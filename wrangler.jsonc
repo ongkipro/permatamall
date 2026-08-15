@@ -12,14 +12,14 @@
   "kv_namespaces": [
     {
       "binding": "SESSION",
-      "id": "1e559dabb71646be90b8a3edf4ace55e"
+      "id": "073d2b37237a4cb7a95c9e09eb2a6a03"
     }
   ],
   "d1_databases": [
     {
       "binding": "OMS_DB",
       "database_name": "cmsads-permatamall-d1",
-      "database_id": "2b021240-b06e-411b-9e9c-8311c33e6735",
+      "database_id": "054f2261-b8e9-4811-aeb2-5a580928fdc3",
       "migrations_dir": "src/db/migrations"
     }
   ],

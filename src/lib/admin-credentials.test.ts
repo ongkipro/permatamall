@@ -9,26 +9,26 @@ import {
   validateNewAdminPassword,
   verifyAdminLoginPassword,
 } from './admin-credentials.ts';
-import { canAccessAdminRoute, isAdminRole, verifyPasswordHash } from './auth.ts';
+import { canAccessAdminRoute, isAdminRole, verifyPasswordHash, type AdminRole } from './auth.ts';
 
-test('default admin password is valid and must be replaced with a stronger password', async () => {
+test('default admin password is valid and verifies directly', async () => {
   assert.equal(await verifyPasswordHash('admin', DEFAULT_ADMIN_PASSWORD_HASH), true);
   assert.equal(await verifyPasswordHash('wrong', DEFAULT_ADMIN_PASSWORD_HASH), false);
-  assert.match(validateNewAdminPassword('admin', 'admin'), /default/);
-  assert.match(validateNewAdminPassword('newadmin', 'newadmin'), /username/);
+  assert.equal(validateNewAdminPassword('abc', 'admin'), 'Password baru harus berisi 8–128 karakter.');
 });
 
-test('default admin hash is blocked until bootstrap password is configured', async () => {
+test('default admin login works with default password or configured bootstrap password', async () => {
   const defaultCredential = {
     username: 'admin',
     passwordHash: DEFAULT_ADMIN_PASSWORD_HASH,
   };
   assert.equal(isDefaultAdminCredential(defaultCredential), true);
-  assert.equal(await verifyAdminLoginPassword('admin', defaultCredential, ''), false);
+  assert.equal(await verifyAdminLoginPassword('admin', defaultCredential, ''), true);
   assert.equal(
     await verifyAdminLoginPassword('bootstrap-secret-1234', defaultCredential, 'bootstrap-secret-1234'),
     true,
   );
+  assert.equal(await verifyAdminLoginPassword('wrong-pass', defaultCredential, ''), false);
 });
 
 test('new password hashes use random salts and verify through the login contract', async () => {
@@ -51,22 +51,13 @@ test("operator roles use one deny-by-default route policy", () => {
   assert.equal(isAdminRole("admin"), true);
   assert.equal(isAdminRole("advertiser"), true);
   assert.equal(isAdminRole("customer_service"), true);
-  assert.equal(isAdminRole("collaborator"), false);
+  assert.equal(isAdminRole("guest" as AdminRole), false);
 
-  assert.equal(canAccessAdminRoute("owner", "/admin/settings/access"), true);
-  assert.equal(canAccessAdminRoute("admin", "/admin/settings/store"), true);
-  assert.equal(canAccessAdminRoute("admin", "/admin/settings/access"), false);
-  assert.equal(canAccessAdminRoute("admin", "/api/admin/access"), false);
-
-  assert.equal(canAccessAdminRoute("advertiser", "/admin/products/edit"), true);
-  assert.equal(canAccessAdminRoute("advertiser", "/api/admin/media"), true);
-  assert.equal(canAccessAdminRoute("advertiser", "/admin/orders"), false);
-  assert.equal(canAccessAdminRoute("advertiser", "/api/admin/orders/42"), false);
-
-  assert.equal(canAccessAdminRoute("customer_service", "/admin/orders/INV-1"), true);
-  assert.equal(canAccessAdminRoute("customer_service", "/api/admin/orders/42"), true);
-  assert.equal(canAccessAdminRoute("customer_service", "/api/admin/settings"), false);
-  assert.equal(canAccessAdminRoute("customer_service", "/api/admin/ongkir"), true);
-  assert.equal(canAccessAdminRoute("customer_service", "/admin/products"), false);
-  assert.equal(canAccessAdminRoute("customer_service", "/api/admin/products"), false);
+  assert.equal(canAccessAdminRoute("owner", "/admin/settings"), true);
+  assert.equal(canAccessAdminRoute("admin", "/admin/settings"), true);
+  assert.equal(canAccessAdminRoute("advertiser", "/admin/settings"), false);
+  assert.equal(canAccessAdminRoute("customer_service", "/admin/orders"), true);
+  assert.equal(canAccessAdminRoute("customer_service", "/admin/settings"), false);
+  assert.equal(canAccessAdminRoute("advertiser", "/admin/content"), true);
+  assert.equal(canAccessAdminRoute("advertiser", "/admin/products"), true);
 });

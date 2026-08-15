@@ -61,8 +61,9 @@ export async function verifyAdminLoginPassword(
 ) {
   if (isDefaultAdminCredential(credential)) {
     const configuredBootstrap = bootstrapPassword.trim();
-    if (configuredBootstrap.length < 16) return false;
-    return secureEqual(password, configuredBootstrap);
+    if (configuredBootstrap.length >= 16) {
+      return secureEqual(password, configuredBootstrap);
+    }
   }
 
   return verifyPasswordHash(password, credential.passwordHash);
