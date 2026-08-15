@@ -38,23 +38,23 @@ const productCatalog = products.map((item) => ({
   hideHeader={true}
   hideFooter={true}
 >
-  <main class="min-h-screen bg-white font-sans text-[14px] text-slate-800 antialiased">
+  <main class="min-h-screen bg-[#F8F7F4] font-sans text-[14px] text-slate-800 antialiased py-4 sm:py-8">
     <MetaThanksTracker tenantName={tenantConfig.name} tenantSlug={tenantConfig.slug} />
-    <header
-      class="relative z-30 flex items-center justify-between border-b border-slate-100 bg-white px-5 py-4"
-    >
-      <span class="logo-text" id="brand-logo">{product.productName.toUpperCase()}</span>
-      <span
-        class="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-medium uppercase tracking-wide text-emerald-700 ring-1 ring-emerald-100"
+    <div class="mx-auto w-full max-w-[480px] overflow-hidden rounded-none border border-slate-200 bg-white shadow-xs">
+      <header
+        class="relative z-30 flex items-center justify-between border-b border-slate-200 bg-white px-5 py-4"
       >
-        <i class="relative flex size-2"
-          ><i class="absolute inline-flex size-full animate-ping rounded-full bg-emerald-400 opacity-70"></i><i
-            class="relative inline-flex size-2 rounded-full bg-emerald-500"></i></i
+        <span class="logo-text text-slate-950 font-bold tracking-wider text-xs" id="brand-logo">{product.productName.toUpperCase()}</span>
+        <span
+          class="inline-flex items-center gap-1.5 rounded-none border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-emerald-700"
         >
-        CS Active
-      </span>
-    </header>
-
+          <i class="relative flex size-2"
+            ><i class="absolute inline-flex size-full animate-ping rounded-full bg-emerald-400 opacity-70"></i><i
+              class="relative inline-flex size-2 rounded-full bg-emerald-500"></i></i
+          >
+          CS Active
+        </span>
+      </header>
     <section class="px-5 pb-5 pt-7 text-center" data-motion="hero">
       <div
         class="mx-auto mb-4 grid size-16 place-items-center rounded-full bg-emerald-500 text-white shadow-[0_0_0_8px_rgba(16,185,129,0.10)]"
@@ -128,7 +128,7 @@ const productCatalog = products.map((item) => ({
 
     <section class="border-t border-slate-100 px-5 py-5" data-motion="section">
       <h2 class="mb-3 text-[15px] font-semibold tracking-[-0.02em] text-slate-950">Ringkasan pembayaran</h2>
-      <div class="divide-y divide-slate-100 overflow-hidden rounded-2xl border border-slate-100">
+      <div class="divide-y divide-slate-100 overflow-hidden rounded-none border border-slate-200">
         <div class="flex justify-between gap-3 px-4 py-3 text-[13px]">
           <span class="text-slate-500">Harga produk</span><span id="product-price" class="font-medium text-slate-900"
             >{formatIdr(defaultVariant.comparePrice ?? defaultVariant.price)}</span
@@ -147,7 +147,7 @@ const productCatalog = products.map((item) => ({
             >{formatIdr(previewShipping)}</span
           >
         </div>
-        <div class="flex items-center justify-between gap-3 bg-slate-50 px-4 py-4">
+        <div class="flex items-center justify-between gap-3 bg-[#F8F7F4] px-4 py-4">
           <div>
             <p id="total-label" class="text-[13px] font-medium text-slate-900">Total COD</p>
             <p id="total-note" class="mt-0.5 text-[10px] uppercase tracking-wide text-amber-600">
@@ -328,6 +328,7 @@ const productCatalog = products.map((item) => ({
     <footer class="border-t border-slate-100 px-5 py-5 text-center text-xs text-slate-400">
       Safe Checkout · Quality Guaranteed
     </footer>
+    </div>
   </main>
 
   <style>
