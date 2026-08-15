@@ -52,7 +52,7 @@
     "PUBLIC_SITE_TAGLINE": "Pusat Belanja Online Pilihan",
     "PUBLIC_SITE_THEME_COLOR": "#0F172A",
     "PUBLIC_SITE_LOCALE": "id-ID",
-    "PUBLIC_STOREFRONT_TEMPLATE": "compact-market",
+    "PUBLIC_STOREFRONT_TEMPLATE": "wide-catalog",
     "PUBLIC_ADMIN_NAME": "Permata Mall Ops"
   }
 }
