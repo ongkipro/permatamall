@@ -174,9 +174,9 @@ export function mergeStorefrontCatalog(
     const firstVariant = variants[0];
     const image = product.image_url || "/images/logo.webp";
 
-    const baseDir = image.endsWith("/1.jpg") ? image.slice(0, -5) : null;
+    const baseDir = image.endsWith("/1.webp") ? image.slice(0, -7) : null;
     const galleryImages = baseDir
-      ? [1, 2, 3, 4, 5, 6, 7].map((num) => `${baseDir}/${num}.jpg`)
+      ? [1, 2, 3, 4, 5, 6, 7].map((num) => `${baseDir}/${num}.webp`)
       : [image];
 
     catalog.push({
@@ -212,25 +212,34 @@ export function mergeStorefrontCatalog(
       offerText: "Diskon Promo Terbatas + Gratis Ongkir COD",
       ctaText: "Pesan Sekarang (COD / Transfer)",
       ratingValue: 4.9,
-      reviewCount: 128,
-      soldCount: 485,
+      reviewCount: 248,
+      soldCount: 785,
       reviews: [
         {
           name: "Siti Rahmawati",
           location: "Jakarta Selatan",
-          avatar: "/images/social-proof-avatar.webp",
+          avatar: "",
           verified: true,
           date: "Kemarin",
-          comment: "Bagus banget tasnya! Bahannya tebal, warnanya sesuai gambar. Pengiriman COD cepat sekali.",
+          comment: "Bagus banget tasnya! Bahannya tebal, warnanya presisi sesuai gambar. Pengiriman COD sangat cepat dan kurir ramah.",
           rating: 5,
         },
         {
           name: "Diah Permata",
           location: "Surabaya",
-          avatar: "/images/social-proof-avatar.webp",
+          avatar: "",
           verified: true,
-          date: "3 hari lalu",
-          comment: "Jahitan rapi, muat banyak barang. Worth it banget untuk harga promo segini!",
+          date: "2 hari lalu",
+          comment: "Jahitan super rapi, muat HP, dompet & makeup. Kualitas luxury untuk harga promo segini, worth it banget!",
+          rating: 5,
+        },
+        {
+          name: "Maya Anggraini",
+          location: "Bandung",
+          avatar: "",
+          verified: true,
+          date: "4 hari lalu",
+          comment: "Desainnya mewah & elegan. Suka banget kancing emas & resletingnya yang kokoh. Packing aman & rapi.",
           rating: 5,
         },
       ],

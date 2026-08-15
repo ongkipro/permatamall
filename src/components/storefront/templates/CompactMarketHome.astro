@@ -1,7 +1,6 @@
 ---
 import HeroSection from '../../home/HeroSection.astro';
 import ProductsSection from '../../home/ProductsSection.astro';
-import SolutionsSection from '../../home/SolutionsSection.astro';
 import ProofsSection from '../../home/ProofsSection.astro';
 import type { TenantHomeContent } from '../../../lib/tenant-content';
 
@@ -25,13 +24,28 @@ interface Props {
 }
 
 const { content, products } = Astro.props;
+
+const heroSlides =
+  content.heroSlides.length > 0
+    ? content.heroSlides
+    : products.slice(0, 3).map((product) => ({
+        image: product.image,
+        alt: product.name,
+        badge: product.category,
+        text: product.name,
+      }));
 ---
 
-<main id="konten-utama" class="relative min-h-screen bg-white text-slate-800">
-  <div id="home" class="mx-auto max-w-[480px] bg-white">
-    <HeroSection slides={content.heroSlides} highlights={content.heroHighlights} content={content.hero} />
+<main
+  id="konten-utama"
+  class="relative min-h-screen overflow-x-hidden bg-[#F8F7F4] font-sans text-[#111111] antialiased"
+>
+  <div
+    id="home"
+    class="mx-auto flex min-h-screen w-full max-w-[480px] flex-col border-x border-[#E5E5E5] bg-[#F8F7F4]"
+  >
+    <HeroSection slides={heroSlides} highlights={content.heroHighlights} content={content.hero} />
     <ProductsSection products={products} heading={content.catalog} />
-    <SolutionsSection solutions={content.solutions} heading={content.solutionsHeading} />
     <ProofsSection proofs={content.proofs} heading={content.proofsHeading} />
   </div>
 </main>
@@ -49,8 +63,8 @@ const { content, products } = Astro.props;
     [...heroDots.children].forEach((dot, itemIndex) => {
       dot.className =
         itemIndex === index
-          ? 'h-6 w-8 rounded-full border-[7px] border-transparent bg-white bg-clip-padding transition-all'
-          : 'h-6 w-6 rounded-full border-[7px] border-transparent bg-white/55 bg-clip-padding transition-all';
+          ? 'h-11 w-7 border-b-2 border-white bg-transparent transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white'
+          : 'h-11 w-4 border-b border-white/55 bg-transparent transition-colors hover:border-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white';
     });
     heroIndex = index;
   };

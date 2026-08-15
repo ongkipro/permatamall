@@ -839,4 +839,28 @@ Implementation, contract tests, static checks, build, and focused authenticated 
 - [x] **T278** - Order Form & Checkout Minimalist Visual Refinement (`GeoIpResolvedForm.astro`, `form-hybrid.css`).
  -> REQ: UI-4 · deps: [T277] · Done when: order form visual colors align with luxury minimalist palette while preserving 100% of underlying form bindings, field handlers, and checkout submit logic.
 - [x] **T279** - Full Verification, Build & Live Production Deployment (`npm test`, `npx tsc --noEmit`, `npx astro check`, `wrangler deploy`).
+
+## Phase 77: Public Storefront Luxury Minimalist UI/UX Overhaul (Mobile-First 480px)
+
+- [x] **T280** — Non-Sticky Clean Header & Luxury Navigation (`SiteHeader.astro`, `SiteFooter.astro`).
+      -> REQ: UI-1 · deps: [T279] · Done when: header uses non-sticky clean document flow layout on homepage, top announcement ticker uses Onyx `#09090B` background with pulsing status dot, and footer presents clean luxury branding inside 480px container.
+- [x] **T281** — Frameless Rounded Luxury Product Cards & Homepage Showcase (`CompactMarketHome.astro`, `ProductsSection.astro`, `HeroSection.astro`, `SolutionsSection.astro`, `ProofsSection.astro`).
+      -> REQ: UI-2 · deps: [T280] · Done when: homepage product grid uses rounded luxury card presentation without bulky borders/shadows, 3:4 portrait image frame, discount tags, rating summary pill, and warm studio canvas `#FBFBFB` background inside max-w-[480px] shell.
+- [x] **T282** — Product Detail Page PDP & Form Visual Refresh (`src/pages/produk/[slug].astro`, `ProductImageSlider.tsx`, `GeoIpResolvedForm.astro`).
+      -> REQ: UI-3 · deps: [T281] · Done when: PDP renders rounded luxury product gallery, Onyx price typography, and checkout form container matches emerald/slate visual styling without touching form logic or DOM field structure.
+- [x] **T283** — Full Verification & Local Preview (`npm test`, `npx tsc --noEmit`, `npx astro check`).
+      -> REQ: UI-4 · deps: [T282] · Done when: unit test suite passes 192/192, 0 TypeScript and Astro check errors, local dev server running on Tailscale IP `http://100.127.67.86:4321/`, and 0 git push / 0 wrangler deploy executed.
+
+## Phase 78: Ground-Up Sharp Luxury Boutique Redesign (Mobile-First 480px)
+
+- [x] **T284** — Simple Minimalist Header & Footer (`SiteHeader.astro`, `SiteFooter.astro`).
+      -> REQ: UI-1 · deps: [T283] · Done when: header and footer present ultra-simple minimalist aesthetic with thin 1px borders, deep ebony #111111 ticker, and non-sticky document flow inside max-w-[480px] shell.
+- [x] **T285** — Vertical Left Thumbnail Product Gallery (`ProductImageSlider.tsx`).
+      -> REQ: UI-2 · deps: [T284] · Done when: PDP image slider presents miniature thumbnails stacked vertically on the LEFT side of the main active image frame.
+- [x] **T286** — Catalog List Capped at Max 15 Products (`src/pages/produk/index.astro`).
+      -> REQ: UI-3 · deps: [T285] · Done when: product catalog page strictly limits item rendering to maximum 15 products with high-precision luxury layout.
+- [x] **T287** — Homepage & PDP Sharp Luxury Overhaul (`CompactMarketHome.astro`, `HeroSection.astro`, `ProductsSection.astro`, `src/pages/produk/[slug].astro`).
+      -> REQ: UI-4 · deps: [T286] · Done when: homepage and PDP render sharp luxury boutique styling without bulky rounded cards, warm alabaster #F8F7F4 canvas, champagne gold #C5A880 accents, and 100% untouched checkout form logic.
+- [x] **T288** — Full System Verification & Tailscale Preview (`npm test`, `npx tsc --noEmit`, `npx astro check`).
+      -> REQ: UI-5 · deps: [T287] · Done when: unit test suite passes 192/192, 0 TypeScript and Astro check errors, local dev server running on Tailscale IP `http://100.127.67.86:4321/`, and 0 git push / 0 wrangler deploy executed.
  -> REQ: UI-5 · deps: [T278] · Done when: unit test suite passes 192/192, 0 TypeScript and Astro check errors, production build deployed to Cloudflare Worker, git committed to main, and verified on `https://permatamall.shop/`.

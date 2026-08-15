@@ -294,7 +294,7 @@ export function ProductForm({ productId }: { productId?: string }) {
   if (loadError)
     return (
       <section
-        className="rounded-xl border border-rose-200 bg-white p-8 text-center shadow-sm"
+        className="rounded-xl border border-rose-200 bg-slate-50 p-8 text-center shadow-sm"
         role="alert"
       >
         <h2 className="text-lg font-black text-slate-950">
@@ -303,7 +303,7 @@ export function ProductForm({ productId }: { productId?: string }) {
         <p className="mt-2 text-sm text-slate-600">{loadError}</p>
         <a
           href="/admin/products"
-          className="btn-primary mt-5 min-h-11 px-5 text-xs"
+          className="btn-primary mt-5 min-h-11 !bg-emerald-700 px-5 text-xs hover:!bg-emerald-800 focus-visible:!outline-emerald-700"
         >
           Kembali ke katalog
         </a>
@@ -320,11 +320,11 @@ export function ProductForm({ productId }: { productId?: string }) {
       <div className="space-y-6">
         {isSampleProduct && (
           <section
-            className="rounded-xl border border-blue-200 bg-blue-50 p-5 text-blue-950 shadow-sm"
+            className="rounded-xl border border-slate-200 bg-slate-50 p-5 text-slate-900 shadow-sm"
             aria-label="Data contoh terkunci"
           >
             <p className="text-sm font-black">Data contoh bawaan</p>
-            <p className="mt-1 text-xs leading-5 text-blue-800">
+            <p className="mt-1 text-xs leading-5 text-slate-600">
               Produk contoh Aussie tidak dapat diubah atau dihapus. Unggah
               produk lain untuk menjual produk Anda sendiri.
             </p>
@@ -349,7 +349,7 @@ export function ProductForm({ productId }: { productId?: string }) {
                 maxLength={160}
                 value={title}
                 onChange={(event) => onTitleChange(event.target.value)}
-                className="bg-white shadow-none admin-input-flat h-11 text-base md:text-sm"
+                className="admin-input-flat h-11 border-slate-300 bg-slate-50 text-base shadow-none focus-visible:border-emerald-700 focus-visible:ring-emerald-700/20 md:text-sm"
               />
             </label>
             <label>
@@ -365,7 +365,7 @@ export function ProductForm({ productId }: { productId?: string }) {
                   setSlugTouched(true);
                   setSlug(slugify(event.target.value));
                 }}
-                className="bg-white shadow-none admin-input-flat h-11 font-mono text-base md:text-sm"
+                className="admin-input-flat h-11 border-slate-300 bg-slate-50 font-mono text-base shadow-none focus-visible:border-emerald-700 focus-visible:ring-emerald-700/20 md:text-sm"
               />
               <span className="mt-1 block text-[11px] text-slate-500">
                 Huruf kecil, angka, dan tanda hubung.
@@ -404,7 +404,7 @@ export function ProductForm({ productId }: { productId?: string }) {
                       if (file) void uploadImage(file);
                       event.target.value = "";
                     }}
-                    className="block min-h-11 w-full text-base text-slate-700 file:mr-3 file:min-h-11 file:rounded-lg file:border-0 file:bg-slate-950 file:px-4 file:text-xs file:font-bold file:text-white md:text-sm"
+                    className="block min-h-11 w-full border-slate-300 bg-slate-50 text-base text-slate-700 focus-visible:border-emerald-700 focus-visible:ring-emerald-700/20 file:mr-3 file:min-h-11 file:rounded-lg file:border-0 file:bg-emerald-700 file:px-4 file:text-xs file:font-bold file:text-white file:hover:bg-emerald-800 md:text-sm"
                   />
                   <p
                     id="product-image-hint"
@@ -476,7 +476,7 @@ export function ProductForm({ productId }: { productId?: string }) {
                       onChange={(event) =>
                         updateVariant(index, "title", event.target.value)
                       }
-                      className="bg-white shadow-none admin-input-flat h-11 text-base md:text-sm"
+                      className="admin-input-flat h-11 border-slate-300 bg-slate-50 text-base shadow-none focus-visible:border-emerald-700 focus-visible:ring-emerald-700/20 md:text-sm"
                     />
                     <span className="mt-1 block text-[10px] text-slate-400">
                       Maks. 15 karakter (contoh: 500ml, 1 Liter, Beli 2)
@@ -497,7 +497,7 @@ export function ProductForm({ productId }: { productId?: string }) {
                           event.target.value.toUpperCase(),
                         )
                       }
-                      className="bg-white shadow-none admin-input-flat h-11 font-mono text-base uppercase md:text-sm"
+                      className="admin-input-flat h-11 border-slate-300 bg-slate-50 font-mono text-base uppercase shadow-none focus-visible:border-emerald-700 focus-visible:ring-emerald-700/20 md:text-sm"
                     />
                   </label>
                   <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5">
@@ -522,7 +522,7 @@ export function ProductForm({ productId }: { productId?: string }) {
                       onChange={(event) =>
                         updateVariant(index, "price", event.target.value)
                       }
-                      className="bg-white shadow-none admin-input-flat h-11 text-base md:text-sm"
+                      className="admin-input-flat h-11 border-slate-300 bg-slate-50 text-base shadow-none focus-visible:border-emerald-700 focus-visible:ring-emerald-700/20 md:text-sm"
                     />
                   </label>
                   <label>
@@ -542,7 +542,7 @@ export function ProductForm({ productId }: { productId?: string }) {
                           event.target.value,
                         )
                       }
-                      className="bg-white shadow-none admin-input-flat h-11 text-base md:text-sm"
+                      className="admin-input-flat h-11 border-slate-300 bg-slate-50 text-base shadow-none focus-visible:border-emerald-700 focus-visible:ring-emerald-700/20 md:text-sm"
                     />
                   </label>
                   <label>
@@ -559,7 +559,7 @@ export function ProductForm({ productId }: { productId?: string }) {
                       onChange={(event) =>
                         updateVariant(index, "weight_grams", event.target.value)
                       }
-                      className="bg-white shadow-none admin-input-flat h-11 text-base md:text-sm"
+                      className="admin-input-flat h-11 border-slate-300 bg-slate-50 text-base shadow-none focus-visible:border-emerald-700 focus-visible:ring-emerald-700/20 md:text-sm"
                     />
                   </label>
                 </div>
@@ -644,7 +644,7 @@ export function ProductForm({ productId }: { productId?: string }) {
               dan Google.
             </p>
             {isSampleProduct ? (
-              <p className="mt-6 rounded-lg border border-blue-200 bg-blue-50 p-3 text-xs font-bold leading-5 text-blue-900">
+              <p className="mt-6 rounded-lg border border-slate-200 bg-slate-50 p-3 text-xs font-bold leading-5 text-slate-700">
                 Data contoh hanya dapat dilihat. Buat atau unggah produk lain
                 untuk penggunaan sebenarnya.
               </p>
@@ -652,7 +652,7 @@ export function ProductForm({ productId }: { productId?: string }) {
               <button
                 type="submit"
                 disabled={saving || uploading}
-                className="btn-blue mt-6 min-h-11 w-full px-5 text-xs"
+                className="btn-primary mt-6 min-h-11 w-full !bg-emerald-700 px-5 text-xs hover:!bg-emerald-800 focus-visible:!outline-emerald-700"
               >
                 {saving ? "Menyimpan…" : "Simpan Produk"}
               </button>

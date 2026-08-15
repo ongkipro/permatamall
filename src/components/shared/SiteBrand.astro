@@ -7,40 +7,37 @@ interface Props {
   showTagline?: boolean;
 }
 
-const { href = '/', class: className = '', tone = 'dark', showTagline = true } = Astro.props;
-const [brandLead, ...brandTailParts] = tenantConfig.name.split(/\s+/);
-const brandTail = brandTailParts.join(' ');
+const { href = '/', class: className = '', tone = 'dark', showTagline = false } = Astro.props;
 const isLight = tone === 'light';
-const isGlossy = tone === 'glossy';
-const brandLeadClass = isLight ? 'text-white' : 'text-slate-900';
-const brandTailClass = isLight
-  ? 'text-white/92'
-  : isGlossy
-    ? 'bg-gradient-to-b from-white via-white to-[#F2F5F0] bg-clip-text text-transparent'
-    : 'text-slate-900';
-const taglineClass = isLight ? 'text-white/72' : 'text-slate-500';
+const textClass = isLight ? 'text-white' : 'text-[#111111]';
+const goldClass = 'text-[#C5A880]';
 ---
 
 <a
   href={href}
-  class={`group flex min-h-11 min-w-0 items-center gap-[8px] rounded-md focus-visible:outline-none focus-visible:ring-2 ${className}`}
+  class={`group inline-flex min-h-11 items-center gap-2.5 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#111111] ${className}`}
   aria-label={tenantConfig.name}
   title={`${tenantConfig.name} - ${tenantConfig.tagline}`}
 >
-  <span class="flex min-w-0 flex-col justify-center">
+  <!-- Elegant Monogram Luxury Emblem Icon -->
+  <span class={`flex h-7 w-7 items-center justify-center border border-[#C5A880]/60 bg-transparent text-[11px] font-bold tracking-widest ${goldClass} transition-colors group-hover:border-[#111111] group-hover:bg-[#111111] group-hover:text-[#F8F7F4]`} style="font-family: 'Cinzel', serif;">
+    P
+  </span>
+
+  <span class="flex flex-col justify-center">
     <span
-      class="min-w-0 whitespace-nowrap text-[20px] font-black leading-none tracking-tight"
-      style="font-family: 'Plus Jakarta Sans', Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;"
+      class={`whitespace-nowrap text-[15px] font-bold uppercase tracking-[0.2em] leading-none ${textClass}`}
+      style="font-family: 'Cinzel', 'Playfair Display', Georgia, serif;"
     >
-      <span class={brandLeadClass}>{brandLead}{brandTail ? ' ' : ''}</span>{brandTail && <span class={brandTailClass}>{brandTail}</span>}
+      PERMATA<span class={`ml-1.5 font-normal ${goldClass}`}>MALL</span>
     </span>
     {
       showTagline && (
         <span
-          class={`mt-[4px] whitespace-nowrap text-[9px] font-medium leading-none tracking-normal ${taglineClass}`}
-          style="font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;"
+          class="mt-1 text-[8px] font-semibold uppercase tracking-[0.25em] text-[#8A704F]"
+          style="font-family: Inter, sans-serif;"
         >
-          {tenantConfig.tagline}
+          LUXURY BOUTIQUE
         </span>
       )
     }

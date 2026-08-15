@@ -62,3 +62,114 @@ const resolvedProvince = province || formContext.province;
     )
   }
 </div>
+
+<style>
+  :global([data-canonical-order-form]) {
+    background: #ffffff;
+    color: #0f172a;
+  }
+
+  :global([data-canonical-order-form] .flash-sale-banner) {
+    background: #111111 !important;
+    background-image: linear-gradient(135deg, #111111 0%, #1a1a1a 100%) !important;
+    border-bottom: 1px solid #C5A880;
+  }
+
+  :global([data-canonical-order-form] .section-title::before) {
+    background: #C5A880;
+  }
+
+  :global([data-canonical-order-form] .simple-variant-copy),
+  :global([data-canonical-order-form] .payment-option-copy),
+  :global([data-canonical-order-form] .payment-group) {
+    border-color: #E5E5E5;
+    background: #ffffff;
+  }
+
+  :global([data-canonical-order-form] .variant-option input:checked + .variant-copy),
+  :global([data-canonical-order-form] .simple-variant-option input:checked + .simple-variant-copy),
+  :global([data-canonical-order-form] .payment-option input:checked + .payment-option-copy),
+  :global([data-canonical-order-form] .payment-group.is-selected) {
+    border-color: #111111;
+    background: #F8F7F4;
+  }
+
+  :global([data-canonical-order-form] .variant-option input:checked + .variant-copy .variant-radio),
+  :global([data-canonical-order-form] .payment-option input:checked + .payment-option-copy .payment-option-radio),
+  :global([data-canonical-order-form] .payment-group.is-selected .payment-group-head .payment-option-radio) {
+    border-color: #111111;
+    background: radial-gradient(circle, #C5A880 0 45%, #ffffff 46% 100%);
+  }
+
+  :global([data-canonical-order-form] .form-field input),
+  :global([data-canonical-order-form] .form-field textarea) {
+    border-color: #E5E5E5;
+    background: #ffffff;
+    color: #111111;
+  }
+
+  :global([data-canonical-order-form] .form-field input:focus),
+  :global([data-canonical-order-form] .form-field textarea:focus),
+  :global([data-canonical-order-form] .form-field input.field-valid:focus),
+  :global([data-canonical-order-form] .form-field textarea.field-valid:focus) {
+    border-color: #111111 !important;
+    background: #ffffff !important;
+    box-shadow: 0 0 0 2px rgba(197, 168, 128, 0.3) !important;
+  }
+
+  :global([data-canonical-order-form] .form-field input:focus ~ label),
+  :global([data-canonical-order-form] .form-field input:focus ~ span),
+  :global([data-canonical-order-form] .form-field textarea:focus ~ label),
+  :global([data-canonical-order-form] .form-field textarea:focus ~ span) {
+    color: #111111;
+  }
+
+  :global([data-canonical-order-form] .field-grid input.field-valid),
+  :global([data-canonical-order-form] .field-grid textarea.field-valid),
+  :global([data-canonical-order-form] .form-field input.field-valid),
+  :global([data-canonical-order-form] .form-field textarea.field-valid) {
+    border-color: #C5A880;
+    background: #F8F7F4 !important;
+  }
+
+  :global([data-canonical-order-form] .total-box) {
+    border-color: #E5E5E5;
+    background: #F8F7F4;
+  }
+
+  :global([data-canonical-order-form] .info-box) {
+    border-color: #C5A880;
+    background: #F8F7F4;
+    color: #111111;
+  }
+
+  :global([data-canonical-order-form] .info-box span) {
+    color: #8A704F;
+  }
+
+  :global([data-canonical-order-form] .submit-main),
+  :global([data-canonical-order-form] .submit-main[data-state='ready']) {
+    border-color: #111111;
+    background: #111111 !important;
+    color: #ffffff !important;
+    box-shadow: 0 8px 16px -4px rgba(17, 17, 17, 0.25);
+  }
+
+  :global([data-canonical-order-form] .submit-main:hover),
+  :global([data-canonical-order-form] .submit-main[data-state='ready']:hover) {
+    background: #C5A880 !important;
+    color: #111111 !important;
+    border-color: #C5A880;
+    box-shadow: 0 10px 20px -4px rgba(197, 168, 128, 0.35);
+  }
+
+  :global([data-canonical-order-form] .submit-main:focus-visible) {
+    outline: 2px solid #111111;
+    outline-offset: 3px;
+  }
+
+  :global([data-canonical-order-form] .submit-main[data-state='loading']) {
+    border-color: #111111;
+    background: #111111 !important;
+  }
+</style>

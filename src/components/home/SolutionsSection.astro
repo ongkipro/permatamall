@@ -27,13 +27,13 @@ const categories = ['Semua', 'Kenyamanan Tidur', 'Perkakas Dapur & Rumah', 'Perk
 const initialLimit = 6;
 ---
 
-<section id="solusi" class="border-t border-slate-100 bg-white px-5 py-8">
+<section id="solusi" class="border-t border-zinc-100 bg-white px-5 py-8">
   <div class="mb-4 text-left">
-    <span class="text-[10px] font-extrabold uppercase tracking-widest text-emerald-800">
+    <span class="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#8A704F]">
       {heading.eyebrow}
     </span>
-    <h2 class="mt-1 text-xl font-extrabold tracking-tight text-slate-900 md:text-2xl">{heading.title}</h2>
-    <p class="mt-1 text-xs text-slate-500">{heading.description}</p>
+    <h2 class="mt-1 text-xl font-bold tracking-tight text-[#111111]">{heading.title}</h2>
+    <p class="mt-1.5 text-xs font-normal leading-relaxed text-[#555555]">{heading.description}</p>
 
     <!-- Category Filter Chips -->
     <div class="mt-3.5 flex flex-wrap gap-1.5 scrollbar-none overflow-x-auto pb-1" id="solutions-filter-bar">
@@ -41,11 +41,11 @@ const initialLimit = 6;
         <button
           type="button"
           data-category={cat}
-          class={`solution-filter-btn rounded-full px-3 py-1 text-[10.5px] font-extrabold transition-all ${
-            idx === 0
-              ? 'bg-emerald-800 text-white shadow-xs'
-              : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-          }`}
+          class={`solution-filter-btn rounded-none border border-[#E5E5E5] px-3 py-1 text-[10.5px] font-bold transition-all focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#111111] ${
+              idx === 0
+                ? 'bg-[#111111] text-white shadow-xs'
+                : 'bg-[#F8F7F4] text-[#555555] hover:bg-[#111111] hover:text-white'
+            }`}
         >
           {cat}
         </button>
@@ -54,7 +54,7 @@ const initialLimit = 6;
   </div>
 
   <!-- Seamless List with Hairline Dividers -->
-  <div id="solutions-list" class="divide-y divide-slate-100">
+  <div id="solutions-list" class="mt-2 flex flex-col gap-3">
     {
       solutions.map((solution, index) => {
         const href = solution.href || '/solusi-terbaru';
@@ -65,13 +65,13 @@ const initialLimit = 6;
             href={href}
             data-index={index}
             data-crop={cropName}
-            class={`solution-item group block py-3.5 first:pt-1 last:pb-0 transition-opacity duration-300 ${
+            class={`solution-item group block rounded-2xl border border-zinc-200/80 bg-white p-3 shadow-xs transition-all duration-300 hover:border-zinc-300 hover:shadow-md ${
               index >= initialLimit ? 'hidden' : ''
             }`}
             title={`Buka panduan ${solution.title}`}
           >
-            <article class="flex gap-3.5 items-center">
-              <div class="relative aspect-[4/3] w-24 shrink-0 overflow-hidden rounded-lg bg-slate-50 border border-slate-100">
+            <article class="flex gap-4 items-center">
+              <div class="relative aspect-[4/3] w-24 shrink-0 overflow-hidden rounded-xl bg-zinc-50 border border-zinc-100">
                 <img
                   src={solution.image}
                   alt={`Foto solusi ${solution.title}`}
@@ -82,16 +82,16 @@ const initialLimit = 6;
               </div>
 
               <div class="min-w-0 flex-1">
-                <span class="inline-block rounded bg-emerald-50 px-1.5 py-0.5 text-[9px] font-extrabold uppercase tracking-wider text-emerald-800 border border-emerald-100/60">
+                <span class="inline-block rounded bg-zinc-100 px-2 py-1 text-[9px] font-extrabold uppercase tracking-widest text-[#09090B]">
                   {cropName}
                 </span>
-                <h3 class="mt-1 text-xs font-extrabold text-slate-900 group-hover:text-emerald-800 transition-colors leading-snug">
+                <h3 class="mt-1.5 text-xs font-bold text-[#111111] group-hover:text-[#8A704F] transition-colors leading-snug">
                   {solution.title}
                 </h3>
-                <p class="mt-1 line-clamp-2 text-[11px] leading-relaxed text-slate-500">
+                <p class="mt-1 line-clamp-2 text-[11px] leading-relaxed text-[#555555]">
                   {solution.excerpt}
                 </p>
-                <div class="mt-1.5 flex items-center gap-1 text-[10px] font-bold text-emerald-800">
+                <div class="mt-1.5 flex items-center gap-1 text-[10px] font-bold text-[#8A704F]">
                   <span>Buka Panduan & Solusi</span>
                   <Icon name="lucide:chevron-right" class="size-3 transition-transform group-hover:translate-x-0.5" />
                 </div>
@@ -104,11 +104,11 @@ const initialLimit = 6;
   </div>
 
   <!-- Load More Button Bar -->
-  <div class="mt-6 flex flex-col items-center justify-center gap-2 border-t border-slate-100 pt-4">
+  <div class="mt-6 flex flex-col items-center justify-center gap-2 pt-2">
     <button
       id="load-more-solutions-btn"
       type="button"
-      class="group inline-flex items-center gap-2 rounded-full border border-emerald-800/20 bg-emerald-50 px-5 py-2.5 text-xs font-extrabold text-emerald-900 shadow-xs transition-all hover:border-emerald-800 hover:bg-emerald-800 hover:text-white active:scale-95"
+      class="group inline-flex items-center gap-2 rounded-xl border border-zinc-200 bg-white px-5 py-2.5 text-[11px] font-extrabold tracking-wide text-[#09090B] shadow-xs transition-all hover:bg-zinc-50 active:scale-[0.98]"
     >
       <span>Muat Lebih Banyak Panduan</span>
       <Icon name="lucide:chevron-down" class="size-3.5 transition-transform group-hover:translate-y-0.5" />
@@ -178,12 +178,11 @@ const initialLimit = 6;
     filterBtns.forEach((btn) => {
       btn.addEventListener('click', () => {
         filterBtns.forEach((b) => {
-          b.classList.remove('bg-emerald-800', 'text-white', 'shadow-xs');
-          b.classList.add('bg-slate-100', 'text-slate-600');
+          b.classList.remove('bg-[#111111]', 'text-white', 'shadow-xs');
+          b.classList.add('bg-[#F8F7F4]', 'text-[#555555]', 'hover:bg-[#111111]', 'hover:text-white');
         });
-        btn.classList.remove('bg-slate-100', 'text-slate-600');
-        btn.classList.add('bg-emerald-800', 'text-white', 'shadow-xs');
-
+        btn.classList.remove('bg-[#F8F7F4]', 'text-[#555555]', 'hover:bg-[#111111]', 'hover:text-white');
+        btn.classList.add('bg-[#111111]', 'text-white', 'shadow-xs');
         activeCategory = btn.getAttribute('data-category') || 'Semua';
         currentLimit = 6;
         updateVisibility();

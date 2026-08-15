@@ -1,43 +1,20 @@
 ---
 import SiteBrand from './SiteBrand.astro';
 import { tenantConfig } from '../../lib/tenant';
-
-const isWide = tenantConfig.storefrontTemplate === 'wide-catalog';
 ---
 
-<div class="bg-zinc-950 px-4 py-2 text-center text-xs font-medium tracking-wide text-zinc-300 border-b border-zinc-900">
-  <p class:list={['mx-auto flex items-center justify-center gap-2 px-1', isWide ? 'max-w-7xl' : 'max-w-[480px]']}>
-    <span class="inline-block h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-    <span>{tenantConfig.tagline || 'Garansi 100% Original • Pengiriman COD Seluruh Indonesia'}</span>
+<div class="bg-[#111111] px-4 py-2.5 text-center text-[10px] font-medium tracking-widest uppercase text-[#C5A880]">
+  <p class="mx-auto flex max-w-[480px] items-center justify-center gap-2 px-1">
+    <span class="relative flex h-1.5 w-1.5 items-center justify-center">
+      <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#C5A880] opacity-75"></span>
+      <span class="relative inline-flex h-1 w-1 rounded-full bg-[#C5A880]"></span>
+    </span>
+    <span>{tenantConfig.tagline || 'Pengiriman COD Seluruh Indonesia • Garansi 100% Original'}</span>
   </p>
 </div>
 
-<header class="sticky top-0 z-40 border-b border-zinc-200/80 bg-white/90 backdrop-blur-md transition-all">
-  <div
-    class:list={[
-      'mx-auto flex h-16 items-center px-5',
-      isWide ? 'max-w-7xl justify-between md:px-10' : 'max-w-[480px] justify-between',
-    ]}
-  >
+<header class="border-b border-[#E5E5E5] bg-[#F8F7F4]">
+  <div class="mx-auto flex h-[64px] max-w-[480px] items-center justify-center px-5 text-center">
     <SiteBrand href="/" showTagline={false} />
-    
-    <nav aria-label="Navigasi utama" class="flex items-center gap-3 sm:gap-6">
-      <a
-        href="/produk"
-        class="text-xs font-bold uppercase tracking-wider text-zinc-700 hover:text-zinc-950 transition-colors px-2 py-1.5"
-      >
-        Katalog Produk
-      </a>
-      {
-        isWide && (
-          <a
-            href="/kontak"
-            class="inline-flex items-center rounded-full bg-zinc-950 px-4 py-1.5 text-xs font-bold tracking-wide text-white hover:bg-zinc-800 transition-colors shadow-xs"
-          >
-            Hubungi Kami
-          </a>
-        )
-      }
-    </nav>
   </div>
 </header>

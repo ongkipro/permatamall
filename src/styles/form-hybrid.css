@@ -237,7 +237,7 @@
 .variant-price {
   font-size: 0.95rem;
   font-weight: 800;
-  color: #047857;
+  color: #111111;
   line-height: 1.1;
 }
 .variant-compare {
@@ -586,13 +586,13 @@
 }
 .district-item:hover,
 .district-item:focus-visible {
-  background: #f0fdf4;
-  border-left-color: #059669;
+  background: #F8F7F4;
+  border-left-color: #C5A880;
   outline: none;
 }
 .district-item:active {
   transform: scale(0.99);
-  background: #dcfce7;
+  background: #F8F7F4;
 }
 .district-empty {
   padding: 0.65rem 0.85rem;
@@ -684,8 +684,8 @@
   object-fit: contain;
 }
 .payment-brand-mark--text {
-  border-color: #166534;
-  background: #166534;
+  border-color: #111111;
+  background: #111111;
   color: #fff;
   font-size: 0.72rem;
   font-weight: 900;
@@ -893,7 +893,7 @@
 .total-box strong {
   font-size: 1.15rem;
   font-weight: 800;
-  color: #047857;
+  color: #111111;
   line-height: 1;
 }
 .info-box {

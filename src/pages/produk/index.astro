@@ -7,19 +7,19 @@ import { getStorefrontProducts } from '../../lib/catalog';
 import { tenantConfig } from '../../lib/tenant';
 
 const products = await getStorefrontProducts(Astro.locals);
-const isWide = tenantConfig.storefrontTemplate === 'wide-catalog';
+const catalogProducts = products.slice(0, 15);
 ---
 
 <BaseLayout
   title={`Produk - ${tenantConfig.name}`}
   description={`Pilih produk ${tenantConfig.name}, lihat varian, stok, dan harga sebelum memesan.`}
-  contentWidth={isWide ? 'wide' : 'compact'}
+  contentWidth="compact"
   breadcrumbs={[
     { name: 'Beranda', url: '/' },
     { name: 'Produk', url: '/produk' },
   ]}
 >
-  <main id="konten-utama" class="min-h-screen bg-white text-slate-800">
+  <main id="konten-utama" class="min-h-screen bg-[#F8F7F4] text-[#111111]">
     <PageIntro
       badge="Semua Produk"
       title={`Produk ${tenantConfig.name}`}
@@ -27,15 +27,15 @@ const isWide = tenantConfig.storefrontTemplate === 'wide-catalog';
       breadcrumbs={[{ label: 'Beranda', href: '/' }, { label: 'Produk' }]}
     />
 
-    <section aria-label="Daftar produk" class:list={['mx-auto px-5 py-8', isWide ? 'max-w-6xl' : 'max-w-[480px]']}>
-      {products.length > 0 ? (
-        <div class:list={[isWide ? 'grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4' : 'grid gap-3']}>
-          {products.map((product) => <ProductListItem product={product} formatPrice={formatIdr} />)}
+    <section aria-label="Daftar produk" class="mx-auto max-w-[480px] px-4 py-8">
+      {catalogProducts.length > 0 ? (
+        <div class="grid grid-cols-2 gap-3">
+          {catalogProducts.map((product) => <ProductListItem product={product} formatPrice={formatIdr} />)}
         </div>
       ) : (
-        <div class="border-y border-slate-200 py-8 text-center">
-          <h2 class="text-lg font-bold text-slate-900">Katalog sedang disiapkan</h2>
-          <p class="mt-2 text-sm leading-6 text-slate-600">Produk akan muncul setelah konten dan varian diterbitkan.</p>
+        <div class="border-y border-[#E5E5E5] py-10 text-center">
+          <h2 class="text-lg font-semibold text-[#111111]">Katalog sedang disiapkan</h2>
+          <p class="mt-2 text-sm leading-6 text-[#555555]">Produk akan muncul setelah konten dan varian diterbitkan.</p>
         </div>
       )}
     </section>

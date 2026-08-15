@@ -15,12 +15,11 @@ interface Props {
 const { items } = Astro.props;
 ---
 
-<nav aria-label="Breadcrumb" class={breadcrumbSectionClass}>
+<nav aria-label="Breadcrumb" class="border-b border-[#E5E5E5] bg-[#F8F7F4] px-5 py-2.5">
   <div
     class={cn(
-      'mx-auto flex min-w-0 items-center gap-2 overflow-hidden text-[11px]',
+      'mx-auto flex min-w-0 items-center gap-2 overflow-hidden text-[11px] text-[#555555]',
       tenantConfig.storefrontTemplate === 'wide-catalog' ? 'max-w-6xl lg:px-6' : 'max-w-[480px]',
-      textVariants({ tone: 'soft' }),
     )}
   >
     {
@@ -29,14 +28,14 @@ const { items } = Astro.props;
 
         return (
           <>
-            {index > 0 && <span class="shrink-0 text-[#A0AAA1]">/</span>}
+            {index > 0 && <span class="shrink-0 text-[#77736C]">/</span>}
             {item.href ? (
-              <a href={item.href} class={cn('shrink-0 transition-colors hover:text-[#2E6A33]')}>
+              <a href={item.href} class="shrink-0 transition-colors hover:text-[#C5A880]">
                 {item.label}
               </a>
             ) : (
               <span
-                class={cn('min-w-0 max-w-[58%] truncate font-semibold sm:max-w-[65%]', textVariants({ tone: 'brand' }))}
+                class="min-w-0 max-w-[58%] truncate font-semibold text-[#111111] sm:max-w-[65%]"
                 aria-current={isLast ? 'page' : undefined}
               >
                 {item.label}

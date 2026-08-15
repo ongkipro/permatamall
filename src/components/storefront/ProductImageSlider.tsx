@@ -30,36 +30,58 @@ export default function ProductImageSlider({
   };
 
   return (
-    <div className="relative w-full select-none bg-slate-900/5 sm:rounded-2xl sm:overflow-hidden sm:border sm:border-slate-200/80">
-      {/* Main Image Frame - Dynamic Contain with Aspect Transition */}
+    <div className="relative flex w-full select-none flex-row gap-3">
+      {/* Thumbnails Column (Left) */}
+      {gallery.length > 1 && (
+        <div className="no-scrollbar flex w-16 shrink-0 flex-col gap-2 overflow-y-auto">
+          {gallery.map((imgUrl, idx) => (
+            <button
+              key={idx}
+              type="button"
+              aria-label={`Lihat foto ${idx + 1} dari ${gallery.length}`}
+              aria-pressed={activeIndex === idx}
+              onClick={() => setActiveIndex(idx)}
+              className={`relative aspect-[3/4] w-full shrink-0 overflow-hidden rounded-sm bg-zinc-100 transition-all duration-200 focus-visible:outline-none ${
+                activeIndex === idx
+                  ? 'border border-[#C5A880] ring-1 ring-[#C5A880] ring-offset-0'
+                  : 'border border-[#E5E5E5] opacity-60 hover:opacity-100'
+              }`}
+            >
+              <img src={imgUrl} alt="" className="h-full w-full object-cover" />
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* Main product image (Right) */}
       <div
-        className="group relative flex w-full items-center justify-center bg-slate-100/90 transition-all duration-300 min-h-[320px] max-h-[560px] cursor-zoom-in"
+        className="group relative flex flex-1 aspect-[3/4] cursor-zoom-in items-center justify-center overflow-hidden rounded-sm border border-[#E5E5E5] bg-zinc-100"
         onClick={() => setIsFullscreen(true)}
       >
         <img
           src={activeImage}
           alt={`${productName} foto ${activeIndex + 1}`}
-          className="h-auto max-h-[560px] w-full object-contain transition-transform duration-300 group-hover:scale-102"
+          className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
           loading="eager"
           decoding="async"
         />
 
         {/* Badge Overlay Top */}
-        <div className="absolute top-3 left-3 flex flex-wrap items-center gap-1.5 z-10">
+        <div className="absolute left-3 top-3 z-10 flex flex-wrap items-center gap-1.5">
           {badgeText && (
-            <span className="rounded-full bg-slate-900/85 px-3 py-1 text-[11px] font-bold text-white shadow-xs backdrop-blur-xs">
+            <span className="rounded-none bg-[#111111] px-2 py-1 text-[10px] font-medium uppercase tracking-wide text-[#F8F7F4] shadow-sm">
               {badgeText}
             </span>
           )}
           {discountPercentage > 0 && (
-            <span className="rounded-full bg-emerald-600 px-2.5 py-1 text-[11px] font-extrabold text-white shadow-xs">
-              Hemat {discountPercentage}%
+            <span className="rounded-none bg-[#C5A880] px-2 py-1 text-[10px] font-bold text-white shadow-sm">
+              -{discountPercentage}%
             </span>
           )}
         </div>
 
         {/* Counter Badge Bottom Right */}
-        <div className="absolute bottom-3 right-3 z-10 rounded-full bg-slate-900/70 px-2.5 py-1 text-[11px] font-semibold text-white backdrop-blur-md">
+        <div className="absolute bottom-3 right-3 z-10 rounded-none border border-[#E5E5E5] bg-white/90 px-2 py-1 text-[10px] font-medium text-[#111111] shadow-sm backdrop-blur-sm">
           {activeIndex + 1} / {gallery.length}
         </div>
 
@@ -70,63 +92,43 @@ export default function ProductImageSlider({
               type="button"
               onClick={handlePrev}
               aria-label="Foto Sebelumnya"
-              className="absolute left-2 top-1/2 -translate-y-1/2 flex h-9 w-9 items-center justify-center rounded-full bg-white/80 text-slate-800 shadow-md backdrop-blur-xs transition hover:bg-white active:scale-95"
+              className="absolute left-2 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-none border border-[#E5E5E5] bg-white/90 text-[#111111] shadow-sm transition hover:bg-[#111111] hover:text-[#F8F7F4] focus-visible:outline-none active:scale-95"
             >
-              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7" />
+              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 19l-7-7 7-7" />
               </svg>
             </button>
             <button
               type="button"
               onClick={handleNext}
               aria-label="Foto Berikutnya"
-              className="absolute right-2 top-1/2 -translate-y-1/2 flex h-9 w-9 items-center justify-center rounded-full bg-white/80 text-slate-800 shadow-md backdrop-blur-xs transition hover:bg-white active:scale-95"
+              className="absolute right-2 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-none border border-[#E5E5E5] bg-white/90 text-[#111111] shadow-sm transition hover:bg-[#111111] hover:text-[#F8F7F4] focus-visible:outline-none active:scale-95"
             >
-              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
+              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5l7 7-7 7" />
               </svg>
             </button>
           </>
         )}
       </div>
 
-      {/* Thumbnails Row */}
-      {gallery.length > 1 && (
-        <div className="no-scrollbar flex items-center gap-2 overflow-x-auto p-3 bg-white border-t border-slate-100">
-          {gallery.map((imgUrl, idx) => (
-            <button
-              key={idx}
-              type="button"
-              onClick={() => setActiveIndex(idx)}
-              className={`relative h-16 w-16 shrink-0 overflow-hidden rounded-xl border-2 transition-all duration-200 ${
-                activeIndex === idx
-                  ? 'border-emerald-600 ring-2 ring-emerald-600/30 scale-105'
-                  : 'border-slate-200 opacity-70 hover:opacity-100'
-              }`}
-            >
-              <img src={imgUrl} alt="" className="h-full w-full object-cover" />
-            </button>
-          ))}
-        </div>
-      )}
-
       {/* Fullscreen Lightbox Modal */}
       {isFullscreen && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-4 backdrop-blur-md"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-[#111111]/95 p-4 backdrop-blur-sm"
           onClick={() => setIsFullscreen(false)}
         >
           <button
             type="button"
             onClick={() => setIsFullscreen(false)}
-            className="absolute top-4 right-4 text-white hover:text-slate-300 text-3xl font-bold"
+            className="absolute right-4 top-4 text-3xl font-light text-[#F8F7F4] transition-colors hover:text-[#C5A880]"
           >
             &times;
           </button>
           <img
             src={activeImage}
             alt={productName}
-            className="max-h-[90vh] max-w-[90vw] object-contain rounded-lg shadow-2xl"
+            className="max-h-[90vh] max-w-[90vw] rounded-sm object-contain"
           />
         </div>
       )}
