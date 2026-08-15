@@ -32,6 +32,8 @@ export type ProductJsonLdInput = {
   sku?: string;
   category?: string;
   brand?: string;
+  ratingValue?: number;
+  reviewCount?: number;
   offers: readonly ProductOfferJsonLdInput[];
 };
 
@@ -173,10 +175,18 @@ export function buildProductJsonLd({
     },
     ...(product.sku ? { sku: product.sku } : {}),
     ...(product.category ? { category: product.category } : {}),
+    ...(typeof product.ratingValue === 'number' && typeof product.reviewCount === 'number' && product.reviewCount > 0
+      ? {
+          aggregateRating: {
+            "@type": "AggregateRating",
+            ratingValue: product.ratingValue,
+            reviewCount: product.reviewCount,
+          },
+        }
+      : {}),
     offers: offers.length === 1 ? offers[0] : offers,
   };
 }
-
 export function buildBreadcrumbJsonLd({
   siteUrl,
   breadcrumbs,

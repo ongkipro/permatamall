@@ -110,6 +110,28 @@ const productSchemaJson = JSON.stringify(productSchema).replace(/</g, '\\u003c')
   hideHeader={false}
   hideFooter={false}
   contentWidth="compact"
+  product={{
+    name: product.productName,
+    description: product.description,
+    image: product.heroImage,
+    url: canonical,
+    category: product.category,
+    ratingValue: ratingValue,
+    reviewCount: reviewCount,
+    offers: product.variants.map((v) => ({
+      price: v.price,
+      priceCurrency: 'IDR',
+      availability: 'InStock',
+      url: canonical,
+      name: v.label,
+      sku: v.sku || `SKU-${product.productId}-${v.id}`,
+    })),
+  }}
+  breadcrumbs={[
+    { name: 'Beranda', url: '/' },
+    { name: 'Produk', url: '/produk' },
+    { name: product.productName, url: canonical },
+  ]}
 >
   <MetaViewContentTracker
     slug={product.slug}
@@ -117,7 +139,6 @@ const productSchemaJson = JSON.stringify(productSchema).replace(/</g, '\\u003c')
     contentName={product.productName}
     price={displayPrice}
   />
-
   <script type="application/ld+json" set:html={productSchemaJson} />
 
   <main class="mx-auto max-w-[480px] bg-white pb-20">
@@ -416,8 +437,8 @@ const productSchemaJson = JSON.stringify(productSchema).replace(/</g, '\\u003c')
       <GeoIpResolvedForm mode={formContext.mode} province={formContext.province} productSlug={product.slug} embedded={true} />
     </section>
 
-    <!-- Sticky Mobile Purchase Bar -->
-    <div class="fixed inset-x-0 bottom-0 z-40 mx-auto flex w-full max-w-[480px] items-center justify-between border-t border-[#D8D6D0] bg-[#F8F7F4]/95 px-5 py-3 shadow-[0_-8px_24px_rgba(17,17,17,0.08)] backdrop-blur-md lg:hidden">
+    <!-- Sticky Mobile Purchase Bar (Auto-hides when order form is visible) -->
+    <div id="sticky-purchase-bar" class="fixed inset-x-0 bottom-0 z-40 mx-auto flex w-full max-w-[480px] items-center justify-between border-t border-[#D8D6D0] bg-[#F8F7F4]/95 px-5 py-3 shadow-[0_-8px_24px_rgba(17,17,17,0.08)] backdrop-blur-md transition-all duration-300 lg:hidden">
       <div>
         <p class="text-[9px] font-semibold uppercase tracking-[0.12em] text-[#555555]">Harga Promo</p>
         <p class="text-base font-bold text-[#111111]">Rp{Math.round(displayPrice).toLocaleString('id-ID')}</p>
@@ -430,4 +451,37 @@ const productSchemaJson = JSON.stringify(productSchema).replace(/</g, '\\u003c')
       </a>
     </div>
   </main>
+
+  <script>
+    function initStickyBarObserver() {
+      const stickyBar = document.getElementById('sticky-purchase-bar');
+      const orderForm = document.getElementById('form-pemesanan');
+      if (!stickyBar || !orderForm) return;
+
+      const observer = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((entry) => {
+            if (entry.isIntersecting) {
+              stickyBar.style.transform = 'translateY(100%)';
+              stickyBar.style.opacity = '0';
+              stickyBar.style.pointerEvents = 'none';
+            } else {
+              stickyBar.style.transform = 'translateY(0)';
+              stickyBar.style.opacity = '1';
+              stickyBar.style.pointerEvents = 'auto';
+            }
+          });
+        },
+        { threshold: 0.05 }
+      );
+
+      observer.observe(orderForm);
+    }
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initStickyBarObserver);
+    } else {
+      initStickyBarObserver();
+    }
+  </script>
 </BaseLayout>

@@ -56,6 +56,117 @@ function getProductMetrics(productId: number, productName: string) {
   return METRICS_TABLE[idx];
 }
 
+function getRealisticComparePrice(productId: number, price: number): number {
+  const multipliers = [1.38, 1.45, 1.52, 1.62, 1.68, 1.72, 1.36, 1.48, 1.55, 1.65, 1.42, 1.58];
+  const seed = Math.abs(productId * 29 + Math.round(price / 100));
+  const mult = multipliers[seed % multipliers.length];
+  const rawCompare = Math.round((price * mult) / 1000) * 1000;
+  return Math.max(rawCompare, price + 25000);
+}
+
+function getRichProductDetails(productId: number, title: string, category: string) {
+  const t = title.toLowerCase();
+
+  let subheadline = "Bahan sintetis premium tebal, jahitan rapi & kompartemen luas.";
+  let description = `${title} dirancang khusus untuk wanita aktif yang mengutamakan penampilan stylish, elegan, dan kepraktisan sehari-hari. Dibuat dengan material sintetis grade A pilihan.`;
+  let benefits = [
+    "Desain Korean Style modern, simpel & timeless",
+    "Bahan sintetis premium tebal & tahan goresan halus",
+    "Kompartemen luas muat dompet, HP, makeup & perlengkapan harian",
+    "Pengiriman cepat & Garansi Bayar di Tempat (COD) seluruh Indonesia",
+  ];
+  let keyPoints = [
+    "100% Kualitas Terjamin & Quality Checked",
+    "Garansi Retur 100% Apabila Produk Cacat / Tidak Sesuai",
+  ];
+  let idealFor = ["Kerja & Kuliah", "Hangout & Casual", "Acara Formal / Semi-Formal"];
+
+  if (t.includes("zivia")) {
+    subheadline = "Edisi Premium Tote Bag dengan Aksesori Gold Hardware & Kompartemen Utama Ber-Zipper.";
+    description = "ZIVIA Tote Bag Wanita Premium memadukan estetika Korean luxury dengan fungsionalitas tinggi. Menggunakan bahan sintetis tebal berstruktur kokoh yang tidak mudah terlipat, dilengkapi zipper halus anti-macet dan aksen emas elegan pada gantungan pegangan.";
+    benefits = [
+      "Material Sintetis Grade A+ tebal, waterproof & mudah dibersihkan",
+      "Kompartemen utama dengan zipper aman & saku rahasia di dalam",
+      "Kapasitas ekstra muat mukena, dompet panjang, pouch makeup & tumbler",
+      "Dilengkapi tali bahu empuk yang nyaman dipakai seharian tanpa bikin pegal",
+    ];
+  } else if (t.includes("aira")) {
+    subheadline = "Inovasi Tas 2-in-1 Serbaguna: Bisa Dijadikan Tote Bag Maupun Tas Selempang Casual.";
+    description = "AIRA Tote Bag 2-in-1 dirancang fleksibel untuk mobilitas tinggi. Hadir dengan tali panjang yang dapat dilepas-pasang dan disesuaikan panjangnya, memungkinkan Kamu bergaya sebagai Tote Bag elegan saat kerja atau Sling Bag santai saat jalan-jalan.";
+    benefits = [
+      "Dual Function 2-in-1 (Tote Bag & Crossbody Sling Bag)",
+      "Tali panjang adjustable dan mudah dilepas sesuai selera",
+      "Struktur tas fleksibel namun tetap tegak berdiri saat diletakkan",
+      "Jahitan ganda di titik beban untuk daya tahan maksimal hingga beban 5 kg",
+    ];
+  } else if (t.includes("candy")) {
+    subheadline = "Tote Bag Beresleting dengan Pilihan Warna-warni Pastel Korean Style yang Manis.";
+    description = "CANDY Tote Bag Zipper Premium merupakan pilihan favorit mahasiswa dan wanita karir muda. Desainnya yang simpel nan elegan dipercantik dengan jahitan quilting halus dan resleting berkualitas tinggi yang menjaga barang pribadi Kamu tetap aman.";
+    benefits = [
+      "Zipper penutup penuh menjaga keamanan barang berharga di dalam",
+      "Lapisan furing satin lembut berkwalitas tinggi di bagian interior",
+      "Muat dokumen A4, buku catatan, iPad/Tablet 11-inch & kebutuhan harian",
+      "Pilihan warna pastel elegan yang cocok dipadukan dengan berbagai outfit",
+    ];
+  } else if (t.includes("amara")) {
+    subheadline = "Sentuhan Kemewahan Klasik dengan Kunci Kait Emas Luxury & Double Zipper.";
+    description = "AMARA Tote Bag Elegance memancarkan pesona wanita anggun. Mengombinasikan pengunci magnetik emas dan resleting ganda, memberikan proteksi ekstra sekaligus tampilan eksklusif khas tas boutique papan atas.";
+    benefits = [
+      "Pengunci magnetik berlapis emas anti-karat dengan daya rekat kuat",
+      "Bahan kulit sintetis motif halus premium berdaya tahan tinggi",
+      "Interior terbagi atas 2 kompartemen besar + 1 sekat zipper tengah",
+      "Dasar tas dilengkapi kaki besi pelindung dari gesekan meja/lantai",
+    ];
+  } else if (t.includes("noura")) {
+    subheadline = "Tas Selempang Ukuran Compact yang Ringan, Stylish, dan Tetap Fungsional.";
+    description = "NOURA Tas Selempang Mini Chic didesain khusus bagi Kamu yang menyukai gaya minimalis praktis. Walaupun tampak compact, kapasitas dalamnya dirancang efisien untuk membawa handphone jumbo, dompet lipat, lipstik, dan kunci kendaraan.";
+    benefits = [
+      "Ukuran mini yang sangat ringan & tidak membebani pundak",
+      "Tali selempang dapat diatur panjangnya sesuai tinggi badan",
+      "Bukaan kancing jepret magnetik praktis untuk akses cepat",
+      "Pilihan tepat untuk jalan-jalan santai, kondangan, maupun berbelanja",
+    ];
+  } else if (t.includes("lenzy")) {
+    subheadline = "Karya Seni Anyaman Tikar Modern dengan Karakter Tekstur Unik dan Elegan.";
+    description = "LENZY Tas Bahu menghadirkan tekstur anyaman berkelas yang diproses secara khusus. Gaya boho-chic modern ini memberikan kesan eksklusif dan berbeda dari tas biasa, cocok untuk Kamu yang tampil berani dan trendi.";
+    benefits = [
+      "Tekstur anyaman sintetis 3D rapat yang awet & tidak mudah terurai",
+      "Tali bahu lebar yang mendistribusikan beban secara merata",
+      "Kapasitas luas dengan bukaan lebar memudahkan mengambil barang",
+      "Desain estetis yang menarik perhatian di setiap kesempatan",
+    ];
+  } else if (t.includes("shelin")) {
+    subheadline = "Siluet Sadel Korea yang Manis & Modis dengan Tali Selempang Aksesoris Gesper Emas.";
+    description = "SHELIN Tas Selempang Sadel menghadirkan siluet melengkung feminin khas tren fashion Seoul terkini. Dibuat dengan presisi tinggi menggunakan bahan halus lembut yang tahan cipratan air dan mudah dibersihkan.";
+    benefits = [
+      "Siluet Curved Saddle nan estetik & kekinian",
+      "Aksen gesper emas mengkilap sebagai daya tarik visual premium",
+      "Resleting interior + saku kartu tersembunyi",
+      "Nyaman digunakan seharian tanpa mengganggu pergerakan",
+    ];
+  } else if (t.includes("lunna")) {
+    subheadline = "Kapasitas Ekstra Luas dengan Gaya Oversized Minimalis ala Korean Streetwear.";
+    description = "LUNNA Tote Bag Korean Oversize hadir untuk Kamu yang membutuhkan ruang penyimpanan maksimal tanpa mengorbankan gaya. Sangat cocok membawa laptop 14 inci, berkas kerja, botol minum, serta pakaian ganti.";
+    benefits = [
+      "Kapasitas Jumbo muat Laptop 14 Inci & perlengkapan dinas/kuliah",
+      "Tali pegangan tebal yang dijahit melingkar dasar tas untuk kekuatan ekstra",
+      "Desain polos minimalis yang netral untuk dipadukan dengan busana apa saja",
+      "Dilengkapi pengunci magnetik kuat di bagian tengah atas",
+    ];
+  } else if (t.includes("lucky")) {
+    subheadline = "Dual Handle Bag: Pegangan Tangan Kokoh + Tali Selempang Bahu Praktis.";
+    description = "LUCKY Tote Bag Gagang Ganda memadukan kepraktisan top-handle bag dengan fleksibilitas shoulder bag. Sangat cocok dijadikan tas kerja harian yang mampu memberikan kesan profesional sekaligus santai.";
+    benefits = [
+      "Pegangan ganda tebal yang nyaman digenggam maupun disampirkan di lengan",
+      "Material sintetis berserat tebal dengan proteksi anti-scratch",
+      "Interior terbagi menjadi kompartemen berzipper dan saku terbuka ganda",
+      "Tersedia pilihan warna netral favorit wanita Indonesia",
+    ];
+  }
+
+  return { subheadline, description, benefits, keyPoints, idealFor };
+}
+
 export function mergeStorefrontCatalog(
   editorialProducts: Product[],
   productRows: CatalogProductRow[],
@@ -104,16 +215,19 @@ export function mergeStorefrontCatalog(
       availableVariants.length > 0
         ? availableVariants
             .filter((variant) => variant.price > 0 && (variant.stock === null || variant.stock === undefined || variant.stock > 0))
-            .map((variant) => ({
-              catalogId: variant.id,
-              ...(variant.sku ? { sku: variant.sku } : {}),
-              id: String(variant.id),
-              label: variantLabel(productName, variant.title),
-              price: variant.price,
-              ...(variant.compare_price && variant.compare_price >= variant.price
-                ? { comparePrice: variant.compare_price }
-                : {}),
-            }))
+            .map((variant) => {
+              const comparePrice = variant.compare_price && variant.compare_price > variant.price
+                ? variant.compare_price
+                : getRealisticComparePrice(matchedRow?.id || 1, variant.price);
+              return {
+                catalogId: variant.id,
+                ...(variant.sku ? { sku: variant.sku } : {}),
+                id: String(variant.id),
+                label: variantLabel(productName, variant.title),
+                price: variant.price,
+                comparePrice,
+              };
+            })
         : editorialProduct.variants;
 
     if (variants.length === 0) return [];
@@ -127,6 +241,9 @@ export function mergeStorefrontCatalog(
       : editorialProduct.images || [image];
 
     const metrics = getProductMetrics(matchedRow?.id || 1, productName);
+    const calculatedComparePrice = firstVariant.comparePrice && firstVariant.comparePrice > firstVariant.price
+      ? firstVariant.comparePrice
+      : getRealisticComparePrice(matchedRow?.id || 1, firstVariant.price);
 
     return [
       {
@@ -136,7 +253,7 @@ export function mergeStorefrontCatalog(
         slug,
         category,
         price: firstVariant.price,
-        comparePrice: firstVariant.comparePrice ?? Math.round(firstVariant.price * 2),
+        comparePrice: calculatedComparePrice,
         image,
         heroImage: image,
         images: galleryImages,
@@ -155,16 +272,19 @@ export function mergeStorefrontCatalog(
     const productName = product.title.trim() || `Produk #${product.id}`;
     const variants = (variantsByProduct.get(product.id) ?? [])
       .filter((variant) => variant.price > 0 && (variant.stock === null || variant.stock === undefined || variant.stock > 0))
-      .map((variant) => ({
-        catalogId: variant.id,
-        ...(variant.sku ? { sku: variant.sku } : {}),
-        id: String(variant.id),
-        label: variantLabel(productName, variant.title),
-        price: variant.price,
-        ...(variant.compare_price && variant.compare_price >= variant.price
-          ? { comparePrice: variant.compare_price }
-          : {}),
-      }));
+      .map((variant) => {
+        const comparePrice = variant.compare_price && variant.compare_price > variant.price
+          ? variant.compare_price
+          : getRealisticComparePrice(product.id, variant.price);
+        return {
+          catalogId: variant.id,
+          ...(variant.sku ? { sku: variant.sku } : {}),
+          id: String(variant.id),
+          label: variantLabel(productName, variant.title),
+          price: variant.price,
+          comparePrice,
+        };
+      });
 
     if (variants.length === 0) continue;
 
@@ -177,6 +297,11 @@ export function mergeStorefrontCatalog(
       : [image];
 
     const metrics = getProductMetrics(product.id, productName);
+    const calculatedComparePrice = firstVariant.comparePrice && firstVariant.comparePrice > firstVariant.price
+      ? firstVariant.comparePrice
+      : getRealisticComparePrice(product.id, firstVariant.price);
+
+    const details = getRichProductDetails(product.id, productName, product.category || "Tote Bag");
 
     catalog.push({
       catalogId: product.id,
@@ -185,29 +310,21 @@ export function mergeStorefrontCatalog(
       productName,
       contentName: productName,
       headline: `${productName} — Korean Style Premium`,
-      subheadline: "Bahan sintetis premium tebal, jahitan rapi & kompartemen luas.",
+      subheadline: details.subheadline,
       seoTitle: `${productName} | Permata Mall`,
       seoDescription: `Beli ${productName} original online di Permata Mall. Garansi kualitas premium, pengiriman cepat & bayar di tempat (COD).`,
       price: firstVariant.price,
-      comparePrice: firstVariant.comparePrice ?? Math.round(firstVariant.price * 2),
+      comparePrice: calculatedComparePrice,
       image,
       heroImage: image,
       images: galleryImages,
       tag: product.category || "Tote Bag",
       category: product.category || "Tote Bag",
       relatedCategories: [product.category || "Tote Bag", "Fashion Wanita"],
-      description: `${productName} dirancang khusus untuk wanita aktif yang mengutamakan penampilan stylish, elegan, dan kepraktisan sehari-hari.`,
-      benefits: [
-        "Desain Korean Style modern & simpel",
-        "Bahan sintetis premium tebal & jahitan presisi",
-        "Kompartemen luas untuk perlengkapan harian",
-        "Layanan Pengiriman COD (Bayar di Tempat) ke seluruh Indonesia",
-      ],
-      keyPoints: [
-        "100% Baru & Quality Checked",
-        "Garansi Retur 100% Jika Produk Rusak",
-      ],
-      idealFor: ["Kuliah & Kerja", "Hangout & Casual", "Acara Formal"],
+      description: details.description,
+      benefits: details.benefits,
+      keyPoints: details.keyPoints,
+      idealFor: details.idealFor,
       offerText: "Diskon Promo Terbatas + Gratis Ongkir COD",
       ctaText: "Pesan Sekarang (COD / Transfer)",
       ratingValue: metrics.ratingValue,
