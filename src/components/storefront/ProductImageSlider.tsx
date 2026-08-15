@@ -15,8 +15,8 @@ export default function ProductImageSlider({
 }: ProductImageSliderProps) {
   const gallery = images && images.length > 0 ? images : ['/images/logo.webp'];
   const [activeIndex, setActiveIndex] = useState(0);
-  const [isFullscreen, setIsFullscreen] = useState(false);
   const thumbnailRefs = useRef<(HTMLButtonElement | null)[]>([]);
+  const touchStartX = useRef<number | null>(null);
 
   const activeImage = gallery[activeIndex] || gallery[0];
 
@@ -29,14 +29,34 @@ export default function ProductImageSlider({
     }
   }, [activeIndex]);
 
-  const handlePrev = (e: React.MouseEvent) => {
-    e.stopPropagation();
+  const handlePrev = (e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
     setActiveIndex((prev) => (prev === 0 ? gallery.length - 1 : prev - 1));
   };
 
-  const handleNext = (e: React.MouseEvent) => {
-    e.stopPropagation();
+  const handleNext = (e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
     setActiveIndex((prev) => (prev === gallery.length - 1 ? 0 : prev + 1));
+  };
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX;
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (touchStartX.current === null) return;
+    const touchEndX = e.changedTouches[0].clientX;
+    const diff = touchStartX.current - touchEndX;
+
+    // Minimum swipe threshold of 35px
+    if (Math.abs(diff) > 35) {
+      if (diff > 0) {
+        handleNext();
+      } else {
+        handlePrev();
+      }
+    }
+    touchStartX.current = null;
   };
 
   return (
@@ -76,21 +96,22 @@ export default function ProductImageSlider({
         </div>
       )}
 
-      {/* Main product hero image (Right) - 3:4 Perfect Aspect Ratio */}
+      {/* Main product hero image (Right) - Touch Swipe Left/Right Support (No Pop-up) */}
       <div
-        className="group relative flex flex-1 aspect-[3/4] cursor-zoom-in items-center justify-center overflow-hidden rounded-none border border-[#E5E5E5] bg-[#F8F7F4]"
-        onClick={() => setIsFullscreen(true)}
+        className="group relative flex flex-1 aspect-[3/4] items-center justify-center overflow-hidden rounded-none border border-[#E5E5E5] bg-[#F8F7F4] touch-pan-y"
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
       >
         <img
           src={activeImage}
           alt={`${productName} foto ${activeIndex + 1}`}
-          className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
+          className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.02]"
           loading="eager"
           decoding="async"
         />
 
         {/* Badge Overlay Top */}
-        <div className="absolute left-3 top-3 z-10 flex flex-wrap items-center gap-1.5">
+        <div className="absolute left-3 top-3 z-10 flex flex-wrap items-center gap-1.5 pointer-events-none">
           {badgeText && (
             <span className="rounded-none bg-[#111111] px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-[#F8F7F4] shadow-xs">
               {badgeText}
@@ -104,7 +125,7 @@ export default function ProductImageSlider({
         </div>
 
         {/* Counter Badge Bottom Right */}
-        <div className="absolute bottom-3 right-3 z-10 rounded-none border border-[#E5E5E5] bg-white/95 px-2 py-1 text-[10px] font-bold text-[#111111] shadow-xs backdrop-blur-xs">
+        <div className="absolute bottom-3 right-3 z-10 pointer-events-none rounded-none border border-[#E5E5E5] bg-white/95 px-2 py-1 text-[10px] font-bold text-[#111111] shadow-xs backdrop-blur-xs">
           {activeIndex + 1} / {gallery.length}
         </div>
 
@@ -115,7 +136,7 @@ export default function ProductImageSlider({
               type="button"
               onClick={handlePrev}
               aria-label="Foto Sebelumnya"
-              className="absolute left-2 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-none border border-[#E5E5E5] bg-white/90 text-[#111111] shadow-xs transition hover:bg-[#111111] hover:text-[#F8F7F4] focus-visible:outline-none active:scale-95"
+              className="absolute left-2 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-none border border-[#E5E5E5] bg-white/90 text-[#111111] shadow-xs transition hover:bg-[#111111] hover:text-[#F8F7F4] focus-visible:outline-none active:scale-95 z-20"
             >
               <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 19l-7-7 7-7" />
@@ -125,7 +146,7 @@ export default function ProductImageSlider({
               type="button"
               onClick={handleNext}
               aria-label="Foto Berikutnya"
-              className="absolute right-2 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-none border border-[#E5E5E5] bg-white/90 text-[#111111] shadow-xs transition hover:bg-[#111111] hover:text-[#F8F7F4] focus-visible:outline-none active:scale-95"
+              className="absolute right-2 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-none border border-[#E5E5E5] bg-white/90 text-[#111111] shadow-xs transition hover:bg-[#111111] hover:text-[#F8F7F4] focus-visible:outline-none active:scale-95 z-20"
             >
               <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5l7 7-7 7" />
@@ -134,27 +155,6 @@ export default function ProductImageSlider({
           </>
         )}
       </div>
-
-      {/* Fullscreen Lightbox Modal */}
-      {isFullscreen && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-[#111111]/95 p-4 backdrop-blur-sm"
-          onClick={() => setIsFullscreen(false)}
-        >
-          <button
-            type="button"
-            onClick={() => setIsFullscreen(false)}
-            className="absolute right-4 top-4 text-3xl font-light text-[#F8F7F4] transition-colors hover:text-[#C5A880]"
-          >
-            &times;
-          </button>
-          <img
-            src={activeImage}
-            alt={productName}
-            className="max-h-[90vh] max-w-[90vw] rounded-none object-contain border border-[#C5A880]/30 shadow-2xl"
-          />
-        </div>
-      )}
     </div>
   );
 }
