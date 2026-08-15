@@ -90,6 +90,15 @@ function getRichProductDetails(productId: number, title: string, category: strin
       "Kapasitas ekstra muat mukena, dompet panjang, pouch makeup & tumbler",
       "Dilengkapi tali bahu empuk yang nyaman dipakai seharian tanpa bikin pegal",
     ];
+  } else if (t.includes("daira")) {
+    subheadline = "Tas Selempang & Bahu Kanvas Premium Berserat Rapat, Kuat & Timeless.";
+    description = "DAIRA Tas Selempang & Bahu Kanvas terbuat dari bahan kanvas premium berserat rapat yang kuat namun tetap lembut disentuh. Membawa kesan youthful, eco-friendly, dan timeless.";
+    benefits = [
+      "Kanvas berserat tebal & rapat yang tahan aus serta tidak gampang berbulu",
+      "Tali kanvas adjustable lebar yang sangat nyaman untuk mobilitas tinggi",
+      "Resleting logam kokoh dan pengunci magnetik tambahan",
+      "Dapat dicuci dengan mudah jika terkena noda",
+    ];
   } else if (t.includes("aira")) {
     subheadline = "Inovasi Tas 2-in-1 Serbaguna: Bisa Dijadikan Tote Bag Maupun Tas Selempang Casual.";
     description = "AIRA Tote Bag 2-in-1 dirancang fleksibel untuk mobilitas tinggi. Hadir dengan tali panjang yang dapat dilepas-pasang dan disesuaikan panjangnya, memungkinkan Kamu bergaya sebagai Tote Bag elegan saat kerja atau Sling Bag santai saat jalan-jalan.";
@@ -270,17 +279,7 @@ function getRichProductDetails(productId: number, title: string, category: strin
       "Kompartemen berkapasitas sedang muat tablet, mukena mini & pouch",
       "Tersedia dalam pilihan warna netral elegan",
     ];
-  } else if (t.includes("daira")) {
-    subheadline = "Tas Selempang & Bahu Kanvas Premium Berserat Rapat, Kuat & Timeless.";
-    description = "DAIRA Tas Selempang & Bahu Kanvas terbuat dari bahan kanvas premium berserat rapat yang kuat namun tetap lembut disentuh. Membawa kesan youthful, eco-friendly, dan timeless.";
-    benefits = [
-      "Kanvas berserat tebal & rapat yang tahan aus serta tidak gampang berbulu",
-      "Tali kanvas adjustable lebar yang sangat nyaman untuk mobilitas tinggi",
-      "Resleting logam kokoh dan pengunci magnetik tambahan",
-      "Dapat dicuci dengan mudah jika terkena noda",
-    ];
   }
-
   return { subheadline, description, benefits, keyPoints, idealFor };
 }
 
