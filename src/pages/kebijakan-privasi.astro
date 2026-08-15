@@ -1,0 +1,21 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import LegalPage from '../components/shared/LegalPage.astro';
+import { getTenantLegalPage } from '../data/legal';
+import { tenantConfig } from '../lib/tenant';
+
+const data = getTenantLegalPage('privacy', tenantConfig.name);
+---
+
+<BaseLayout title={`${data.title} - ${tenantConfig.name}`} description={data.description}>
+  <LegalPage
+    badge={data.badge}
+    title={data.title}
+    description={data.description}
+    sections={data.sections}
+    breadcrumbs={[
+      { label: 'Beranda', href: '/' },
+      { label: data.badge, href: '/kebijakan-privasi' },
+    ]}
+  />
+</BaseLayout>

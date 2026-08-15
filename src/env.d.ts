@@ -1,0 +1,67 @@
+/// <reference path="../.astro/types.d.ts" />
+/// <reference types="@astrojs/cloudflare" />
+type KVNamespace = import("@cloudflare/workers-types/index.ts").KVNamespace;
+type D1Database = import("@cloudflare/workers-types/index.ts").D1Database;
+type R2Bucket = import("@cloudflare/workers-types/index.ts").R2Bucket;
+type Ai = import("@cloudflare/workers-types/index.ts").Ai;
+
+interface SharedEnvVars {
+  PUBLIC_COD_DISABLED_PROVINCES?: string;
+  PUBLIC_TENANT_SLUG?: string;
+  PUBLIC_SITE_NAME?: string;
+  PUBLIC_SITE_URL?: string;
+  PUBLIC_SITE_DESCRIPTION?: string;
+  PUBLIC_SITE_LOGO?: string;
+  PUBLIC_SITE_TAGLINE?: string;
+  PUBLIC_SITE_THEME_COLOR?: string;
+  PUBLIC_SITE_LOCALE?: string;
+  PUBLIC_CONTENT_PACK?: string;
+  PUBLIC_STOREFRONT_TEMPLATE?: string;
+  PUBLIC_ADMIN_NAME?: string;
+  PUBLIC_EMBED_ALLOWED_ORIGINS?: string;
+  MENGANTAR_API_KEY?: string;
+  AUTH_SECRET?: string;
+  BOOTSTRAP_ADMIN_PASSWORD?: string;
+  MENGANTAR_ORIGIN_AREA_ID?: string;
+  MENGANTAR_PICKUP_ADDRESS_ID?: string;
+  AUTOLARIS_API_KEY?: string;
+  AUTOLARIS_BASE_URL?: string;
+  AUTOLARIS_WEBHOOK_SECRET?: string;
+  META_PIXEL_ID?: string;
+  META_CAPI_ACCESS_TOKEN?: string;
+  META_CAPI_TOKEN?: string;
+  NEXT_PUBLIC_FB_PIXEL_ID?: string;
+  PUBLIC_FB_PIXEL_ID?: string;
+  FB_PIXEL_ID?: string;
+  GOOGLE_ADS_CONVERSION_ID?: string;
+  GOOGLE_ADS_CONVERSION_LABEL?: string;
+  NEXT_PUBLIC_GTM_ID?: string;
+  PUBLIC_GTM_ID?: string;
+  GTM_ID?: string;
+}
+
+interface CloudflareRuntimeEnv extends SharedEnvVars {
+  SESSION: KVNamespace;
+  OMS_DB: D1Database;
+  ASSET_BUCKET: R2Bucket;
+  AI: Ai;
+  ASSETS: unknown;
+}
+declare namespace Cloudflare {
+  interface Env extends CloudflareRuntimeEnv {}
+}
+
+declare module "cloudflare:workers" {
+  export const env: Cloudflare.Env;
+}
+
+
+declare namespace App {
+  interface Locals {
+    runtimeEnv?: Record<string, unknown>;
+    admin?: {
+      username: string;
+      role: import("./lib/auth").AdminRole;
+    };
+  }
+}

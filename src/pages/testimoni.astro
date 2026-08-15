@@ -1,0 +1,85 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import PageIntro from '../components/shared/PageIntro.astro';
+import RatingStars from '../components/shared/RatingStars.astro';
+import { formatRp, products } from '../data/products';
+
+const reviewGroups = products
+  .filter((product) => product.reviews.length > 0)
+  .map((product) => ({ product, reviews: product.reviews }));
+---
+
+<BaseLayout
+  shell="storefront"
+  title="Ulasan Pembeli - Pesantren.shop"
+  description="Ulasan pembeli produk Pesantren.shop: asahan portable, alat anti ngorok, kunci lipat, dan kunci shock universal. Semua pesanan bisa COD."
+  breadcrumbs={[
+    { name: 'Beranda', url: '/' },
+    { name: 'Ulasan Pembeli', url: '/testimoni' },
+  ]}
+>
+  <main id="konten-utama" class="min-h-screen bg-white text-slate-950">
+    <PageIntro
+      badge="Ulasan Pembeli"
+      title="Kata Mereka yang Sudah Pakai"
+      description="Ulasan dari pembeli untuk setiap produk di toko ini. Klik produknya untuk lihat detail dan ikut memesan."
+      breadcrumbs={[{ label: 'Beranda', href: '/' }, { label: 'Ulasan' }]}
+    />
+
+    <div class="mx-auto max-w-[800px] space-y-6 px-5 py-8">
+      {
+        reviewGroups.map(({ product, reviews }) => (
+          <section class="border-b-2 border-[#EAEDED] pb-6 last:border-b-0">
+            <a href={`/produk/${product.slug}`} class="group flex items-center gap-3 border-b border-[#EAEDED] pb-3">
+              <img
+                src={product.image}
+                alt={product.productName}
+                class="h-14 w-14 shrink-0 rounded-md object-contain bg-[#F2F3F3]"
+                width="56"
+                height="56"
+                loading="lazy"
+                decoding="async"
+              />
+              <div class="min-w-0">
+                <h2 class="truncate text-[15px] font-bold text-[#16191F] underline-offset-4 decoration-[#FF9900]/60 decoration-2 group-hover:underline">
+                  {product.productName}
+                </h2>
+                <p class="mt-0.5 text-[13px] font-extrabold text-[#EC7211]">{formatRp(product.price)}</p>
+                {product.ratingValue && (
+                  <div class="mt-0.5 flex items-center gap-1 text-[11px] text-[#545B64]">
+                    <RatingStars max={1} starClass="h-3 w-3" label={`Rating ${product.ratingValue} dari 5`} />
+                    <span class="font-semibold text-[#16191F]">{product.ratingValue.toFixed(1)}</span>
+                    <span>({product.reviewCount} penilaian)</span>
+                  </div>
+                )}
+              </div>
+            </a>
+            <div class="space-y-4 pt-4">
+              {reviews.map((review) => (
+                <div class="border-b border-[#EAEDED] pb-4 last:border-0 last:pb-0">
+                  <div class="flex items-center gap-2.5">
+                    <img
+                      src={review.avatar}
+                      alt={`Foto ${review.name}, pengguna ${product.productName}`}
+                      class="h-9 w-9 shrink-0 rounded-full object-cover"
+                      width="36"
+                      height="36"
+                      loading="lazy"
+                      decoding="async"
+                    />
+                    <div class="min-w-0">
+                      <p class="text-[12.5px] font-semibold text-[#16191F]">{review.name}</p>
+                      <p class="text-[11px] text-[#879596]">{review.location}</p>
+                    </div>
+                  </div>
+                  <RatingStars rating={review.rating} class="mt-2" starClass="h-2.5 w-2.5" />
+                  <p class="mt-1.5 text-[13.5px] leading-relaxed text-[#545B64]">{review.comment}</p>
+                </div>
+              ))}
+            </div>
+          </section>
+        ))
+      }
+    </div>
+  </main>
+</BaseLayout>

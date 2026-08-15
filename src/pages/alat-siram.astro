@@ -1,0 +1,241 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import GeoIpResolvedForm from '../components/forms/GeoIpResolvedForm.astro';
+import LpMiniFooter from '../components/shared/LpMiniFooter.astro';
+import MetaLandingTracker from '../components/tracking/MetaLandingTracker.astro';
+import SocialProof from '../components/shared/SocialProof.astro';
+import StickyCTA from '../components/shared/StickyCTA.astro';
+import { getProductBySlug } from '../data/products';
+import { resolveFormModeContext } from '../lib/form-mode';
+import '../styles/form-hybrid.css';
+
+export const prerender = false;
+
+const product = getProductBySlug('alat-siram-otomatis');
+if (!product) throw new Error('Product alat-siram-otomatis not found');
+const formContext = await resolveFormModeContext(Astro.request);
+
+const canonical = 'https://pesantren.shop/alat-siram';
+const seoTitle = 'Alat Siram Tanaman Otomatis Irigasi Tetes Drip Spike System';
+const seoDescription =
+  'Alat Siram Tanaman Otomatis Irigasi Tetes Drip Spike System. Menyiram 24 jam nonstop tanpa listrik & tanpa pompa. Promo 10 Pcs Rp 99rb / 20 Pcs Rp 125rb COD.';
+---
+
+<BaseLayout
+  title={seoTitle}
+  description={seoDescription}
+  image={product.heroImage}
+  canonical={canonical}
+  hideHeader={true}
+  hideFooter={true}
+  breadcrumbs={[
+    { name: 'Beranda', url: '/' },
+    { name: 'Alat Siram Tanaman Otomatis', url: '/alat-siram' },
+  ]}
+  preloadImages={[
+    {
+      srcset:
+        '/images/alat-siram/lp-1-400.webp 400w, /images/alat-siram/lp-1-600.webp 600w, /images/alat-siram/lp-1-800.webp 800w',
+      sizes: '(max-width: 480px) 100vw, 480px',
+    },
+  ]}
+>
+  <main class="mx-auto min-h-screen w-full max-w-[480px] bg-white text-slate-950 font-sans shadow-lg">
+    <MetaLandingTracker
+      slug="alat-siram-otomatis"
+      productId={product.productId}
+      contentName={product.contentName}
+      price={product.price}
+    />
+
+    <!-- URGENCY TOP BAR -->
+    <div class="bg-[#EC7211] px-4 py-2.5 text-center">
+      <p class="flex items-center justify-center gap-1.5 text-[12px] font-extrabold uppercase tracking-wide text-white">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          class="h-4 w-4 shrink-0 text-white"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2.5"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          aria-hidden="true"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg
+        >
+        🔥 ALAT SIRAM AUTOMATIC DRIP SYSTEM — 10 PCS RP 99.000 · PAKET 20 PCS RP 125.000 · BISA BAYAR COD!
+      </p>
+    </div>
+
+    <!-- OVERCLAIM HEADLINE HERO SECTION -->
+    <section class="px-5 pt-5 pb-3.5 text-center bg-gradient-to-b from-amber-50 to-white">
+      <div
+        class="inline-block bg-red-600 text-white text-[11px] font-black uppercase tracking-widest px-3 py-0.5 rounded-full mb-2.5 shadow-xs"
+      >
+        ⚡ INOVASI IRIGASI TERBARU 2026
+      </div>
+
+      <h1 class="text-[clamp(22px,6.8vw,27px)] font-black leading-[1.22] text-slate-950 uppercase tracking-tight">
+        ALAT SIRAM AUTOMATIC DRIP SYSTEM — <span class="text-red-600 bg-amber-200 px-1.5 py-0.5 rounded"
+          >BEBAS LAYU DITINGGAL MUDIK 30 HARI!</span
+        >
+      </h1>
+
+      <p
+        class="mt-2.5 text-[14.5px] font-semibold leading-relaxed text-slate-700 bg-white p-3 rounded-xl border border-amber-300 shadow-xs"
+      >
+        Inovasi irigasi tetes otomatis tanpa listrik &amp; tanpa pompa. Pohon subur 10x lipat, air mengalir 24 jam
+        nonstop!
+      </p>
+    </section>
+
+    <!-- SEQUENTIAL CONTENT IMAGES (LP-1 to LP-7a) -->
+    <section class="bg-white">
+      <div class="w-full">
+        <img
+          src="/images/alat-siram/lp-1-800.webp"
+          srcset="/images/alat-siram/lp-1-400.webp 400w, /images/alat-siram/lp-1-600.webp 600w, /images/alat-siram/lp-1-800.webp 800w"
+          sizes="(max-width: 480px) 100vw, 480px"
+          alt="Alat Siram Otomatis Irigasi Tetes Header"
+          class="w-full h-auto block"
+          loading="eager"
+          fetchpriority="high"
+          decoding="async"
+          width="1202"
+          height="708"
+        />
+      </div>
+      <div class="w-full">
+        <img
+          src="/images/alat-siram/lp-2-800.webp"
+          srcset="/images/alat-siram/lp-2-400.webp 400w, /images/alat-siram/lp-2-600.webp 600w, /images/alat-siram/lp-2-800.webp 800w"
+          sizes="(max-width: 480px) 100vw, 480px"
+          alt="Masalah Tanaman Layu & Kekeringan"
+          class="w-full h-auto block"
+          loading="lazy"
+          decoding="async"
+          fetchpriority="low"
+          width="1611"
+          height="976"
+        />
+      </div>
+      <div class="w-full">
+        <img
+          src="/images/alat-siram/lp-3-800.webp"
+          srcset="/images/alat-siram/lp-3-400.webp 400w, /images/alat-siram/lp-3-600.webp 600w, /images/alat-siram/lp-3-800.webp 800w"
+          sizes="(max-width: 480px) 100vw, 480px"
+          alt="Keunggulan Drip Spike System Otomatis"
+          class="w-full h-auto block"
+          loading="lazy"
+          decoding="async"
+          fetchpriority="low"
+          width="1611"
+          height="976"
+        />
+      </div>
+      <div class="w-full">
+        <img
+          src="/images/alat-siram/lp-4-800.webp"
+          srcset="/images/alat-siram/lp-4-400.webp 400w, /images/alat-siram/lp-4-600.webp 600w, /images/alat-siram/lp-4-800.webp 800w"
+          sizes="(max-width: 480px) 100vw, 480px"
+          alt="Cara Penggunaan Dengan Botol Minum"
+          class="w-full h-auto block"
+          loading="lazy"
+          decoding="async"
+          fetchpriority="low"
+          width="1611"
+          height="976"
+        />
+      </div>
+      <div class="w-full">
+        <img
+          src="/images/alat-siram/lp-5-800.webp"
+          srcset="/images/alat-siram/lp-5-400.webp 400w, /images/alat-siram/lp-5-600.webp 600w, /images/alat-siram/lp-5-800.webp 800w"
+          sizes="(max-width: 480px) 100vw, 480px"
+          alt="Katup Pengatur Kecepatan Tetesan Air"
+          class="w-full h-auto block"
+          loading="lazy"
+          decoding="async"
+          fetchpriority="low"
+          width="1611"
+          height="976"
+        />
+      </div>
+      <div class="w-full">
+        <img
+          src="/images/alat-siram/lp-6-800.webp"
+          srcset="/images/alat-siram/lp-6-400.webp 400w, /images/alat-siram/lp-6-600.webp 600w, /images/alat-siram/lp-6-800.webp 800w"
+          sizes="(max-width: 480px) 100vw, 480px"
+          alt="Demonstrasi Penyiraman Otomatis Pot & Kebun"
+          class="w-full h-auto block"
+          loading="lazy"
+          decoding="async"
+          fetchpriority="low"
+          width="1611"
+          height="976"
+        />
+      </div>
+      <div class="w-full">
+        <img
+          src="/images/alat-siram/lp-7a-800.webp"
+          srcset="/images/alat-siram/lp-7a-400.webp 400w, /images/alat-siram/lp-7a-600.webp 600w, /images/alat-siram/lp-7a-800.webp 800w"
+          sizes="(max-width: 480px) 100vw, 480px"
+          alt="Harga Promo Paket Alat Siram Otomatis"
+          class="w-full h-auto block"
+          loading="lazy"
+          decoding="async"
+          fetchpriority="low"
+          width="1280"
+          height="853"
+        />
+      </div>
+    </section>
+
+    <!-- ORDER FORM SECTION -->
+    <section id="order-form" class="bg-white border-t border-slate-200">
+      <!-- SCALEV ORDER FORM INTEGRATION -->
+      <GeoIpResolvedForm mode={formContext.mode} productSlug="alat-siram-otomatis" embedded={true} />
+    </section>
+
+    <!-- SOCIAL PROOF NOTIFICATION -->
+    <SocialProof productSlug="alat-siram-otomatis" />
+
+    <!-- FOOTER & GUARANTEE IMAGES -->
+    <section class="px-5 py-6 bg-slate-900 text-white text-center border-t border-slate-800">
+      <div class="space-y-4 mb-6">
+        <div class="overflow-hidden rounded-xl shadow-md border border-slate-800">
+          <img
+            src="/images/alat-siram/garansi-10-800.webp"
+            srcset="/images/alat-siram/garansi-10-400.webp 400w, /images/alat-siram/garansi-10-600.webp 600w, /images/alat-siram/garansi-10-800.webp 800w"
+            sizes="(max-width: 480px) 100vw, 480px"
+            alt="Garansi Kepuasan Pelanggan 100%"
+            class="w-full h-auto block mx-auto"
+            loading="lazy"
+            decoding="async"
+            fetchpriority="low"
+            width="1227"
+            height="1152"
+          />
+        </div>
+        <div class="overflow-hidden rounded-xl shadow-md border border-slate-800">
+          <img
+            src="/images/alat-siram/garansi-11-800.webp"
+            srcset="/images/alat-siram/garansi-11-400.webp 400w, /images/alat-siram/garansi-11-600.webp 600w, /images/alat-siram/garansi-11-800.webp 800w"
+            sizes="(max-width: 480px) 100vw, 480px"
+            alt="Garansi Pengiriman COD Aman"
+            class="w-full h-auto block mx-auto"
+            loading="lazy"
+            decoding="async"
+            fetchpriority="low"
+            width="1366"
+            height="1151"
+          />
+        </div>
+      </div>
+
+      <LpMiniFooter />
+    </section>
+
+    <!-- STICKY BOTTOM CTA -->
+    <StickyCTA productSlug="alat-siram-otomatis" />
+  </main>
+</BaseLayout>

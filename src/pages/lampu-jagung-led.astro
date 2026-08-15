@@ -1,0 +1,339 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import GeoIpResolvedForm from '../components/forms/GeoIpResolvedForm.astro';
+import Icon from '../components/shared/Icon.astro';
+import LpMiniFooter from '../components/shared/LpMiniFooter.astro';
+import MetaLandingTracker from '../components/tracking/MetaLandingTracker.astro';
+import SocialProof from '../components/shared/SocialProof.astro';
+import StickyCTA from '../components/shared/StickyCTA.astro';
+import { getProductBySlug } from '../data/products';
+import { resolveFormModeContext } from '../lib/form-mode';
+import '../styles/form-hybrid.css';
+
+export const prerender = false;
+
+const product = getProductBySlug('lampu-jagung-led');
+if (!product) throw new Error('Product lampu-jagung-led not found');
+const formContext = await resolveFormModeContext(Astro.request);
+
+const canonical = 'https://permatamall.shop/lampu-jagung-led';
+const seoTitle = 'Lampu Jagung LED E27 3 Warna: Super Terang 360° & Hemat Listrik 90%';
+const seoDescription =
+  'Lampu Jagung LED E27 3 Warna Cahaya. Super terang 360°, hemat listrik 90%, fitting rumahan E27 standar, awet anti panas. Promo Beli 1 Dapat 3 Pcs Rp 99rb COD.';
+
+const sectionTitle = 'text-[clamp(26px,6.8vw,30px)] font-extrabold leading-[1.14] tracking-tight text-slate-950';
+---
+
+<BaseLayout
+  title={seoTitle}
+  description={seoDescription}
+  image={product.heroImage}
+  canonical={canonical}
+  hideHeader={true}
+  hideFooter={true}
+  breadcrumbs={[
+    { name: 'Beranda', url: '/' },
+    { name: 'Lampu Jagung LED E27 3 Warna', url: '/lampu-jagung-led' }
+  ]}
+  preloadImages={[
+    {
+      srcset: "/images/lampu/lampu-hero-400.webp 400w, /images/lampu/lampu-hero-600.webp 600w",
+      sizes: "(max-width: 480px) 100vw, 480px"
+    }
+  ]}
+>
+  <main class="mx-auto min-h-screen w-full max-w-[480px] bg-white text-slate-950">
+    <MetaLandingTracker slug="lampu-jagung-led" productId={product.productId} contentName={product.contentName} price={product.price} />
+
+    <!-- 1. URGENCY TOP BAR OVERCLAIM -->
+    <div class="bg-[#EC7211] px-4 py-2.5 text-center">
+      <p class="flex items-center justify-center gap-1.5 text-[12px] font-extrabold uppercase tracking-wide text-white">
+        <Icon name="lucide:zap" class="h-4 w-4 shrink-0 text-white" aria-hidden="true" />
+        PROMO SPESIAL LAMPU JAGUNG LED E27 3 WARNA: BELI 1 DAPAT 3 PCS & COD 99RB!
+      </p>
+    </div>
+
+    <!-- 2. HERO SECTION OVERCLAIM -->
+    <section class="bg-white pb-6 text-center">
+      <div class="px-5 pt-6">
+        <div class="mx-auto mb-2.5 inline-flex items-center gap-1.5 rounded-full bg-[#FFF5E5] px-3.5 py-1 text-[11px] font-extrabold text-[#EC7211] border border-[#FFEACC]">
+          <Icon name="lucide:sparkles" class="h-3.5 w-3.5 text-[#EC7211]" />
+          3 WARNA CAHAYA (COOL, WARM, NATURAL) & HEMAT LISTRIK 90%
+        </div>
+        <h1 class="mx-auto max-w-[440px] text-[clamp(28px,7.8vw,33px)] font-extrabold leading-[1.14] tracking-tight text-slate-950">
+          Menerangi Seluruh Ruangan <span class="hl-brush">Super Terang 360° & 3 Warna Cahaya!</span>
+        </h1>
+        <p class="mx-auto mt-3 max-w-[390px] text-[15px] font-semibold leading-relaxed text-slate-700">
+          Lampu Jagung LED E27 3 Warna Cahaya. <strong class="font-bold text-slate-950">Bisa diganti warna Putih, Kuning, & Natural tinggal ganti saklar!</strong> <span class="font-bold text-slate-950 underline decoration-[#EC7211]/60 decoration-2 underline-offset-4">Pencahayaan 360° tanpa bayangan, hemat listrik 90%, fitting E27 rumahan, & promo Beli 1 Dapat 3 Pcs Rp 99rb!</span>
+        </p>
+      </div>
+
+      <!-- HERO IMAGE CONTAINER (PAS FLUID UNCROPPED) -->
+      <div class="mt-5 w-full overflow-hidden border-y border-slate-200 bg-white">
+        <img
+          src="/images/lampu/lampu-hero-600.webp"
+          srcset="/images/lampu/lampu-hero-400.webp 400w, /images/lampu/lampu-hero-600.webp 600w"
+          sizes="(max-width: 480px) 100vw, 480px"
+          alt="Lampu Jagung LED E27 3 Warna Super Terang 360 Derajat Hemat Listrik"
+          class="w-full h-auto block object-contain mx-auto"
+          loading="eager"
+          fetchpriority="high"
+          decoding="async"
+          width="540"
+          height="360"
+        />
+
+        <div class="bg-slate-950 px-4 py-2.5 text-center">
+          <p class="flex items-center justify-center gap-1.5 text-[12.5px] font-bold text-[#FFD699]">
+            <Icon name="lucide:lightbulb" class="h-4 w-4 text-[#EC7211] shrink-0" aria-hidden="true" />
+            <span>3 Warna Cahaya • Pencahayaan 360° • Beli 1 Dapat 3 Pcs!</span>
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3. HIGHLIGHT SPECS BAR -->
+    <section class="border-y border-orange-100 bg-[#FFF5E5]/60 px-5 py-4">
+      <div class="grid grid-cols-2 gap-2.5 text-left">
+        <div class="flex items-start gap-2.5 rounded-xl border border-orange-100 bg-white p-2.5 shadow-xs">
+          <Icon name="lucide:palette" class="mt-0.5 h-4.5 w-4.5 shrink-0 text-[#EC7211]" />
+          <div>
+            <p class="text-[10.5px] font-extrabold tracking-wide uppercase text-[#EC7211]">MODUS WARNA</p>
+            <p class="text-[13px] font-extrabold text-slate-950">3 Warna Cahaya</p>
+          </div>
+        </div>
+        <div class="flex items-start gap-2.5 rounded-xl border border-orange-100 bg-white p-2.5 shadow-xs">
+          <Icon name="lucide:sun" class="mt-0.5 h-4.5 w-4.5 shrink-0 text-[#EC7211]" />
+          <div>
+            <p class="text-[10.5px] font-extrabold tracking-wide uppercase text-slate-400">PENCAHAYAAN</p>
+            <p class="text-[13px] font-extrabold text-slate-950">360° Super Terang</p>
+          </div>
+        </div>
+        <div class="flex items-start gap-2.5 rounded-xl border border-orange-100 bg-white p-2.5 shadow-xs">
+          <Icon name="lucide:plug-zap" class="mt-0.5 h-4.5 w-4.5 shrink-0 text-[#EC7211]" />
+          <div>
+            <p class="text-[10.5px] font-extrabold tracking-wide uppercase text-slate-400">FITTING RUMAH</p>
+            <p class="text-[13px] font-extrabold text-slate-950">Fitting E27 Standar</p>
+          </div>
+        </div>
+        <div class="flex items-start gap-2.5 rounded-xl border border-orange-100 bg-white p-2.5 shadow-xs">
+          <Icon name="lucide:truck" class="mt-0.5 h-4.5 w-4.5 shrink-0 text-[#EC7211]" />
+          <div>
+            <p class="text-[10.5px] font-extrabold tracking-wide uppercase text-slate-400">LAYANAN</p>
+            <p class="text-[13px] font-extrabold text-slate-950">Garansi & COD</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 4. SECTION FITUR 1 -->
+    <section class="px-5 py-7 border-b border-slate-100">
+      <div class="text-center">
+        <span class="text-[11px] font-extrabold uppercase tracking-widest text-[#EC7211]">PENCAHAYAAN KELILING</span>
+        <h2 class={sectionTitle + ' mt-1'}>Pencahayaan 360° Menerangi Ruangan</h2>
+      </div>
+
+      <div class="mt-4 w-full overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xs">
+        <img
+          src="/images/lampu/lampu-sensor-600.webp"
+          srcset="/images/lampu/lampu-sensor-400.webp 400w, /images/lampu/lampu-sensor-600.webp 600w"
+          sizes="(max-width: 480px) 100vw, 480px"
+          alt="Lampu Jagung LED E27 3 Warna Desain 360 Derajat Super Terang"
+          class="w-full h-auto block object-contain mx-auto"
+          loading="lazy"
+          decoding="async"
+          fetchpriority="low"
+          width="540"
+          height="669"
+        />
+      </div>
+    </section>
+
+    <!-- 5. SECTION FITUR 2 -->
+    <section class="px-5 py-7 border-b border-slate-100 bg-slate-50/50">
+      <div class="text-center">
+        <span class="text-[11px] font-extrabold uppercase tracking-widest text-[#EC7211]">CHIP LED HIGH POWER</span>
+        <h2 class={sectionTitle + ' mt-1'}>Awet Tahan Panas & Anti Leleh</h2>
+      </div>
+
+      <div class="mt-4 w-full overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xs">
+        <img
+          src="/images/lampu/lampu-waterproof-600.webp"
+          srcset="/images/lampu/lampu-waterproof-400.webp 400w, /images/lampu/lampu-waterproof-600.webp 600w"
+          sizes="(max-width: 480px) 100vw, 480px"
+          alt="Lampu Jagung LED E27 Awet Tahan Panas Berdaya Tinggi"
+          class="w-full h-auto block object-contain mx-auto"
+          loading="lazy"
+          decoding="async"
+          fetchpriority="low"
+          width="540"
+          height="1138"
+        />
+      </div>
+    </section>
+
+    <!-- 6. SECTION FITUR 3 -->
+    <section class="px-5 py-7 border-b border-slate-100">
+      <div class="text-center">
+        <span class="text-[11px] font-extrabold uppercase tracking-widest text-[#EC7211]">HEMAT ENERGI 90%</span>
+        <h2 class={sectionTitle + ' mt-1'}>Selamatkan Dompet Hemat Listrik</h2>
+      </div>
+
+      <div class="mt-4 w-full overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xs">
+        <img
+          src="/images/lampu/lampu-hemat-listrik-600.webp"
+          srcset="/images/lampu/lampu-hemat-listrik-400.webp 400w, /images/lampu/lampu-hemat-listrik-600.webp 600w"
+          sizes="(max-width: 480px) 100vw, 480px"
+          alt="Lampu Jagung LED E27 Hemat Energi 90 persen"
+          class="w-full h-auto block object-contain mx-auto"
+          loading="lazy"
+          decoding="async"
+          fetchpriority="low"
+          width="540"
+          height="1138"
+        />
+      </div>
+    </section>
+
+    <!-- 7. SECTION FITUR 4 -->
+    <section class="px-5 py-7 border-b border-slate-100 bg-slate-50/50">
+      <div class="text-center">
+        <span class="text-[11px] font-extrabold uppercase tracking-widest text-[#EC7211]">FITTING STANDAR E27</span>
+        <h2 class={sectionTitle + ' mt-1'}>Pemasangan Sangat Mudah Tinggal Putar</h2>
+      </div>
+
+      <div class="mt-4 w-full overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xs">
+        <img
+          src="/images/lampu/lampu-pemasangan-600.webp"
+          srcset="/images/lampu/lampu-pemasangan-400.webp 400w, /images/lampu/lampu-pemasangan-600.webp 600w"
+          sizes="(max-width: 480px) 100vw, 480px"
+          alt="Fitting E27 Standar Pemasangan Sangat Mudah Tinggal Putar"
+          class="w-full h-auto block object-contain mx-auto"
+          loading="lazy"
+          decoding="async"
+          fetchpriority="low"
+          width="540"
+          height="810"
+        />
+      </div>
+    </section>
+
+    <!-- 8. TABEL SPESIFIKASI TEKNIS PRODUK -->
+    <section class="px-5 py-7 border-b border-slate-100">
+      <div class="text-center">
+        <span class="text-[11px] font-extrabold uppercase tracking-widest text-[#EC7211]">SPESIFIKASI TEKNIS</span>
+        <h2 class={sectionTitle + ' mt-1'}>Spesifikasi Lampu Jagung LED</h2>
+      </div>
+
+      <div class="mt-4 w-full overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xs">
+        <img
+          src="/images/lampu/lampu-spesifikasi-600.webp"
+          srcset="/images/lampu/lampu-spesifikasi-400.webp 400w, /images/lampu/lampu-spesifikasi-600.webp 600w"
+          sizes="(max-width: 480px) 100vw, 480px"
+          alt="Ringkasan Spesifikasi Lampu Jagung LED E27 3 Warna"
+          class="w-full h-auto block object-contain mx-auto"
+          loading="lazy"
+          decoding="async"
+          fetchpriority="low"
+          width="540"
+          height="150"
+        />
+      </div>
+
+      <div class="mt-4 rounded-2xl border border-slate-200 bg-[#FFF5E5]/40 p-4.5 shadow-xs">
+        <ul class="space-y-3 text-[14px] text-slate-800">
+          <li class="flex items-center justify-between border-b border-slate-200/80 pb-2">
+            <span class="text-slate-500 font-medium">Jenis Lampu</span>
+            <span class="font-bold text-slate-950">Lampu Jagung LED E27 3 Warna (Corn Bulb)</span>
+          </li>
+          <li class="flex items-center justify-between border-b border-slate-200/80 pb-2">
+            <span class="text-slate-500 font-medium">Mode Warna Cahaya</span>
+            <span class="font-bold text-slate-950">3 Warna (Cool White, Warm White, Natural)</span>
+          </li>
+          <li class="flex items-center justify-between border-b border-slate-200/80 pb-2">
+            <span class="text-slate-500 font-medium">Tipe Fitting</span>
+            <span class="font-bold text-slate-950">Fitting Standar Rumahan E27</span>
+          </li>
+          <li class="flex items-center justify-between border-b border-slate-200/80 pb-2">
+            <span class="text-slate-500 font-medium">Sudut Pencahayaan</span>
+            <span class="font-bold text-slate-950">360 Derajat Menerangi Seluruh Ruangan</span>
+          </li>
+          <li class="flex items-center justify-between">
+            <span class="text-slate-500 font-medium">Paket Promo</span>
+            <span class="font-bold text-slate-950">Beli 1 Dapat 3 Pcs / Beli 2 Dapat 6 Pcs</span>
+          </li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- 9. KEUNGGULAN PRODUK -->
+    <section class="px-5 py-7 border-b border-slate-100 bg-slate-50/50">
+      <div class="text-center">
+        <span class="text-[11px] font-extrabold uppercase tracking-widest text-[#EC7211]">KEUNGGULAN PRODUK</span>
+        <h2 class={sectionTitle + ' mt-1'}>Keunggulan Lampu Jagung LED</h2>
+      </div>
+
+      <div class="mt-4 w-full overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xs">
+        <img
+          src="/images/lampu/lampu-testi-600.webp"
+          srcset="/images/lampu/lampu-testi-400.webp 400w, /images/lampu/lampu-testi-600.webp 600w"
+          sizes="(max-width: 480px) 100vw, 480px"
+          alt="Keunggulan & Bukti Terang Lampu Jagung LED E27 3 Warna"
+          class="w-full h-auto block object-contain mx-auto"
+          loading="lazy"
+          decoding="async"
+          fetchpriority="low"
+          width="540"
+          height="360"
+        />
+      </div>
+    </section>
+
+    <!-- 10. SOCIAL PROOF DYNAMIC -->
+    <SocialProof productSlug="lampu-jagung-led" />
+
+    <!-- 11. PRICING & HARGA SECTION (CHECKOUT FORM & BANNER GARANSI PROMO) -->
+    <section id="checkout" class="border-t-8 border-slate-100 bg-white py-10">
+      <div class="px-5 pb-6 text-center">
+        <p class="mx-auto mb-2 inline-flex items-center gap-1.5 text-[11.5px] font-bold uppercase tracking-[0.14em] text-[#EC7211]">
+          <Icon name="lucide:zap" class="h-4 w-4 shrink-0 text-[#EC7211]" aria-hidden="true" />
+          Promo Lampu Jagung LED E27 COD
+        </p>
+        <h2 class="mx-auto max-w-[340px] text-[clamp(26px,6.8vw,30px)] font-extrabold leading-[1.12] tracking-tight text-slate-950">
+          Isi Alamat Pengiriman, <span class="hl-brush">Bayar Saat Sampai</span>
+        </h2>
+      </div>
+
+      <div class="mx-auto mb-6 max-w-[380px] px-5 text-center">
+        <div class="rounded-2xl border-2 border-[#EC7211] bg-[#FFF5E5]/40 p-3.5">
+          <p class="text-[11.5px] font-bold text-[#EC7211] uppercase tracking-wider">HARGA PROMO SPESIAL</p>
+          <div class="mt-0.5 flex items-baseline justify-center gap-2">
+            <span class="text-[13.5px] text-slate-400 line-through">Rp 250.000</span>
+            <span class="text-[26px] font-black text-slate-950">Rp 99.000</span>
+          </div>
+          <p class="mt-0.5 text-[11.5px] font-medium text-slate-600">Beli 1 Dapat 3 Pcs Rp 99.000 • Promo PALING LARIS Beli 2 Dapat 6 Pcs Rp 149.000</p>
+        </div>
+      </div>
+
+      <GeoIpResolvedForm mode={formContext.mode} productSlug="lampu-jagung-led" embedded={true} bannerImage="/images/lampu/lampu-garansi-600.webp" />
+    </section>
+
+    <!-- 12. FOOTER -->
+    <LpMiniFooter />
+
+    <!-- 13. STICKY CTA MOBILE -->
+    <StickyCTA productSlug="lampu-jagung-led" />
+  </main>
+</BaseLayout>
+
+<style>
+  .hl-brush {
+    -webkit-box-decoration-break: clone;
+    box-decoration-break: clone;
+    padding-bottom: 0.14em;
+    background-image: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20320%2024'%20preserveAspectRatio='none'%3E%3Cpath%20d='M3%2013C55%206%20120%2016%20182%2011S292%208%20317%2012L315%2020C252%2015%20150%2023%2072%2019S13%2021%205%2020C2%2017%202%2016%203%2013Z'%20fill='%23EC7211'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: center 100%;
+    background-size: 100% 0.32em;
+  }
+</style>

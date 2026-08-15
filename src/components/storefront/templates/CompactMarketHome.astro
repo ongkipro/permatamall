@@ -1,0 +1,83 @@
+---
+import HeroSection from '../../home/HeroSection.astro';
+import ProductsSection from '../../home/ProductsSection.astro';
+import SolutionsSection from '../../home/SolutionsSection.astro';
+import ProofsSection from '../../home/ProofsSection.astro';
+import type { TenantHomeContent } from '../../../lib/tenant-content';
+
+interface ProductCard {
+  name: string;
+  category: string;
+  description: string;
+  href: string;
+  image: string;
+  price: number;
+  comparePrice: number;
+  ratingValue?: number;
+  reviewCount?: number;
+  soldCount?: number;
+  variants: Array<{ label: string; price: number }>;
+}
+
+interface Props {
+  content: TenantHomeContent;
+  products: ProductCard[];
+}
+
+const { content, products } = Astro.props;
+---
+
+<main id="konten-utama" class="relative min-h-screen bg-white text-slate-800">
+  <div id="home" class="mx-auto max-w-[480px] bg-white">
+    <HeroSection slides={content.heroSlides} highlights={content.heroHighlights} content={content.hero} />
+    <ProductsSection products={products} heading={content.catalog} />
+    <SolutionsSection solutions={content.solutions} heading={content.solutionsHeading} />
+    <ProofsSection proofs={content.proofs} heading={content.proofsHeading} />
+  </div>
+</main>
+
+<script>
+  const heroTrack = document.getElementById('hero-track');
+  const heroDots = document.getElementById('hero-dots');
+  const heroCount = heroTrack?.children.length ?? 0;
+  let heroIndex = 0;
+  let heroTimer: number | undefined;
+
+  const setHeroSlide = (index: number) => {
+    if (!heroTrack || !heroDots) return;
+    heroTrack.style.transform = `translateX(-${index * 100}%)`;
+    [...heroDots.children].forEach((dot, itemIndex) => {
+      dot.className =
+        itemIndex === index
+          ? 'h-6 w-8 rounded-full border-[7px] border-transparent bg-white bg-clip-padding transition-all'
+          : 'h-6 w-6 rounded-full border-[7px] border-transparent bg-white/55 bg-clip-padding transition-all';
+    });
+    heroIndex = index;
+  };
+
+  const startHero = () => {
+    if (heroTimer || heroCount <= 1) return;
+    heroTimer = window.setInterval(() => {
+      setHeroSlide((heroIndex + 1) % heroCount);
+    }, 4000);
+  };
+
+  const stopHero = () => {
+    if (!heroTimer) return;
+    window.clearInterval(heroTimer);
+    heroTimer = undefined;
+  };
+
+  [...(heroDots?.children ?? [])].forEach((dot, index) => {
+    dot.addEventListener('click', () => {
+      setHeroSlide(index);
+      stopHero();
+      startHero();
+    });
+  });
+
+  const heroContainer = document.getElementById('home');
+  heroContainer?.addEventListener('mouseenter', stopHero);
+  heroContainer?.addEventListener('mouseleave', startHero);
+  startHero();
+</script>

@@ -1,0 +1,266 @@
+---
+import Icon from '../shared/Icon.astro';
+
+interface Product {
+  name: string;
+  category: string;
+  description: string;
+  href: string;
+  image: string;
+  price: number;
+  comparePrice: number;
+  ratingValue?: number;
+  reviewCount?: number;
+  soldCount?: number;
+  variants?: Array<{ label: string; price: number }>;
+}
+
+interface Heading {
+  eyebrow: string;
+  title: string;
+  description: string;
+}
+
+interface Props {
+  products: Product[];
+  heading: Heading;
+}
+
+const { products, heading } = Astro.props;
+
+// Group or extract unique categories
+const categories = ['Semua', ...new Set(products.map((p) => p.category).filter(Boolean))];
+
+const formatPrice = (val: number) => `Rp${val.toLocaleString('id-ID')}`;
+---
+
+<section id="produk" class="border-y border-slate-200 bg-slate-50/70 px-4 py-8 md:px-6 md:py-12">
+  <div class="mb-6 text-center md:text-left">
+    <span class="inline-flex rounded-full border border-slate-200 bg-slate-100 px-3.5 py-1 text-[11px] font-semibold text-slate-800 tracking-wide">
+      {heading.eyebrow}
+    </span>
+    <h2 class="mt-2 text-2xl font-black tracking-tight text-slate-900 md:text-3xl">{heading.title}</h2>
+    <p class="mt-1 text-sm text-slate-600 md:max-w-xl">{heading.description}</p>
+  </div>
+
+  <!-- Search & Category Filter Bar -->
+  <div class="mb-6 flex flex-col gap-3">
+    <!-- Search Input -->
+    <div class="relative w-full">
+      <input
+        type="text"
+        id="catalog-search"
+        placeholder="Cari produk pilihan Anda..."
+        class="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-10 pr-4 text-xs shadow-xs transition-all focus:border-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900/20 md:text-sm text-slate-900 placeholder:text-slate-400"
+      />
+      <Icon name="lucide:search" class="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" aria-hidden="true" />
+    </div>
+
+    <!-- Horizontal Scroll Category Pills -->
+    <div class="no-scrollbar -mx-4 flex gap-1.5 overflow-x-auto px-4 pb-1 md:mx-0 md:px-0">
+      {
+        categories.map((cat, idx) => (
+          <button
+            type="button"
+            data-category-filter={cat}
+            class={`category-tab flex-none rounded-full px-4 py-1.5 text-xs font-medium transition-all cursor-pointer ${
+              idx === 0
+                ? 'bg-slate-900 text-white shadow-xs font-semibold'
+                : 'border border-slate-200 bg-white text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+            }`}
+          >
+            {cat}
+          </button>
+        ))
+      }
+    </div>
+  </div>
+
+  <!-- Products Grid: strictly 2-column layout across screen sizes for clean Shopify aesthetic -->
+  <div id="product-grid" class="grid grid-cols-2 gap-3.5 sm:gap-5 md:gap-6">
+    {
+      products.map((product, idx) => {
+        const discount =
+          product.comparePrice > product.price
+            ? Math.round((1 - product.price / product.comparePrice) * 100)
+            : 0;
+
+        const sold = product.soldCount
+          ? product.soldCount >= 1000
+            ? `${(product.soldCount / 1000).toFixed(1).replace('.0', '')}rb+`
+            : `${product.soldCount}+`
+          : null;
+
+        return (
+          <article
+            class="product-card group flex flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xs transition-all duration-200 hover:border-slate-300 hover:shadow-md"
+            data-category={product.category}
+            data-search={`${product.name} ${product.category} ${product.description}`.toLowerCase()}
+            data-index={idx}
+            style={idx >= 10 ? 'display: none;' : ''}
+          >
+            <a href={product.href} class="relative aspect-square w-full overflow-hidden bg-slate-100">
+              <img
+                src={product.image}
+                alt={product.name}
+                class="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                loading={idx < 4 ? 'eager' : 'lazy'}
+                decoding="async"
+              />
+              {discount > 0 && (
+                <span class="absolute right-2.5 top-2.5 rounded-full bg-red-600 px-2 py-0.5 text-[10px] font-extrabold text-white shadow-xs tracking-wide">
+                  -{discount}%
+                </span>
+              )}
+            </a>
+
+            <div class="flex flex-1 flex-col p-3.5 sm:p-4">
+              <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                {product.category}
+              </span>
+              <h3 class="mt-1 line-clamp-2 text-xs font-bold leading-snug text-slate-900 transition-colors group-hover:text-slate-700 sm:text-sm md:text-base">
+                <a href={product.href}>{product.name}</a>
+              </h3>
+
+              <!-- Rating & Sold Count -->
+              {product.ratingValue && (
+                <div class="mt-2 flex items-center gap-1.5 text-[11px] text-slate-500">
+                  <div class="flex items-center gap-1 text-amber-500">
+                    <Icon name="lucide:star" class="h-3.5 w-3.5 fill-current" aria-hidden="true" />
+                    <span class="font-bold text-slate-900">{product.ratingValue.toFixed(1)}</span>
+                  </div>
+                  {sold && (
+                    <>
+                      <span class="text-slate-300">•</span>
+                      <span class="text-slate-500 font-medium">{sold} terjual</span>
+                    </>
+                  )}
+                </div>
+              )}
+
+              <!-- Price Section -->
+              <div class="mt-auto pt-3 sm:pt-4">
+                {product.comparePrice > product.price && (
+                  <p class="text-[11px] text-slate-400 line-through font-medium">{formatPrice(product.comparePrice)}</p>
+                )}
+                <p class="text-base font-black text-slate-900 sm:text-lg">
+                  {formatPrice(product.price)}
+                </p>
+                
+                <a
+                  href={product.href}
+                  class="mt-3 flex w-full items-center justify-center gap-1.5 rounded-xl bg-slate-900 py-2 text-center text-xs font-bold text-white transition-all hover:bg-slate-800 active:scale-[0.98] sm:py-2.5 sm:text-sm"
+                >
+                  <span>Beli Sekarang</span>
+                  <Icon name="lucide:arrow-right" class="h-4 w-4" aria-hidden="true" />
+                </a>
+              </div>
+            </div>
+          </article>
+        );
+      })
+    }
+  </div>
+
+  <!-- Load More & Status (Max 10 initial display, 10 more per click) -->
+  <div id="load-more-container" class="mt-8 flex flex-col items-center gap-3">
+    <p id="catalog-status" class="text-xs text-slate-500 font-medium">
+      Menampilkan <span id="visible-count">10</span> dari <span id="total-count">{products.length}</span> produk
+    </p>
+    {
+      products.length > 10 && (
+        <button
+          type="button"
+          id="load-more-btn"
+          class="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-6 py-2.5 text-xs font-bold text-slate-800 shadow-xs transition-all hover:bg-slate-100 hover:border-slate-400 active:scale-95 cursor-pointer"
+        >
+          <span>Lihat Produk Lainnya</span>
+          <Icon name="lucide:chevron-down" class="h-4 w-4 text-slate-600" aria-hidden="true" />
+        </button>
+      )
+    }
+  </div>
+</section>
+
+<script>
+  function initProductCatalog() {
+    const searchInput = document.getElementById('catalog-search') as HTMLInputElement | null;
+    const categoryTabs = document.querySelectorAll('.category-tab');
+    const cards = document.querySelectorAll('.product-card') as NodeListOf<HTMLElement>;
+    const loadMoreBtn = document.getElementById('load-more-btn');
+    const visibleCountEl = document.getElementById('visible-count');
+    const totalCountEl = document.getElementById('total-count');
+
+    let currentCategory = 'Semua';
+    let currentSearch = '';
+    let visibleLimit = 10;
+
+    function filterAndRender() {
+      let matchedCount = 0;
+      let currentlyShown = 0;
+
+      cards.forEach((card) => {
+        const cat = card.getAttribute('data-category') || '';
+        const searchData = card.getAttribute('data-search') || '';
+
+        const matchesCat = currentCategory === 'Semua' || cat === currentCategory;
+        const matchesSearch = !currentSearch || searchData.includes(currentSearch);
+
+        if (matchesCat && matchesSearch) {
+          matchedCount++;
+          if (currentlyShown < visibleLimit) {
+            card.style.display = 'flex';
+            currentlyShown++;
+          } else {
+            card.style.display = 'none';
+          }
+        } else {
+          card.style.display = 'none';
+        }
+      });
+
+      if (visibleCountEl) visibleCountEl.textContent = String(currentlyShown);
+      if (totalCountEl) totalCountEl.textContent = String(matchedCount);
+
+      if (loadMoreBtn) {
+        if (currentlyShown >= matchedCount) {
+          loadMoreBtn.style.display = 'none';
+        } else {
+          loadMoreBtn.style.display = 'inline-flex';
+        }
+      }
+    }
+
+    categoryTabs.forEach((tab) => {
+      tab.addEventListener('click', () => {
+        categoryTabs.forEach((t) => {
+          t.classList.remove('bg-slate-900', 'text-white', 'shadow-xs', 'font-semibold');
+          t.classList.add('border', 'border-slate-200', 'bg-white', 'text-slate-600', 'font-medium');
+        });
+        tab.classList.remove('border', 'border-slate-200', 'bg-white', 'text-slate-600', 'font-medium');
+        tab.classList.add('bg-slate-900', 'text-white', 'shadow-xs', 'font-semibold');
+
+        currentCategory = tab.getAttribute('data-category-filter') || 'Semua';
+        visibleLimit = 10;
+        filterAndRender();
+      });
+    });
+
+    searchInput?.addEventListener('input', (e) => {
+      currentSearch = (e.target as HTMLInputElement).value.trim().toLowerCase();
+      visibleLimit = 10;
+      filterAndRender();
+    });
+
+    loadMoreBtn?.addEventListener('click', () => {
+      visibleLimit += 10;
+      filterAndRender();
+    });
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initProductCatalog);
+  } else {
+    initProductCatalog();
+  }
+</script>

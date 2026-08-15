@@ -1,0 +1,256 @@
+(() => {
+  const tagName = "cmsads-form-widget";
+  if (window.customElements.get(tagName)) return;
+
+  const scriptOrigin = (() => {
+    try {
+      return new URL(document.currentScript?.src || "", document.baseURI).origin;
+    } catch {
+      return "";
+    }
+  })();
+  const modes = new Set(["middle", "full", "hybrid"]);
+  const trackingKeys = [
+    "gclid",
+    "gbraid",
+    "wbraid",
+    "_fbp",
+    "_fbc",
+    "fbclid",
+    "ttclid",
+    "utm_source",
+    "utm_medium",
+    "utm_campaign",
+    "utm_content",
+    "utm_term",
+  ];
+
+  function getTrackingParams() {
+    const params = {};
+    try {
+      const searchParams = new URLSearchParams(window.location.search);
+      for (const k of trackingKeys) {
+        const v = searchParams.get(k);
+        if (v) params[k] = v;
+      }
+      if (!params._fbp) {
+        const mFbp = document.cookie.match(/(?:^|;\s*)_fbp=([^;]+)/);
+        if (mFbp) params._fbp = decodeURIComponent(mFbp[1]);
+      }
+      if (!params._fbc) {
+        const mFbc = document.cookie.match(/(?:^|;\s*)_fbc=([^;]+)/);
+        if (mFbc) params._fbc = decodeURIComponent(mFbc[1]);
+      }
+    } catch {}
+    return params;
+  }
+  class CmsadsFormWidget extends HTMLElement {
+    static observedAttributes = [
+      "base-url",
+      "mode",
+      "product-id",
+      "variant-id",
+      "title",
+    ];
+
+    #frame = null;
+    #initializeTimer = 0;
+    #onMessage = (event) => {
+      if (
+        !this.#frame ||
+        event.origin !== this.#baseOrigin() ||
+        event.source !== this.#frame.contentWindow ||
+        !event.data
+      ) {
+        return;
+      }
+
+      if (
+        event.data.type === "cmsads:add-to-cart" ||
+        event.data.type === "cmsads:initiate-checkout"
+      ) {
+        try {
+          const payload = event.data;
+          const eventName = payload.type === "cmsads:add-to-cart" ? "AddToCart" : "InitiateCheckout";
+          if (typeof window.fbq === "function") {
+            window.fbq(
+              "track",
+              eventName,
+              {
+                content_name: payload.content_name,
+                content_ids: payload.content_ids,
+                content_type: payload.content_type || "product",
+                value: Number(payload.value || 0),
+                currency: payload.currency || "IDR",
+              },
+              payload.eventId ? { eventID: payload.eventId } : undefined,
+            );
+          }
+          if (typeof window.gtag === "function") {
+            window.gtag("event", eventName === "AddToCart" ? "add_to_cart" : "begin_checkout", {
+              currency: payload.currency || "IDR",
+              value: Number(payload.value || 0),
+              items: payload.content_name ? [{ item_name: payload.content_name }] : [],
+            });
+          }
+        } catch {}
+        return;
+      }
+
+      if (
+        event.data.type === "cmsads:checkout-redirect" ||
+        event.data.type === "cmsads:order-complete"
+      ) {
+        try {
+          const payload = event.data;
+          if (payload.total && Number(payload.total) > 0) {
+            if (typeof window.fbq === "function") {
+              window.fbq("track", "Purchase", {
+                value: Number(payload.total),
+                currency: "IDR",
+              });
+            }
+            if (typeof window.gtag === "function") {
+              window.gtag("event", "conversion", {
+                value: Number(payload.total),
+                currency: "IDR",
+                transaction_id: String(payload.orderId || ""),
+              });
+            }
+            if (
+              typeof window.ttq === "object" &&
+              typeof window.ttq.track === "function"
+            ) {
+              window.ttq.track("CompletePayment", {
+                value: Number(payload.total),
+                currency: "IDR",
+              });
+            }
+          }
+          if (payload.type === "cmsads:checkout-redirect" && payload.url) {
+            const target = this.#checkoutTarget(payload.url);
+            if (target) {
+              const targetUrl = new URL(target);
+              const params = getTrackingParams();
+              for (const [k, v] of Object.entries(params)) {
+                if (!targetUrl.searchParams.has(k)) targetUrl.searchParams.set(k, v);
+              }
+              window.location.assign(targetUrl.toString());
+            }
+          }
+        } catch {}
+        return;
+      }
+
+      if (event.data.type !== "cmsads:embed-resize") return;
+
+      const height = Number(event.data.height);
+      if (!Number.isFinite(height)) return;
+      this.#frame.style.height = `${Math.max(480, Math.min(12000, height))}px`;
+      this.#frame.height = String(Math.max(480, Math.min(12000, height)));
+    };
+
+    connectedCallback() {
+      this.style.display = "block";
+      this.style.width = "100%";
+      this.style.maxWidth = "100%";
+      window.clearTimeout(this.#initializeTimer);
+      this.#initializeTimer = window.setTimeout(() => {
+        if (this.isConnected) this.#initialize();
+      }, 0);
+    }
+
+    disconnectedCallback() {
+      window.clearTimeout(this.#initializeTimer);
+      window.removeEventListener("message", this.#onMessage);
+    }
+
+    attributeChangedCallback() {
+      if (this.isConnected) this.#syncFrame();
+    }
+
+    #initialize() {
+      const frames = [...this.querySelectorAll("iframe[data-cmsads-form]")];
+      this.#frame = frames.find((frame) => frame.id) || frames[0] || null;
+
+      if (!this.#frame) {
+        this.#frame = document.createElement("iframe");
+        this.#frame.dataset.cmsadsForm = "";
+        this.append(this.#frame);
+      }
+      for (const frame of frames) {
+        if (frame !== this.#frame) frame.remove();
+      }
+
+      this.#frame.style.display = "block";
+      this.#frame.style.width = "100%";
+      this.#frame.style.maxWidth = "100%";
+      this.#frame.style.minHeight = "720px";
+      this.#frame.style.border = "0";
+      this.#frame.width = "100%";
+      this.#frame.height ||= "1000";
+      this.#frame.loading = "eager";
+      this.#frame.referrerPolicy = "strict-origin-when-cross-origin";
+      this.#frame.addEventListener("load", () => this.removeAttribute("aria-busy"), {
+        once: true,
+      });
+      this.setAttribute("aria-busy", "true");
+      this.#syncFrame();
+      window.addEventListener("message", this.#onMessage);
+    }
+
+    #baseOrigin() {
+      const configured = this.getAttribute("base-url")?.trim();
+      try {
+        return new URL(configured || scriptOrigin, document.baseURI).origin;
+      } catch {
+        return "";
+      }
+    }
+
+    #checkoutTarget(value) {
+      try {
+        const target = new URL(String(value || ""), this.#baseOrigin());
+        return target.origin === this.#baseOrigin() &&
+          (target.pathname === "/payment" || target.pathname === "/thanks")
+          ? target.toString()
+          : "";
+      } catch {
+        return "";
+      }
+    }
+
+    #syncFrame() {
+      if (!this.#frame) return;
+      const origin = this.#baseOrigin();
+      const productId = this.getAttribute("product-id")?.trim();
+      const mode = this.getAttribute("mode")?.trim().toLowerCase() || "hybrid";
+      const variantId = this.getAttribute("variant-id")?.trim();
+
+      if (!origin || !productId || !modes.has(mode)) {
+        this.#frame.removeAttribute("src");
+        this.#frame.title = "Form pemesanan belum dikonfigurasi";
+        this.removeAttribute("aria-busy");
+        this.setAttribute("data-error", "invalid-configuration");
+        return;
+      }
+
+      const url = new URL("/embed/form", origin);
+      url.searchParams.set("mode", mode);
+      url.searchParams.set("product_id", productId);
+      if (variantId) url.searchParams.set("variant_id", variantId);
+      const trackingParams = getTrackingParams();
+      for (const [k, v] of Object.entries(trackingParams)) {
+        if (!url.searchParams.has(k)) url.searchParams.set(k, v);
+      }
+      const nextSrc = url.toString();
+
+      this.removeAttribute("data-error");
+      this.#frame.title =
+        this.getAttribute("title")?.trim() || "Form pemesanan produk";
+      if (this.#frame.src !== nextSrc) this.#frame.src = nextSrc;
+    }
+  }
+
+  window.customElements.define(tagName, CmsadsFormWidget);
+})();

@@ -1,0 +1,43 @@
+---
+import PageIntro from '../../components/shared/PageIntro.astro';
+import ProductListItem from '../../components/shared/ProductListItem.astro';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { formatIdr } from '../../lib/format-idr';
+import { getStorefrontProducts } from '../../lib/catalog';
+import { tenantConfig } from '../../lib/tenant';
+
+const products = await getStorefrontProducts(Astro.locals);
+const isWide = tenantConfig.storefrontTemplate === 'wide-catalog';
+---
+
+<BaseLayout
+  title={`Produk - ${tenantConfig.name}`}
+  description={`Pilih produk ${tenantConfig.name}, lihat varian, stok, dan harga sebelum memesan.`}
+  contentWidth={isWide ? 'wide' : 'compact'}
+  breadcrumbs={[
+    { name: 'Beranda', url: '/' },
+    { name: 'Produk', url: '/produk' },
+  ]}
+>
+  <main id="konten-utama" class="min-h-screen bg-white text-slate-800">
+    <PageIntro
+      badge="Semua Produk"
+      title={`Produk ${tenantConfig.name}`}
+      description="Pilih produk berdasarkan kebutuhan Anda, lalu lihat varian dan harga sebelum memesan."
+      breadcrumbs={[{ label: 'Beranda', href: '/' }, { label: 'Produk' }]}
+    />
+
+    <section aria-label="Daftar produk" class:list={['mx-auto px-5 py-8', isWide ? 'max-w-6xl' : 'max-w-[480px]']}>
+      {products.length > 0 ? (
+        <div class:list={[isWide ? 'grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4' : 'grid gap-3']}>
+          {products.map((product) => <ProductListItem product={product} formatPrice={formatIdr} />)}
+        </div>
+      ) : (
+        <div class="border-y border-slate-200 py-8 text-center">
+          <h2 class="text-lg font-bold text-slate-900">Katalog sedang disiapkan</h2>
+          <p class="mt-2 text-sm leading-6 text-slate-600">Produk akan muncul setelah konten dan varian diterbitkan.</p>
+        </div>
+      )}
+    </section>
+  </main>
+</BaseLayout>

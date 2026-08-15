@@ -1,0 +1,269 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import GeoIpResolvedForm from '../components/forms/GeoIpResolvedForm.astro';
+import LpMiniFooter from '../components/shared/LpMiniFooter.astro';
+import MetaLandingTracker from '../components/tracking/MetaLandingTracker.astro';
+import SocialProof from '../components/shared/SocialProof.astro';
+import StickyCTA from '../components/shared/StickyCTA.astro';
+import { getProductBySlug } from '../data/products';
+import { resolveFormModeContext } from '../lib/form-mode';
+import '../styles/form-hybrid.css';
+
+export const prerender = false;
+
+const product = getProductBySlug('tutup-makanan');
+if (!product) throw new Error('Product tutup-makanan not found');
+const formContext = await resolveFormModeContext(Astro.request);
+
+const canonical = 'https://permatamall.shop/tutup-makanan';
+const seoTitle = 'Tutup Makanan Serbaguna Tudung Saji Lipat Insulasi Panas - BelanjaKini';
+const seoDescription =
+  'Tutup Makanan Serbaguna Tudung Saji Lipat Insulasi Panas. Melindungi makanan dari lalat & debu, praktis bisa dilipat hemat tempat. Promo Rp 99.000 COD.';
+---
+
+<BaseLayout
+  title={seoTitle}
+  description={seoDescription}
+  image={product.heroImage}
+  canonical={canonical}
+  hideHeader={true}
+  hideFooter={true}
+  breadcrumbs={[
+    { name: 'Beranda', url: '/' },
+    { name: 'Tutup Makanan Serbaguna', url: '/tutup-makanan' },
+  ]}
+  preloadImages={['/images/tutup-makanan/tutup-1-400.webp']}
+>
+  <main class="mx-auto min-h-screen w-full max-w-[480px] bg-white text-slate-950 font-sans shadow-lg">
+    <MetaLandingTracker
+      slug="tutup-makanan"
+      productId={product.productId}
+      contentName={product.contentName}
+      price={product.price}
+    />
+
+    <!-- URGENCY TOP BAR -->
+    <div class="bg-[#EC7211] px-4 py-2.5 text-center">
+      <p class="flex items-center justify-center gap-1.5 text-[12px] font-extrabold uppercase tracking-wide text-white">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          class="h-4 w-4 shrink-0 text-white"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2.5"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          aria-hidden="true"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg
+        >
+        PROMO SPECIAL TUTUP MAKANAN SERBAGUNA LIPAT INSULASI PANAS: CUMA RP 99RB COD!
+      </p>
+    </div>
+
+    <!-- SEQUENTIAL CONTENT IMAGES -->
+    <section class="bg-white">
+      <div class="w-full">
+        <img
+          src="/images/tutup-makanan/tutup-1-800.webp"
+          srcset="/images/tutup-makanan/tutup-1-400.webp 400w, /images/tutup-makanan/tutup-1-600.webp 600w, /images/tutup-makanan/tutup-1-800.webp 800w"
+          sizes="(max-width: 480px) 100vw, 480px"
+          alt="Tutup Makanan Serbaguna Header"
+          class="w-full h-auto block"
+          loading="eager"
+          fetchpriority="high"
+          decoding="async"
+          width="819"
+          height="1024"
+        />
+      </div>
+      <div class="w-full">
+        <img
+          src="/images/tutup-makanan/tutup-2-800.webp"
+          srcset="/images/tutup-makanan/tutup-2-400.webp 400w, /images/tutup-makanan/tutup-2-600.webp 600w, /images/tutup-makanan/tutup-2-800.webp 800w"
+          sizes="(max-width: 480px) 100vw, 480px"
+          alt="Masalah Makanan Dihinggapi Lalat & Cold"
+          class="w-full h-auto block"
+          loading="lazy"
+          decoding="async"
+          fetchpriority="low"
+          width="819"
+          height="1024"
+        />
+      </div>
+      <div class="w-full">
+        <img
+          src="/images/tutup-makanan/tutup-3-800.webp"
+          srcset="/images/tutup-makanan/tutup-3-400.webp 400w, /images/tutup-makanan/tutup-3-600.webp 600w, /images/tutup-makanan/tutup-3-800.webp 800w"
+          sizes="(max-width: 480px) 100vw, 480px"
+          alt="Solusi Tudung Saji Lipat Thermal Foil"
+          class="w-full h-auto block"
+          loading="lazy"
+          decoding="async"
+          fetchpriority="low"
+          width="819"
+          height="1024"
+        />
+      </div>
+      <div class="w-full">
+        <img
+          src="/images/tutup-makanan/tutup-4-800.webp"
+          srcset="/images/tutup-makanan/tutup-4-400.webp 400w, /images/tutup-makanan/tutup-4-600.webp 600w, /images/tutup-makanan/tutup-4-800.webp 800w"
+          sizes="(max-width: 480px) 100vw, 480px"
+          alt="Fitur Insulasi Panas & Anti Debu"
+          class="w-full h-auto block"
+          loading="lazy"
+          decoding="async"
+          fetchpriority="low"
+          width="819"
+          height="1024"
+        />
+      </div>
+      <div class="w-full">
+        <img
+          src="/images/tutup-makanan/tutup-5-800.webp"
+          srcset="/images/tutup-makanan/tutup-5-400.webp 400w, /images/tutup-makanan/tutup-5-600.webp 600w, /images/tutup-makanan/tutup-5-800.webp 800w"
+          sizes="(max-width: 480px) 100vw, 480px"
+          alt="Desain Lipat Ringkas Hemat Tempat"
+          class="w-full h-auto block"
+          loading="lazy"
+          decoding="async"
+          fetchpriority="low"
+          width="1024"
+          height="1024"
+        />
+      </div>
+      <div class="w-full">
+        <img
+          src="/images/tutup-makanan/tutup-6-800.webp"
+          srcset="/images/tutup-makanan/tutup-6-400.webp 400w, /images/tutup-makanan/tutup-6-600.webp 600w, /images/tutup-makanan/tutup-6-800.webp 800w"
+          sizes="(max-width: 480px) 100vw, 480px"
+          alt="Bahan Alumunium Foil Premium Waterproof"
+          class="w-full h-auto block"
+          loading="lazy"
+          decoding="async"
+          fetchpriority="low"
+          width="819"
+          height="1024"
+        />
+      </div>
+      <div class="w-full">
+        <img
+          src="/images/tutup-makanan/tutup-7-800.webp"
+          srcset="/images/tutup-makanan/tutup-7-400.webp 400w, /images/tutup-makanan/tutup-7-600.webp 600w, /images/tutup-makanan/tutup-7-800.webp 800w"
+          sizes="(max-width: 480px) 100vw, 480px"
+          alt="Penggunaan Praktis Meja Makan Keluarga"
+          class="w-full h-auto block"
+          loading="lazy"
+          decoding="async"
+          fetchpriority="low"
+          width="819"
+          height="1024"
+        />
+      </div>
+      <div class="w-full">
+        <img
+          src="/images/tutup-makanan/tutup-8-800.webp"
+          srcset="/images/tutup-makanan/tutup-8-400.webp 400w, /images/tutup-makanan/tutup-8-600.webp 600w, /images/tutup-makanan/tutup-8-800.webp 800w"
+          sizes="(max-width: 480px) 100vw, 480px"
+          alt="Kelebihan Dibanding Tudung Saji Plastik"
+          class="w-full h-auto block"
+          loading="lazy"
+          decoding="async"
+          fetchpriority="low"
+          width="819"
+          height="1024"
+        />
+      </div>
+      <div class="w-full">
+        <img
+          src="/images/tutup-makanan/tutup-9-800.webp"
+          srcset="/images/tutup-makanan/tutup-9-400.webp 400w, /images/tutup-makanan/tutup-9-600.webp 600w, /images/tutup-makanan/tutup-9-800.webp 800w"
+          sizes="(max-width: 480px) 100vw, 480px"
+          alt="Spesifikasi & Ukuran Tutup Makanan"
+          class="w-full h-auto block"
+          loading="lazy"
+          decoding="async"
+          fetchpriority="low"
+          width="819"
+          height="1024"
+        />
+      </div>
+      <div class="w-full">
+        <img
+          src="/images/tutup-makanan/tutup-10-800.webp"
+          srcset="/images/tutup-makanan/tutup-10-400.webp 400w, /images/tutup-makanan/tutup-10-600.webp 600w, /images/tutup-makanan/tutup-10-800.webp 800w"
+          sizes="(max-width: 480px) 100vw, 480px"
+          alt="Harga Promo Spesial Hari Ini"
+          class="w-full h-auto block"
+          loading="lazy"
+          decoding="async"
+          fetchpriority="low"
+          width="819"
+          height="1024"
+        />
+      </div>
+    </section>
+
+    <!-- ORDER FORM SECTION -->
+    <section id="order-form" class="bg-white border-t border-slate-200">
+      <!-- SCALEV ORDER FORM INTEGRATION -->
+      <GeoIpResolvedForm mode={formContext.mode} productSlug="tutup-makanan" embedded={true} />
+    </section>
+
+    <!-- SOCIAL PROOF NOTIFICATION -->
+    <SocialProof productSlug="tutup-makanan" />
+
+    <!-- FOOTER & GUARANTEE IMAGES -->
+    <section class="px-5 py-6 bg-slate-900 text-white text-center border-t border-slate-800">
+      <div class="space-y-4 mb-6">
+        <div class="overflow-hidden rounded-xl shadow-md border border-slate-800">
+          <img
+            src="/images/tutup-makanan/tutup-12-800.webp"
+            srcset="/images/tutup-makanan/tutup-12-400.webp 400w, /images/tutup-makanan/tutup-12-600.webp 600w, /images/tutup-makanan/tutup-12-800.webp 800w"
+            sizes="(max-width: 480px) 100vw, 480px"
+            alt="Pilihan Warna Tutup Makanan"
+            class="w-full h-auto block mx-auto"
+            loading="lazy"
+            decoding="async"
+            fetchpriority="low"
+            width="819"
+            height="1024"
+          />
+        </div>
+        <div class="overflow-hidden rounded-xl shadow-md border border-slate-800">
+          <img
+            src="/images/tutup-makanan/garansi-10-800.webp"
+            srcset="/images/tutup-makanan/garansi-10-400.webp 400w, /images/tutup-makanan/garansi-10-600.webp 600w, /images/tutup-makanan/garansi-10-800.webp 800w"
+            sizes="(max-width: 480px) 100vw, 480px"
+            alt="Garansi Kepuasan Pelanggan"
+            class="w-full h-auto block mx-auto"
+            loading="lazy"
+            decoding="async"
+            fetchpriority="low"
+            width="918"
+            height="1024"
+          />
+        </div>
+        <div class="overflow-hidden rounded-xl shadow-md border border-slate-800">
+          <img
+            src="/images/tutup-makanan/garansi-11-800.webp"
+            srcset="/images/tutup-makanan/garansi-11-400.webp 400w, /images/tutup-makanan/garansi-11-600.webp 600w, /images/tutup-makanan/garansi-11-800.webp 800w"
+            sizes="(max-width: 480px) 100vw, 480px"
+            alt="Garansi Pengiriman COD Safe"
+            class="w-full h-auto block mx-auto"
+            loading="lazy"
+            decoding="async"
+            fetchpriority="low"
+            width="1024"
+            height="863"
+          />
+        </div>
+      </div>
+
+      <LpMiniFooter />
+    </section>
+
+    <!-- STICKY BOTTOM CTA -->
+    <StickyCTA productSlug="tutup-makanan" />
+  </main>
+</BaseLayout>

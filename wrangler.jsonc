@@ -1,0 +1,58 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "cmsads-permatamall",
+  "compatibility_date": "2026-08-01",
+  "compatibility_flags": [
+    "nodejs_compat"
+  ],
+  "workers_dev": false,
+  "assets": {
+    "binding": "ASSETS"
+  },
+  "kv_namespaces": [
+    {
+      "binding": "SESSION",
+      "id": "1e559dabb71646be90b8a3edf4ace55e"
+    }
+  ],
+  "d1_databases": [
+    {
+      "binding": "OMS_DB",
+      "database_name": "cmsads-permatamall-d1",
+      "database_id": "2b021240-b06e-411b-9e9c-8311c33e6735",
+      "migrations_dir": "src/db/migrations"
+    }
+  ],
+  "r2_buckets": [
+    {
+      "binding": "ASSET_BUCKET",
+      "bucket_name": "cmsads-permatamall-assets"
+    }
+  ],
+  "ai": {
+    "binding": "AI"
+  },
+  "routes": [
+    {
+      "pattern": "permatamall.shop",
+      "custom_domain": true
+    },
+    {
+      "pattern": "www.permatamall.shop",
+      "custom_domain": true
+    }
+  ],
+  "vars": {
+    "PUBLIC_COD_DISABLED_PROVINCES": "papua,papua barat,papua barat daya,papua tengah,papua pegunungan,papua selatan,maluku,maluku utara,nusa tenggara timur,kalimantan utara,sulawesi barat,gorontalo,kepulauan riau,aceh,bengkulu",
+    "PUBLIC_SITE_NAME": "Permata Mall",
+    "PUBLIC_SITE_URL": "https://permatamall.shop",
+    "PUBLIC_EMBED_ALLOWED_ORIGINS": "https://permatamall.shop",
+    "PUBLIC_SITE_DESCRIPTION": "Solusi Belanja Online Praktis & Terpercaya.",
+    "PUBLIC_SITE_LOGO": "/images/logo.webp",
+    "PUBLIC_SITE_TAGLINE": "Pusat Belanja Online Pilihan",
+    "PUBLIC_SITE_THEME_COLOR": "#0F172A",
+    "PUBLIC_SITE_LOCALE": "id-ID",
+    "PUBLIC_STOREFRONT_TEMPLATE": "compact-market",
+    "PUBLIC_ADMIN_NAME": "Permata Mall Ops"
+  }
+}

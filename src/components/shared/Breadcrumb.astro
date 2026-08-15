@@ -1,0 +1,50 @@
+---
+import { cn } from '../../lib/cn';
+import { breadcrumbSectionClass, textVariants } from '../../lib/ui-variants';
+import { tenantConfig } from '../../lib/tenant';
+
+interface BreadcrumbItem {
+  label: string;
+  href?: string;
+}
+
+interface Props {
+  items: BreadcrumbItem[];
+}
+
+const { items } = Astro.props;
+---
+
+<nav aria-label="Breadcrumb" class={breadcrumbSectionClass}>
+  <div
+    class={cn(
+      'mx-auto flex min-w-0 items-center gap-2 overflow-hidden text-[11px]',
+      tenantConfig.storefrontTemplate === 'wide-catalog' ? 'max-w-6xl lg:px-6' : 'max-w-[480px]',
+      textVariants({ tone: 'soft' }),
+    )}
+  >
+    {
+      items.map((item, index) => {
+        const isLast = index === items.length - 1;
+
+        return (
+          <>
+            {index > 0 && <span class="shrink-0 text-[#A0AAA1]">/</span>}
+            {item.href ? (
+              <a href={item.href} class={cn('shrink-0 transition-colors hover:text-[#2E6A33]')}>
+                {item.label}
+              </a>
+            ) : (
+              <span
+                class={cn('min-w-0 max-w-[58%] truncate font-semibold sm:max-w-[65%]', textVariants({ tone: 'brand' }))}
+                aria-current={isLast ? 'page' : undefined}
+              >
+                {item.label}
+              </span>
+            )}
+          </>
+        );
+      })
+    }
+  </div>
+</nav>

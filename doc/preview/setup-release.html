@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Panduan setup lokal, validation, tenant development, migration, dan release CMSAds Engine.">
+  <title>Setup & Release | CMSAds System Guide</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="assets/docs.css">
+</head>
+<body data-page="setup-release.html">
+  <header id="site-header"></header>
+  <main id="konten" class="mx-auto max-w-[1480px] px-4 pb-24 sm:px-6 lg:px-8">
+    <section class="hero-grid py-16 md:py-24">
+      <div><p class="section-kicker mb-5">Developer runbook</p><h1 class="hero-title">Setup lokal sampai release yang aman.</h1><p class="lede mt-7">Semua command memakai lockfile-pinned local toolchain dan canonical tenant wrapper. Remote operation selalu membutuhkan exact tenant dan explicit approval.</p></div>
+      <aside class="surface-card page-toc" aria-label="Daftar isi halaman"><strong class="mb-3 block text-sm">Di halaman ini</strong><a href="#prasyarat">Prasyarat</a><a href="#install">Install</a><a href="#lokal">Run lokal</a><a href="#validasi">Validation</a><a href="#deploy">Deploy</a><a href="#smoke">Smoke test</a><a href="#secrets">Secrets</a><a href="#preview-doc">Preview guide</a></aside>
+    </section>
+
+    <section id="prasyarat" class="section-rule py-16">
+      <div class="mb-9 max-w-3xl"><h2 class="section-title">Prasyarat dan source of truth.</h2><p class="lede mt-4">Mulai dari repository contract. Jangan mulai dari command lama, branch name, atau environment yang ditebak.</p></div>
+      <div class="grid gap-5 lg:grid-cols-[.8fr_1.2fr]">
+        <article class="surface-card tint"><h3 class="text-xl font-extrabold">Runtime minimum</h3><dl class="mt-5 grid grid-cols-[auto_1fr] gap-x-6 gap-y-3 text-sm"><dt class="font-bold">Node</dt><dd class="text-slate-600">22 atau lebih baru</dd><dt class="font-bold">npm</dt><dd class="text-slate-600">10 atau lebih baru</dd><dt class="font-bold">Cloudflare</dt><dd class="text-slate-600">Wrangler local dependency</dd><dt class="font-bold">Root</dt><dd class="text-slate-600">Folder repository hasil clone/worktree aktif</dd></dl></article>
+        <article class="surface-card"><h3 class="text-xl font-extrabold">Urutan baca</h3><ol class="mt-4 grid gap-3 text-sm leading-6 text-slate-600 sm:grid-cols-2"><li><strong>1. AGENTS.md</strong><br>Invariant dan approval gate.</li><li><strong>2. STATUS.md</strong><br>Current evidence dan deployment boundary.</li><li><strong>3. PRD.md</strong><br>Observable requirements.</li><li><strong>4. TASKS.md</strong><br>Traceability dan active backlog.</li><li><strong>5. Integration specs</strong><br>Provider contract dan blockers.</li><li><strong>6. Cloudflare guide</strong><br>Tenant isolation dan delivery.</li></ol></article>
+      </div>
+    </section>
+    <section id="cloudflare-account" class="section-rule py-16">
+      <div class="mb-9 max-w-3xl">
+        <h2 class="section-title">New Cloudflare account preparation.</h2>
+        <p class="lede mt-4">Persiapan sebelum melakukan remote work pada akun Cloudflare baru.</p>
+      </div>
+      <div class="step-list max-w-5xl">
+        <article class="step">
+          <h3>1. Authenticate</h3>
+          <p>Otentikasi Wrangler ke akun Cloudflare yang dituju melalui metode yang disetujui operator.</p>
+        </article>
+        <article class="step">
+          <h3>2. Confirm identity</h3>
+          <p>Gunakan <code>npx wrangler whoami</code> untuk memastikan identitas akun tanpa mencetak token rahasia.</p>
+        </article>
+        <article class="step">
+          <h3>3. Unique resources</h3>
+          <p>Tentukan tenant slug, Worker name, domain, D1 name, KV name, dan R2 bucket name yang unik secara global.</p>
+        </article>
+        <article class="step">
+          <h3>4. Decide ingress</h3>
+          <p>Putuskan penggunaan <code>custom-domain</code> versus <code>service-only</code> sebelum melakukan provisioning.</p>
+        </article>
+        <article class="step">
+          <h3>5. Review registry</h3>
+          <p>Tinjau environment mana yang benar-benar milik akun Cloudflare tersebut. Jangan menggunakan resource ID milik akun lain.</p>
+        </article>
+      </div>
+    </section>
+
+
+    <section id="install" class="section-rule py-16">
+      <div class="mb-9 max-w-3xl"><h2 class="section-title">Install dan Provisioning Toolchain.</h2><p class="lede mt-4">Installer repository menangani provisioning environment secara otomatis. Tidak perlu global Astro, TypeScript, atau Wrangler.</p></div>
+      <pre class="code-block" data-copy><code># Dari repository root
+./scripts/install.sh
+
+# Pastikan registry dapat dibaca
+npm run tenant:list
+npm run tenant:validate</code></pre>
+      <div class="callout mt-6"><strong>Expected CMSAds tenant slug:</strong> hanya <code>petanisejahtera-preview</code>. Production Petani Sejahtera sengaja berada di luar registry CMSAds.</div>
+    </section>
+
+    <section id="lokal" class="section-rule py-16">
+      <div class="mb-9 max-w-3xl"><h2 class="section-title">Siapkan satu tenant lokal.</h2><p class="lede mt-4">Local migration dan dev server wajib menyebut tenant. Resource remote tidak disentuh.</p></div>
+      <div class="step-list max-w-5xl">
+        <article class="step"><h3>Siapkan development variables</h3><p>Buat <code>.dev.vars.&lt;tenant&gt;</code> melalui jalur aman. Jangan print, paste ke chat, commit, atau salin secret tenant lain.</p></article>
+        <article class="step"><h3>Apply local D1 migration</h3><pre class="code-block mt-3" data-copy><code>npm run tenant:migrate:local -- petanisejahtera-preview</code></pre></article>
+        <article class="step"><h3>Jalankan selected tenant</h3><pre class="code-block mt-3" data-copy><code>npm run tenant:dev -- petanisejahtera-preview</code></pre></article>
+        <article class="step"><h3>Exercise affected flow</h3><p>Buka storefront, login lokal, dan route admin yang diubah. Bug fix harus direproduksi sebelum patch dan dicek ulang sesudah patch.</p></article>
+      </div>
+      <div class="mt-6 grid gap-4 md:grid-cols-2"><div class="callout warning"><strong>Bootstrap database baru:</strong> login route <code>/hello</code>, username dan password awal <code>admin</code>, lalu forced replacement wajib diselesaikan.</div><div class="callout"><strong>Live preview:</strong> credential sudah diganti dan tidak didokumentasikan. Jangan membaca secrets untuk membuat authenticated session.</div></div>
+    </section>
+
+    <section id="validasi" class="section-rule py-16">
+      <div class="mb-9 max-w-3xl"><h2 class="section-title">No-side-effect release gate.</h2><p class="lede mt-4">Lima command ini wajib pass sebelum remote approval diminta.</p></div>
+      <pre class="code-block" data-copy><code>npm test
+npm run check
+npm run tenant:validate
+npm run tenant:build -- &lt;tenant&gt;
+npm run tenant:dry-run -- &lt;tenant&gt;</code></pre>
+      <div class="mt-6 data-table-wrap"><table class="data-table"><thead><tr><th>Check</th><th>Membuktikan</th><th>Tidak membuktikan</th></tr></thead><tbody>
+        <tr><td><code>npm test</code></td><td>Observable library dan domain contracts.</td><td>Layout browser atau live provider.</td></tr>
+        <tr><td><code>npm run check</code></td><td>Astro dan TypeScript diagnostics.</td><td>UI interaction end-to-end.</td></tr>
+        <tr><td><code>tenant:validate</code></td><td>Registry, resource uniqueness, vars, ingress mode, dan route contract.</td><td>Remote resource contents atau compatibility frontend.</td></tr>
+        <tr><td><code>tenant:build</code></td><td>Selected CMSAds tenant compiles dengan environment contract.</td><td>Storefront repository build atau D1 migration.</td></tr>
+        <tr><td><code>tenant:dry-run</code></td><td>Flattened config dapat dikemas dan mempertahankan ingress shape.</td><td>Live service binding atau Custom Domain behavior.</td></tr>
+      </tbody></table></div>
+      <div class="callout warning mt-6"><strong>Browser-visible change:</strong> build hijau belum cukup. Jalankan selected tenant dan uji desktop serta mobile dengan browser nyata.</div>
+    </section>
+
+    <section id="deploy" class="section-rule py-16">
+      <div class="mb-9 max-w-3xl"><h2 class="section-title">Deploy exact tenant dan exact layer.</h2><p class="lede mt-4">Storefront deploy, CMSAds deploy, dan remote D1 migration adalah tiga operasi terpisah. Satu approval tidak mengizinkan dua operasi lain.</p></div>
+      <div class="grid gap-6 lg:grid-cols-2">
+        <article class="surface-card"><span class="status gated">CMSADS APPROVAL</span><h3 class="mt-4 text-xl font-extrabold">Publish backend Worker</h3><pre class="code-block mt-4" data-copy><code>CF_DEPLOY_REMOTE=1 \
+npm run tenant:deploy -- &lt;tenant&gt;</code></pre><p class="mt-4 text-sm leading-6 text-slate-600">Wrapper revalidates bindings, ingress mode, route shape, build, dry-run, dan generated config. Service-only deploy tidak memiliki public target.</p></article>
+        <article class="surface-card"><span class="status blocked">SEPARATE APPROVAL</span><h3 class="mt-4 text-xl font-extrabold">Remote D1 migration</h3><pre class="code-block mt-4" data-copy><code>CF_D1_REMOTE=1 \
+npm run tenant:migrate:remote -- &lt;tenant&gt;</code></pre><p class="mt-4 text-sm leading-6 text-slate-600">Deploy approval tidak mengizinkan migration. Migration approval tidak mengizinkan deploy.</p></article>
+      </div>
+      <div class="callout warning mt-6"><strong>Frontend release:</strong> jalankan build, test, dan deploy dari repository storefront tenant. Deploy CMSAds tidak mengirim bundle public tersebut.</div>
+      <div class="callout danger mt-4"><strong>Jangan gunakan:</strong> direct <code>wrangler deploy</code>, unnamed migration, loop semua tenant, atau memindahkan domain untuk memperbaiki backend.</div>
+    </section>
+
+    <section id="smoke" class="section-rule py-16">
+      <div class="mb-9 max-w-3xl"><h2 class="section-title">Verifikasi deployed artifact.</h2><p class="lede mt-4">Catat repository layer, tenant, Worker name, ingress, route atau service binding, Version ID, dan non-actions.</p></div>
+      <div class="step-list max-w-5xl">
+        <article class="step"><h3>Storefront surface</h3><p>Home dan satu known product route mengembalikan UI tenant yang benar pada mobile dan desktop.</p></article>
+        <article class="step"><h3>Gateway route</h3><p>Pada headless tenant, <code>/hello</code> harus mencapai CMSAds dan URL browser tetap memakai origin storefront.</p></article>
+        <article class="step"><h3>Auth boundary</h3><p>Unauthenticated <code>/admin/*</code> masuk ke login. Protected admin API memberi JSON <code>401</code>.</p></article>
+        <article class="step"><h3>Ingress proof</h3><p>Service-only backend melaporkan tidak ada public target. Custom-domain tenant mempertahankan exact hostname yang direview.</p></article>
+        <article class="step"><h3>Affected browser flow</h3><p>Uji viewport relevan, console, failed request, focus, interaction state, horizontal overflow, dan API response yang dipakai frontend.</p></article>
+        <article class="step"><h3>Record evidence</h3><p>Update STATUS, BUILD-LOG, task state, commit, Worker, Version ID, check yang tidak dilakukan, dan unrelated files yang ditinggalkan.</p></article>
+      </div>
+      <div class="callout warning mt-6"><strong>Selection-only QA:</strong> jangan klik provider, payment, pickup, messaging, content publish, atau order mutation tanpa approval side effect yang spesifik.</div>
+    </section>
+
+    <section id="secrets" class="section-rule py-16">
+      <div class="mb-9 max-w-3xl"><h2 class="section-title">Secrets dan configuration boundary.</h2></div>
+      <div class="auto-grid">
+        <article class="surface-card"><strong>Local only</strong><p class="mt-2 text-sm leading-6 text-slate-600"><code>.dev.vars.&lt;tenant&gt;</code> tidak dibaca, dicetak, atau di-commit tanpa explicit need dan approval.</p></article>
+        <article class="surface-card"><strong>Tenant D1</strong><p class="mt-2 text-sm leading-6 text-slate-600">Masked Mengantar dan AutoLaris configuration dapat diganti dari authenticated Profile. Empty key mempertahankan value aktif.</p></article>
+        <article class="surface-card"><strong>Cloudflare secret</strong><p class="mt-2 text-sm leading-6 text-slate-600">Webhook secret tetap server-managed dan tidak tersedia untuk replacement melalui admin browser.</p></article>
+        <article class="surface-card"><strong>Public vars</strong><p class="mt-2 text-sm leading-6 text-slate-600">Nama, logo, canonical origin, locale, template, dan theme boleh berada di typed Worker vars.</p></article>
+      </div>
+    </section>
+
+    <section id="preview-doc" class="section-rule py-16">
+      <div class="grid gap-6 lg:grid-cols-[.8fr_1.2fr] lg:items-center"><div><h2 class="section-title">Menjalankan visual guide ini.</h2><p class="lede mt-4">Serve folder static agar relative navigation, JavaScript, dan Tailwind Play CDN bekerja konsisten.</p></div><pre class="code-block" data-copy><code>cd doc/preview
+python3 -m http.server 4177
+
+# buka
+http://127.0.0.1:4177/</code></pre></div>
+      <div class="callout mt-6"><strong>Scope:</strong> folder ini adalah visual explanation. PRD, STATUS, integration specs, source code, dan command output tetap authoritative.</div>
+    </section>
+  </main>
+  <footer id="site-footer" class="section-rule bg-slate-50"></footer>
+  <script type="module" src="assets/docs.js"></script>
+</body>
+</html>

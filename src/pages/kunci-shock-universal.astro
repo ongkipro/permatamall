@@ -1,0 +1,524 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import RatingStars from '../components/shared/RatingStars.astro';
+import GeoIpResolvedForm from '../components/forms/GeoIpResolvedForm.astro';
+import Icon from '../components/shared/Icon.astro';
+import LpMiniFooter from '../components/shared/LpMiniFooter.astro';
+import MetaLandingTracker from '../components/tracking/MetaLandingTracker.astro';
+import SocialProof from '../components/shared/SocialProof.astro';
+import StickyCTA from '../components/shared/StickyCTA.astro';
+import { getProductBySlug } from '../data/products';
+import { resolveFormModeContext } from '../lib/form-mode';
+import '../styles/form-hybrid.css';
+
+export const prerender = false;
+
+const product = getProductBySlug('kunci-shock-universal');
+if (!product) throw new Error('Product kunci-shock-universal not found');
+const formContext = await resolveFormModeContext(Astro.request);
+
+const canonical = 'https://permatamall.shop/kunci-shock-universal';
+const seoTitle = 'Kepala Kunci Shock Universal Multisize 10-19mm - Chrome Vanadium Steel';
+const seoDescription =
+  'Kepala kunci shock universal multisize 10-19mm material Chrome Vanadium Steel tahan torsi 430 Nm. Otomatis cengkeram baut metrik/inci & aus. Bisa COD.';
+
+const sectionTitle = 'text-[clamp(28px,7.2vw,32px)] font-extrabold leading-[1.12] tracking-tight text-slate-950';
+const body = 'text-[16px] leading-relaxed text-slate-600';
+
+const testimonials = [
+  {
+    name: 'Pak Gunawan',
+    location: 'Bogor, Jawa Barat',
+    avatar: '/images/kunci-shock/testi-pak-gunawan-3x2.webp',
+    photo: '/images/kunci-shock/testi-pak-gunawan-3x2.webp',
+    problem: 'Baut ukuran nanggung sering bikin kerjaan terhambat',
+    comment:
+      'Baut ukuran nanggung yang biasanya bikin bingung cari mata kunci, sekarang <strong class="box-decoration-clone bg-[#FFEACC] px-1.5 pb-0.5 font-semibold text-slate-950">tinggal tempel langsung nyekam kuat</strong>. Dipakai di ratchet 3/8 saya pas banget, tidak perlu bongkar pasang set kunci lagi.',
+    highlight: 'Baut nanggung langsung kecengkram kuat',
+  },
+  {
+    name: 'Mas Rendi',
+    location: 'Surabaya, Jawa Timur',
+    avatar: '/images/kunci-shock/testi-mas-rendi-3x2.webp',
+    photo: '/images/kunci-shock/testi-mas-rendi-3x2.webp',
+    problem: 'Baut motor dol/aus susah dibuka kunci biasa',
+    comment:
+      'Buat servis ringan motor di rumah enak banget. Baut bagian bawah yang <strong class="box-decoration-clone bg-red-100 px-1.5 pb-0.5 font-semibold text-slate-950">kepalanya sudah agak aus dan bersegi 6 tidak rata</strong> masih bisa <strong class="box-decoration-clone bg-[#FFEACC] px-1.5 pb-0.5 font-semibold text-slate-950">dicengkeram rapat oleh pin bajanya</strong> tanpa licin.',
+    highlight: 'Baut aus dan dol tetap bisa dibuka',
+  },
+  {
+    name: 'Pak Slamet',
+    location: 'Purwokerto, Jawa Tengah',
+    avatar: '/images/kunci-shock/testi-pak-slamet-3x2.webp',
+    photo: '/images/kunci-shock/testi-pak-slamet-3x2.webp',
+    problem: 'Kotak perkakas berat dan berantakan penuh mata shock',
+    comment:
+      'Dulu kalau benerin peralatan rumah atau mobil harus bawa koper kunci shock berat. Sekarang <strong class="box-decoration-clone bg-[#FFEACC] px-1.5 pb-0.5 font-semibold text-slate-950">cukup bawa 1 kepala universal ini sama gagang ratchet</strong>. Ringkas, hemat tempat, bahannya berat dan kokoh.',
+    highlight: 'Kotak perkakas jadi jauh lebih ringkas',
+  },
+];
+---
+
+<BaseLayout
+  title={seoTitle}
+  description={seoDescription}
+  image="/images/kunci-shock/produk-hero.webp"
+  canonical={canonical}
+  hideHeader={true}
+  hideFooter={true}
+  breadcrumbs={[
+    { name: 'Beranda', url: '/' },
+    { name: 'Kunci Shock Universal', url: '/kunci-shock-universal' }
+  ]}
+
+  preloadImages={[
+    "/images/kunci-shock/produk-hero.webp",
+    "/images/kunci-shock/fitur-material.webp"
+  ]}>
+  <main class="mx-auto min-h-screen w-full max-w-[480px] bg-white text-slate-950">
+    <MetaLandingTracker slug="kunci-shock-universal" productId={product.productId} contentName={product.contentName} price={product.price} />
+
+    <!-- TOP URGENCY BAR -->
+    <div class="bg-[#FF9900] px-4 py-2 text-center">
+      <p class="flex items-center justify-center gap-1.5 text-[12px] font-extrabold tracking-wide text-white">
+        <Icon name="lucide:zap" class="h-4 w-4 shrink-0" aria-hidden="true" />
+        SAKTI! 1 KEPALA UNTUK BAUT 10 - 19 MM, BAYAR DI TEMPAT (COD)
+      </p>
+    </div>
+
+    <!-- HERO SECTION -->
+    <section class="bg-white pb-8 text-center">
+      <div class="px-5 pt-7">
+        <div class="mx-auto mb-3 inline-flex items-center gap-1.5 rounded-full bg-[#FFF5E5] px-3.5 py-1 text-[11.5px] font-extrabold text-[#EC7211] border border-[#FFEACC]">
+          <Icon name="lucide:wrench" class="h-3.5 w-3.5 text-[#EC7211]" />
+          PIN BAJA SELF-ADJUSTING PRESISI
+        </div>
+        <h1 class="mx-auto max-w-[440px] text-[clamp(32px,8.8vw,36px)] font-extrabold leading-[1.14] tracking-tight text-slate-950">
+          Repot Bongkar Pasang Set Kunci? <span class="hl-brush">1 Kepala Cengkram Semua</span> Baut 10-19mm!
+        </h1>
+        <p class="mx-auto mt-4 max-w-[400px] text-[16px] font-semibold leading-relaxed text-slate-700">
+          Pin baja per otomatis menyesuaikan bentuk mur, baut segi enam, hingga baut aus. <span class="font-bold text-slate-950 underline decoration-[#FF9900]/60 decoration-2 underline-offset-4">Material Chrome Vanadium Steel tahan hingga torsi 430 Nm!</span>
+        </p>
+      </div>
+
+      <div class="mt-7">
+        <!-- UNCROPPED HERO IMAGE -->
+        <div class="relative overflow-hidden bg-slate-950">
+          <img
+            src="/images/kunci-shock/produk-hero.webp"
+            alt="Mekanik Indonesia menggunakan kepala kunci shock universal untuk memutar baut mesin motor"
+            class="w-full h-auto block"
+            loading="eager"
+            fetchpriority="high"
+            decoding="async"
+            width="480"
+            height="360"
+          />
+          <div class="bg-slate-950 px-4 py-3 text-center">
+            <p class="flex items-center justify-center gap-1.5 text-[12.5px] font-bold text-[#FFD699]">
+              <Icon name="lucide:wrench" class="h-4 w-4 shrink-0 text-[#FF9900]" aria-hidden="true" />
+              <span>Otomatis presisi: tempelkan ke baut 10-19mm, pin baja langsung mengunci rapat.</span>
+            </p>
+          </div>
+        </div>
+
+        <div class="mt-4 flex items-center justify-center gap-2 px-4">
+          <RatingStars rating={5} max={5} starClass="h-3.5 w-3.5" />
+          <span class="text-[13px] font-bold text-slate-900">{product.ratingValue}/5</span>
+          <p class="text-[11px] font-medium text-slate-500">dari {(product.soldCount ?? 0).toLocaleString('id-ID')}+ mekanik & teknisi puas</p>
+        </div>
+
+        <div class="mt-5 flex justify-center gap-4 px-4">
+          <span class="inline-flex items-center gap-1.5 text-[12px] font-semibold text-slate-700">
+            <Icon name="lucide:shield" class="h-4 w-4 text-[#232F3E]" aria-hidden="true" />
+            Chrome Vanadium
+          </span>
+          <span class="inline-flex items-center gap-1.5 text-[12px] font-semibold text-slate-700">
+            <Icon name="lucide:gauge" class="h-4 w-4 text-[#232F3E]" aria-hidden="true" />
+            Torsi 430 Nm
+          </span>
+          <span class="inline-flex items-center gap-1.5 text-[12px] font-semibold text-slate-700">
+            <Icon name="lucide:truck" class="h-4 w-4 text-[#232F3E]" aria-hidden="true" />
+            Bisa COD
+          </span>
+        </div>
+
+        <div class="mt-6 border-l-2 border-[#FF9900] px-5 pl-4 text-left">
+          <h2 class="text-[15px] font-bold text-slate-950">Solusi Praktis untuk Semua Pekerjaan</h2>
+          <p class="mt-1 text-[13.5px] leading-relaxed text-slate-600">Dibuat dari material Chrome Vanadium Steel berkualitas tinggi yang terkenal kuat, tahan aus, dan tidak mudah selip. Cocok untuk kebutuhan rumah tangga, bengkel, otomotif, hingga konstruksi.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- FEATURE HIGHLIGHTS -->
+    <section class="border-t border-slate-100 bg-white pt-8 pb-4">
+      <div class="px-5 mb-4">
+        <span class="text-[11px] font-extrabold uppercase tracking-[0.2em] text-[#EC7211] block mb-1">FITUR UNGGULAN</span>
+        <h2 class={sectionTitle}>Keunggulan <span class="hl-brush">Material & Desain</span></h2>
+      </div>
+
+      <div class="space-y-6">
+        <div>
+          <img fetchpriority="low" src="/images/kunci-shock/fitur-material.webp"
+            alt="Fitur material Chrome Vanadium Steel presisi tinggi"
+            class="w-full h-auto block"
+            loading="lazy"
+            decoding="async"
+            width="480"
+            height="360"
+          />
+        </div>
+
+        <div class="mx-5 rounded-md bg-[#FFF5E5] p-4 text-[14.5px] leading-relaxed text-slate-800 space-y-2 border border-[#FFEACC]">
+          <p class="flex items-center gap-2 font-bold text-slate-950">
+            <Icon name="lucide:check-circle-2" class="h-4.5 w-4.5 text-[#EC7211]" />
+            Menyesuaikan ukuran baut 10-19 mm
+          </p>
+          <p class="flex items-center gap-2 font-bold text-slate-950">
+            <Icon name="lucide:check-circle-2" class="h-4.5 w-4.5 text-[#EC7211]" />
+            Cocok untuk baut metrik maupun inci
+          </p>
+          <p class="flex items-center gap-2 font-bold text-slate-950">
+            <Icon name="lucide:check-circle-2" class="h-4.5 w-4.5 text-[#EC7211]" />
+            Kuat menahan beban hingga torsi 430 Nm
+          </p>
+          <p class="flex items-center gap-2 font-bold text-slate-950">
+            <Icon name="lucide:check-circle-2" class="h-4.5 w-4.5 text-[#EC7211]" />
+            Praktis dibawa ke mana saja
+          </p>
+        </div>
+
+        <div>
+          <img fetchpriority="low" src="/images/kunci-shock/fitur-torsi.webp"
+            alt="Daya tahan beban torsi tinggi 430 Nm"
+            class="w-full h-auto block"
+            loading="lazy"
+            decoding="async"
+            width="480"
+            height="360"
+          />
+        </div>
+      </div>
+    </section>
+
+    <!-- PROBLEM SECTION -->
+    <section class="border-t border-slate-100 bg-red-50/40 py-10">
+      <div class="px-5">
+        <span class="text-[11px] font-extrabold uppercase tracking-[0.2em] text-red-600 block mb-1">MASALAH LAPANGAN</span>
+        <h2 class={sectionTitle}>Jangan Sampai Pekerjaan Anda <span class="text-red-600 underline decoration-red-400 decoration-2 underline-offset-4">Terhambat!</span></h2>
+        <p class={`${body} mt-3 mb-6 text-slate-700`}>Sering kali kita harus mencari ukuran soket yang sesuai satu per satu. Jika ukuran yang dibutuhkan tidak ada, pekerjaan jadi terbengkalai:</p>
+      </div>
+
+      <div class="mb-6">
+        <img fetchpriority="low" src="/images/kunci-shock/kompatibilitas-baut.webp"
+          alt="Kompatibilitas berbagai jenis bentuk mur dan baut"
+          class="w-full h-auto block"
+          loading="lazy"
+          decoding="async"
+          width="480"
+          height="360"
+        />
+      </div>
+
+      <div class="px-5 space-y-4">
+        {[
+          ['Mata Kunci Shock Sering Hilang', 'Mata shock ukuran 10mm atau 12mm paling sering nyelip/hilang. Saat mau dipakai, malah sibuk mengaduk koper perkakas.'],
+          ['Baut Aus atau Slek Tidak Bisa Diputar', 'Baut lama yang sudutnya sudah membulat/aus akan licin diputar kunci biasa. Makin dipaksa, sudut baut makin hancur.'],
+          ['Koper Perkakas Terlalu Berat Dibawa', 'Harus membawa koper besi berisi puluhan mata shock berat padahal yang dipakai di lapangan cuma 2-3 ukuran saja.']
+        ].map(([title, desc]) => (
+          <div class="flex items-start gap-3.5 rounded-xl bg-white p-4 border border-red-100">
+            <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-red-100 text-red-600">
+              <Icon name="lucide:x-circle" class="h-4 w-4 text-red-600" aria-hidden="true" />
+            </span>
+            <div>
+              <h3 class="text-[15px] font-bold text-slate-950">{title}</h3>
+              <p class="text-[13.5px] text-slate-600 mt-1 leading-relaxed">{desc}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+    </section>
+
+    <!-- COMPARISON & DURABILITY -->
+    <section class="border-t border-[#EAEDED] bg-white py-10">
+      <div class="px-5 mb-4">
+        <span class="text-[11px] font-extrabold uppercase tracking-[0.2em] text-[#EC7211] block mb-1">MENGAPA MEMILIH KAMI?</span>
+        <h2 class={sectionTitle}>Perbandingan Efisiensi & <span class="hl-brush">Daya Tahan</span></h2>
+        <p class={`${body} mt-3 mb-6`}>Material Chrome Vanadium Steel memberikan daya tahan yang jauh lebih baik dibanding kunci biasa:</p>
+      </div>
+
+      <div class="space-y-6">
+        <div>
+          <img fetchpriority="low" src="/images/kunci-shock/perbandingan-alat.webp"
+            alt="Perbandingan 1 kepala universal menghentikan kebutuhan membawa koper kunci shock berat"
+            class="w-full h-auto block"
+            loading="lazy"
+            decoding="async"
+            width="480"
+            height="360"
+          />
+        </div>
+
+        <div>
+          <img fetchpriority="low" src="/images/kunci-shock/keunggulan-durabilitas.webp"
+            alt="Keunggulan daya tahan dan efisiensi kunci shock universal"
+            class="w-full h-auto block"
+            loading="lazy"
+            decoding="async"
+            width="480"
+            height="360"
+          />
+        </div>
+      </div>
+    </section>
+
+    <!-- MEKANISME PRESISI -->
+    <section class="border-t border-[#EAEDED] bg-slate-950 px-5 py-10 text-white">
+      <span class="text-[11px] font-extrabold uppercase tracking-[0.2em] text-[#FF9900] block mb-1">MEKANISME PRESISI</span>
+      <h2 class="text-[clamp(28px,7.2vw,32px)] font-extrabold leading-[1.12] tracking-tight text-white">Rahasia Pin Baja <span class="text-[#FF9900]">Self-Adjusting</span></h2>
+      <p class="mt-3 text-[15px] leading-relaxed text-slate-300">Di dalam kepala kunci terdapat puluhan batang pin baja independen yang ditopang pegas presisi tinggi:</p>
+
+      <div class="relative ml-2 mt-8 space-y-8 border-l border-slate-800 pl-6">
+        <div class="relative">
+          <span class="absolute -left-[35px] flex h-6 w-6 items-center justify-center rounded-full bg-[#FF9900] text-[11px] font-bold text-slate-950 ring-4 ring-slate-950">1</span>
+          <h3 class="text-[16px] font-bold text-[#FFEACC]">Pin Menyesuaikan Bentuk Baut</h3>
+          <p class="mt-1.5 text-[14px] leading-relaxed text-slate-300">Saat ditekan ke baut, pin yang bersentuhan dengan kepala baut akan terdorong masuk, sementara pin luar tetap menahan dan mengunci sekeliling baut.</p>
+        </div>
+        <div class="relative">
+          <span class="absolute -left-[35px] flex h-6 w-6 items-center justify-center rounded-full bg-[#FF9900] text-[11px] font-bold text-slate-950 ring-4 ring-slate-950">2</span>
+          <h3 class="text-[16px] font-bold text-[#FFEACC]">Cengkraman 360 Derajat Serba Guna</h3>
+          <p class="mt-1.5 text-[14px] leading-relaxed text-slate-300">Batang pin baja mengunci rapat kontur baut hexagon, persegi, gantungan kait (wingnut), hingga baut yang sudah aus/tidak beraturan.</p>
+        </div>
+      </div>
+
+      <div class="mt-8 overflow-hidden rounded-xl border border-slate-800">
+        <img fetchpriority="low" src="/images/kunci-shock/pin-baja-detail.webp"
+          alt="Macro detail pin baja di dalam kepala kunci shock universal yang mencengkram mur baut"
+          class="w-full h-auto block"
+          loading="lazy"
+          decoding="async"
+          width="480"
+          height="360"
+        />
+      </div>
+
+      <div class="mt-6 rounded-xl bg-slate-900 p-4 border border-slate-800">
+        <p class="text-[14px] leading-relaxed text-slate-300"><strong class="text-[#FF9900]">Di sinilah Kunci Shock Universal bekerja:</strong> Tidak peduli berapa milimeter ukuran baut Anda (rentang 10-19mm), kepala kunci langsung mencengkram penuh tanpa slip saat gagang ratchet diputar.</p>
+      </div>
+    </section>
+
+    <!-- VERSATILE APPLICATIONS -->
+    <section class="border-t border-[#EAEDED] py-10">
+      <div class="px-5 mb-4">
+        <span class="text-[11px] font-extrabold uppercase tracking-[0.2em] text-[#EC7211] block mb-1">PENGGUNAAN LUAS</span>
+        <h2 class={sectionTitle}>Solusi Serbaguna untuk <span class="hl-brush">Berbagai Kebutuhan</span></h2>
+        <p class={`${body} mt-3 mb-6`}>Cocok digunakan oleh mekanik profesional, teknisi, tukang bangunan, hingga pengguna rumahan & pecinta DIY:</p>
+      </div>
+
+      <div>
+        <img fetchpriority="low" src="/images/kunci-shock/aplikasi-serbaguna.webp"
+          alt="Penggunaan serbaguna untuk otomotif, perbaikan rumah, dan pertukangan"
+          class="w-full h-auto block"
+          loading="lazy"
+          decoding="async"
+          width="480"
+          height="360"
+        />
+      </div>
+
+      <div class="px-5 mt-8">
+        <div class="border-t-2 border-[#FFEACC] pt-5 space-y-2 text-[14px] leading-relaxed">
+          <h3 class="flex items-center gap-2 text-[15px] font-bold text-slate-950 mb-3">
+            <Icon name="lucide:shield-check" class="h-4.5 w-4.5 text-[#EC7211]" aria-hidden="true" />
+            Spesifikasi Kunci Shock Universal
+          </h3>
+          <p><strong class="font-bold text-slate-950">Kapasitas Baut:</strong> <span class="box-decoration-clone bg-[#FFF5E5] px-1.5 pb-0.5 font-bold text-slate-950">Ukuran 10 mm hingga 19 mm</span></p>
+          <p><strong class="font-bold text-slate-950">Ukuran Drive:</strong> <span class="text-[#545B64]">3/8 Inci (9.5 mm) standar ratchet</span></p>
+          <p><strong class="font-bold text-slate-950">Dimensi Kepala:</strong> <span class="text-[#545B64]">Diameter 24-37 mm, Tinggi 52 mm</span></p>
+          <p><strong class="font-bold text-slate-950">Material:</strong> <span class="text-[#545B64]">Chrome Vanadium Steel kokoh & anti karat</span></p>
+        </div>
+      </div>
+    </section>
+
+    <!-- CARA PAKAI (3 STEP FIGURE) -->
+    <section class="border-t border-[#EAEDED] px-5 py-10">
+      <span class="text-[11px] font-extrabold uppercase tracking-[0.2em] text-slate-500 block mb-1">CARA PAKAI</span>
+      <h2 class={sectionTitle}>3 Langkah Praktis Pemakaian</h2>
+      <p class={`${body} mt-3 mb-6`}>Langsung pakai tanpa setelan rumit, pasang di gagang ratchet Anda:</p>
+      <figure class="overflow-hidden rounded-xl ring-1 ring-slate-200/80">
+        <figcaption class="flex items-center gap-2 bg-[#232F3E] px-4 py-2.5 text-[11px] font-bold uppercase tracking-[0.18em] text-white">
+          <Icon name="lucide:workflow" class="h-4 w-4 shrink-0" aria-hidden="true" />
+          3 Langkah Pakai Kunci Shock Universal
+        </figcaption>
+        <div class="flex items-start justify-between gap-1 bg-gradient-to-b from-[#FFF5E5]/60 to-white px-3 py-6">
+          {[
+            ['lucide:plug', 'Pasang', 'Sambungkan kepala ke gagang ratchet 3/8"'],
+            ['lucide:target', 'Tempel', 'Tekan kepala kunci ke baut target (10-19mm)'],
+            ['lucide:rotate-cw', 'Putar', 'Putar ratchet, baut langsung lepas/kencang']
+          ].map(([icon, title, sub], i, arr) => (
+            <>
+              <div class="flex-1 text-center">
+                <span class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-[#FF9900] text-white font-bold">
+                  <Icon name={icon} class="h-5 w-5" aria-hidden="true" />
+                </span>
+                <h3 class="mt-2.5 text-[13px] font-bold text-slate-950">{title}</h3>
+                <p class="mx-auto mt-0.5 max-w-[110px] text-[11px] leading-tight text-slate-500">{sub}</p>
+              </div>
+              {i < arr.length - 1 && (
+                <Icon name="lucide:chevron-right" class="mt-4 h-5 w-5 shrink-0 text-[#FF9900]" aria-hidden="true" />
+              )}
+            </>
+          ))}
+        </div>
+        <div class="flex items-center justify-center gap-1.5 border-t border-[#FFEACC] bg-[#FFF5E5]/60 px-4 py-2.5 text-center text-[12px] font-semibold text-[#232F3E]">
+          <Icon name="lucide:badge-check" class="h-4 w-4 shrink-0" aria-hidden="true" />
+          Mencengkeram erat segala posisi mur & baut 10-19mm
+        </div>
+      </figure>
+    </section>
+
+    <!-- TESTIMONIALS SECTION -->
+    <section class="border-t border-[#EAEDED] bg-slate-50/80 px-5 py-10">
+      <span class="text-[11px] font-extrabold uppercase tracking-[0.2em] text-[#EC7211] block mb-1">KATA PEMBELI</span>
+      <h2 class={sectionTitle}>Pengalaman Mekanik & <span class="hl-brush">Pengguna Lapangan</span></h2>
+      <p class={`${body} mt-3 mb-8`}>Ini tanggapan mereka setelah memakai Kunci Shock Universal:</p>
+
+      <div class="space-y-6">
+        {testimonials.map((t) => (
+          <div class="rounded-xl bg-white p-5 border border-slate-200/90">
+            <div class="flex items-center gap-3 mb-3">
+              <img
+                src={t.avatar}
+                alt={t.name}
+                class="h-11 w-11 rounded-full object-cover shrink-0 border border-slate-200"
+                width="44"
+                height="44"
+                loading="lazy"
+                decoding="async"
+              />
+              <div>
+                <h3 class="text-[15px] font-bold text-slate-950 flex items-center gap-1">
+                  {t.name}
+                  <Icon name="lucide:badge-check" class="h-4 w-4 text-[#0073BB] shrink-0" />
+                </h3>
+                <p class="text-[12px] text-slate-500">{t.location}</p>
+              </div>
+              <div class="ml-auto flex gap-0.5">
+                <RatingStars rating={5} max={5} starClass="h-3.5 w-3.5" />
+              </div>
+            </div>
+
+            <div class="mb-2 inline-block text-[12px] font-bold text-[#B45309]">
+              Masalah: {t.problem}
+            </div>
+
+            <p class="text-[14px] leading-relaxed text-slate-700 italic border-l-2 border-[#FF9900] pl-3 py-0.5 mb-3" set:html={`"${t.comment}"`}></p>
+
+            <div class="mb-3 flex items-center gap-1.5 text-[12.5px] font-bold text-[#EC7211]">
+              <Icon name="lucide:check-circle-2" class="h-4 w-4 shrink-0" />
+              <span>Hasil: {t.highlight}</span>
+            </div>
+
+            {t.photo && (
+              <div class="overflow-hidden rounded-xl bg-slate-100 border border-slate-200 mt-3">
+                <img
+                  src={t.photo}
+                  alt={`Foto riil pembeli ${t.name}`}
+                  class="w-full aspect-[3/2] object-cover block"
+                  loading="lazy"
+                  decoding="async"
+                  width="600"
+                  height="400"
+                />
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+    </section>
+
+    <!-- HONESTY SECTION -->
+    <section class="border-t border-[#EAEDED] px-5 py-10">
+      <span class="text-[11px] font-extrabold uppercase tracking-[0.2em] text-[#EC7211] block mb-1">JUJUR DARI AWAL</span>
+      <h2 class={sectionTitle}>Informasi Pemakaian Sebelum Membeli</h2>
+      <p class={`${body} mt-3 mb-6 text-slate-700`}>Agar sesuai ekspektasi, perhatikan batas penggunaan alat ini:</p>
+
+      <div class="space-y-3 text-[15px] leading-relaxed">
+        <p class="flex items-start gap-2.5">
+          <Icon name="lucide:check-circle-2" class="mt-1 h-4 w-4 shrink-0 text-[#EC7211]" aria-hidden="true" />
+          <span class="text-slate-700">Sangat cocok untuk <strong class="font-bold text-slate-950">mur dan baut standar 10mm sampai 19mm</strong> (Hex, Square, Wingnut, Baut Aus).</span>
+        </p>
+        <p class="flex items-start gap-2.5">
+          <Icon name="lucide:check-circle-2" class="mt-1 h-4 w-4 shrink-0 text-[#EC7211]" aria-hidden="true" />
+          <span class="text-slate-700">Cocok untuk <strong class="font-bold text-slate-950">gagang ratchet drive 3/8 inci</strong> (ukuran paling umum).</span>
+        </p>
+        <p class="mt-4 flex items-start gap-2.5 border-l-2 border-red-500 pl-3 py-1 bg-red-50/50 rounded-r-md">
+          <Icon name="lucide:alert-triangle" class="mt-0.5 h-4 w-4 shrink-0 text-red-600" aria-hidden="true" />
+          <span class="text-slate-700">Tidak disarankan untuk <strong class="font-bold text-red-700">buka baut roda mobil yang diputar impact wrench bertenaga angin ekstrem (pneumatic heavy duty)</strong>. Gunakan untuk pemakaian ratchet / engkol manual.</span>
+        </p>
+      </div>
+    </section>
+
+    <!-- GUARANTEE / COD -->
+    <section class="border-t border-[#EAEDED] bg-slate-900 px-5 py-10 text-center text-white">
+      <div class="mx-auto mb-4 flex h-14 w-14 items-center justify-center text-[#FF9900]">
+        <Icon name="lucide:shield-check" class="h-12 w-12" aria-hidden="true" />
+      </div>
+      <span class="mb-1 block text-[11px] font-extrabold uppercase tracking-[0.2em] text-[#FF9900]">BELANJA TANPA WAS-WAS</span>
+      <h2 class="text-[clamp(28px,7.2vw,32px)] font-extrabold leading-[1.12] text-white">BAYAR SETELAH BARANG SAMPAI</h2>
+      <p class="mx-auto mt-3 max-w-[340px] text-[15px] leading-relaxed text-slate-300">Pesan Kunci Shock Universal hari ini dengan sistem COD: Anda baru bayar ke kurir saat paket sudah di tangan.</p>
+
+      <div class="mx-auto mt-8 max-w-[360px] space-y-5 text-left">
+        {[
+          ['lucide:truck', 'COD ke Seluruh Indonesia', 'Bayar tunai di tempat saat paket tiba. Tidak perlu transfer di muka.'],
+          ['lucide:package-check', 'Paket Sesuai Foto', 'Barang yang sampai persis seperti foto asli di atas, dikirim rapi dan aman.'],
+          ['lucide:message-circle', 'Admin Siap Ditanya', 'Ragu soal pemakaian atau pengiriman? Chat admin via WhatsApp sebelum maupun sesudah pesan.']
+        ].map(([icon, title, desc]) => (
+          <div class="flex items-start gap-4">
+            <span class="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded bg-slate-800 text-[#FF9900]"><Icon name={icon} class="h-4.5 w-4.5" aria-hidden="true" /></span>
+            <div>
+              <h3 class="text-[15.5px] font-bold text-white">{title}</h3>
+              <p class="mt-0.5 text-[14px] leading-relaxed text-slate-300">{desc}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+    </section>
+
+    <!-- CHECKOUT SECTION -->
+    <section id="checkout" class="border-t-8 border-[#EAEDED] bg-white py-12">
+      <div class="px-5 pb-8 text-center">
+        <div class="mx-auto mb-3 inline-flex items-center gap-1.5 rounded-full bg-[#FFF5E5] px-3.5 py-1 text-[12px] font-extrabold text-[#EC7211] border border-[#FFEACC]">
+          <span class="relative flex h-2 w-2">
+            <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#FF9900] opacity-75"></span>
+            <span class="relative inline-flex h-2 w-2 rounded-full bg-[#EC7211]"></span>
+          </span>
+          KUALITAS TERJAMIN - SIAP KIRIM COD
+        </div>
+        <h2 class="mx-auto max-w-[340px] text-[clamp(28px,7.2vw,32px)] font-extrabold leading-[1.12] tracking-tight text-slate-950">
+          Isi Alamat Pengiriman, <span class="hl-brush">Bayar Saat Sampai</span>
+        </h2>
+        <p class="mx-auto mt-3 max-w-[320px] text-[15px] leading-relaxed text-slate-600">
+          Form menyesuaikan wilayah Anda. Paket dikirim rapi, Anda bayar tunai ke kurir saat barang tiba di rumah.
+        </p>
+      </div>
+      <GeoIpResolvedForm mode={formContext.mode} productSlug="kunci-shock-universal" embedded={true} />
+    </section>
+
+    <LpMiniFooter />
+    <StickyCTA productSlug="kunci-shock-universal" />
+    <SocialProof productSlug="kunci-shock-universal" />
+  </main>
+</BaseLayout>
+
+<style>
+  .hl-brush {
+    -webkit-box-decoration-break: clone;
+    box-decoration-break: clone;
+    padding-bottom: 0.14em;
+    background-image: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20320%2024'%20preserveAspectRatio='none'%3E%3Cpath%20d='M3%2013C55%206%20120%2016%20182%2011S292%208%20317%2012L315%2020C252%2015%20150%2023%2072%2019S13%2021%205%2020C2%2017%202%2016%203%2013Z'%20fill='%23FF9900'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: center 100%;
+    background-size: 100% 0.32em;
+  }
+</style>

@@ -1,0 +1,24 @@
+---
+import { cn } from '../../lib/cn';
+import { buttonVariants, textVariants } from '../../lib/ui-variants';
+import Icon from './Icon.astro';
+
+interface Props {
+  href: string;
+  label: string;
+  variant?: 'primary' | 'secondary';
+  class?: string;
+}
+
+const { href, label, variant = 'primary', class: className } = Astro.props;
+const isPrimary = variant === 'primary';
+---
+
+<a href={href} class={cn(buttonVariants({ variant, size: 'compact' }), className)}>
+  <span>{label}</span>
+  <Icon
+    name="lucide:chevron-right"
+    class={cn('h-3.5 w-3.5 flex-shrink-0', isPrimary ? 'text-white' : textVariants({ tone: 'brand' }))}
+    aria-hidden="true"
+  />
+</a>

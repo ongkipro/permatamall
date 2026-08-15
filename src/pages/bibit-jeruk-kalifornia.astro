@@ -1,0 +1,444 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import RatingStars from '../components/shared/RatingStars.astro';
+import GeoIpResolvedForm from '../components/forms/GeoIpResolvedForm.astro';
+import Icon from '../components/shared/Icon.astro';
+import LpMiniFooter from '../components/shared/LpMiniFooter.astro';
+import MetaLandingTracker from '../components/tracking/MetaLandingTracker.astro';
+import SocialProof from '../components/shared/SocialProof.astro';
+import StickyCTA from '../components/shared/StickyCTA.astro';
+import { getProductBySlug } from '../data/products';
+import { resolveFormModeContext } from '../lib/form-mode';
+import '../styles/form-hybrid.css';
+
+export const prerender = false;
+
+const product = getProductBySlug('bibit-jeruk-kalifornia');
+if (!product) throw new Error('Product bibit-jeruk-kalifornia not found');
+const formContext = await resolveFormModeContext(Astro.request);
+
+const canonical = 'https://pesantren.shop/bibit-jeruk-kalifornia';
+const seoTitle = 'Bibit Jeruk Lemon California Unggul: Cepat Berbuah Berair Melimpah';
+const seoDescription =
+  'Bibit Jeruk Lemon California okulasi super cepat berbuah. Cocok untuk tabulampot pot teras & kebun. Kaya Vitamin C, jus segar & garansi COD.';
+
+const sectionTitle = 'text-[clamp(28px,7.2vw,32px)] font-extrabold leading-[1.12] tracking-tight text-slate-950';
+const body = 'text-[16px] leading-relaxed text-slate-600';
+
+const testimonials = [
+  {
+    name: 'Pak Bambang Setyo',
+    location: 'Magelang, Jawa Tengah',
+    avatar: '/images/petani/petani-01.webp',
+    problem: 'Tanam bibit biji 3 tahun tidak kunjung berbuah',
+    comment:
+      'Dulu beli bibit pasar 3 tahun cuma tumbuh daun. Pas ganti <strong class="box-decoration-clone bg-red-100 px-1.5 pb-0.5 font-semibold text-slate-950">bibit okulasi Lemon California ini</strong>, ditaruh di pot teras 3 bulan <strong class="box-decoration-clone bg-[#FFEACC] px-1.5 pb-0.5 font-semibold text-slate-950">langsung keluar calon buah lemon rimbun</strong>! Cepat banget berbuahnya.',
+    highlight: '3 bulan di pot langsung keluar calon buah lemon',
+  },
+  {
+    name: 'Bu Dewi Rahayu',
+    location: 'Sleman, Yogyakarta',
+    avatar: '/images/petani/petani-dewi.webp',
+    problem: 'Ragu beli bibit online takut mati di jalan',
+    comment:
+      'Awalnya ragu pesan bibit lewat online, takut batang patah atau layu. Ternyata <strong class="box-decoration-clone bg-red-100 px-1.5 pb-0.5 font-semibold text-slate-950">packing kayu & media tanamnya rapat</strong>. Pas dibuka <strong class="box-decoration-clone bg-[#FFEACC] px-1.5 pb-0.5 font-semibold text-slate-950">daun masih segar hijau segar</strong>, sekarang buah lemonnya banyak airnya untuk infused water harian.',
+    highlight: 'Packing aman, bibit sampai rumah tetap segar',
+  },
+  {
+    name: 'Pak Haryanto',
+    location: 'Kediri, Jawa Timur',
+    avatar: '/images/petani/petani-03.webp',
+    problem: 'Lahan rumah sempit tidak ada tanah luas',
+    comment:
+      'Halaman rumah saya semen semua. Ternyata jeruk Lemon California ini <strong class="box-decoration-clone bg-red-100 px-1.5 pb-0.5 font-semibold text-slate-950">cocok banget untuk tabulampot</strong> (pot drum). Pohonnya pendek semeter tapi <strong class="box-decoration-clone bg-[#FFEACC] px-1.5 pb-0.5 font-semibold text-slate-950">buah lemonnya dompolan lebat sampai melengkung</strong>.',
+    highlight: 'Sangat ideal untuk tabulampot pot rumah',
+  },
+];
+---
+
+<BaseLayout
+  title={seoTitle}
+  description={seoDescription}
+  image={product.heroImage}
+  canonical={canonical}
+  hideHeader={true}
+  hideFooter={true}
+  breadcrumbs={[
+    { name: 'Beranda', url: '/' },
+    { name: 'Bibit Jeruk Lemon California', url: '/bibit-jeruk-kalifornia' }
+  ]}
+
+  preloadImages={[
+    "/images/produk/bibit-jeruk-kalifornia-showcase1.webp",
+    "/images/produk/bibit-jeruk-kalifornia-showcase2.webp"
+  ]}>
+  <main class="mx-auto min-h-screen w-full max-w-[480px] bg-white text-slate-950">
+    <MetaLandingTracker slug="bibit-jeruk-kalifornia" productId={product.productId} contentName={product.contentName} price={product.price} />
+
+    <!-- 1. URGENCY TOP BAR -->
+    <div class="bg-[#FF9900] px-4 py-2.5 text-center">
+      <p class="flex items-center justify-center gap-1.5 text-[12px] font-extrabold uppercase tracking-wide text-white">
+        <Icon name="lucide:zap" class="h-4 w-4 shrink-0 text-white" aria-hidden="true" />
+        BIBIT LEMON OKULASI UNGGUL: GARANSI SEGAR SAMPAI RUMAH & COD!
+      </p>
+    </div>
+
+    <!-- 2. HERO SECTION -->
+    <section class="bg-white pb-8 text-center">
+      <div class="px-5 pt-7">
+        <div class="mx-auto mb-3 inline-flex items-center gap-1.5 rounded-full bg-[#FFF5E5] px-3.5 py-1 text-[11.5px] font-extrabold text-[#EC7211] border border-[#FFEACC]">
+          <Icon name="lucide:sprout" class="h-3.5 w-3.5 text-[#EC7211]" />
+          OKULASI BATI POKOK UNGGUL
+        </div>
+        <h1 class="mx-auto max-w-[440px] text-[clamp(32px,8.8vw,36px)] font-extrabold leading-[1.14] tracking-tight text-slate-950">
+          Panen Lemon Segar Kaya Vitamin C <span class="hl-brush">Langsung Di Pot Rumah!</span>
+        </h1>
+        <p class="mx-auto mt-4 max-w-[400px] text-[16px] font-semibold leading-relaxed text-slate-700">
+          Bibit Jeruk Lemon California okulasi unggul. <strong class="font-bold text-slate-950">Pohon pendek cepat berbuah lebat</strong> & <span class="font-bold text-slate-950 underline decoration-[#FF9900]/60 decoration-2 underline-offset-4">berair melimpah untuk jus & infused water harian!</span>
+        </p>
+      </div>
+
+      <div class="mt-7">
+        <div class="relative w-full overflow-hidden bg-slate-950 shadow-2xl ring-1 ring-slate-800">
+          <div class="aspect-[9/16] w-full overflow-hidden">
+            <img
+              src={product.heroImage}
+              alt="Bibit Jeruk Lemon California Okulasi Real Tree Photo"
+              class="h-full w-full object-cover"
+              loading="eager"
+              fetchpriority="high"
+              decoding="async"
+              width="576"
+              height="1024"
+            />
+          </div>
+          <div class="bg-slate-950/95 border-t border-slate-800/80 px-4 py-3 text-center backdrop-blur-sm">
+            <p class="flex items-center justify-center gap-1.5 text-[12.5px] font-bold text-[#FFD699]">
+              <Icon name="lucide:citrus" class="h-4 w-4 text-[#FF9900] shrink-0" aria-hidden="true" />
+              <span>FOTO REAL BIBIT JERUK LEMON CALIFORNIA OKULASI UNGGUL: SIAP BERBUAH</span>
+            </p>
+          </div>
+        </div>
+
+        <div class="mt-4 flex items-center justify-center gap-3 px-4">
+          <div class="flex -space-x-2">
+            {testimonials.map((t) => (
+              <img src={t.avatar} alt={t.name} class="h-8 w-8 rounded-full border-2 border-white object-cover" width="32" height="32" loading="eager" decoding="async" />
+            ))}
+          </div>
+          <div class="text-left">
+            <div class="flex items-center gap-0.5">
+            <RatingStars rating={5} max={5} starClass="h-3.5 w-3.5" />
+            <span class="ml-1 text-[13px] font-bold text-slate-900">4.9/5</span>
+            </div>
+            <p class="text-[11px] font-medium text-slate-500">dari 1.650+ pekebun terpuaskan</p>
+          </div>
+        </div>
+
+        <div class="mt-5 flex justify-center gap-4 px-4">
+          <span class="inline-flex items-center gap-1.5 text-[12px] font-semibold text-slate-700">
+            <Icon name="lucide:sprout" class="h-4 w-4 text-[#232F3E]" aria-hidden="true" />
+            Okulasi Unggul
+          </span>
+          <span class="inline-flex items-center gap-1.5 text-[12px] font-semibold text-slate-700">
+            <Icon name="lucide:shield-check" class="h-4 w-4 text-[#232F3E]" aria-hidden="true" />
+            Garansi Segar
+          </span>
+          <span class="inline-flex items-center gap-1.5 text-[12px] font-semibold text-slate-700">
+            <Icon name="lucide:truck" class="h-4 w-4 text-[#232F3E]" aria-hidden="true" />
+            Bisa COD
+          </span>
+        </div>
+
+        <div class="mt-6 border-l-2 border-[#FF9900] px-5 pl-4 text-left">
+          <h2 class="text-[15px] font-bold text-slate-950">Beli lemon segar di supermarket terus-menerus makin mahal.</h2>
+          <p class="mt-1 text-[13.5px] leading-relaxed text-slate-600">Dengan menanam 1-2 pot bibit jeruk Lemon California di rumah, Anda bisa petik sendiri lemon segar kaya Vitamin C sekeluarga kapan saja.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3. PAIN CHECKLIST (Sering Mengalami Ini?) -->
+    <section class="border-t border-slate-100 bg-red-50/40 px-5 py-10">
+      <span class="mb-2 block text-[11px] font-medium uppercase tracking-[0.2em] text-red-600">Kapok Beli Bibit Sembarangan?</span>
+      <h2 class={sectionTitle}>Masalah Beli Bibit Lemon <span class="hl-brush">Biasa di Pasaran</span></h2>
+      <p class={`${body} mt-3 mb-6`}>Banyak penggemar tanaman kecewa karena salah memilih bibit generik asal-asalan:</p>
+      <div class="space-y-4">
+        {[
+          ['Tahun-Tahun Ditunggu Tak Berbuah', 'Bibit dari biji (generatif) butuh waktu 3-5 tahun lebih baru belajar berbuah, seringkali malah cuma tumbuh rimbun daun.'],
+          ['Kadar Air Sedikit & Buah Kering', 'Varietas tidak jelas membuat hasil panen berdaging tipis, airnya sedikit, dan tidak segar saat diperas.'],
+          ['Bibit Mati Layu Saat Pengiriman', 'Beli online dari toko tidak berpengalaman membuat media tanam kering dan bibit mati patah di perjalanan.']
+        ].map(([title, desc]) => (
+          <div class="flex items-start gap-3.5">
+            <span class="mt-1 flex h-5 w-5 shrink-0 items-center justify-center text-red-600"><Icon name="lucide:x-circle" class="h-5 w-5" aria-hidden="true" /></span>
+            <div>
+              <h3 class="text-[16px] font-bold text-slate-900">{title}</h3>
+              <p class="mt-0.5 text-[15px] leading-relaxed text-slate-600">{desc}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div class="mt-8 -mx-5 w-[calc(100%+2.5rem)] overflow-hidden bg-slate-950 shadow-2xl ring-1 ring-slate-800">
+        <div class="aspect-[9/16] w-full overflow-hidden">
+          <img fetchpriority="low" src="/images/produk/bibit-jeruk-kalifornia-showcase1.webp"
+            alt="Bibit Jeruk Lemon California Ditanam di Pot Rumah"
+            class="h-full w-full object-cover"
+            loading="lazy"
+            decoding="async"
+            width="576"
+            height="1024"
+          />
+        </div>
+        <div class="bg-slate-950/95 border-t border-slate-800/80 px-4 py-2.5 text-center backdrop-blur-sm">
+          <span class="inline-flex items-center gap-1.5 text-[11.5px] font-bold text-[#FFD699]">
+            <Icon name="lucide:sprout" class="h-3.5 w-3.5 text-[#FF9900]" />
+            PENANAMAN LEMON DI POT TERAS RUMAH
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <!-- 4. EDUKASI GELAP (Mekanisme Okulasi) -->
+    <section class="border-t border-slate-100 bg-slate-950 px-5 py-10 text-white">
+      <span class="mb-2 block text-[11px] font-medium uppercase tracking-[0.2em] text-[#FFD699]">Mekanisme Okulasi Unggul</span>
+      <h2 class="text-[clamp(28px,7.2vw,32px)] font-extrabold leading-[1.12] tracking-tight text-white">Kenapa Bibit Okulasi Kami <span class="text-[#FFD699]">Berbuah 5x Lebih Cepat?</span></h2>
+      <p class="mt-3 text-[16px] leading-relaxed text-slate-400">Teknologi okulasi menempelkan mata tunas dari indukan jeruk Lemon California yang sudah terbukti rajin berbuah ke batang bawah yang berakar kuat:</p>
+
+      <div class="relative ml-2 mt-8 space-y-8 border-l border-slate-800 pl-6">
+        <div class="relative">
+          <span class="absolute -left-[35px] flex h-6 w-6 items-center justify-center rounded-full bg-[#FF9900] text-[11px] font-bold text-white ring-4 ring-slate-950">1</span>
+          <h3 class="text-[16px] font-semibold text-[#FFD699]">Genetik Indukan Super Genjah</h3>
+          <p class="mt-1.5 text-[15px] leading-relaxed text-slate-400">Mata tunas diambil dari induk Lemon California pilihan berumur matang yang produktif berbuah lebat berair melimpah sepanjang tahun.</p>
+        </div>
+        <div class="relative">
+          <span class="absolute -left-[35px] flex h-6 w-6 items-center justify-center rounded-full bg-[#FF9900] text-[11px] font-bold text-white ring-4 ring-slate-950">2</span>
+          <h3 class="text-[16px] font-semibold text-[#FFD699]">Akar Batang Bawah Tahan Penyakit</h3>
+          <p class="mt-1.5 text-[15px] leading-relaxed text-slate-400">Batang bawah dipilih dari varietas lokal berakar tunggang kuat yang tahan jamur akar dan penyakit tanah.</p>
+        </div>
+      </div>
+
+      <div class="mt-8 -mx-5 w-[calc(100%+2.5rem)] overflow-hidden bg-slate-900 shadow-2xl ring-1 ring-slate-800">
+        <div class="aspect-[9/16] w-full overflow-hidden">
+          <img fetchpriority="low" src="/images/produk/bibit-jeruk-kalifornia-showcase2.webp"
+            alt="Hasil panen Jeruk Lemon California lebat di pot rumah"
+            class="h-full w-full object-cover"
+            loading="lazy"
+            decoding="async"
+            width="576"
+            height="1024"
+          />
+        </div>
+        <div class="bg-slate-950/95 border-t border-slate-800/80 px-4 py-2.5 text-center backdrop-blur-sm">
+          <span class="inline-flex items-center gap-1.5 text-[11.5px] font-bold text-[#FFD699]">
+            <Icon name="lucide:citrus" class="h-3.5 w-3.5 text-[#FF9900]" />
+            HASIL PANEN LEMON LEBAT DI POT RUMAH
+          </span>
+        </div>
+      </div>
+
+      <div class="mt-6 rounded-md bg-slate-900 p-4">
+        <p class="text-[14px] leading-relaxed text-slate-300"><strong class="text-[#FFD699]">Hasilnya:</strong> Tanaman berukuran pendek (1 meter) sudah sanggup menopang puluhan dompolan buah lemon segar berair melimpah!</p>
+      </div>
+    </section>
+
+    <!-- 5. FOTO ASLI PRODUK & SPESIFIKASI -->
+    <section class="border-t border-slate-100 px-5 py-10">
+      <span class="mb-2 block text-[11px] font-medium uppercase tracking-[0.2em] text-[#232F3E]">Foto Asli & Kualitas Buah</span>
+      <h2 class={sectionTitle}>Bulir Lemon Segar <span class="hl-brush">Kaya Vitamin C</span></h2>
+      <p class={`${body} mt-3 mb-6`}>Bisa ditanam langsung di pekarangan tanah maupun di pot rumah (tabulampot):</p>
+
+      <div class="-mx-5 w-[calc(100%+2.5rem)] overflow-hidden bg-slate-950 shadow-2xl ring-1 ring-slate-800">
+        <div class="aspect-[9/16] w-full overflow-hidden">
+          <img fetchpriority="low" src="/images/produk/bibit-jeruk-kalifornia-showcase3.webp"
+            alt="Irisan Jeruk Lemon California manis segar berair melimpah"
+            class="h-full w-full object-cover"
+            loading="lazy"
+            decoding="async"
+            width="576"
+            height="1024"
+          />
+        </div>
+        <div class="bg-slate-950/95 border-t border-slate-800/80 px-4 py-3 text-center backdrop-blur-sm">
+          <div class="flex flex-wrap justify-center gap-2 text-[11.5px] font-bold text-white">
+            <span class="inline-flex items-center gap-1 rounded-md bg-slate-800/80 px-2.5 py-1 text-[#FFD699]"><Icon name="lucide:check" class="h-3 w-3 text-[#FF9900]" /> Okulasi Unggul</span>
+            <span class="inline-flex items-center gap-1 rounded-md bg-slate-800/80 px-2.5 py-1 text-[#FFD699]"><Icon name="lucide:check" class="h-3 w-3 text-[#FF9900]" /> Cepat Berbuah</span>
+            <span class="inline-flex items-center gap-1 rounded-md bg-slate-800/80 px-2.5 py-1 text-[#FFD699]"><Icon name="lucide:check" class="h-3 w-3 text-[#FF9900]" /> Garansi Segar</span>
+          </div>
+        </div>
+      </div>
+      <p class="mt-2.5 text-center text-[12.5px] font-semibold text-slate-600">Bulir lemon padat dengan kadar air tinggi kaya Vitamin C penumpas dahaga & penyegar harian.</p>
+
+      <div class="mt-8 border-t-2 border-[#FFEACC] pt-5">
+        <h3 class="flex items-center gap-2 text-[15px] font-bold text-slate-950">
+          <Icon name="lucide:shield-check" class="h-4.5 w-4.5 text-[#EC7211]" aria-hidden="true" />
+          Spesifikasi Bibit Jeruk Lemon California
+        </h3>
+        <div class="mt-3 space-y-2.5 text-[14px] leading-relaxed">
+          <p><strong class="font-semibold text-slate-900">Metode perbanyakan:</strong> <span class="text-slate-600">Okulasi / Sambung Pucuk Unggul</span></p>
+          <p><strong class="font-semibold text-slate-900">Tinggi bibit dikirim:</strong> <span class="text-slate-600">40 - 60 cm (akar sudah siap tanam)</span></p>
+          <p><strong class="font-semibold text-slate-900">Estimasi berbuah:</strong> <span class="box-decoration-clone bg-[#FFF5E5] px-1.5 pb-0.5 font-semibold text-slate-900">4 - 8 bulan setelah tanam</span></p>
+          <p><strong class="font-semibold text-slate-900">Kebutuhan sinar matahari:</strong> <span class="text-slate-600">Penuh sepanjang hari (full sun)</span></p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 6. CARA TANAM (3 Langkah) -->
+    <section class="border-t border-slate-100 px-5 py-10">
+      <span class="mb-2 block text-[11px] font-medium uppercase tracking-[0.2em] text-[#232F3E]">Panduan Praktis</span>
+      <h2 class={sectionTitle}>3 Langkah Mudah Menanam Jeruk</h2>
+      <p class={`${body} mt-3 mb-6`}>Tanpa perawatan rumit, siapapun bisa memanen jeruk sendiri di rumah:</p>
+
+      <figure class="overflow-hidden rounded-md ring-1 ring-slate-200">
+        <figcaption class="flex items-center gap-2 bg-[#232F3E] px-4 py-2.5 text-[11px] font-bold uppercase tracking-[0.18em] text-white">
+          <Icon name="lucide:workflow" class="h-4 w-4 shrink-0" aria-hidden="true" />
+          3 Langkah Penanaman di Pot
+        </figcaption>
+        <div class="flex items-start justify-between gap-1 bg-gradient-to-b from-[#FFF5E5]/60 to-white px-3 py-6">
+          {[
+            ['lucide:package-open', 'Buka Polybag', 'Lepas plastik polybag pelan agar akar tidak rusak'],
+            ['lucide:flower-2', 'Tanam Pot', 'Masukkan ke pot ukuran min 40cm dengan media subur'],
+            ['lucide:droplets', 'Siram Rutin', 'Siram 1x sehari & tempatkan di lokasi terkena sinar matahari']
+          ].map(([icon, title, sub], i, arr) => (
+            <>
+              <div class="flex-1 text-center">
+                <span class="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-[#FF9900] text-white">
+                  <Icon name={icon} class="h-6 w-6" aria-hidden="true" />
+                </span>
+                <h3 class="mt-2.5 text-[13px] font-bold text-slate-900">{title}</h3>
+                <p class="mx-auto mt-0.5 max-w-[110px] text-[11px] leading-tight text-slate-500">{sub}</p>
+              </div>
+              {i < arr.length - 1 && (
+                <Icon name="lucide:chevron-right" class="mt-4 h-5 w-5 shrink-0 text-[#FFD699]" aria-hidden="true" />
+              )}
+            </>
+          ))}
+        </div>
+      </figure>
+    </section>
+
+    <!-- 7. TESTIMONIALS -->
+    <section class="border-t border-slate-100 bg-[#FFF5E5]/40 px-5 py-10">
+      <span class="mb-2 block text-[11px] font-medium uppercase tracking-[0.2em] text-[#232F3E]">Bukti Pembeli</span>
+      <h2 class={sectionTitle}>Pengalaman Menanam <span class="hl-brush">Jeruk Kalifornia</span></h2>
+      <p class={`${body} mt-3 mb-8`}>Kisah nyata pembeli yang sudah memanen jeruk di rumah:</p>
+
+      <div class="space-y-9">
+        {testimonials.map((t, index, arr) => (
+          <div>
+            <div class="flex items-center gap-3">
+              <img
+                src={t.avatar}
+                alt={`Foto ${t.name}, pekerbun jeruk`}
+                class="h-11 w-11 shrink-0 rounded-full object-cover"
+                width="44"
+                height="44"
+                loading="lazy"
+                decoding="async"
+              />
+              <div class="min-w-0">
+                <h3 class="flex items-center gap-1 text-[15px] font-bold text-slate-900">
+                  {t.name}
+                  <Icon name="lucide:badge-check" class="h-4 w-4 shrink-0 text-[#0073BB]" aria-hidden="true" />
+                </h3>
+                <p class="text-[11.5px] text-slate-500">{t.location}</p>
+              </div>
+              <div class="ml-auto flex gap-0.5">
+                <RatingStars rating={5} max={5} starClass="h-3.5 w-3.5" />
+              </div>
+            </div>
+            <p class="mt-1.5 text-[12px] font-semibold text-[#B45309]">Masalah: {t.problem}</p>
+            <p class="mt-3 border-l-2 border-[#FF9900]/40 pl-3 text-[15px] italic leading-relaxed text-slate-700" set:html={`"${t.comment}"`} />
+            <p class="mt-2.5 flex items-center gap-1.5 text-[13px] font-bold text-slate-900">
+              <Icon name="lucide:check-circle-2" class="h-4 w-4 shrink-0 text-[#EC7211]" aria-hidden="true" />
+              {t.highlight}
+            </p>
+            {index < arr.length - 1 && <div class="mt-8 h-px bg-gradient-to-r from-transparent via-slate-200 to-transparent" />}
+          </div>
+        ))}
+      </div>
+    </section>
+
+    <!-- 8. JUJUR DARI AWAL -->
+    <section class="border-t border-slate-100 px-5 py-10">
+      <span class="mb-2 block text-[11px] font-medium uppercase tracking-[0.2em] text-[#232F3E]">Jujur Dari Awal</span>
+      <h2 class={sectionTitle}>Syarat Supaya Pohon Berbuah Lebat</h2>
+      <p class={`${body} mt-3 mb-6`}>Agar tidak salah paham dalam perawatan bibit jeruk Kalifornia:</p>
+
+      <div class="space-y-2.5 text-[15px] leading-relaxed">
+        <p class="flex items-start gap-2.5">
+          <Icon name="lucide:check-circle-2" class="mt-1 h-4 w-4 shrink-0 text-[#EC7211]" aria-hidden="true" />
+          <span class="text-slate-700">Wajib ditempatkan di area <strong class="font-semibold text-slate-900">terkena sinar matahari minimal 6 jam sehari</strong> agar pembungaan maksimal.</span>
+        </p>
+        <p class="flex items-start gap-2.5">
+          <Icon name="lucide:check-circle-2" class="mt-1 h-4 w-4 shrink-0 text-[#EC7211]" aria-hidden="true" />
+          <span class="text-slate-700">Gunakan pot berdiameter <strong class="font-semibold text-slate-900">minimal 40 cm</strong> jika ingin ditanam sebagai tabulampot pot rumah.</span>
+        </p>
+        <p class="mt-4 flex items-start gap-2.5 border-l-2 border-[#FF9900] pl-3">
+          <Icon name="lucide:info" class="mt-1 h-4 w-4 shrink-0 text-[#EC7211]" aria-hidden="true" />
+          <span class="text-slate-700">Jika bibit layu akibat perjalanan ekspedisi, <strong class="font-semibold text-slate-900">siram dan teduhkan 3-5 hari</strong>. Bibit okulasi kami bergaransi hidup & akan kembali segar.</span>
+        </p>
+      </div>
+    </section>
+
+    <!-- 9. BELANJA TANPA WAS-WAS / GARANSI COD -->
+    <section class="border-t border-slate-100 bg-[#F2F3F3] px-5 py-10 text-center">
+      <div class="mx-auto mb-4 flex h-14 w-14 items-center justify-center text-[#232F3E]">
+        <Icon name="lucide:shield-check" class="h-12 w-12" aria-hidden="true" />
+      </div>
+      <h2 class="mb-2 text-[11px] font-medium uppercase tracking-[0.2em] text-[#232F3E]">Belanja Tanpa Risiko</h2>
+      <h3 class="text-[clamp(28px,7.2vw,32px)] font-extrabold leading-[1.12] tracking-tight text-slate-950">BAYAR SETELAH BARANG SAMPAI</h3>
+      <p class="mx-auto mt-4 max-w-[340px] text-[16px] leading-relaxed text-slate-600">Pesan bibit jeruk Kalifornia hari ini secara COD: Anda baru bayar ke kurir saat bibit sudah tiba di rumah.</p>
+
+      <div class="mx-auto mt-8 max-w-[360px] space-y-6 text-left">
+        {[
+          ['lucide:truck', 'COD ke Seluruh Indonesia', 'Bayar tunai di tempat saat bibit tiba. Tanpa perlu transfer di muka.'],
+          ['lucide:package-check', 'Garansi Bibit Segar Sampai Tujuan', 'Bibit dipacking rapi dengan media tanam lembab basah. Jika mati di jalan, kami ganti baru gratis!'],
+          ['lucide:message-circle', 'Admin Pendampingan Tanam', 'Bisa berkonsultasi cara penanaman dan pemupukan kapan saja lewat WhatsApp admin.']
+        ].map(([icon, title, desc]) => (
+          <div class="flex items-start gap-4">
+            <span class="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded bg-white text-[#232F3E]"><Icon name={icon} class="h-4.5 w-4.5" aria-hidden="true" /></span>
+            <div>
+              <h4 class="text-[16px] font-bold text-slate-900">{title}</h4>
+              <p class="mt-1 text-[15px] leading-relaxed text-slate-500">{desc}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+    </section>
+
+    <!-- 10. CHECKOUT FORM -->
+    <section id="checkout" class="border-t-8 border-slate-100 bg-white py-12">
+      <div class="px-5 pb-8 text-center">
+        <p class="mx-auto mb-3 inline-flex items-center gap-1.5 text-[12px] font-bold uppercase tracking-[0.14em] text-[#EC7211]">
+          <Icon name="lucide:zap" class="h-4 w-4 shrink-0" aria-hidden="true" />
+          Promo Bibit Jeruk Kalifornia COD
+        </p>
+        <h2 class="mx-auto max-w-[340px] text-[clamp(28px,7.2vw,32px)] font-extrabold leading-[1.12] tracking-tight text-slate-950">
+          Isi Alamat Pengiriman, <span class="hl-brush">Bayar Saat Sampai</span>
+        </h2>
+        <p class="mx-auto mt-4 max-w-[320px] text-[15px] leading-relaxed text-slate-600">
+          Form otomatis menyesuaikan lokasi Anda. Bibit dikirim aman dan rapi, bayar tunai ke kurir saat barang tiba.
+        </p>
+      </div>
+      <GeoIpResolvedForm mode={formContext.mode} productSlug="bibit-jeruk-kalifornia" embedded={true} />
+    </section>
+
+    <LpMiniFooter />
+    <StickyCTA productSlug="bibit-jeruk-kalifornia" />
+    <SocialProof productSlug="bibit-jeruk-kalifornia" />
+  </main>
+</BaseLayout>
+
+<style>
+  .hl-brush {
+    -webkit-box-decoration-break: clone;
+    box-decoration-break: clone;
+    padding-bottom: 0.14em;
+    background-image: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20320%2024'%20preserveAspectRatio='none'%3E%3Cpath%20d='M3%2013C55%206%20120%2016%20182%2011S292%208%20317%2012L315%2020C252%2015%20150%2023%2072%2019S13%2021%205%2020C2%2017%202%2016%203%2013Z'%20fill='%23FF9900'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: center 100%;
+    background-size: 100% 0.32em;
+  }
+</style>
+
+

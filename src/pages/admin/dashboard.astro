@@ -1,0 +1,23 @@
+---
+import AdminLayout from '../../layouts/AdminLayout.astro';
+import { AnalyticsDashboard } from '../../components/admin/AnalyticsDashboard';
+
+export const prerender = false;
+---
+
+<AdminLayout title="Dashboard" activeMenu="dashboard">
+  <div class="space-y-4 md:space-y-5">
+    <header class="flex flex-col gap-3 border-b border-slate-200/80 pb-4 sm:flex-row sm:items-end sm:justify-between sm:pb-5">
+      <div>
+        <p class="text-[10px] font-bold uppercase tracking-[0.16em] text-slate-500">Commerce overview</p>
+        <h2 class="mt-1 text-2xl font-extrabold tracking-[-0.035em] text-slate-950 md:mt-1.5 md:text-3xl">Pusat kendali bisnis</h2>
+        <p class="mt-1 max-w-2xl text-sm leading-5 text-slate-500 md:leading-6">Pantau omset, order, pembayaran, dan risiko pengiriman dalam satu workspace.</p>
+      </div>
+      <div class="grid grid-cols-2 gap-2 sm:flex">
+        <a href="/admin/orders" class="inline-flex min-h-11 items-center justify-center rounded-xl border border-slate-200 bg-white px-4 text-xs font-bold text-slate-700 shadow-sm transition hover:bg-slate-50">Kelola order</a>
+        <a href="/admin/shipping" class="inline-flex min-h-11 items-center justify-center rounded-xl bg-slate-950 px-4 text-xs font-bold text-white shadow-sm transition hover:bg-slate-800">Buka pengiriman</a>
+      </div>
+    </header>
+    <AnalyticsDashboard client:only="react" />
+  </div>
+</AdminLayout>

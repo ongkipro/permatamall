@@ -1,0 +1,195 @@
+---
+import '../styles/global.css';
+import {
+  getAdminCredential,
+  isDefaultAdminCredential,
+  normalizeAdminUsername,
+  verifyAdminLoginPassword,
+} from '../lib/admin-credentials';
+import { secureEqual, signJwt } from '../lib/auth';
+import { getEnvValue, getRuntimeEnv } from '../lib/env';
+import { tenantConfig } from '../lib/tenant';
+
+export const prerender = false;
+
+let errorMessage = '';
+let submittedUsername = '';
+let focusPassword = false;
+
+// The middleware's cross-site guard only covers /api/admin/*, and this form
+// posts to itself — so the login POST needs its own origin check. Without it a
+// third-party page can silently log an admin into an attacker's session.
+const loginOrigin = Astro.request.headers.get('origin');
+const loginFetchSite = Astro.request.headers.get('sec-fetch-site');
+const crossSiteLogin =
+  (loginOrigin !== null && loginOrigin !== Astro.url.origin) ||
+  loginFetchSite === 'cross-site';
+
+if (Astro.request.method === 'POST' && crossSiteLogin) {
+  Astro.response.status = 403;
+  errorMessage = 'Permintaan login ditolak karena berasal dari domain lain.';
+} else if (Astro.request.method === 'POST') {
+  const env = getRuntimeEnv(Astro.locals);
+  const sessions = env?.SESSION as KVNamespace | undefined;
+  const database = env?.OMS_DB as D1Database | undefined;
+  const authSecret = getEnvValue('AUTH_SECRET', env);
+  const clientIp = Astro.request.headers.get('cf-connecting-ip')?.trim() || 'local';
+  const attemptKey = `admin-login-attempts:${clientIp}`;
+
+  try {
+    if (!sessions || !database || authSecret.length < 32) {
+      Astro.response.status = 503;
+      errorMessage = 'Login admin belum dikonfigurasi di server.';
+    } else {
+      const data = await Astro.request.formData();
+      const username = normalizeAdminUsername(data.get('username'));
+      submittedUsername = username;
+      const password = String(data.get('password') || '').slice(0, 1024);
+      const bootstrapAdminPassword = getEnvValue('BOOTSTRAP_ADMIN_PASSWORD', env);
+      const credential = await getAdminCredential(database, username);
+      if (!credential) {
+        Astro.response.status = 401;
+        errorMessage = 'Username atau password salah.';
+      } else {
+        const attempts = Number(await sessions.get(attemptKey)) || 0;
+        if (attempts >= 5) {
+          Astro.response.status = 429;
+          errorMessage = 'Terlalu banyak percobaan. Coba kembali dalam 15 menit.';
+        } else {
+          if (isDefaultAdminCredential(credential) && bootstrapAdminPassword.trim().length < 16) {
+            Astro.response.status = 503;
+            errorMessage = 'Bootstrap admin password belum dikonfigurasi di server.';
+          } else {
+            const [usernameMatches, passwordMatches] = await Promise.all([
+              secureEqual(username, credential.username),
+              verifyAdminLoginPassword(password, credential, bootstrapAdminPassword),
+            ]);
+
+            if (usernameMatches && passwordMatches) {
+              const { token, session } = await signJwt({ username: credential.username, role: credential.role }, authSecret);
+              await Promise.all([
+                sessions.put(
+                  `admin-session:${session.jti}`,
+                  JSON.stringify({
+                    username: session.username,
+                    role: session.role,
+                    must_change_password: credential.mustChangePassword,
+                    credential_updated_at: credential.updatedAt,
+                  }),
+                  { expirationTtl: 60 * 60 * 24 },
+                ),
+                sessions.delete(attemptKey),
+              ]);
+              Astro.cookies.set('cmsads_session', token, {
+                path: '/',
+                httpOnly: true,
+                secure: import.meta.env.PROD,
+                sameSite: 'lax',
+                maxAge: 60 * 60 * 24,
+              });
+              return Astro.redirect(credential.mustChangePassword ? '/admin/profile' : '/admin/dashboard');
+            }
+
+            await sessions.put(attemptKey, String(attempts + 1), { expirationTtl: 15 * 60 });
+            focusPassword = true;
+            errorMessage = 'Username atau password salah.';
+          }
+
+        }
+      }
+    }
+  } catch (error) {
+    console.error('admin-login', error);
+    Astro.response.status = 500;
+    errorMessage = 'Terjadi kesalahan sistem login.';
+  }
+}
+---
+
+<!DOCTYPE html>
+<html lang={tenantConfig.locale}>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="robots" content="noindex, nofollow" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content={`Login ADScms - ${tenantConfig.adminName}`} />
+    <meta property="og:image" content="/og-admin.webp" />
+    <meta property="twitter:card" content="summary_large_image" />
+    <meta property="twitter:image" content="/og-admin.webp" />
+    <title>Login ADScms - {tenantConfig.adminName}</title>
+    <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon.png" />
+    <link rel="icon" type="image/svg+xml" href="/images/logo.svg" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  </head>
+  <body class="admin-login-page text-slate-900 antialiased">
+    <main class="admin-login-stage">
+    <div class="admin-login-card w-full max-w-sm rounded-2xl border border-white/70 bg-white/95 text-slate-950 shadow-2xl backdrop-blur-md">
+      <!-- Header -->
+      <div class="admin-login-header flex flex-col items-center px-6 pt-7 pb-3 text-center">
+        <img src="/images/logo.webp" alt="ADScms Logo" width="180" height="188" class="mx-auto mb-3 h-36 w-auto max-w-[220px] object-contain drop-shadow-md" />
+      </div>
+
+      <div class="p-6 pt-0">
+        {errorMessage && (
+          <div id="loginError" class="mb-4 rounded-xl bg-rose-50 p-3 text-center text-xs font-semibold text-rose-700" role="alert" aria-live="assertive">
+            {errorMessage}
+          </div>
+        )}
+
+        <form id="loginForm" method="POST" class="space-y-4" aria-busy="false" aria-describedby={errorMessage ? 'loginError' : undefined}>
+          <div class="space-y-2">
+            <label for="username" class="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">Username Admin</label>
+            <input id="username" type="text" name="username" required autocomplete="username" autofocus={!focusPassword} value={submittedUsername} class="admin-input-flat" />
+          </div>
+
+          <div class="space-y-2">
+            <label for="password" class="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">Password</label>
+            <div class="relative">
+              <input id="password" type="password" name="password" required autocomplete="current-password" autofocus={focusPassword} class="admin-input-flat pr-20" />
+              <button id="togglePassword" type="button" class="absolute right-0 top-0 h-full px-3 py-2 text-xs font-medium text-slate-500 hover:text-slate-900 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-slate-300" aria-controls="password" aria-label="Tampilkan password" aria-pressed="false">Lihat</button>
+            </div>
+          </div>
+          <button id="loginSubmit" type="submit" class="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-slate-300 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-slate-900 text-slate-50 hover:bg-slate-900/90 h-10 px-4 py-2 w-full">
+            Masuk Dashboard
+          </button>
+        <p id="loginStatus" class="sr-only" role="status" aria-live="polite" aria-atomic="true"></p>
+        </form>
+      </div>
+      <script>
+        const form = document.getElementById('loginForm') as HTMLFormElement | null;
+        const submit = document.getElementById('loginSubmit') as HTMLButtonElement | null;
+        const password = document.getElementById('password') as HTMLInputElement | null;
+        const toggle = document.getElementById('togglePassword') as HTMLButtonElement | null;
+        const status = document.getElementById('loginStatus');
+        let pending = false;
+
+        form?.addEventListener('submit', (event) => {
+          if (pending) {
+            event.preventDefault();
+            return;
+          }
+          if (!form.checkValidity() || !submit) return;
+          pending = true;
+          form.setAttribute('aria-busy', 'true');
+          submit.disabled = true;
+          submit.textContent = 'Memverifikasi…';
+          if (status) status.textContent = 'Memverifikasi kredensial admin.';
+        });
+
+        toggle?.addEventListener('click', () => {
+          if (!password) return;
+          const visible = password.type === 'text';
+          password.type = visible ? 'password' : 'text';
+          toggle.textContent = visible ? 'Lihat' : 'Sembunyikan';
+          toggle.setAttribute('aria-label', visible ? 'Tampilkan password' : 'Sembunyikan password');
+          toggle.setAttribute('aria-pressed', String(!visible));
+        });
+      </script>
+    </div>
+    </main>
+  </body>
+</html>

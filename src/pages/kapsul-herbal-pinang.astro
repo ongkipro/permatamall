@@ -1,0 +1,430 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import RatingStars from '../components/shared/RatingStars.astro';
+import GeoIpResolvedForm from '../components/forms/GeoIpResolvedForm.astro';
+import Icon from '../components/shared/Icon.astro';
+import LpMiniFooter from '../components/shared/LpMiniFooter.astro';
+import MetaLandingTracker from '../components/tracking/MetaLandingTracker.astro';
+import SocialProof from '../components/shared/SocialProof.astro';
+import StickyCTA from '../components/shared/StickyCTA.astro';
+import { getProductBySlug } from '../data/products';
+import { resolveFormModeContext } from '../lib/form-mode';
+import '../styles/form-hybrid.css';
+
+export const prerender = false;
+
+const product = getProductBySlug('kapsul-herbal-pinang');
+if (!product) throw new Error('Product kapsul-herbal-pinang not found');
+const formContext = await resolveFormModeContext(Astro.request);
+
+const canonical = 'https://permatamall.shop/kapsul-herbal-pinang';
+const seoTitle = 'Kapsul Herbal Pinang Stamina Pria - 100% Alami & Fit Bertenaga';
+const seoDescription =
+  'Kapsul Herbal Pinang racikan alami stamina pria dewasa. Tingkatkan daya tahan tubuh, stamina bugar, & tidak gampang capek. Bisa COD.';
+
+const sectionTitle = 'text-[clamp(28px,7.2vw,32px)] font-extrabold leading-[1.12] tracking-tight text-slate-950';
+const body = 'text-[16px] leading-relaxed text-slate-600';
+
+const testimonials = [
+  {
+    name: 'Pak Hery Subagyo',
+    location: 'Tangerang, Banten',
+    avatar: '/images/petani/petani-01.webp',
+    problem: 'Badan cepat loyo dan lelah berlebihan saat kerja lembur',
+    comment:
+      'Dulu sepulang kerja <strong class="box-decoration-clone bg-red-100 px-1.5 pb-0.5 font-semibold text-slate-950">badan gampang ngedrop dan lemas banget</strong>. Sejak rutin konsumsi kapsul pinang ini, <strong class="box-decoration-clone bg-[#FFEACC] px-1.5 pb-0.5 font-semibold text-slate-950">stamina bugar terjaga seharian walau kerja lembur</strong>. Mantap luar biasa!',
+    highlight: 'Stamina terjaga seharian',
+  },
+  {
+    name: 'Mas Rian Kurnia',
+    location: 'Bandung, Jawa Barat',
+    avatar: '/images/petani/petani-03.webp',
+    problem: 'Ribet olah buah pinang sendiri yang rasanya membakar tenggorokan',
+    comment:
+      'Mau khasiat pinang tapi <strong class="box-decoration-clone bg-red-100 px-1.5 pb-0.5 font-semibold text-slate-950">malas parut dan rebus sendiri yang rasanya kelat</strong>. Kapsul ini praktis banget, <strong class="box-decoration-clone bg-[#FFEACC] px-1.5 pb-0.5 font-semibold text-slate-950">tiap bangun pagi tubuh terasa fit dan bertenaga</strong>.',
+    highlight: 'Tubuh segar tiap pagi',
+  },
+  {
+    name: 'Pak Sugiarto',
+    location: 'Semarang, Jawa Tengah',
+    avatar: '/images/petani/petani-08.webp',
+    problem: 'Napas gampang terengah-engah dan stamina berkurang',
+    comment:
+      'Usia kepala empat terasa <strong class="box-decoration-clone bg-red-100 px-1.5 pb-0.5 font-semibold text-slate-950">stamina cepat kendor kalau aktivitas berat</strong>. Minum kapsul pinang ini rutin, <strong class="box-decoration-clone bg-[#FFEACC] px-1.5 pb-0.5 font-semibold text-slate-950">badan terasa tegap bertenaga lagi seperti muda</strong>.',
+    highlight: 'Stamina tegap bertenaga',
+  },
+];
+---
+
+<BaseLayout
+  title={seoTitle}
+  description={seoDescription}
+  image={product.heroImage}
+  canonical={canonical}
+  hideHeader={true}
+  hideFooter={true}
+  breadcrumbs={[
+    { name: 'Beranda', url: '/' },
+    { name: 'Kapsul Herbal Pinang', url: '/kapsul-herbal-pinang' }
+  ]}
+
+  preloadImages={[
+    "/images/produk/kapsul-herbal-pinang-showcase1.webp",
+    "/images/produk/kapsul-herbal-pinang-hero.webp"
+  ]}>
+  <main class="mx-auto min-h-screen w-full max-w-[480px] bg-white text-slate-950">
+    <MetaLandingTracker slug="kapsul-herbal-pinang" productId={product.productId} contentName={product.contentName} price={product.price} />
+
+    <!-- 1. URGENCY TOP BAR -->
+    <div class="bg-[#FF9900] px-4 py-2.5 text-center">
+      <p class="flex items-center justify-center gap-1.5 text-[12px] font-extrabold uppercase tracking-wide text-white">
+        <Icon name="lucide:zap" class="h-4 w-4 shrink-0 text-white" aria-hidden="true" />
+        PROMO STAMINA PRIA: BELI 1 BOTOL 99RB | BELI 2 BOTOL 199RB (FREE ONGKIR & COD)
+      </p>
+    </div>
+
+    <!-- 2. HERO SECTION -->
+    <section class="bg-white pb-8 text-center">
+      <div class="px-5 pt-7">
+        <div class="mx-auto mb-3 inline-flex items-center gap-1.5 rounded-full bg-[#FFF5E5] px-3.5 py-1 text-[11.5px] font-extrabold text-[#EC7211] border border-[#FFEACC]">
+          <Icon name="lucide:sparkles" class="h-3.5 w-3.5 text-[#EC7211]" aria-hidden="true" />
+          EKSTRAK PINANG ALAMI 100% HERBALJAYA
+        </div>
+        <h1 class="mx-auto max-w-[440px] text-[clamp(32px,8.8vw,36px)] font-extrabold leading-[1.14] tracking-tight text-slate-950">
+          Stamina Pria Melejit Brutal! <span class="hl-brush">Bertenaga Super Seharian!</span>
+        </h1>
+        <p class="mx-auto mt-4 max-w-[400px] text-[16px] font-semibold leading-relaxed text-slate-700">
+          Formulasi murni ekstrak buah pinang tua HerbalJaya. <strong class="font-bold text-slate-950">Mendobrak stamina loyo, tingkatkan vitalitas pria, & bikin bertenaga ekstra seharian</strong>. <span class="font-bold text-slate-950 underline decoration-[#FF9900]/60 decoration-2 underline-offset-4">Tanpa bahan kimia obat (BKO), 100% aman & garansi COD!</span>
+        </p>
+      </div>
+
+      <div class="mt-7">
+        <div class="relative overflow-hidden bg-gradient-to-b from-slate-900 to-slate-950 rounded-xl shadow-2xl ring-1 ring-slate-900 mx-3 flex justify-center py-5">
+          <img
+            src={product.heroImage}
+            alt="Kapsul Herbal Buah Pinang Real Product Bottle"
+            class="max-h-[420px] w-auto object-contain rounded-lg shadow-xl"
+            loading="eager"
+            fetchpriority="high"
+            decoding="async"
+            width="856"
+            height="1354"
+          />
+          <div class="absolute bottom-0 left-0 right-0 bg-slate-950/85 px-4 py-2.5 text-center backdrop-blur-sm">
+            <p class="flex items-center justify-center gap-1.5 text-[12px] font-bold text-[#FFD699]">
+              <Icon name="lucide:shield-check" class="h-4 w-4 text-[#FF9900] shrink-0" aria-hidden="true" />
+              <span>FOTO ASLI BOTOL KAPSUL HERBAL BUAH PINANG: 100% ORIGINAL</span>
+            </p>
+          </div>
+        </div>
+
+        <div class="mt-4 flex items-center justify-center gap-3 px-4">
+          <div class="flex -space-x-2">
+            {testimonials.map((t) => (
+              <img src={t.avatar} alt={t.name} class="h-8 w-8 rounded-full border-2 border-white object-cover" width="32" height="32" loading="eager" decoding="async" />
+            ))}
+          </div>
+          <div class="text-left">
+            <div class="flex items-center gap-0.5">
+            <RatingStars rating={5} max={5} starClass="h-3.5 w-3.5" />
+            <span class="ml-1 text-[13px] font-bold text-slate-900">4.9/5</span>
+            </div>
+            <p class="text-[11px] font-medium text-slate-500">dari 1.650+ pria bugar terpuaskan</p>
+          </div>
+        </div>
+
+        <div class="mt-5 flex justify-center gap-4 px-4">
+          <span class="inline-flex items-center gap-1.5 text-[12px] font-semibold text-slate-700">
+            <Icon name="lucide:zap" class="h-4 w-4 text-[#232F3E]" aria-hidden="true" />
+            Vitalitas Pria
+          </span>
+          <span class="inline-flex items-center gap-1.5 text-[12px] font-semibold text-slate-700">
+            <Icon name="lucide:sparkles" class="h-4 w-4 text-[#232F3E]" aria-hidden="true" />
+            100% Alami
+          </span>
+          <span class="inline-flex items-center gap-1.5 text-[12px] font-semibold text-slate-700">
+            <Icon name="lucide:truck" class="h-4 w-4 text-[#232F3E]" aria-hidden="true" />
+            Bisa COD
+          </span>
+        </div>
+
+        <div class="mt-6 border-l-2 border-[#FF9900] px-5 pl-4 text-left">
+          <h2 class="text-[15px] font-bold text-slate-950">Khasiat buah pinang murni tanpa repot mengolah.</h2>
+          <p class="mt-1 text-[13.5px] leading-relaxed text-slate-600">Ekstrak pinang tua pilihan diolah higienis untuk mendobrak daya tahan dan kebugaran pria dewasa.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3. PAIN CHECKLIST SECTION -->
+    <section class="border-t border-slate-100 bg-red-50/40 px-5 py-10">
+      <span class="mb-2 block text-[11px] font-medium uppercase tracking-[0.2em] text-red-600">Sering Mengalami Ini?</span>
+      <h2 class={sectionTitle}>Masalah Vitalitas Pria <span class="hl-brush">Dianggap Sepele</span></h2>
+      <p class={`${body} mt-3 mb-6`}>Banyak pria membiarkan tubuhnya cepat lelah dan kehilangan stamina produktif harian:</p>
+      <div class="space-y-4">
+        {[
+          ['Badan Cepat Loyo & Gampang Capek', 'Baru kerja sebentar otot rasanya letih, stamina gampang ngedrop, dan gampang lemas saat siang hari.'],
+          ['Fisik Kurang Fit Pas Malam Hari', 'Daya tahan tubuh menurun sehingga terasa lesu dan tidak bertenaga saat tiba di rumah.'],
+          ['Ribet Olah Buah Pinang Sendiri', 'Ingin khasiat buah pinang tapi malas parut atau rebus karena rasa kelatnya membakar tenggorokan.']
+        ].map(([title, desc]) => (
+          <div class="flex items-start gap-3.5">
+            <span class="mt-1 flex h-5 w-5 shrink-0 items-center justify-center text-red-600"><Icon name="lucide:x-circle" class="h-5 w-5" aria-hidden="true" /></span>
+            <div>
+              <h3 class="text-[16px] font-bold text-slate-900">{title}</h3>
+              <p class="mt-0.5 text-[15px] leading-relaxed text-slate-600">{desc}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+    </section>
+
+    <!-- 4. EDUKASI GELAP (Mekanisme Pinang) -->
+    <section class="border-t border-slate-100 bg-slate-950 px-5 py-10 text-white">
+      <span class="mb-2 block text-[11px] font-medium uppercase tracking-[0.2em] text-[#FFD699]">Mekanisme Ekstrak Pinang</span>
+      <h2 class="text-[clamp(28px,7.2vw,32px)] font-extrabold leading-[1.12] tracking-tight text-white">Kenapa Kapsul Pinang Bekerja <span class="text-[#FFD699]">Cepat Mendobrak Stamina?</span></h2>
+      <p class="mt-3 text-[16px] leading-relaxed text-slate-400">Buah pinang (Areca catechu) mengandung alkaloid alami arekolin dan guvakolin yang telah digunakan turun-temurun untuk stamina fisik:</p>
+
+      <div class="relative ml-2 mt-8 space-y-8 border-l border-slate-800 pl-6">
+        <div class="relative">
+          <span class="absolute -left-[35px] flex h-6 w-6 items-center justify-center rounded-full bg-[#FF9900] text-[11px] font-bold text-white ring-4 ring-slate-950">1</span>
+          <h3 class="text-[16px] font-semibold text-[#FFD699]">Stimulasi Sirkulasi Darah & Otot</h3>
+          <p class="mt-1.5 text-[15px] leading-relaxed text-slate-400">Alkaloid pinang melancarkan sirkulasi oksigen ke jaringan otot sehingga tubuh tidak gampang merasa lemas dan letih.</p>
+        </div>
+        <div class="relative">
+          <span class="absolute -left-[35px] flex h-6 w-6 items-center justify-center rounded-full bg-[#FF9900] text-[11px] font-bold text-white ring-4 ring-slate-950">2</span>
+          <h3 class="text-[16px] font-semibold text-[#FFD699]">Peningkat Daya Tahan Fisik Harian</h3>
+          <p class="mt-1.5 text-[15px] leading-relaxed text-slate-400">Senyawa bioaktif membantu menjaga ketahanan fisik agar bertenaga ekstra walau beraktivitas padat seharian.</p>
+        </div>
+      </div>
+
+      <div class="mt-8 overflow-hidden rounded-md bg-slate-900">
+        <img fetchpriority="low" src="/images/produk/kapsul-herbal-pinang-showcase1.webp"
+          alt="Ekstrak Kapsul Herbal Pinang Murni"
+          class="aspect-[4/3] w-full object-cover"
+          loading="lazy"
+          decoding="async"
+          width="1200"
+          height="896"
+        />
+      </div>
+
+      <div class="mt-6 rounded-md bg-slate-900 p-4">
+        <p class="text-[14px] leading-relaxed text-slate-300"><strong class="text-[#FFD699]">Hasilnya:</strong> Otot terasa tegap bertenaga, fisik tidak gampang letih, dan vitalitas bugar terjaga sepanjang hari!</p>
+      </div>
+    </section>
+
+    <!-- 5. FOTO ASLI PRODUK & SPESIFIKASI -->
+    <section class="border-t border-slate-100 px-5 py-10">
+      <span class="mb-2 block text-[11px] font-medium uppercase tracking-[0.2em] text-[#232F3E]">Foto Asli Produk</span>
+      <h2 class={sectionTitle}>Lihat Bentuk Fisik & <span class="hl-brush">Kemasan Segel</span></h2>
+      <p class={`${body} mt-3 mb-6`}>Kapsul ekstrak buah pinang pilihan dikemas dalam botol tersegel higienis:</p>
+
+      <div class="overflow-hidden rounded-2xl bg-gradient-to-b from-slate-900 via-slate-950 to-slate-900 p-6 shadow-2xl ring-1 ring-slate-800 flex flex-col items-center">
+        <span class="mb-3 inline-flex items-center gap-1.5 rounded-full bg-[#FF9900]/20 px-3 py-1 text-[11px] font-bold text-[#FFD699] ring-1 ring-[#FF9900]/40">
+          <Icon name="lucide:shield-check" class="h-3.5 w-3.5 text-[#FF9900]" />
+          FOTO REAL STOK 100% HERBALJAYA ASLI
+        </span>
+        <img fetchpriority="low" src="/images/produk/kapsul-herbal-pinang-hero.webp"
+          alt="Botol Kemasan Asli Kapsul Herbal Buah Pinang"
+          class="max-h-[440px] w-auto object-contain rounded-xl shadow-2xl drop-shadow-[0_20px_20px_rgba(0,0,0,0.8)]"
+          loading="lazy"
+          decoding="async"
+          width="856"
+          height="1354"
+        />
+        <div class="mt-4 flex flex-wrap justify-center gap-2 text-[11.5px] font-bold text-white">
+          <span class="inline-flex items-center gap-1 rounded-md bg-slate-800/80 px-2.5 py-1"><Icon name="lucide:check" class="h-3 w-3 text-[#FF9900]" /> Jamu Indonesia</span>
+          <span class="inline-flex items-center gap-1 rounded-md bg-slate-800/80 px-2.5 py-1"><Icon name="lucide:check" class="h-3 w-3 text-[#FF9900]" /> Halal Terdaftar</span>
+          <span class="inline-flex items-center gap-1 rounded-md bg-slate-800/80 px-2.5 py-1"><Icon name="lucide:check" class="h-3 w-3 text-[#FF9900]" /> Segel Rapat</span>
+        </div>
+      </div>
+      <p class="mt-2.5 text-center text-[12.5px] font-semibold text-slate-600">Botol segel higienis 100% HerbalJaya asli. Bebas pengawet, terdaftar Jamu & Halal.</p>
+
+      <div class="mt-8 border-t-2 border-[#FFEACC] pt-5">
+        <h3 class="flex items-center gap-2 text-[15px] font-bold text-slate-950">
+          <Icon name="lucide:shield-check" class="h-4.5 w-4.5 text-[#EC7211]" aria-hidden="true" />
+          Spesifikasi Kapsul Herbal Pinang
+        </h3>
+        <div class="mt-3 space-y-2.5 text-[14px] leading-relaxed">
+          <p><strong class="font-semibold text-slate-900">Bahan utama:</strong> <span class="text-slate-600">100% Ekstrak Buah Pinang Tua Pilihan (Areca catechu)</span></p>
+          <p><strong class="font-semibold text-slate-900">Isi kemasan:</strong> <span class="box-decoration-clone bg-[#FFF5E5] px-1.5 pb-0.5 font-semibold text-slate-900">Botol segel isi 50 kapsul stamina</span></p>
+          <p><strong class="font-semibold text-slate-900">Kualitas:</strong> <span class="text-slate-600">Bebas Bahan Kimia Obat (BKO), aman dikonsumsi harian</span></p>
+          <p><strong class="font-semibold text-slate-900">Harga Promo:</strong> <span class="text-slate-600">1 Botol 99rb, 2 Botol 199rb (Gratis Ongkir & COD)</span></p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 6. CARA PAKAI (3 Langkah) -->
+    <section class="border-t border-slate-100 px-5 py-10">
+      <span class="mb-2 block text-[11px] font-medium uppercase tracking-[0.2em] text-[#232F3E]">Aturan Minum</span>
+      <h2 class={sectionTitle}>3 Langkah Praktis Jaga Stamina</h2>
+      <p class={`${body} mt-3 mb-6`}>Tanpa perlu meracik atau memarut buah pinang secara manual:</p>
+      <figure class="overflow-hidden rounded-md ring-1 ring-slate-200">
+        <figcaption class="flex items-center gap-2 bg-[#232F3E] px-4 py-2.5 text-[11px] font-bold uppercase tracking-[0.18em] text-white">
+          <Icon name="lucide:workflow" class="h-4 w-4 shrink-0" aria-hidden="true" />
+          3 Langkah Minum Kapsul Pinang
+        </figcaption>
+        <div class="flex items-start justify-between gap-1 bg-gradient-to-b from-[#FFF5E5]/60 to-white px-3 py-6">
+          {[
+            ['lucide:pill', 'Minum Kapsul', 'Ambil 2 kapsul herbal pinang'],
+            ['lucide:glass-water', 'Air Hangat', 'Gunakan 1 gelas air putih hangat'],
+            ['lucide:zap', 'Rutin 2x Sehari', 'Minum pagi & malam sesudah makan']
+          ].map(([icon, title, sub], i, arr) => (
+            <>
+              <div class="flex-1 text-center">
+                <span class="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-[#FF9900] text-white">
+                  <Icon name={icon} class="h-6 w-6" aria-hidden="true" />
+                </span>
+                <h3 class="mt-2.5 text-[13px] font-bold text-slate-900">{title}</h3>
+                <p class="mx-auto mt-0.5 max-w-[110px] text-[11px] leading-tight text-slate-500">{sub}</p>
+              </div>
+              {i < arr.length - 1 && (
+                <Icon name="lucide:chevron-right" class="mt-4 h-5 w-5 shrink-0 text-[#FFD699]" aria-hidden="true" />
+              )}
+            </>
+          ))}
+        </div>
+        <div class="flex items-center justify-center gap-1.5 border-t border-[#FFEACC] bg-[#FFF5E5]/60 px-4 py-2.5 text-center text-[12px] font-semibold text-[#232F3E]">
+          <Icon name="lucide:badge-check" class="h-4 w-4 shrink-0" aria-hidden="true" />
+          Dapat diminum 1 jam sebelum beraktivitas berat untuk dorongan stamina optimal
+        </div>
+      </figure>
+
+      <div class="mt-8 border-t border-slate-100 pt-6">
+        <h3 class="text-[16px] font-extrabold tracking-tight text-slate-950">Kenapa Memilih Kapsul Ekstrak Pinang?</h3>
+        <div class="mt-4 space-y-2.5 text-[14.5px] leading-relaxed">
+          <p class="flex items-start gap-2.5">
+            <Icon name="lucide:x" class="mt-1 h-4 w-4 shrink-0 text-red-600" aria-hidden="true" />
+            <span class="text-slate-600">Buah pinang mentah: rasanya sangat kelat pahit membakar tenggorokan, serta susah diolah secara higienis.</span>
+          </p>
+          <p class="flex items-start gap-2.5 border-l-2 border-[#FF9900] pl-3">
+            <Icon name="lucide:check" class="mt-1 h-4 w-4 shrink-0 text-[#EC7211]" aria-hidden="true" />
+            <span class="font-semibold text-slate-900">Kapsul Herbal Pinang: Praktis ditelan tanpa rasa kelat, terukur aman, dan privasi pengiriman sangat terjamin.</span>
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 7. TESTIMONI PEMBELI -->
+    <section class="border-t border-slate-100 bg-[#FFF5E5]/40 px-5 py-10">
+      <span class="mb-2 block text-[11px] font-medium uppercase tracking-[0.2em] text-[#232F3E]">Kata Pembeli</span>
+      <h2 class={sectionTitle}>Cerita Mereka yang Staminanya <span class="hl-brush">Kembali Prima</span></h2>
+      <p class={`${body} mt-3 mb-8`}>Ribuan pria dewasa Indonesia sudah membuktikannya:</p>
+
+      <div class="space-y-9">
+        {testimonials.map((t, index, arr) => (
+          <div>
+            <div class="flex items-center gap-3">
+              <img
+                src={t.avatar}
+                alt={`Foto ${t.name}, pengguna Kapsul Herbal Pinang`}
+                class="h-11 w-11 shrink-0 rounded-full object-cover"
+                width="44"
+                height="44"
+                loading="lazy"
+                decoding="async"
+              />
+              <div class="min-w-0">
+                <h3 class="flex items-center gap-1 text-[15px] font-bold text-slate-900">
+                  {t.name}
+                  <Icon name="lucide:badge-check" class="h-4 w-4 shrink-0 text-[#0073BB]" aria-hidden="true" />
+                </h3>
+                <p class="text-[11.5px] text-slate-500">{t.location}</p>
+              </div>
+              <div class="ml-auto flex gap-0.5">
+                <RatingStars rating={5} max={5} starClass="h-3.5 w-3.5" />
+              </div>
+            </div>
+            <p class="mt-1.5 text-[12px] font-semibold text-[#B45309]">Masalah: {t.problem}</p>
+            <p class="mt-3 border-l-2 border-[#FF9900]/40 pl-3 text-[15px] italic leading-relaxed text-slate-700" set:html={`"${t.comment}"`} />
+            <p class="mt-2.5 flex items-center gap-1.5 text-[13px] font-bold text-slate-900">
+              <Icon name="lucide:check-circle-2" class="h-4 w-4 shrink-0 text-[#EC7211]" aria-hidden="true" />
+              {t.highlight}
+            </p>
+            {index < arr.length - 1 && <div class="mt-8 h-px bg-gradient-to-r from-transparent via-slate-200 to-transparent" />}
+          </div>
+        ))}
+      </div>
+    </section>
+
+    <!-- 8. JUJUR DARI AWAL -->
+    <section class="border-t border-slate-100 px-5 py-10">
+      <span class="mb-2 block text-[11px] font-medium uppercase tracking-[0.2em] text-[#232F3E]">Jujur dari Awal</span>
+      <h2 class={sectionTitle}>Cocok untuk Siapa, dan Kapan ke Dokter?</h2>
+      <p class={`${body} mt-3 mb-6`}>Kapsul Herbal Pinang adalah suplemen herbal pendobrak stamina harian pria dewasa. Supaya Anda tidak salah beli:</p>
+
+      <div class="space-y-2.5 text-[15px] leading-relaxed">
+        <p class="flex items-start gap-2.5">
+          <Icon name="lucide:check-circle-2" class="mt-1 h-4 w-4 shrink-0 text-[#EC7211]" aria-hidden="true" />
+          <span class="text-slate-700">Cocok untuk pria dewasa yang sering merasa <strong class="font-semibold text-slate-900">lelah, loyo, dan butuh stamina bugar ekstra</strong> saat kerja keras.</span>
+        </p>
+        <p class="flex items-start gap-2.5">
+          <Icon name="lucide:check-circle-2" class="mt-1 h-4 w-4 shrink-0 text-[#EC7211]" aria-hidden="true" />
+          <span class="text-slate-700">Cocok untuk pria yang mencari solusi stamina <strong class="font-semibold text-slate-900">100% alami tanpa Bahan Kimia Obat (BKO)</strong>.</span>
+        </p>
+        <p class="mt-4 flex items-start gap-2.5 border-l-2 border-red-300 pl-3">
+          <Icon name="lucide:stethoscope" class="mt-1 h-4 w-4 shrink-0 text-red-600" aria-hidden="true" />
+          <span class="text-slate-700">Jika Anda memiliki <strong class="font-semibold text-red-700">riwayat penyakit jantung berat atau hipertensi tinggi</strong>, konsultasikan terlebih dahulu dengan dokter sebelum mengonsumsi suplemen stamina jenis apapun.</span>
+        </p>
+      </div>
+    </section>
+
+    <!-- 9. BELANJA TANPA WAS-WAS / GARANSI COD -->
+    <section class="border-t border-slate-100 bg-[#F2F3F3] px-5 py-10 text-center">
+      <div class="mx-auto mb-4 flex h-14 w-14 items-center justify-center text-[#232F3E]">
+        <Icon name="lucide:shield-check" class="h-12 w-12" aria-hidden="true" />
+      </div>
+      <h2 class="mb-2 text-[11px] font-medium uppercase tracking-[0.2em] text-[#232F3E]">Belanja Tanpa Was-Was</h2>
+      <h3 class="text-[clamp(28px,7.2vw,32px)] font-extrabold leading-[1.12] tracking-tight text-slate-950">BAYAR SETELAH BARANG SAMPAI</h3>
+      <p class="mx-auto mt-4 max-w-[340px] text-[16px] leading-relaxed text-slate-600">Pesan Kapsul Herbal Pinang hari ini dengan sistem COD: Anda baru bayar ke kurir saat paket tiba di rumah.</p>
+
+      <div class="mx-auto mt-8 max-w-[360px] space-y-6 text-left">
+        {[
+          ['lucide:truck', 'COD ke Seluruh Indonesia', 'Bayar tunai di tempat saat paket tiba. Tidak perlu transfer di muka.'],
+          ['lucide:package-check', 'Privasi Terjaga Rapat', 'Paket dikirim dalam kemasan polos tanpa label isi produk, privasi Anda aman 100%.'],
+          ['lucide:message-circle', 'Admin Siap Ditanya', 'Ragu soal pemakaian atau konsultasi? Chat admin via WhatsApp kapan saja.']
+        ].map(([icon, title, desc]) => (
+          <div class="flex items-start gap-4">
+            <span class="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded bg-white text-[#232F3E]"><Icon name={icon} class="h-4.5 w-4.5" aria-hidden="true" /></span>
+            <div>
+              <h4 class="text-[16px] font-bold text-slate-900">{title}</h4>
+              <p class="mt-1 text-[15px] leading-relaxed text-slate-500">{desc}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+    </section>
+
+    <!-- 10. FORM CHECKOUT -->
+    <section id="checkout" class="border-t-8 border-slate-100 bg-white py-12">
+      <div class="px-5 pb-8 text-center">
+        <p class="mx-auto mb-3 inline-flex items-center gap-1.5 text-[12px] font-bold uppercase tracking-[0.14em] text-[#EC7211]">
+          <Icon name="lucide:zap" class="h-4 w-4 shrink-0" aria-hidden="true" />
+          Promo Stamina Pria Pinang
+        </p>
+        <h2 class="mx-auto max-w-[340px] text-[clamp(28px,7.2vw,32px)] font-extrabold leading-[1.12] tracking-tight text-slate-950">
+          Isi Alamat Pengiriman, <span class="hl-brush">Bayar Saat Sampai</span>
+        </h2>
+        <p class="mx-auto mt-4 max-w-[320px] text-[15px] leading-relaxed text-slate-600">
+          Form menyesuaikan wilayah Anda. Paket dikirim rapi & tertutup rapat, bayar tunai ke kurir saat barang tiba.
+        </p>
+      </div>
+      <GeoIpResolvedForm mode={formContext.mode} productSlug="kapsul-herbal-pinang" embedded={true} />
+    </section>
+
+    <LpMiniFooter />
+    <StickyCTA productSlug="kapsul-herbal-pinang" />
+    <SocialProof productSlug="kapsul-herbal-pinang" />
+  </main>
+</BaseLayout>
+
+<style>
+  .hl-brush {
+    -webkit-box-decoration-break: clone;
+    box-decoration-break: clone;
+    padding-bottom: 0.14em;
+    background-image: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20320%2024'%20preserveAspectRatio='none'%3E%3Cpath%20d='M3%2013C55%206%20120%2016%20182%2011S292%208%20317%2012L315%2020C252%2015%20150%2023%2072%2019S13%2021%205%2020C2%2017%202%2016%203%2013Z'%20fill='%23FF9900'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: center 100%;
+    background-size: 100% 0.32em;
+  }
+</style>

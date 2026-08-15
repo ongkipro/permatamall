@@ -1,0 +1,227 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import GeoIpResolvedForm from '../components/forms/GeoIpResolvedForm.astro';
+import Icon from '../components/shared/Icon.astro';
+import LpMiniFooter from '../components/shared/LpMiniFooter.astro';
+import MetaLandingTracker from '../components/tracking/MetaLandingTracker.astro';
+import SocialProof from '../components/shared/SocialProof.astro';
+import StickyCTA from '../components/shared/StickyCTA.astro';
+import { getProductBySlug } from '../data/products';
+import { resolveFormModeContext } from '../lib/form-mode';
+import '../styles/form-hybrid.css';
+
+export const prerender = false;
+
+const product = getProductBySlug('teh-daun-insulin');
+if (!product) throw new Error('Product teh-daun-insulin not found');
+const formContext = await resolveFormModeContext(Astro.request);
+
+const canonical = 'https://permatamall.shop/teh-daun-insulin';
+const seoTitle = 'Teh Daun Insulin Herbal Celup - Bantu Kontrol Gula Darah';
+const seoDescription =
+  'Teh celup daun insulin herbal alami murni. Pilihan tepat bantu kontrol gula darah, atasi lemas & sering kencing malam. Garansi COD.';
+
+const sectionTitle = 'text-[clamp(25px,6.8vw,31px)] font-black leading-[1.15] tracking-tight text-slate-950';
+
+const testimonials = [
+  {
+    name: 'Pak Slamet Raharjo',
+    location: 'Klaten, Jawa Tengah',
+    avatar: '/images/petani/petani-05.webp',
+    rating: 5,
+    comment: 'Cek gula darah puasa dulu pernah 240, rutin minum teh celup daun insulin tiap pagi & sore, gula darah stabil di 120-130! Badan gak lemes lagi.',
+    highlight: 'Gula darah stabil & badan bugar',
+  },
+  {
+    name: 'Bu Hajah Minarti',
+    location: 'Sidoarjo, Jawa Timur',
+    avatar: '/images/petani/petani-02.webp',
+    rating: 5,
+    comment: 'Dulu tiap malam terbangun 4-5 kali buat kencing. Sekarang setelah seduh teh insulin ini kencing malam jauh berkurang dan tidur nyenyak.',
+    highlight: 'Bebas kencing malam & tidur nyenyak',
+  },
+  {
+    name: 'Ibu Endang Sulastri',
+    location: 'Magelang, Jawa Tengah',
+    avatar: '/images/petani/petani-dewi.webp',
+    rating: 5,
+    comment: 'Tangan & kaki sering kesemutan & kebas kalau pagi hari. Rutin seduh teh insulin 2 minggu, kesemutan hilang, aktivitas segar & angka gula darah aman.',
+    highlight: 'Kesemutan hilang & stamina pulih',
+  },
+];
+---
+
+<BaseLayout
+  title={seoTitle}
+  description={seoDescription}
+  image={product.heroImage}
+  canonical={canonical}
+  hideHeader={true}
+  hideFooter={true}
+  breadcrumbs={[
+    { name: 'Beranda', url: '/' },
+    { name: 'Teh Daun Insulin', url: '/teh-daun-insulin' }
+  ]}
+
+  preloadImages={[
+    "/images/produk/teh-daun-insulin-lp-1.webp",
+    "/images/produk/teh-daun-insulin-lp-2.webp"
+  ]}>
+  <main class="mx-auto min-h-screen w-full max-w-[480px] bg-white text-slate-950 overflow-x-hidden">
+    <MetaLandingTracker slug="teh-daun-insulin" productId={product.productId} contentName={product.contentName} price={product.price} />
+
+    <!-- URGENCY TOP BAR -->
+    <div class="bg-gradient-to-r from-emerald-800 via-teal-700 to-green-800 px-4 py-2.5 text-center shadow-md">
+      <p class="text-[12.5px] font-black tracking-wide text-white flex items-center justify-center gap-1.5 uppercase">
+        <Icon name="lucide:zap" class="h-4 w-4 fill-yellow-300 text-yellow-300 shrink-0 animate-bounce" />
+        TEH DAUN INSULIN MURNI — BANTU STABILKAN GULA DARAH & COD!
+      </p>
+    </div>
+    <!-- HERO SECTION -->
+    <section class="bg-white text-center pt-6 pb-0">
+      <div class="px-5">
+        <div class="mx-auto mb-3 inline-flex items-center gap-1.5 rounded-full bg-teal-100 px-3.5 py-1 text-[11.5px] font-extrabold text-teal-800 border border-teal-200">
+          <Icon name="lucide:sparkles" class="h-3.5 w-3.5 text-teal-600" />
+          HERBAL SOLUSI GULA DARAH
+        </div>
+        <h1 class="mx-auto max-w-[440px] text-[clamp(27px,8vw,34px)] font-black leading-[1.14] tracking-tight text-slate-950">
+          Gula Darah Stabil Kembali, <span class="hl-brush">Bebas Lemas & Kantuk!</span>
+        </h1>
+        <p class="mx-auto mt-3.5 max-w-[410px] text-[15px] font-medium leading-relaxed text-slate-700">
+          Seduhan herbal teh celup daun insulin murni untuk <strong class="text-slate-950 font-bold">normalkan gula darah & cegah lemas berlebih</strong> secara alami & nikmat.
+        </p>
+      </div>
+      <!-- LP BANNER 1: HERO & SOLUSI GULA DARAH -->
+      <div class="w-full">
+        <img
+          src="/images/produk/teh-daun-insulin-lp-1.webp"
+          alt="Teh Daun Insulin Solusi Bebas Gula Darah Tinggi"
+          class="w-full h-auto block"
+          loading="eager"
+          fetchpriority="high"
+          decoding="async"
+          width="800"
+          height="1306"
+        />
+      </div>
+
+      <!-- PROOF BADGES -->
+      <div class="bg-slate-50 py-4 px-4 border-b border-slate-100 flex flex-col items-center gap-3">
+        <div class="flex items-center gap-1.5">
+          <div class="flex gap-1">
+            {Array(5).fill(0).map(() => (
+              <svg class="h-4.5 w-4.5 text-amber-500 fill-amber-500" viewBox="0 0 24 24"><path fill="currentColor" d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+            ))}
+          </div>
+          <span class="text-[13px] font-black text-slate-900">4.9 / 5.0</span>
+          <span class="text-[11.5px] font-medium text-slate-500">(3.600+ Pembeli)</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- LP BANNER 2: GEJALA & MANFAAT ALAMI -->
+    <div class="w-full border-b border-slate-100">
+      <img fetchpriority="low" src="/images/produk/teh-daun-insulin-lp-2.webp"
+        alt="12 Manfaat Alami Teh Daun Insulin"
+        class="w-full h-auto block"
+        loading="lazy"
+        decoding="async"
+        width="800"
+        height="1452"
+      />
+    </div>
+
+    <!-- LP BANNER 3: MEKANISME KERJA & KANDUNGAN -->
+    <div class="w-full border-b border-slate-100">
+      <img fetchpriority="low" src="/images/produk/teh-daun-insulin-lp-3.webp"
+        alt="Mekanisme Kerja & Kenapa Memilih Sehatku Herbal Teh Daun Insulin"
+        class="w-full h-auto block"
+        loading="lazy"
+        decoding="async"
+        width="800"
+        height="1452"
+      />
+    </div>
+
+    <!-- LP BANNER 4: CARA PENYAJIAN & SERTIFIKAT HALAL DINKES -->
+    <div class="w-full border-b border-slate-100">
+      <img fetchpriority="low" src="/images/produk/teh-daun-insulin-lp-4.webp"
+        alt="Cara Penyajian, Foto Produk & Sertifikat Halal MUI Teh Daun Insulin"
+        class="w-full h-auto block"
+        loading="lazy"
+        decoding="async"
+        width="800"
+        height="1452"
+      />
+    </div>
+
+    <!-- FAST CTA ORDER BUTTON -->
+    <div class="my-6 px-5 text-center">
+      <a
+        href="#checkout"
+        class="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-700 px-6 py-4 text-[17px] font-black uppercase tracking-wide text-white shadow-lg transition-transform hover:scale-[1.01] active:scale-[0.98]"
+      >
+        <Icon name="lucide:shopping-bag" class="h-5 w-5 shrink-0" aria-hidden="true" />
+        <span>KLIK DISINI UNTUK PEMESANAN COD</span>
+      </a>
+    </div>
+    <!-- TESTIMONIALS -->
+    <section class="bg-teal-50/40 py-9 px-5 border-b border-slate-100">
+      <div class="text-center mb-6">
+        <span class="text-[11.5px] font-extrabold uppercase tracking-wider text-teal-800 block mb-1">
+          KATA PEMBELI ASLI
+        </span>
+        <h2 class={sectionTitle}>Ulasan Pelanggan</h2>
+      </div>
+      <div class="space-y-4">
+        {testimonials.map((t) => (
+          <div class="rounded-2xl bg-white p-4.5 shadow-sm border border-slate-200/80">
+            <div class="flex items-center gap-3 mb-2.5">
+              <img src={t.avatar} alt={t.name} class="h-11 w-11 rounded-full object-cover ring-2 ring-teal-500/40 shrink-0" width="44" height="44" loading="lazy" />
+              <div>
+                <h3 class="text-[14.5px] font-bold text-slate-950 flex items-center gap-1">
+                  {t.name}
+                  <Icon name="lucide:badge-check" class="h-4 w-4 text-blue-500 shrink-0" />
+                </h3>
+                <p class="text-[12px] text-slate-500">{t.location}</p>
+              </div>
+            </div>
+            <div class="mb-2 inline-block rounded-md bg-teal-100/80 px-2.5 py-0.5 text-[11.5px] font-bold text-teal-800">
+              ✓ {t.highlight}
+            </div>
+            <p class="text-[14px] leading-relaxed text-slate-700">"{t.comment}"</p>
+          </div>
+        ))}
+      </div>
+    </section>
+
+    <!-- CHECKOUT -->
+    <section id="checkout" class="bg-white py-9 border-t-4 border-teal-600">
+      <div class="px-5 pb-6 text-center">
+        <div class="mx-auto mb-3 inline-flex items-center gap-1.5 rounded-full bg-teal-100 px-3.5 py-1 text-[12px] font-extrabold text-teal-800">
+          PROMO TEH DAUN INSULIN — BISA COD
+        </div>
+        <h2 class="mx-auto max-w-[360px] text-[clamp(26px,7.5vw,33px)] font-black leading-[1.14] tracking-tight text-slate-950">
+          Isi Form Alamat <span class="hl-brush">Bayar Saat Sampai</span>
+        </h2>
+      </div>
+      <GeoIpResolvedForm mode={formContext.mode} productSlug="teh-daun-insulin" embedded={true} />
+    </section>
+
+    <LpMiniFooter />
+    <StickyCTA productSlug="teh-daun-insulin" />
+    <SocialProof productSlug="teh-daun-insulin" />
+  </main>
+</BaseLayout>
+
+<style>
+  .hl-brush {
+    -webkit-box-decoration-break: clone;
+    box-decoration-break: clone;
+    padding-bottom: 0.14em;
+    background-image: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20320%2024'%20preserveAspectRatio='none'%3E%3Cpath%20d='M3%2013C55%206%20120%2016%20182%2011S292%208%20317%2012L315%2020C252%2015%20150%2023%2072%2019S13%2021%205%2020C2%2017%202%2016%203%2013Z'%20fill='%230D9488'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: center 100%;
+    background-size: 100% 0.32em;
+  }
+</style>

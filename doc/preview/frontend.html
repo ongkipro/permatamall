@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Arsitektur standalone frontend pada CMSAds.">
+  <title>Frontend Architecture | CMSAds System Guide</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="assets/docs.css">
+</head>
+<body data-page="frontend.html">
+  <header id="site-header"></header>
+  
+  <div class="mx-auto flex max-w-[1480px] flex-col items-start gap-8 px-4 pb-24 pt-8 sm:px-6 lg:flex-row lg:px-8">
+    <aside class="page-toc sticky top-8 hidden w-64 shrink-0 lg:block">
+      <h2 class="mb-4 text-sm font-semibold tracking-tight text-slate-900">Di halaman ini</h2>
+      <nav class="flex flex-col gap-2 text-sm text-slate-600">
+        <a href="#topology">Topology Headless vs Integrated</a>
+        <a href="#backend-per-tenant">Satu Backend per Tenant</a>
+        <a href="#worker-binding">Service Binding Worker</a>
+        <a href="#data-isolation">Isolasi Data (No Cross-Tenant)</a>
+        <a href="#ai-storefront">Workflow AI Storefront</a>
+      </nav>
+    </aside>
+
+    <main id="konten" class="w-full min-w-0 max-w-full flex-1">
+      <header class="mb-12">
+        <p class="section-kicker mb-3">Standalone Frontend</p>
+        <h1 class="text-4xl font-extrabold tracking-tight text-slate-900 sm:text-5xl">Frontend bebas, kontrak commerce tetap satu.</h1>
+        <p class="lede mt-5">CMSAds mendukung mode integrated dan headless. Setiap tenant boleh memilih presentasi yang berbeda, sementara data, checkout, order, shipping, payment, dan tracking tetap berada pada backend tenant yang terisolasi.</p>
+      </header>
+
+      <section id="topology" class="section-rule py-12">
+        <div class="mb-8 max-w-3xl">
+          <h2 class="section-title">Topology Headless vs Integrated</h2>
+          <p class="lede mt-4">Pemisahan tanggung jawab secara eksplisit antara presentation dan core business logic.</p>
+        </div>
+        <div class="grid gap-6 md:grid-cols-2">
+          <article class="surface-card">
+            <h3 class="mb-3 text-xl font-bold tracking-tight">Integrated</h3>
+            <p class="text-sm leading-6 text-slate-600">Satu Worker CMSAds memiliki Custom Domain dan merender storefront, form, admin, serta API. Mode ini tetap didukung untuk tenant yang ingin satu deployment.</p>
+            <span class="mt-4 inline-block rounded bg-emerald-100 px-2 py-1 text-xs font-semibold text-emerald-800">Implemented</span>
+          </article>
+          <article class="surface-card border-blue-200 bg-blue-50/30">
+            <h3 class="mb-3 text-xl font-bold tracking-tight">Headless</h3>
+            <p class="text-sm leading-6 text-slate-600">Worker storefront memiliki domain publik. Backend CMSAds memakai <code>service-only</code> dan menerima route operasional melalui private service binding. Arsitektur ini didukung, tetapi belum memiliki active reference deployment.</p>
+            <span class="mt-4 inline-block rounded bg-amber-100 px-2 py-1 text-xs font-semibold text-amber-800">Supported · proof required</span>
+          </article>
+        </div>
+      </section>
+
+      <section id="backend-per-tenant" class="section-rule py-12">
+        <div class="mb-8 max-w-3xl">
+          <h2 class="section-title">Satu Backend CMSAds per Tenant</h2>
+          <p class="lede mt-4">Berbeda dengan SaaS tradisional (multi-tenant single DB), CMSAds menggunakan arsitektur single-tenant deployment.</p>
+        </div>
+        <div class="diagram mb-8">
+          <div class="diagram-grid">
+            <article class="diagram-node"><strong>Tenant A</strong><p>Frontend A</p></article>
+            <article class="diagram-node accent" data-next><strong>Backend A</strong><p>CMSAds + D1 A + R2 A</p></article>
+            <article class="diagram-node lg:translate-x-4"><strong>Tenant B</strong><p>Frontend B</p></article>
+            <article class="diagram-node accent" data-next><strong>Backend B</strong><p>CMSAds + D1 B + R2 B</p></article>
+          </div>
+        </div>
+        <p class="max-w-3xl text-sm leading-7 text-slate-600">Setiap tenant mendapatkan Worker, D1, R2, KV, dan konfigurasi provider terpisah. Provisioning tenant baru hanya membuat schema, store, dan owner credential; produk, media, customer, order, secret, dan konten tenant lain tidak disalin.</p>
+      </section>
+
+      <section id="worker-binding" class="section-rule py-12">
+        <div class="mb-8 max-w-3xl">
+          <h2 class="section-title">Separate Frontend Worker via Service Binding</h2>
+          <p class="lede mt-4">Komunikasi internal antar-worker tanpa overhead jaringan publik.</p>
+        </div>
+        <div class="surface-card mb-8">
+          <h3 class="mb-3 font-semibold">Service Binding</h3>
+          <p class="mb-4 text-sm leading-6 text-slate-600">Frontend tenant dijalankan sebagai Worker mandiri dan meneruskan route operasional ke binding <code>CMSADS</code>. Browser tetap memakai origin tenant; backend service-only tidak memiliki public route.</p>
+          <pre data-copy class="overflow-x-auto rounded-lg bg-slate-900 p-4 text-sm text-slate-50"><code>const CMSADS_PATHS = ['/admin', '/api', '/hello', '/thanks', '/hybrid-form', '/middle-form', '/full-form'];
+
+export default {
+  fetch(request, env) {
+    const path = new URL(request.url).pathname;
+    return CMSADS_PATHS.some((prefix) =&gt; path === prefix || path.startsWith(`${prefix}/`))
+      ? env.CMSADS.fetch(request)
+      : env.ASSETS.fetch(request);
+  }
+};</code></pre>
+        </div>
+      </section>
+      <section id="prompt-boundary" class="section-rule py-12">
+        <div class="mb-8 max-w-3xl">
+          <h2 class="section-title">Storefront Integration Prompt Boundary</h2>
+          <p class="lede mt-4">Integrasi UI public menggunakan AI generation wajib berdasarkan data dinamis, bukan sekadar fallback palsu.</p>
+        </div>
+        <div class="surface-card">
+          <h3 class="mb-3 font-semibold">Dynamic Catalog Prerequisite</h3>
+          <p class="text-sm leading-6 text-slate-600">Prompt integrasi storefront (disimpan dalam <code>STOREFRONT_INTEGRATION.md</code>) mengatur bahwa catalog atau product bootstrap dari API CMSAds adalah prerequisite wajib. AI generation tidak boleh membuat fake static fallback jika API katalog tidak dikonfigurasi, memastikan semua order di public layout disinkronisasikan ke backend yang tepat.</p>
+        </div>
+      </section>
+
+
+      <section id="data-isolation" class="section-rule py-12">
+        <div class="mb-8 max-w-3xl">
+          <h2 class="section-title">No Cross-Tenant Data Copy</h2>
+          <p class="lede mt-4">Isolasi berasal dari resource Cloudflare per deployment, bukan filter hostname runtime.</p>
+        </div>
+        <ul class="max-w-3xl list-disc space-y-2 pl-5 text-sm text-slate-600">
+          <li>D1, R2, KV, Workers AI, dan secret berbeda untuk setiap tenant.</li>
+          <li>Installer tidak mengimpor data tenant yang sudah ada.</li>
+          <li>Deploy frontend tidak memigrasikan D1 atau men-deploy backend.</li>
+          <li>Penghapusan Worker atau storage selalu operasi terpisah yang memerlukan approval eksplisit.</li>
+        </ul>
+      </section>
+      
+      <section id="ai-storefront" class="section-rule py-12">
+        <div class="mb-8 max-w-3xl">
+          <h2 class="section-title">Workflow AI Storefront</h2>
+          <p class="lede mt-4">Mempercepat pembuatan komponen dan halaman e-commerce menggunakan AI Agent.</p>
+        </div>
+        <div class="data-table-wrap">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Tahap</th>
+                <th>Aksi</th>
+                <th>Role/Sistem</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>1. Generasi Prompt</strong></td>
+                <td>Merchant mendeskripsikan kebutuhan campaign atau komponen (misal: "Bikin landing page promo ramadan").</td>
+                <td>Merchant / Operator</td>
+              </tr>
+              <tr>
+                <td><strong>2. AI Drafting</strong></td>
+                <td>AI membuat draft struktur HTML/Astro dan copy, mematuhi rule desain tenant. <span class="status ok text-[10px]">Workbench implemented</span></td>
+                <td>CMSAds AI / Cloudflare Workers AI</td>
+              </tr>
+              <tr>
+                <td><strong>3. Review & Edit</strong></td>
+                <td>Draft tidak langsung tayang. Operator memeriksa, menguji di environment terisolasi, atau merevisi instruksi.</td>
+                <td>Operator</td>
+              </tr>
+              <tr>
+                <td><strong>4. Handoff & Release</strong></td>
+                <td>Agent mengimplementasikan di repository pemilik frontend, menjalankan test/build/dry-run dan browser proof, lalu berhenti di approval gate sebelum deploy.</td>
+                <td>AI Agent + Operator</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+    </main>
+  </div>
+  
+  <footer id="site-footer" class="section-rule bg-slate-50"></footer>
+  <script type="module" src="assets/docs.js"></script>
+</body>
+</html>

@@ -1,0 +1,437 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import GeoIpResolvedForm from '../components/forms/GeoIpResolvedForm.astro';
+import Icon from '../components/shared/Icon.astro';
+import LpMiniFooter from '../components/shared/LpMiniFooter.astro';
+import MetaLandingTracker from '../components/tracking/MetaLandingTracker.astro';
+import SocialProof from '../components/shared/SocialProof.astro';
+import StickyCTA from '../components/shared/StickyCTA.astro';
+import { getProductBySlug } from '../data/products';
+import { resolveFormModeContext } from '../lib/form-mode';
+import '../styles/form-hybrid.css';
+
+export const prerender = false;
+
+const product = getProductBySlug('bibit-markisa-pasima');
+if (!product) throw new Error('Product bibit-markisa-pasima not found');
+const formContext = await resolveFormModeContext(Astro.request);
+
+const canonical = 'https://pesantren.shop/bibit-markisa-pasima';
+const seoTitle = 'Bibit Markisa Madu Pasima Okulasi Super: Pohon Pendek Berbuah Lebat Manis';
+const seoDescription =
+  'Bibit Markisa Madu PASIMA okulasi unggulan. Pohon genjah berbuah manis lebat di pot teras rumah. Garansi COD & bibit segar sampai tujuan.';
+
+const sectionTitle = 'text-[clamp(28px,7.2vw,32px)] font-extrabold leading-[1.12] tracking-tight text-slate-950';
+const body = 'text-[16px] leading-relaxed text-slate-600';
+
+const testimonials = [
+  {
+    name: 'Pak Bambang Setyo',
+    location: 'Kendal, Jawa Tengah',
+    avatar: '/images/petani/petani-07.webp',
+    problem: 'Pernah tanam markisa biasa hanya rimbun daun tapi tak pernah berbuah',
+    comment:
+      'Dulu pernah kapok <strong class="box-decoration-clone bg-red-100 px-1.5 pb-0.5 font-semibold text-slate-950">tanam markisa lokal cuma rimbun daun</strong>. Setelah ganti Bibit Markisa Pasima ini, <strong class="box-decoration-clone bg-[#FFEACC] px-1.5 pb-0.5 font-semibold text-slate-950">pohon baru 1 meter dirambatkan di pagar langsung lebat bunganya</strong>. Buahnya manis madu segar sekali!',
+    highlight: 'Pohon rimbun cepat keluar calon buah manis',
+  },
+  {
+    name: 'Bu Dewi Kusuma',
+    location: 'Sleman, DI Yogyakarta',
+    avatar: '/images/petani/petani-dewi.webp',
+    problem: 'Sering beli markisa di pasar rasanya masam pekat dan kurus isi dagingnya',
+    comment:
+      'Bosan beli markisa pasar yang <strong class="box-decoration-clone bg-red-100 px-1.5 pb-0.5 font-semibold text-slate-950">masam dan airnya sedikit</strong>. Pas panen sendiri dari pot teras rumah, <strong class="box-decoration-clone bg-[#FFEACC] px-1.5 pb-0.5 font-semibold text-slate-950">dagingnya tebal beraroma wangi madu harum manis</strong>. Anak-anak sangat suka!',
+    highlight: 'Daging tebal manis harum aroma madu',
+  },
+  {
+    name: 'Pak Sugeng Widodo',
+    location: 'Klaten, Jawa Tengah',
+    avatar: '/images/petani/petani-01.webp',
+    problem: 'Khawatir bibit layu atau daun rontok saat pengiriman ekspedisi',
+    comment:
+      'Pesan bibit via COD online agak khawatir. Pas paket datang <strong class="box-decoration-clone bg-red-100 px-1.5 pb-0.5 font-semibold text-slate-950">packingnya sangat kokoh, media tanah masih basah segar</strong>. Daun tetap hijau rimbun, <strong class="box-decoration-clone bg-[#FFEACC] px-1.5 pb-0.5 font-semibold text-slate-950">langsung tumbuh tunas baru 3 hari kemudian</strong>.',
+    highlight: 'Packing amanah, bibit segar siap tanam',
+  },
+];
+---
+
+<BaseLayout
+  title={seoTitle}
+  description={seoDescription}
+  image={product.heroImage}
+  canonical={canonical}
+  hideHeader={true}
+  hideFooter={true}
+  breadcrumbs={[
+    { name: 'Beranda', url: '/' },
+    { name: 'Bibit Markisa Pasima', url: '/bibit-markisa-pasima' }
+  ]}
+
+  preloadImages={[
+    {
+      srcset: "/images/markisa/markisa-hero-400.webp 400w, /images/markisa/markisa-hero-600.webp 600w",
+      sizes: "(max-width: 480px) 100vw, 480px"
+    }
+  ]}
+>
+  <main class="mx-auto min-h-screen w-full max-w-[480px] bg-white text-slate-950">
+    <MetaLandingTracker slug="bibit-markisa-pasima" productId={product.productId} contentName={product.contentName} price={product.price} />
+
+    <!-- 1. URGENCY TOP BAR -->
+    <div class="bg-[#2E7D32] px-4 py-2.5 text-center">
+      <p class="flex items-center justify-center gap-1.5 text-[12px] font-extrabold uppercase tracking-wide text-white">
+        <Icon name="lucide:zap" class="h-4 w-4 shrink-0 text-amber-300" aria-hidden="true" />
+        FLASH SALE MARKISA MADU PASIMA: DISKON 50% GARANSI SEGAR & COD 99RB!
+      </p>
+    </div>
+
+    <!-- 2. HERO SECTION -->
+    <section class="bg-white pb-8 text-center">
+      <div class="px-5 pt-7">
+        <div class="mx-auto mb-3 inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3.5 py-1 text-[11.5px] font-extrabold text-[#2E7D32] border border-emerald-200">
+          <Icon name="lucide:sparkles" class="h-3.5 w-3.5 text-[#2E7D32]" />
+          VARIETAS MARKISA MADU PASIMA UNGGULAN
+        </div>
+        <h1 class="mx-auto max-w-[440px] text-[clamp(32px,8.8vw,36px)] font-extrabold leading-[1.14] tracking-tight text-slate-950">
+          Panen Markisa Madu Super Manis <span class="hl-brush">Langsung Di Pot Teras!</span>
+        </h1>
+        <p class="mx-auto mt-4 max-w-[400px] text-[16px] font-semibold leading-relaxed text-slate-700">
+          Bibit Markisa Madu PASIMA Sambung Okulasi. <strong class="font-bold text-slate-950">Pohon genjah berbuah manis melimpah</strong> & <span class="font-bold text-slate-950 underline decoration-[#2E7D32]/60 decoration-2 underline-offset-4">beraroma wangi harum segar kaya antioksidan, garansi bibit tumbuh segar!</span>
+        </p>
+      </div>
+
+      <!-- HERO IMAGE REAL -->
+      <div class="mt-7 w-full border-b border-slate-100">
+        <img
+          src="/images/markisa/markisa-hero-600.webp"
+          srcset="/images/markisa/markisa-hero-400.webp 400w, /images/markisa/markisa-hero-600.webp 600w"
+          sizes="(max-width: 480px) 100vw, 480px"
+          alt="Bibit Markisa Madu PASIMA Okulasi Super Berbuah Lebat"
+          class="w-full h-auto block object-contain mx-auto"
+          width="540"
+          height="540"
+          loading="eager"
+          fetchpriority="high"
+          decoding="async"
+        />
+      </div>
+    </section>
+
+    <!-- 3. HIGHLIGHT SPECS BAR -->
+    <section class="border-y border-emerald-100 bg-emerald-50/60 px-5 py-5">
+      <div class="grid grid-cols-2 gap-3 text-left">
+        <div class="flex items-start gap-2.5 rounded-xl border border-emerald-100 bg-white p-3 shadow-xs">
+          <Icon name="lucide:check-circle-2" class="mt-0.5 h-5 w-5 shrink-0 text-[#2E7D32]" />
+          <div>
+            <p class="text-[11px] font-extrabold tracking-wide uppercase text-slate-400">METODE</p>
+            <p class="text-[13.5px] font-extrabold text-slate-950">Sambung Okulasi Super</p>
+          </div>
+        </div>
+        <div class="flex items-start gap-2.5 rounded-xl border border-emerald-100 bg-white p-3 shadow-xs">
+          <Icon name="lucide:droplets" class="mt-0.5 h-5 w-5 shrink-0 text-[#2E7D32]" />
+          <div>
+            <p class="text-[11px] font-extrabold tracking-wide uppercase text-slate-400">RASA BUAH</p>
+            <p class="text-[13.5px] font-extrabold text-slate-950">Manis Madu Harum</p>
+          </div>
+        </div>
+        <div class="flex items-start gap-2.5 rounded-xl border border-emerald-100 bg-white p-3 shadow-xs">
+          <Icon name="lucide:sprout" class="mt-0.5 h-5 w-5 shrink-0 text-[#2E7D32]" />
+          <div>
+            <p class="text-[11px] font-extrabold tracking-wide uppercase text-slate-400">KONDISI</p>
+            <p class="text-[13.5px] font-extrabold text-slate-950">Siap Tanam (30-50cm)</p>
+          </div>
+        </div>
+        <div class="flex items-start gap-2.5 rounded-xl border border-emerald-100 bg-white p-3 shadow-xs">
+          <Icon name="lucide:truck" class="mt-0.5 h-5 w-5 shrink-0 text-[#2E7D32]" />
+          <div>
+            <p class="text-[11px] font-extrabold tracking-wide uppercase text-slate-400">GARANSI</p>
+            <p class="text-[13.5px] font-extrabold text-slate-950">COD & Bibit Segar</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 4. KEUNGGULAN UTAMA -->
+    <section class="px-5 py-9 border-b border-slate-100">
+      <div class="text-center">
+        <span class="text-[11.5px] font-extrabold uppercase tracking-widest text-[#2E7D32]">KEUNGGULAN VARIETAS PASIMA</span>
+        <h2 class={sectionTitle + ' mt-1.5'}>Kenapa Banyak yang Pilih Markisa PASIMA?</h2>
+        <p class={body + ' mt-2.5 font-medium'}>
+          Varietas Markisa Madu PASIMA diproses secara okulasi vegetatif unggulan untuk menghasilkan bibit yang cepat berbuah dan tahan hama.
+        </p>
+      </div>
+
+      <div class="mt-7 space-y-3.5">
+        <div class="flex items-start gap-3.5 rounded-2xl border border-slate-200/80 bg-white p-4 shadow-xs">
+          <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-emerald-100 text-[#2E7D32]">
+            <Icon name="lucide:sparkles" class="h-5 w-5" />
+          </div>
+          <div>
+            <h3 class="text-[15.5px] font-bold text-slate-950">Bibit Sambung Okulasi Super</h3>
+            <p class="mt-1 text-[14px] leading-relaxed text-slate-600">
+              Pertumbuhan akar lebih kuat, daya tahan tinggi terhadap cuaca ekstrem, dan berpotensi jauh lebih cepat berbuah.
+            </p>
+          </div>
+        </div>
+
+        <div class="flex items-start gap-3.5 rounded-2xl border border-slate-200/80 bg-white p-4 shadow-xs">
+          <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-emerald-100 text-[#2E7D32]">
+            <Icon name="lucide:sun" class="h-5 w-5" />
+          </div>
+          <div>
+            <h3 class="text-[15.5px] font-bold text-slate-950">Mudah Ditanam & Dirawat</h3>
+            <p class="mt-1 text-[14px] leading-relaxed text-slate-600">
+              Sangat cocok ditanam di pot teras rumah (tabulampot), pekarangan, maupun dijadikan peneduh pagar indah.
+            </p>
+          </div>
+        </div>
+
+        <div class="flex items-start gap-3.5 rounded-2xl border border-slate-200/80 bg-white p-4 shadow-xs">
+          <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-emerald-100 text-[#2E7D32]">
+            <Icon name="lucide:heart-pulse" class="h-5 w-5" />
+          </div>
+          <div>
+            <h3 class="text-[15.5px] font-bold text-slate-950">Rasa Manis Madu Menyegarkan</h3>
+            <p class="mt-1 text-[14px] leading-relaxed text-slate-600">
+              Perpaduan sempurna rasa manis legit beraroma harum alami yang sangat disukai anak-anak hingga orang dewasa.
+            </p>
+          </div>
+        </div>
+
+        <div class="flex items-start gap-3.5 rounded-2xl border border-slate-200/80 bg-white p-4 shadow-xs">
+          <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-emerald-100 text-[#2E7D32]">
+            <Icon name="lucide:shield-check" class="h-5 w-5" />
+          </div>
+          <div>
+            <h3 class="text-[15.5px] font-bold text-slate-950">Kaya Nutrisi & Antioksidan</h3>
+            <p class="mt-1 text-[14px] leading-relaxed text-slate-600">
+              Kandungan Vitamin C, A, dan serat alami yang tinggi sangat baik untuk daya tahan tubuh sekeluarga.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 5. SHOWCASE BUAH & KEUNGGULAN GAMBAR -->
+    <section class="border-b border-slate-100 bg-slate-50/50 py-9">
+      <div class="px-5 text-center">
+        <span class="text-[11.5px] font-extrabold uppercase tracking-widest text-[#2E7D32]">PANEN SENDIRI DI RUMAH</span>
+        <h2 class={sectionTitle + ' mt-1.5'}>Buah Lebat & Manis Berkualitas</h2>
+      </div>
+
+      <div class="mt-6 space-y-4 px-5">
+        <div class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+          <img
+            src="/images/markisa/markisa-keunggulan-600.webp"
+            srcset="/images/markisa/markisa-keunggulan-400.webp 400w, /images/markisa/markisa-keunggulan-600.webp 600w"
+            sizes="(max-width: 480px) 100vw, 480px"
+            alt="Bibit Unggul Panen Manis Berkualitas PASIMA"
+            class="w-full h-auto block object-contain mx-auto"
+            width="540"
+            height="540"
+            loading="lazy"
+            decoding="async"
+            fetchpriority="low"
+          />
+          <div class="p-4 text-center">
+            <h3 class="text-[16px] font-extrabold text-slate-950">Kualitas Bibit Terjamin Healthy & Genjah</h3>
+            <p class="mt-1 text-[13.5px] text-slate-600">Bibit segar dengan perakaran kuat yang siap tumbuh cepat saat dipindah ke tanah atau pot.</p>
+          </div>
+        </div>
+
+        <div class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+          <img
+            src="/images/markisa/markisa-buah-600.webp"
+            srcset="/images/markisa/markisa-buah-400.webp 400w, /images/markisa/markisa-buah-600.webp 600w"
+            sizes="(max-width: 480px) 100vw, 480px"
+            alt="Buah Markisa Madu Lebat Berkelompok"
+            class="w-full h-auto block object-contain mx-auto"
+            width="540"
+            height="540"
+            loading="lazy"
+            decoding="async"
+            fetchpriority="low"
+          />
+          <div class="p-4 text-center">
+            <h3 class="text-[16px] font-extrabold text-slate-950">Hasil Buah Lebat Beraroma Harum</h3>
+            <p class="mt-1 text-[13.5px] text-slate-600">Setiap tangkai mampu menghasilkan dompolan buah yang lebat dan manis juicy.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 6. CARA PERAWATAN -->
+    <section class="px-5 py-9 border-b border-slate-100">
+      <div class="text-center">
+        <span class="text-[11.5px] font-extrabold uppercase tracking-widest text-[#2E7D32]">PANDUAN PRAKTIS</span>
+        <h2 class={sectionTitle + ' mt-1.5'}>Cara Perawatan Bibit</h2>
+      </div>
+
+      <div class="mt-6 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+        <img
+          src="/images/markisa/markisa-perawatan-600.webp"
+          srcset="/images/markisa/markisa-perawatan-400.webp 400w, /images/markisa/markisa-perawatan-600.webp 600w"
+          sizes="(max-width: 480px) 100vw, 480px"
+          alt="Cara Perawatan Bibit Markisa"
+          class="w-full h-auto block object-contain mx-auto"
+          width="540"
+          height="540"
+          loading="lazy"
+          decoding="async"
+          fetchpriority="low"
+        />
+        <div class="p-5">
+          <ol class="space-y-3 text-[14px] leading-relaxed text-slate-700">
+            <li class="flex items-start gap-2.5">
+              <span class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-[12px] font-extrabold text-[#2E7D32]">1</span>
+              <span>Setelah paket diterima, isi polybag dengan media tanam hingga penuh.</span>
+            </li>
+            <li class="flex items-start gap-2.5">
+              <span class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-[12px] font-extrabold text-[#2E7D32]">2</span>
+              <span>Gunakan campuran tanah dan pupuk kandang / kompos dengan rasio 2:1.</span>
+            </li>
+            <li class="flex items-start gap-2.5">
+              <span class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-[12px] font-extrabold text-[#2E7D32]">3</span>
+              <span>Siram media tanam hingga benar-benar basah dan meresap sempurna.</span>
+            </li>
+            <li class="flex items-start gap-2.5">
+              <span class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-[12px] font-extrabold text-[#2E7D32]">4</span>
+              <span>Letakkan bibit di tempat teduh selama 3–7 hari agar beradaptasi sebelum dipindahkan ke sinar matahari penuh.</span>
+            </li>
+            <li class="flex items-start gap-2.5">
+              <span class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-[12px] font-extrabold text-[#2E7D32]">5</span>
+              <span>Setelah bibit segar, pindahkan ke pot besar atau lahan terbuka serta siapkan tiang rambat.</span>
+            </li>
+          </ol>
+        </div>
+      </div>
+    </section>
+
+    <!-- 7. SPESIFIKASI PRODUK -->
+    <section class="border-b border-slate-100 bg-slate-50/50 py-9">
+      <div class="px-5 text-center">
+        <span class="text-[11.5px] font-extrabold uppercase tracking-widest text-[#2E7D32]">DETAIL BIBIT</span>
+        <h2 class={sectionTitle + ' mt-1.5'}>Spesifikasi Produk</h2>
+      </div>
+
+      <div class="mt-6 px-5">
+        <div class="overflow-hidden rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+          <img
+            src="/images/markisa/markisa-spec-600.webp"
+            srcset="/images/markisa/markisa-spec-400.webp 400w, /images/markisa/markisa-spec-600.webp 600w"
+            sizes="(max-width: 480px) 100vw, 480px"
+            alt="Spesifikasi Bibit Markisa PASIMA"
+            class="mx-auto mb-4 rounded-xl object-contain w-full h-auto"
+            width="540"
+            height="540"
+            loading="lazy"
+            decoding="async"
+            fetchpriority="low"
+          />
+          <ul class="space-y-2.5 text-[14px] text-slate-700">
+            <li class="flex items-center gap-2 border-b border-slate-100 pb-2">
+              <Icon name="lucide:check-circle-2" class="h-4.5 w-4.5 shrink-0 text-[#2E7D32]" />
+              <span><strong>Tinggi Bibit:</strong> 30–50 cm (siap tanam)</span>
+            </li>
+            <li class="flex items-center gap-2 border-b border-slate-100 pb-2">
+              <Icon name="lucide:check-circle-2" class="h-4.5 w-4.5 shrink-0 text-[#2E7D32]" />
+              <span><strong>Metode Perbanyakan:</strong> Sambung Okulasi Vegetatif</span>
+            </li>
+            <li class="flex items-center gap-2 border-b border-slate-100 pb-2">
+              <Icon name="lucide:check-circle-2" class="h-4.5 w-4.5 shrink-0 text-[#2E7D32]" />
+              <span><strong>Kondisi:</strong> Bibit hidup, sehat, & daun rimbun</span>
+            </li>
+            <li class="flex items-center gap-2">
+              <Icon name="lucide:check-circle-2" class="h-4.5 w-4.5 shrink-0 text-[#2E7D32]" />
+              <span><strong>Media Tanam:</strong> Pot / Polybag / Lahan Terbuka</span>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- 8. TESTIMONIALS -->
+    <section class="px-5 py-9 border-b border-slate-100">
+      <div class="text-center">
+        <span class="text-[11.5px] font-extrabold uppercase tracking-widest text-[#2E7D32]">KATA PEMBELI</span>
+        <h2 class={sectionTitle + ' mt-1.5'}>Testimoni Pelanggan</h2>
+      </div>
+
+      <div class="mt-6 space-y-4">
+        {testimonials.map((t) => (
+          <div class="rounded-2xl border border-slate-200/80 bg-white p-4.5 shadow-xs">
+            <div class="flex items-center gap-3">
+              <img src={t.avatar} alt={t.name} class="h-10 w-10 rounded-full object-cover ring-2 ring-emerald-100" loading="lazy" decoding="async" width="40" height="40" />
+              <div>
+                <h3 class="text-[14.5px] font-bold text-slate-950">{t.name}</h3>
+                <p class="text-[12px] text-slate-500">{t.location}</p>
+              </div>
+            </div>
+            <div class="mt-3 rounded-xl bg-emerald-50/70 p-3 text-[13.5px] leading-relaxed text-slate-700">
+              <p set:html={t.comment} />
+            </div>
+            <div class="mt-2.5 flex items-center justify-between text-[11.5px]">
+              <span class="font-bold text-[#2E7D32]">✓ {t.highlight}</span>
+              <span class="font-semibold text-slate-400">Pembeli Terverifikasi</span>
+            </div>
+          </div>
+        ))}
+      </div>
+    </section>
+
+    <!-- 9. SOCIAL PROOF DYNAMIC -->
+    <SocialProof productSlug="bibit-markisa-pasima" />
+
+    <!-- 10. CHECKOUT FORM SECTION -->
+    <section id="checkout" class="border-t-8 border-slate-100 bg-white py-12">
+      <div class="px-5 pb-8 text-center">
+        <p class="mx-auto mb-3 inline-flex items-center gap-1.5 text-[12px] font-bold uppercase tracking-[0.14em] text-[#2E7D32]">
+          <Icon name="lucide:zap" class="h-4 w-4 shrink-0 text-[#2E7D32]" aria-hidden="true" />
+          Promo Bibit Markisa PASIMA COD
+        </p>
+        <h2 class="mx-auto max-w-[340px] text-[clamp(28px,7.2vw,32px)] font-extrabold leading-[1.12] tracking-tight text-slate-950">
+          Isi Alamat Pengiriman, <span class="hl-brush">Bayar Saat Sampai</span>
+        </h2>
+        <p class="mx-auto mt-4 max-w-[320px] text-[15px] leading-relaxed text-slate-600">
+          Form otomatis menyesuaikan lokasi Anda. Bibit dikirim aman dan rapi, bayar tunai ke kurir saat barang tiba.
+        </p>
+      </div>
+
+      <div class="mb-6 w-full">
+        <img
+          src="/images/markisa/markisa-promo-500.webp"
+          srcset="/images/markisa/markisa-promo-400.webp 400w, /images/markisa/markisa-promo-500.webp 500w"
+          sizes="(max-width: 480px) 100vw, 480px"
+          alt="Promo Diskon 50% & Garansi Sampai Bibit Markisa PASIMA"
+          class="w-full h-auto block object-contain mx-auto"
+          loading="lazy"
+          decoding="async"
+          width="500"
+          height="500"
+          fetchpriority="low"
+        />
+      </div>
+
+      <GeoIpResolvedForm mode={formContext.mode} productSlug="bibit-markisa-pasima" embedded={true} />
+    </section>
+
+    <!-- 11. FOOTER -->
+    <LpMiniFooter />
+
+    <!-- 12. STICKY CTA MOBILE -->
+    <StickyCTA productSlug="bibit-markisa-pasima" />
+  </main>
+</BaseLayout>
+
+<style>
+  .hl-brush {
+    -webkit-box-decoration-break: clone;
+    box-decoration-break: clone;
+    padding-bottom: 0.14em;
+    background-image: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20320%2024'%20preserveAspectRatio='none'%3E%3Cpath%20d='M3%2013C55%206%20120%2016%20182%2011S292%208%20317%2012L315%2020C252%2015%20150%2023%2072%2019S13%2021%205%2020C2%2017%202%2016%203%2013Z'%20fill='%232E7D32'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: center 100%;
+    background-size: 100% 0.32em;
+  }
+</style>
+

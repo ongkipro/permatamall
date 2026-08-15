@@ -1,0 +1,359 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import GeoIpResolvedForm from '../components/forms/GeoIpResolvedForm.astro';
+import Icon from '../components/shared/Icon.astro';
+import LpMiniFooter from '../components/shared/LpMiniFooter.astro';
+import MetaLandingTracker from '../components/tracking/MetaLandingTracker.astro';
+import SocialProof from '../components/shared/SocialProof.astro';
+import StickyCTA from '../components/shared/StickyCTA.astro';
+import { getProductBySlug } from '../data/products';
+import { resolveFormModeContext } from '../lib/form-mode';
+import '../styles/form-hybrid.css';
+
+export const prerender = false;
+
+const product = getProductBySlug('bibit-buah-jamblang');
+if (!product) throw new Error('Product bibit-buah-jamblang not found');
+const formContext = await resolveFormModeContext(Astro.request);
+
+const canonical = 'https://pesantren.shop/bibit-buah-jamblang';
+const seoTitle = 'Bibit Buah Jamblang Hitam (Duwet) Unggulan Vegetatif - Toko Berkah Amanah';
+const seoDescription =
+  'Bibit Buah Jamblang Hitam (Duwet) unggulan hasil perbanyakan vegetatif pilihan. Tanaman kokoh, cepat berbuah di pot & pekarangan. Cuma Rp 85.000 COD!';
+---
+
+<BaseLayout
+  title={seoTitle}
+  description={seoDescription}
+  image={product.heroImage}
+  canonical={canonical}
+  hideHeader={true}
+  hideFooter={true}
+  preloadImages={['/images/jamblang/jamblang-hero.webp']}
+  breadcrumbs={[
+    { name: 'Beranda', url: '/' },
+    { name: 'Bibit Buah Jamblang Hitam', url: '/bibit-buah-jamblang' },
+  ]}
+>
+  <main class="mx-auto min-h-screen w-full max-w-[480px] bg-white text-slate-950 font-sans shadow-lg">
+    <MetaLandingTracker
+      slug="bibit-buah-jamblang"
+      productId={product.productId}
+      contentName={product.contentName}
+      price={product.price}
+    />
+
+    <!-- TOP URGENCY BANNER -->
+    <div class="bg-[#232F3E] px-4 py-2.5 text-center">
+      <p class="flex items-center justify-center gap-1.5 text-[12px] font-extrabold uppercase tracking-wide text-white">
+        <Icon name="lucide:zap" class="h-4 w-4 shrink-0 text-[#FF9900]" aria-hidden="true" />
+        PROMO BIBIT BUAH JAMBLANG HITAM PREMIUM: CUMA RP 85.000 BISA COD!
+      </p>
+    </div>
+
+    <!-- HERO / TITLE & SUBTITLE -->
+    <section class="px-5 pt-6 pb-4 text-center bg-white">
+      <h1 class="text-[clamp(26px,7.5vw,32px)] font-extrabold leading-[1.18] text-slate-950">
+        Bibit Buah Jamblang Hitam (Duwet)
+      </h1>
+      <p class="mt-3 text-[15px] leading-relaxed text-slate-700 font-medium">
+        unggulan hasil perbanyakan vegetatif pilihan. Tanaman kokoh, cepat berbuah, dan sangat cocok ditanam di pot
+        maupun pekarangan rumah sebagai koleksi buah legendaris yang mulai langka.
+      </p>
+
+      <!-- HERO IMAGE (LCP) -->
+      <div class="mt-5 overflow-hidden rounded-xl border border-slate-200 shadow-sm">
+        <img
+          src="/images/jamblang/jamblang-hero.webp"
+          alt="Bibit Buah Jamblang Hitam Duwet"
+          class="w-full h-auto block object-cover"
+          loading="eager"
+          fetchpriority="high"
+          decoding="async"
+          width="540"
+          height="960"
+        />
+      </div>
+
+      <!-- ANIMATED ARROW (14.6KB Poster + Lazy IntersectionObserver) -->
+      <div class="mt-4 flex justify-center">
+        <img
+          id="jamblang-arrow-img"
+          src="/images/jamblang/download-arrow-poster.webp"
+          data-src="/images/jamblang/download-arrow.webp"
+          alt="Panah Petunjuk"
+          class="w-[120px] max-w-full h-auto block"
+          loading="lazy"
+          decoding="async"
+          fetchpriority="low"
+          width="240"
+          height="240"
+        />
+      </div>
+      <script is:inline>
+        if ('IntersectionObserver' in window) {
+          const arrowImg = document.getElementById('jamblang-arrow-img');
+          if (arrowImg) {
+            const obs = new IntersectionObserver(
+              (entries) => {
+                entries.forEach((e) => {
+                  if (e.isIntersecting) {
+                    arrowImg.src = arrowImg.getAttribute('data-src');
+                    obs.disconnect();
+                  }
+                });
+              },
+              { rootMargin: '200px' },
+            );
+            obs.observe(arrowImg);
+          }
+        }
+      </script>
+    </section>
+
+    <!-- SECTION 1: MASALAH YANG SERING ANDA ALAMI -->
+    <section class="px-5 py-6 bg-slate-50 border-t border-slate-200">
+      <h2 class="text-center font-extrabold text-[22px] text-slate-950 mb-4">Masalah Yang Sering Anda Alami:</h2>
+
+      <ul class="space-y-3.5 text-[14.5px] leading-relaxed text-slate-800 font-medium">
+        <li class="flex items-start gap-2.5 bg-white p-3 rounded-lg border border-red-100 shadow-xs">
+          <span class="text-red-500 font-bold shrink-0 text-lg">❌</span>
+          <span
+            >Kangen berat ingin makan buah jamblang hitam tapi frustrasi karena nyarinya susah setengah mati di pasar
+            modern maupun pasar tradisional.</span
+          >
+        </li>
+        <li class="flex items-start gap-2.5 bg-white p-3 rounded-lg border border-red-100 shadow-xs">
+          <span class="text-red-500 font-bold shrink-0 text-lg">❌</span>
+          <span
+            >Harga buahnya melambung tinggi kalaupun ada yang jual, itu pun kualitas buahnya sering kali sudah layu dan
+            tidak segar lagi karena terlalu lama di perjalanan.</span
+          >
+        </li>
+        <li class="flex items-start gap-2.5 bg-white p-3 rounded-lg border border-red-100 shadow-xs">
+          <span class="text-red-500 font-bold shrink-0 text-lg">❌</span>
+          <span
+            >Kehilangan momen mengenalkan buah legendaris ini kepada anak-anak, padahal buah duwet hitam ini punya
+            cerita nostalgia yang sangat berkesan di masa kecil kita dulu.</span
+          >
+        </li>
+      </ul>
+
+      <p
+        class="mt-5 text-[15px] leading-relaxed text-slate-700 bg-red-50/80 p-4 rounded-xl border border-red-200/60 font-medium"
+      >
+        Ini adalah keresahan para pencinta tanaman dan pemburu buah langka. Menikmati eksotisnya buah masa kecil
+        harusnya bisa dilakukan dengan mudah di rumah, tanpa harus bergantung pada stok pasar yang makin hari makin
+        hilang ditelan zaman.
+      </p>
+
+      <div class="mt-5 overflow-hidden rounded-xl border border-slate-200 shadow-sm">
+        <img
+          fetchpriority="low"
+          decoding="async"
+          src="/images/jamblang/jamblang-masalah.webp"
+          alt="Masalah Buah Jamblang Hitam Langka"
+          class="w-full h-auto block"
+          loading="lazy"
+          width="540"
+          height="540"
+        />
+      </div>
+    </section>
+
+    <!-- SECTION 2: SOLUSI LOGIS -->
+    <section class="px-5 py-6 bg-white border-t border-slate-200">
+      <h2 class="text-center font-extrabold text-[22px] text-emerald-800 leading-snug mb-3">
+        Solusi Logis Hadirkan Kebun Buah Langka di Rumah Anda
+      </h2>
+
+      <p class="text-[15px] leading-relaxed text-slate-700 font-medium text-center">
+        Meninggalkan cara lama berburu buah langka yang bikin lelah dan belum tentu ketemu. Sekarang waktunya beralih ke
+        investasi hijau yang menghasilkan kepuasan jangka panjang: <strong class="text-slate-950 font-bold"
+          >Bibit Buah Jamblang Hitam Premium</strong
+        >.
+      </p>
+
+      <div class="mt-5 overflow-hidden rounded-xl border border-slate-200 shadow-sm">
+        <img
+          fetchpriority="low"
+          decoding="async"
+          src="/images/jamblang/jamblang-solusi.webp"
+          alt="Solusi Bibit Buah Jamblang Hitam"
+          class="w-full h-auto block"
+          loading="lazy"
+          width="540"
+          height="540"
+        />
+      </div>
+    </section>
+
+    <!-- SECTION 3: PERUBAHAN YANG KAMU DAPATKAN -->
+    <section class="px-5 py-6 bg-slate-50 border-t border-slate-200">
+      <h2 class="text-center font-extrabold text-[22px] text-slate-950 leading-snug mb-4">
+        Perubahan Yang Kamu Dapatkan Setelah Punya Barang Ini:
+      </h2>
+
+      <div class="overflow-hidden rounded-xl border border-slate-200 shadow-sm">
+        <img
+          fetchpriority="low"
+          decoding="async"
+          src="/images/jamblang/jamblang-perubahan.webp"
+          alt="Perubahan Setelah Punya Bibit Jamblang"
+          class="w-full h-auto block"
+          loading="lazy"
+          width="540"
+          height="540"
+        />
+      </div>
+    </section>
+
+    <!-- SECTION 4: TANAMAN ALL-ROUNDER -->
+    <section class="px-5 py-6 bg-white border-t border-slate-200">
+      <h2 class="text-center font-extrabold text-[21px] text-slate-950 leading-snug mb-4">
+        Tanaman All-Rounder, Pas untuk Segala Jenis Lahan:
+      </h2>
+
+      <div class="overflow-hidden rounded-xl border border-slate-200 shadow-sm">
+        <img
+          fetchpriority="low"
+          decoding="async"
+          src="/images/jamblang/jamblang-all-rounder.webp"
+          alt="Tanaman All-Rounder Segala Lahan"
+          class="w-full h-auto block"
+          loading="lazy"
+          width="540"
+          height="540"
+        />
+      </div>
+    </section>
+
+    <!-- SECTION 5: FITUR & KELEBIHAN PRODUK -->
+    <section class="px-5 py-6 bg-slate-50 border-t border-slate-200">
+      <h2 class="text-center font-extrabold text-[22px] text-slate-950 mb-5">Fitur &amp; Kelebihan Produk</h2>
+
+      <div class="space-y-4">
+        <div class="overflow-hidden rounded-xl border border-slate-200 shadow-xs">
+          <img
+            fetchpriority="low"
+            decoding="async"
+            src="/images/jamblang/jamblang-fitur-1.webp"
+            alt="Fitur 1 Bibit Buah Jamblang"
+            class="w-full h-auto block"
+            loading="lazy"
+            width="540"
+            height="540"
+          />
+        </div>
+        <div class="overflow-hidden rounded-xl border border-slate-200 shadow-xs">
+          <img
+            fetchpriority="low"
+            decoding="async"
+            src="/images/jamblang/jamblang-fitur-2.webp"
+            alt="Fitur 2 Bibit Buah Jamblang"
+            class="w-full h-auto block"
+            loading="lazy"
+            width="540"
+            height="540"
+          />
+        </div>
+        <div class="overflow-hidden rounded-xl border border-slate-200 shadow-xs">
+          <img
+            fetchpriority="low"
+            decoding="async"
+            src="/images/jamblang/jamblang-fitur-3.webp"
+            alt="Fitur 3 Bibit Buah Jamblang"
+            class="w-full h-auto block"
+            loading="lazy"
+            width="540"
+            height="540"
+          />
+        </div>
+        <div class="overflow-hidden rounded-xl border border-slate-200 shadow-xs">
+          <img
+            fetchpriority="low"
+            decoding="async"
+            src="/images/jamblang/jamblang-fitur-4.webp"
+            alt="Fitur 4 Bibit Buah Jamblang"
+            class="w-full h-auto block"
+            loading="lazy"
+            width="540"
+            height="540"
+          />
+        </div>
+        <div class="overflow-hidden rounded-xl border border-slate-200 shadow-xs">
+          <img
+            fetchpriority="low"
+            decoding="async"
+            src="/images/jamblang/jamblang-fitur-5.webp"
+            alt="Fitur 5 Bibit Buah Jamblang"
+            class="w-full h-auto block"
+            loading="lazy"
+            width="540"
+            height="540"
+          />
+        </div>
+        <div class="overflow-hidden rounded-xl border border-slate-200 shadow-xs">
+          <img
+            fetchpriority="low"
+            decoding="async"
+            src="/images/jamblang/jamblang-fitur-6.webp"
+            alt="Fitur 6 Bibit Buah Jamblang"
+            class="w-full h-auto block"
+            loading="lazy"
+            width="540"
+            height="960"
+          />
+        </div>
+      </div>
+    </section>
+
+    <!-- OFFER & PRICING CALLOUT -->
+    <section class="px-5 py-6 bg-gradient-to-b from-amber-50 to-orange-50 border-t border-amber-200 text-center">
+      <div class="bg-white p-5 rounded-2xl border border-amber-300 shadow-md">
+        <p class="text-[17px] font-extrabold text-slate-950 leading-snug">
+          Cuma Rp 85.000. Amankan Bibit Buah Jamblang Hitam Premium Ini dan Mulai Kebun Nostalgia Anda Sekarang!
+        </p>
+
+        <div class="my-4 h-px bg-amber-200 w-full"></div>
+
+        <p class="text-[14.5px] leading-relaxed text-slate-800 font-medium">
+          Hanya dengan <strong class="font-bold text-slate-950">Rp 85.000</strong>, Anda sudah memiliki aset tanaman
+          langka hias sekaligus produktif yang umurnya bisa bertahan puluhan tahun di rumah.
+        </p>
+
+        <p class="mt-2.5 text-[14px] leading-relaxed text-slate-600 font-medium italic">
+          Jauh lebih hemat daripada beli buah petikan eceran yang sekali makan langsung habis.
+        </p>
+      </div>
+    </section>
+
+    <!-- ORDER FORM SECTION (SCALEV EMBEDDED FORM) -->
+    <section id="order-form" class="bg-white border-t border-slate-200">
+      <!-- SCALEV ORDER FORM INTEGRATION -->
+      <GeoIpResolvedForm mode={formContext.mode} productSlug="bibit-buah-jamblang" embedded={true} />
+    </section>
+
+    <!-- SOCIAL PROOF NOTIFICATION -->
+    <SocialProof productSlug="bibit-buah-jamblang" />
+
+    <!-- GUARANTEE IMAGE & FOOTER INFO -->
+    <section class="px-5 py-6 bg-slate-900 text-white text-center border-t border-slate-800">
+      <div class="overflow-hidden rounded-xl mb-6 shadow-md border border-slate-800">
+        <img
+          fetchpriority="low"
+          decoding="async"
+          src="/images/jamblang/garansi-cod.webp"
+          alt="Garansi COD Dan Pengiriman"
+          class="w-full h-auto block mx-auto"
+          loading="lazy"
+        />
+      </div>
+
+      <LpMiniFooter />
+    </section>
+
+    <!-- STICKY BOTTOM CTA -->
+    <StickyCTA productSlug="bibit-buah-jamblang" />
+  </main>
+</BaseLayout>

@@ -1,0 +1,252 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import GeoIpResolvedForm from '../components/forms/GeoIpResolvedForm.astro';
+import Icon from '../components/shared/Icon.astro';
+import LpMiniFooter from '../components/shared/LpMiniFooter.astro';
+import MetaLandingTracker from '../components/tracking/MetaLandingTracker.astro';
+import SocialProof from '../components/shared/SocialProof.astro';
+import StickyCTA from '../components/shared/StickyCTA.astro';
+import { getProductBySlug } from '../data/products';
+import { resolveFormModeContext } from '../lib/form-mode';
+import '../styles/form-hybrid.css';
+
+export const prerender = false;
+
+const product = getProductBySlug('lem-jaysuing');
+if (!product) throw new Error('Product lem-jaysuing not found');
+const formContext = await resolveFormModeContext(Astro.request);
+
+const canonical = 'https://permatamall.shop/transparan';
+const seoTitle = 'Lem Transparan Anti Bocor & Rembes - Cek Out Sekarang';
+const seoDescription =
+  'Lem Jaysuing Transparan Anti Bocor & Rembes. Lapisan bening kedap air 100% tahan panas & cuaca. Promo Beli 1 Gratis 1 Rp 99.000 COD.';
+---
+
+<BaseLayout
+  title={seoTitle}
+  description={seoDescription}
+  image={product.heroImage}
+  canonical={canonical}
+  hideHeader={true}
+  hideFooter={true}
+  breadcrumbs={[
+    { name: 'Beranda', url: '/' },
+    { name: 'Lem Transparan Anti Bocor', url: '/transparan' },
+  ]}
+  preloadImages={[
+    {
+      srcset: '/images/transparan/h1-400.webp 400w, /images/transparan/h1-600.webp 600w',
+      sizes: '(max-width: 480px) 100vw, 480px',
+    },
+  ]}
+>
+  <main class="mx-auto min-h-screen w-full max-w-[480px] bg-white text-slate-950 font-sans shadow-lg">
+    <MetaLandingTracker
+      slug="lem-jaysuing"
+      productId={product.productId}
+      contentName={product.contentName}
+      price={product.price}
+    />
+
+    <!-- URGENCY TOP BAR -->
+    <div class="bg-[#EC7211] px-4 py-2.5 text-center">
+      <p class="flex items-center justify-center gap-1.5 text-[12px] font-extrabold uppercase tracking-wide text-white">
+        <Icon name="lucide:zap" class="h-4 w-4 shrink-0 text-white" aria-hidden="true" />
+        PROMO SPECIAL LEM JAYSUING TRANSPARAN ANTI BOCOR: BELI 1 GRATIS 1 RP 99RB COD!
+      </p>
+    </div>
+
+    <!-- SEQUENTIAL CONTENT IMAGES (H1 - H7) -->
+    <section class="bg-white">
+      <div class="w-full">
+        <img
+          src="/images/transparan/h1-600.webp"
+          srcset="/images/transparan/h1-400.webp 400w, /images/transparan/h1-600.webp 600w"
+          sizes="(max-width: 480px) 100vw, 480px"
+          alt="Lem Transparan Anti Bocor Header"
+          class="w-full h-auto block"
+          loading="eager"
+          fetchpriority="high"
+          decoding="async"
+          width="540"
+          height="661"
+        />
+      </div>
+      <div class="w-full">
+        <img
+          src="/images/transparan/h2-600.webp"
+          srcset="/images/transparan/h2-400.webp 400w, /images/transparan/h2-600.webp 600w"
+          sizes="(max-width: 480px) 100vw, 480px"
+          alt="Solusi Lem Transparan Anti Rembes"
+          class="w-full h-auto block"
+          loading="lazy"
+          decoding="async"
+          fetchpriority="low"
+          width="540"
+          height="761"
+        />
+      </div>
+      <div class="w-full">
+        <img
+          src="/images/transparan/h3-600.webp"
+          srcset="/images/transparan/h3-400.webp 400w, /images/transparan/h3-600.webp 600w"
+          sizes="(max-width: 480px) 100vw, 480px"
+          alt="Fitur Lem Transparan Jaysuing"
+          class="w-full h-auto block"
+          loading="lazy"
+          decoding="async"
+          fetchpriority="low"
+          width="540"
+          height="755"
+        />
+      </div>
+      <div class="w-full">
+        <img
+          src="/images/transparan/h4-600.webp"
+          srcset="/images/transparan/h4-400.webp 400w, /images/transparan/h4-600.webp 600w"
+          sizes="(max-width: 480px) 100vw, 480px"
+          alt="Demonstrasi Penggunaan Lem Transparan"
+          class="w-full h-auto block"
+          loading="lazy"
+          decoding="async"
+          fetchpriority="low"
+          width="540"
+          height="820"
+        />
+      </div>
+      <div class="w-full">
+        <img
+          src="/images/transparan/h5-600.webp"
+          srcset="/images/transparan/h5-400.webp 400w, /images/transparan/h5-600.webp 600w"
+          sizes="(max-width: 480px) 100vw, 480px"
+          alt="Keunggulan Pelapis Bening Anti Bocor"
+          class="w-full h-auto block"
+          loading="lazy"
+          decoding="async"
+          fetchpriority="low"
+          width="540"
+          height="518"
+        />
+      </div>
+      <div class="w-full">
+        <img
+          src="/images/transparan/h6-600.webp"
+          srcset="/images/transparan/h6-400.webp 400w, /images/transparan/h6-600.webp 600w"
+          sizes="(max-width: 480px) 100vw, 480px"
+          alt="Penggunaan Pada Keramik & Atap Seng"
+          class="w-full h-auto block"
+          loading="lazy"
+          decoding="async"
+          fetchpriority="low"
+          width="540"
+          height="683"
+        />
+      </div>
+      <div class="w-full">
+        <img
+          src="/images/transparan/h7-600.webp"
+          srcset="/images/transparan/h7-400.webp 400w, /images/transparan/h7-600.webp 600w"
+          sizes="(max-width: 480px) 100vw, 480px"
+          alt="Detail Produk Lem Jaysuing Transparan"
+          class="w-full h-auto block"
+          loading="lazy"
+          decoding="async"
+          fetchpriority="low"
+          width="540"
+          height="646"
+        />
+      </div>
+    </section>
+
+    <!-- PRICING & OFFER BOX SECTION -->
+    <section class="px-5 py-8 bg-gradient-to-b from-orange-50 to-amber-50 border-t border-orange-200 text-center">
+      <span
+        class="inline-block bg-red-600 text-white font-black text-[12px] uppercase tracking-widest px-3 py-1 rounded-full shadow-xs mb-3"
+      >
+        PROMO HARI INI
+      </span>
+
+      <h2 class="text-[20px] font-extrabold text-slate-950 leading-snug">
+        Saya tertarik dan mau pesan, berapa harga nya?
+      </h2>
+
+      <p class="mt-2.5 text-[14.5px] leading-relaxed text-slate-700 font-medium max-w-[420px] mx-auto">
+        Saat ini toko kami sedang mengadakan promo khusus. Sehingga harga LEM ANTI REMBES ini jauh lebih murah dibanding
+        dengan harga normal.
+      </p>
+
+      <h3 class="mt-4 text-[17px] font-extrabold text-red-600">Hari ini kita berikan HARGA SPESIAL :</h3>
+
+      <!-- OFFER CARD -->
+      <div
+        class="mt-4 max-w-[380px] mx-auto bg-gradient-to-r from-amber-500 to-orange-600 text-white p-5 rounded-2xl shadow-xl border border-amber-300"
+      >
+        <p class="text-[22px] font-black tracking-tight">BELI 1 GRATIS 1</p>
+        <p class="text-[32px] font-black text-amber-100 my-1">Rp.99.000</p>
+        <p class="text-[14px] font-extrabold text-amber-200 uppercase tracking-wide">(DAPAT 2 KALENG)</p>
+      </div>
+    </section>
+
+    <!-- ORDER FORM SECTION -->
+    <section id="order-form" class="bg-white border-t border-slate-200">
+      <!-- SCALEV ORDER FORM INTEGRATION -->
+      <GeoIpResolvedForm mode={formContext.mode} productSlug="lem-jaysuing" embedded={true} />
+    </section>
+
+    <!-- SOCIAL PROOF NOTIFICATION -->
+    <SocialProof productSlug="lem-jaysuing" />
+
+    <!-- FOOTER & GUARANTEE IMAGES -->
+    <section class="px-5 py-6 bg-slate-900 text-white text-center border-t border-slate-800">
+      <div class="space-y-4 mb-6">
+        <div class="overflow-hidden rounded-xl shadow-md border border-slate-800">
+          <img
+            src="/images/transparan/cod-banner-600.webp"
+            srcset="/images/transparan/cod-banner-400.webp 400w, /images/transparan/cod-banner-600.webp 800w"
+            sizes="(max-width: 480px) 100vw, 480px"
+            alt="Banner COD Seluruh Indonesia"
+            class="w-full h-auto block mx-auto"
+            loading="lazy"
+            decoding="async"
+            fetchpriority="low"
+            width="800"
+            height="414"
+          />
+        </div>
+        <div class="overflow-hidden rounded-xl shadow-md border border-slate-800">
+          <img
+            src="/images/transparan/garansi-600.webp"
+            srcset="/images/transparan/garansi-400.webp 400w, /images/transparan/garansi-600.webp 540w"
+            sizes="(max-width: 480px) 100vw, 480px"
+            alt="Garansi Kepuasan Pelanggan"
+            class="w-full h-auto block mx-auto"
+            loading="lazy"
+            decoding="async"
+            fetchpriority="low"
+            width="540"
+            height="135"
+          />
+        </div>
+        <div class="overflow-hidden rounded-xl shadow-md border border-slate-800">
+          <img
+            src="/images/transparan/ketentuan-600.webp"
+            srcset="/images/transparan/ketentuan-400.webp 400w, /images/transparan/ketentuan-600.webp 540w"
+            sizes="(max-width: 480px) 100vw, 480px"
+            alt="Syarat & Ketentuan Garansi"
+            class="w-full h-auto block mx-auto"
+            loading="lazy"
+            decoding="async"
+            fetchpriority="low"
+            width="540"
+            height="270"
+          />
+        </div>
+      </div>
+
+      <LpMiniFooter />
+    </section>
+
+    <!-- STICKY BOTTOM CTA -->
+    <StickyCTA productSlug="lem-jaysuing" />
+  </main>
+</BaseLayout>

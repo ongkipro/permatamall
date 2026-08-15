@@ -1,0 +1,342 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import GeoIpResolvedForm from '../components/forms/GeoIpResolvedForm.astro';
+import Icon from '../components/shared/Icon.astro';
+import LpMiniFooter from '../components/shared/LpMiniFooter.astro';
+import MetaLandingTracker from '../components/tracking/MetaLandingTracker.astro';
+import SocialProof from '../components/shared/SocialProof.astro';
+import StickyCTA from '../components/shared/StickyCTA.astro';
+import { getProductBySlug } from '../data/products';
+import { resolveFormModeContext } from '../lib/form-mode';
+import '../styles/form-hybrid.css';
+
+export const prerender = false;
+
+const product = getProductBySlug('sealant-cement');
+if (!product) throw new Error('Product sealant-cement not found');
+const formContext = await resolveFormModeContext(Astro.request);
+
+const canonical = 'https://permatamall.shop/sealant';
+const seoTitle = 'Sealant Anti Bocor Cement Dempul Penambal Lubang Praktis';
+const seoDescription =
+  'Sealant Dempul Cement penambal lubang praktis. Tahan air, minyak, panas & korosi, otomatis mengeras. Promo Beli 1 Dapat 10 Pcs Rp 99rb COD.';
+---
+
+<BaseLayout
+  title={seoTitle}
+  description={seoDescription}
+  image={product.heroImage}
+  canonical={canonical}
+  hideHeader={true}
+  hideFooter={true}
+  breadcrumbs={[
+    { name: 'Beranda', url: '/' },
+    { name: 'Sealant Anti Bocor', url: '/sealant' },
+  ]}
+  preloadImages={[
+    {
+      srcset: '/images/sealant/sealant-hero-400.webp 400w, /images/sealant/sealant-hero-600.webp 600w',
+      sizes: '(max-width: 480px) 100vw, 480px',
+    },
+  ]}
+>
+  <main class="mx-auto min-h-screen w-full max-w-[480px] bg-white text-slate-950 font-sans shadow-lg">
+    <MetaLandingTracker
+      slug="sealant-cement"
+      productId={product.productId}
+      contentName={product.contentName}
+      price={product.price}
+    />
+
+    <!-- URGENCY TOP BAR -->
+    <div class="bg-[#EC7211] px-4 py-2.5 text-center">
+      <p class="flex items-center justify-center gap-1.5 text-[12px] font-extrabold uppercase tracking-wide text-white">
+        <Icon name="lucide:zap" class="h-4 w-4 shrink-0 text-white" aria-hidden="true" />
+        PROMO SPECIAL SEALANT CEMENT PENAMBAL LUBANG PRAKTIS: BELI 1 DAPAT 10 RP 99RB COD!
+      </p>
+    </div>
+
+    <!-- HERO SECTION & TITLE -->
+    <section class="px-5 pt-6 pb-4 text-center bg-white">
+      <h1 class="text-[clamp(24px,7vw,30px)] font-extrabold leading-[1.2] text-slate-950 uppercase tracking-tight">
+        EMANG ADA PENAMBAL LUBANG PRAKTIS KAYA GINI..???
+      </h1>
+      <p
+        class="mt-3 text-[15px] font-semibold leading-relaxed text-red-600 bg-red-50 p-3 rounded-xl border border-red-200/60"
+      >
+        Bisa digunakan untuk menambal apapun baik bocor, berlubang dan lain sebagainya
+      </p>
+
+      <!-- HERO IMAGE -->
+      <div class="mt-5 overflow-hidden rounded-xl border border-slate-200 shadow-sm">
+        <img
+          src="/images/sealant/sealant-hero-600.webp"
+          srcset="/images/sealant/sealant-hero-400.webp 400w, /images/sealant/sealant-hero-600.webp 600w"
+          sizes="(max-width: 480px) 100vw, 480px"
+          alt="Sealant Cement Penambal Lubang AC & Dinding"
+          class="w-full h-auto block"
+          loading="eager"
+          fetchpriority="high"
+          decoding="async"
+          width="540"
+          height="540"
+        />
+      </div>
+    </section>
+
+    <!-- SECTION 1: SOLUSI PALING TEPAT -->
+    <section class="px-5 py-6 bg-slate-50 border-t border-slate-200">
+      <h2 class="text-center font-extrabold text-[21px] text-slate-950 leading-snug mb-3">
+        Tak perlu lagi pusing cukup dengan satu produk ini Solusi yang paling tepat!
+      </h2>
+
+      <p
+        class="text-[14.5px] leading-relaxed text-slate-700 font-medium text-center bg-white p-4 rounded-xl border border-slate-200 shadow-xs mb-5"
+      >
+        Sealant dempul ini dapat digunakan untuk memperbaiki lubang dinding dan menutup celah. Ini akan secara otomatis
+        kering setelah menerapkannya di dinding. Selain itu, sealant ini lunak dan mudah dibentuk kembali!
+      </p>
+
+      <div class="space-y-4">
+        <div class="overflow-hidden rounded-xl border border-slate-200 shadow-sm">
+          <img
+            src="/images/sealant/sealant-5-600.webp"
+            srcset="/images/sealant/sealant-5-400.webp 400w, /images/sealant/sealant-5-600.webp 600w"
+            sizes="(max-width: 480px) 100vw, 480px"
+            alt="Aplikasi Sealant Dempul Dinding"
+            class="w-full h-auto block"
+            loading="lazy"
+            decoding="async"
+            fetchpriority="low"
+            width="540"
+            height="540"
+          />
+        </div>
+        <div class="overflow-hidden rounded-xl border border-slate-200 shadow-sm">
+          <img
+            src="/images/sealant/sealant-3-600.webp"
+            srcset="/images/sealant/sealant-3-400.webp 400w, /images/sealant/sealant-3-600.webp 600w"
+            sizes="(max-width: 480px) 100vw, 480px"
+            alt="Hasil Penambalan Lubang AC Pipa"
+            class="w-full h-auto block"
+            loading="lazy"
+            decoding="async"
+            fetchpriority="low"
+            width="540"
+            height="540"
+          />
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 2: ALAT SERBAGUNA & BAHAN -->
+    <section class="px-5 py-6 bg-white border-t border-slate-200 text-center">
+      <h2 class="font-extrabold text-[20px] text-slate-950 leading-snug mb-3">
+        Dengan desain yang kokoh dan ringkas, Penambal Lubang Praktis adalah alat serbaguna yang dapat memenuhi berbagai
+        kebutuhan sehari-hari Anda.
+      </h2>
+
+      <p
+        class="text-[14.5px] font-semibold text-emerald-800 bg-emerald-50 p-3.5 rounded-xl border border-emerald-200/60 leading-relaxed"
+      >
+        Terbuat dari bahan yang sudah didesain untuk menambal seperti Pipa, Lubang AC, Gap Garis, dan Dinding Alur.
+      </p>
+    </section>
+
+    <!-- SECTION 3: MENGAPA HARUS MEMILIH -->
+    <section class="px-5 py-6 bg-slate-50 border-t border-slate-200">
+      <h2 class="text-center font-extrabold text-[21px] text-slate-950 mb-4">
+        Mengapa Harus Memilih Penambal Lubang Praktis..??
+      </h2>
+
+      <div class="overflow-hidden rounded-xl border border-slate-200 shadow-sm">
+        <img
+          src="/images/sealant/sealant-9-600.webp"
+          srcset="/images/sealant/sealant-9-400.webp 400w, /images/sealant/sealant-9-600.webp 600w"
+          sizes="(max-width: 480px) 100vw, 480px"
+          alt="Mengapa Memilih Penambal Lubang Praktis"
+          class="w-full h-auto block"
+          loading="lazy"
+          decoding="async"
+          fetchpriority="low"
+          width="540"
+          height="540"
+        />
+      </div>
+    </section>
+
+    <!-- SECTION 4: DETAIL & FITUR PRODUK -->
+    <section class="px-5 py-6 bg-white border-t border-slate-200">
+      <!-- DETAIL PRODUK CARD -->
+      <div class="bg-gradient-to-br from-slate-900 to-slate-800 text-white p-5 rounded-2xl shadow-md mb-6">
+        <h2 class="text-center font-extrabold text-[20px] text-amber-400 mb-3 border-b border-slate-700 pb-2">
+          Detail Produk
+        </h2>
+        <div class="space-y-2 text-[14.5px] font-medium leading-relaxed">
+          <p><strong class="text-slate-300">Ukuran :</strong> 14cm X 6cm</p>
+          <p><strong class="text-slate-300">Bahan :</strong> Rubber and Silicone</p>
+          <p><strong class="text-slate-300">Isi Kemasan :</strong> 1 Bungkus Isi 25 Gram</p>
+        </div>
+      </div>
+
+      <!-- FITUR PRODUK LIST -->
+      <div class="bg-amber-50/80 p-5 rounded-2xl border border-amber-200/70 shadow-xs mb-6">
+        <h2 class="text-center font-extrabold text-[20px] text-slate-950 mb-3 border-b border-amber-200 pb-2">
+          Fitur Produk
+        </h2>
+        <ul class="space-y-2.5 text-[14px] leading-relaxed text-slate-800 font-medium">
+          <li class="flex items-start gap-2">
+            <span class="text-amber-600 font-bold shrink-0">✔</span>
+            <span>Relatif Lebih Cepat Kering Dan Mengeras</span>
+          </li>
+          <li class="flex items-start gap-2">
+            <span class="text-amber-600 font-bold shrink-0">✔</span>
+            <span>Formula Disempurnakan Tahan Terhadap Panas, Minyak Dan Korosi Instan Dan Mudah Diaplikasikan</span>
+          </li>
+          <li class="flex items-start gap-2">
+            <span class="text-amber-600 font-bold shrink-0">✔</span>
+            <span>Cocok Diaplikasikan Di Beton, Fiberglass, Logam, PVC, Plastik, Kayu, Aquarium Dll</span>
+          </li>
+          <li class="flex items-start gap-2">
+            <span class="text-amber-600 font-bold shrink-0">✔</span>
+            <span>Lingkup Aplikasi: Dinding Alur, Lubang AC, Gap Garis, Pipa Air</span>
+          </li>
+        </ul>
+      </div>
+
+      <!-- FITUR IMAGES -->
+      <div class="space-y-4">
+        <div class="overflow-hidden rounded-xl border border-slate-200 shadow-sm">
+          <img
+            src="/images/sealant/sealant-7-600.webp"
+            srcset="/images/sealant/sealant-7-400.webp 400w, /images/sealant/sealant-7-600.webp 600w"
+            sizes="(max-width: 480px) 100vw, 480px"
+            alt="Fitur Aplikasi Dempul Sealant"
+            class="w-full h-auto block"
+            loading="lazy"
+            decoding="async"
+            fetchpriority="low"
+            width="540"
+            height="540"
+          />
+        </div>
+        <div class="overflow-hidden rounded-xl border border-slate-200 shadow-sm">
+          <img
+            src="/images/sealant/sealant-6-600.webp"
+            srcset="/images/sealant/sealant-6-400.webp 400w, /images/sealant/sealant-6-600.webp 600w"
+            sizes="(max-width: 480px) 100vw, 480px"
+            alt="Dempul Tahan Air Panas Korosi"
+            class="w-full h-auto block"
+            loading="lazy"
+            decoding="async"
+            fetchpriority="low"
+            width="540"
+            height="540"
+          />
+        </div>
+        <div class="overflow-hidden rounded-xl border border-slate-200 shadow-sm">
+          <img
+            src="/images/sealant/sealant-h6-600.webp"
+            srcset="/images/sealant/sealant-h6-400.webp 400w, /images/sealant/sealant-h6-600.webp 720w"
+            sizes="(max-width: 480px) 100vw, 480px"
+            alt="Demonstrasi Penambalan Lubang"
+            class="w-full h-auto block"
+            loading="lazy"
+            decoding="async"
+            fetchpriority="low"
+            width="720"
+            height="200"
+          />
+        </div>
+      </div>
+    </section>
+
+    <!-- PRICING BOX / PROMO HARI INI -->
+    <section class="px-5 py-6 bg-gradient-to-b from-orange-50 to-amber-50 border-t border-orange-200 text-center">
+      <p class="text-[16px] font-bold text-slate-800">Wah, pengen banget nih!😍 Tapi harganya berapa ya ?</p>
+
+      <h2 class="mt-2 text-[22px] font-extrabold text-red-600">Harga Spesial Hari Ini!!🎉🎉</h2>
+
+      <div class="mt-2 inline-block bg-red-600 text-white font-extrabold px-4 py-1.5 rounded-full text-[14px]">
+        <span class="line-through text-red-200 mr-2">Rp 185.000</span> DISKON 65%!
+      </div>
+
+      <div class="mt-5 space-y-3.5 max-w-[380px] mx-auto">
+        <!-- VARIANT 1 -->
+        <div class="bg-white p-4 rounded-xl border-2 border-orange-400 shadow-md">
+          <p class="text-[18px] font-extrabold text-slate-950">BELI 1 DAPAT 10</p>
+          <p class="text-[22px] font-black text-red-600 mt-1">Rp 99.000</p>
+        </div>
+
+        <div class="text-slate-300 font-bold text-xs tracking-widest">— — — — — — — — — —</div>
+
+        <!-- VARIANT 2 -->
+        <div
+          class="bg-gradient-to-r from-amber-500 to-orange-500 text-white p-4 rounded-xl shadow-lg border border-amber-300"
+        >
+          <span
+            class="inline-block bg-white text-orange-600 font-extrabold text-[11px] px-3 py-0.5 rounded-full uppercase tracking-wider mb-1"
+          >
+            PALING HEMAT!
+          </span>
+          <p class="text-[19px] font-black">BELI 1 DAPAT 20</p>
+          <p class="text-[24px] font-black text-amber-100 mt-0.5">Rp 149.000</p>
+        </div>
+      </div>
+
+      <p
+        class="mt-5 text-[13.5px] font-extrabold tracking-wide uppercase text-red-600 bg-white p-3 rounded-lg border border-red-200"
+      >
+        PROMO CUMA HARI INI JANGAN KETINGGALAN
+      </p>
+    </section>
+
+    <!-- ORDER FORM SECTION -->
+    <section id="order-form" class="bg-white border-t border-slate-200">
+      <!-- SCALEV ORDER FORM INTEGRATION -->
+      <GeoIpResolvedForm mode={formContext.mode} productSlug="sealant-cement" embedded={true} />
+    </section>
+
+    <!-- SOCIAL PROOF NOTIFICATION -->
+    <SocialProof productSlug="sealant-cement" />
+
+    <!-- GUARANTEE IMAGES & FOOTER -->
+    <section class="px-5 py-6 bg-slate-900 text-white text-center border-t border-slate-800">
+      <div class="space-y-4 mb-6">
+        <div class="overflow-hidden rounded-xl shadow-md border border-slate-800">
+          <img
+            src="/images/sealant/garansi-mb-600.webp"
+            srcset="/images/sealant/garansi-mb-400.webp 400w, /images/sealant/garansi-mb-600.webp 540w"
+            sizes="(max-width: 480px) 100vw, 480px"
+            alt="Garansi Kepuasan Pelanggan"
+            class="w-full h-auto block mx-auto"
+            loading="lazy"
+            decoding="async"
+            fetchpriority="low"
+            width="540"
+            height="302"
+          />
+        </div>
+        <div class="overflow-hidden rounded-xl shadow-md border border-slate-800">
+          <img
+            src="/images/sealant/garansi-11-600.webp"
+            srcset="/images/sealant/garansi-11-400.webp 400w, /images/sealant/garansi-11-600.webp 540w"
+            sizes="(max-width: 480px) 100vw, 480px"
+            alt="Garansi Pengiriman Aman COD"
+            class="w-full h-auto block mx-auto"
+            loading="lazy"
+            decoding="async"
+            fetchpriority="low"
+            width="540"
+            height="455"
+          />
+        </div>
+      </div>
+
+      <LpMiniFooter />
+    </section>
+
+    <!-- STICKY BOTTOM CTA -->
+    <StickyCTA productSlug="sealant-cement" />
+  </main>
+</BaseLayout>

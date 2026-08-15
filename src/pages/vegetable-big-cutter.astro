@@ -1,0 +1,379 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import GeoIpResolvedForm from '../components/forms/GeoIpResolvedForm.astro';
+import Icon from '../components/shared/Icon.astro';
+import LpMiniFooter from '../components/shared/LpMiniFooter.astro';
+import MetaLandingTracker from '../components/tracking/MetaLandingTracker.astro';
+import SocialProof from '../components/shared/SocialProof.astro';
+import StickyCTA from '../components/shared/StickyCTA.astro';
+import { getProductBySlug } from '../data/products';
+import { resolveFormModeContext } from '../lib/form-mode';
+import '../styles/form-hybrid.css';
+
+export const prerender = false;
+
+const product = getProductBySlug('vegetable-big-cutter');
+if (!product) throw new Error('Product vegetable-big-cutter not found');
+const formContext = await resolveFormModeContext(Astro.request);
+
+const canonical = 'https://permatamall.shop/vegetable-big-cutter';
+const seoTitle = 'Vegetable Big Cutter 14 in 1 Multifungsi: Alat Pemotong Parut Sayur Jumbo';
+const seoDescription =
+  'Vegetable Big Cutter 14 in 1 Multifungsi. Pisau stainless ultra tajam, wadah jumbo 2L, pelindung tangan aman, bahan food grade BPA free. Promo COD Rp 105rb.';
+
+const sectionTitle = 'text-[clamp(28px,7.2vw,32px)] font-extrabold leading-[1.12] tracking-tight text-slate-950';
+const body = 'text-[16px] leading-relaxed text-slate-600';
+
+const testimonials = [
+  {
+    name: 'Bu Hajjah Nurul',
+    location: 'Surabaya, Jawa Timur',
+    avatar: '/images/petani/petani-dewi.webp',
+    problem: 'Pegal & lama motong bawang, wortel, dan kentang untuk persediaan masak keluarga',
+    comment:
+      'Sangat membantu banget di dapur! Ngeracang bawang merah, kentang goreng, sama wortel sup <strong class="box-decoration-clone bg-[#FFEACC] px-1.5 pb-0.5 font-semibold text-slate-950">langsung kelar dalam 2 menit presisi rapi</strong>. Ada alat pendorongnya jadi jari aman tidak takut kena pisau!',
+    highlight: 'Motong kilat 2 menit & aman jari',
+  },
+  {
+    name: 'Pak Sugeng Priyadi',
+    location: 'Sidoarjo, Jawa Timur',
+    avatar: '/images/petani/petani-07.webp',
+    problem: 'Sering teriris pisau dapur saat iris tipis bumbu & sayur keras',
+    comment:
+      'Istri saya sering perih jarinya teriris piringan pisau biasa pas bikin keripik kentang. Pas pakai Vegetable Big Cutter ini <strong class="box-decoration-clone bg-[#FFEACC] px-1.5 pb-0.5 font-semibold text-slate-950">hasil potongannya tipis renyah seragam & jarinya 100% aman pakai Safety Guard</strong>. Mantap!',
+    highlight: 'Hasil tipis seragam & aman teriris',
+  },
+  {
+    name: 'Bu Maya Sari',
+    location: 'Tangerang, Banten',
+    avatar: '/images/petani/petani-01.webp',
+    problem: 'Dapur berantakan & repot cuci wadah terpisah saat masak banyak',
+    comment:
+      'Wadah penampungnya jumbo banget dan langsung ada saringan airnya. <strong class="box-decoration-clone bg-[#FFEACC] px-1.5 pb-0.5 font-semibold text-slate-950">Bisa langsung bilas & tiris sayuran di satu tempat</strong>. Dapur tetap bersih tanpa berantakan!',
+    highlight: 'Wadah jumbo 2L & langsung saring tiris',
+  },
+];
+---
+
+<BaseLayout
+  title={seoTitle}
+  description={seoDescription}
+  image={product.heroImage}
+  canonical={canonical}
+  hideHeader={true}
+  hideFooter={true}
+  breadcrumbs={[
+    { name: 'Beranda', url: '/' },
+    { name: 'Vegetable Big Cutter', url: '/vegetable-big-cutter' }
+  ]}
+  preloadImages={[
+    {
+      srcset: "/images/vegetable-cutter/cutter-hero-400.webp 400w, /images/vegetable-cutter/cutter-hero-600.webp 600w",
+      sizes: "(max-width: 480px) 100vw, 480px"
+    }
+  ]}
+>
+  <main class="mx-auto min-h-screen w-full max-w-[480px] bg-white text-slate-950">
+    <MetaLandingTracker slug="vegetable-big-cutter" productId={product.productId} contentName={product.contentName} price={product.price} />
+
+    <!-- 1. URGENCY TOP BAR -->
+    <div class="bg-[#EC7211] px-4 py-2.5 text-center">
+      <p class="flex items-center justify-center gap-1.5 text-[12px] font-extrabold uppercase tracking-wide text-white">
+        <Icon name="lucide:zap" class="h-4 w-4 shrink-0 text-white" aria-hidden="true" />
+        PROMO DISKON 50% VEGETABLE BIG CUTTER 14 IN 1 & COD RP 105.000
+      </p>
+    </div>
+
+    <!-- 2. HERO SECTION (FOTO HERO UTAMA DESAIN GRAFIS DARI DOWNLOADS) -->
+    <section class="bg-white pb-8 text-center">
+      <div class="px-5 pt-7">
+        <div class="mx-auto mb-3 inline-flex items-center gap-1.5 rounded-full bg-[#FFF5E5] px-3.5 py-1 text-[11.5px] font-extrabold text-[#EC7211] border border-[#FFEACC]">
+          <Icon name="lucide:sparkles" class="h-3.5 w-3.5 text-[#EC7211]" />
+          PARUTAN & PEMOTONG SAYUR 14 IN 1
+        </div>
+        <h1 class="mx-auto max-w-[440px] text-[clamp(30px,8.5vw,35px)] font-extrabold leading-[1.14] tracking-tight text-slate-950">
+          Potong & Parut Sayur <span class="hl-brush">Lebih Cepat & Aman</span>
+        </h1>
+        <p class="mx-auto mt-4 max-w-[400px] text-[16px] font-semibold leading-relaxed text-slate-700">
+          Vegetable Big Cutter 14 in 1. <strong class="font-bold text-slate-950">Potong dadu, iris tipis, & parut halus dengan cepat dan rapi.</strong> <span class="font-bold text-slate-950 underline decoration-[#EC7211]/60 decoration-2 underline-offset-4">Dilengkapi wadah 2L & pelindung tangan agar jari tetap aman dari mata pisau.</span>
+        </p>
+      </div>
+
+      <!-- HERO IMAGE CONTAINER (PAS FLUID SESUAI ASPEK RASIO BANNER HERO) -->
+      <div class="mt-6 w-full overflow-hidden border-y border-slate-200 bg-white">
+        <img
+          src="/images/vegetable-cutter/cutter-hero-600.webp"
+          srcset="/images/vegetable-cutter/cutter-hero-400.webp 400w, /images/vegetable-cutter/cutter-hero-600.webp 600w"
+          sizes="(max-width: 480px) 100vw, 480px"
+          alt="Vegetable Big Cutter 14 in 1 Alat Pemotong Parutan Sayur Buah Multifungsi Jumbo"
+          class="w-full h-auto block object-contain mx-auto"
+          loading="eager"
+          fetchpriority="high"
+          decoding="async"
+          width="540"
+          height="304"
+        />
+
+        <div class="bg-slate-950 px-4 py-2.5 text-center">
+          <p class="flex items-center justify-center gap-1.5 text-[12.5px] font-bold text-[#FFD699]">
+            <Icon name="lucide:shield-check" class="h-4 w-4 text-[#EC7211] shrink-0" aria-hidden="true" />
+            <span>7 Mata Pisau Stainless Steel • Safety Hand Guard • Wadah Jumbo 2L!</span>
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3. HIGHLIGHT SPECS BAR -->
+    <section class="border-y border-orange-100 bg-[#FFF5E5]/60 px-5 py-5">
+      <div class="grid grid-cols-2 gap-3 text-left">
+        <div class="flex items-start gap-2.5 rounded-xl border border-orange-100 bg-white p-3 shadow-xs">
+          <Icon name="lucide:scissors" class="mt-0.5 h-5 w-5 shrink-0 text-[#EC7211]" />
+          <div>
+            <p class="text-[11px] font-extrabold tracking-wide uppercase text-slate-400">PISAU CUTTER</p>
+            <p class="text-[13.5px] font-extrabold text-slate-950">Stainless 420 Tajam</p>
+          </div>
+        </div>
+        <div class="flex items-start gap-2.5 rounded-xl border border-orange-100 bg-white p-3 shadow-xs">
+          <Icon name="lucide:layers" class="mt-0.5 h-5 w-5 shrink-0 text-[#EC7211]" />
+          <div>
+            <p class="text-[11px] font-extrabold tracking-wide uppercase text-slate-400">VARIAN FUNGSI</p>
+            <p class="text-[13.5px] font-extrabold text-slate-950">14 in 1 Multifungsi</p>
+          </div>
+        </div>
+        <div class="flex items-start gap-2.5 rounded-xl border border-orange-100 bg-white p-3 shadow-xs">
+          <Icon name="lucide:shield" class="mt-0.5 h-5 w-5 shrink-0 text-[#EC7211]" />
+          <div>
+            <p class="text-[11px] font-extrabold tracking-wide uppercase text-slate-400">KEAMANAN JARI</p>
+            <p class="text-[13.5px] font-extrabold text-slate-950">Safety Hand Guard</p>
+          </div>
+        </div>
+        <div class="flex items-start gap-2.5 rounded-xl border border-orange-100 bg-white p-3 shadow-xs">
+          <Icon name="lucide:truck" class="mt-0.5 h-5 w-5 shrink-0 text-[#EC7211]" />
+          <div>
+            <p class="text-[11px] font-extrabold tracking-wide uppercase text-slate-400">LAYANAN</p>
+            <p class="text-[13.5px] font-extrabold text-slate-950">Garansi & COD</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 4. SECTION FITUR KEUNGGULAN (FOTO DARI DOWNLOADS: 02-keunggulan-spring-slicer.webp) -->
+    <section class="px-5 py-9 border-b border-slate-100">
+      <div class="text-center">
+        <span class="text-[11.5px] font-extrabold uppercase tracking-widest text-[#EC7211]">KEUNGGULAN UTAMA</span>
+        <h2 class={sectionTitle + ' mt-1.5'}>Keunggulan Spring Slicer</h2>
+        <p class={body + ' mt-2.5 font-medium'}>
+          Pisau stainless steel tajam dengan wadah 2L dan pelindung tangan yang praktis:
+        </p>
+      </div>
+
+      <!-- FOTO BANNER KEUNGGULAN (PAS FLUID SESUAI UKURAN ASLI GAMBAR 02-KEUNGGULAN) -->
+      <div class="mt-6 w-full overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xs">
+        <img
+          src="/images/vegetable-cutter/cutter-keunggulan-600.webp"
+          srcset="/images/vegetable-cutter/cutter-keunggulan-400.webp 400w, /images/vegetable-cutter/cutter-keunggulan-600.webp 600w"
+          sizes="(max-width: 480px) 100vw, 480px"
+          alt="Keunggulan Utama Pemotong Sayur Spring Slicer Multifungsi"
+          class="w-full h-auto block object-contain mx-auto"
+          loading="lazy"
+          decoding="async"
+          fetchpriority="low"
+          width="540"
+          height="675"
+        />
+      </div>
+
+      <!-- FOTO BANNER SAFETY HAND GUARD (PELINDUNG JARI AMAN PISAU) -->
+      <div class="mt-4 w-full overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xs">
+        <img
+          src="/images/vegetable-cutter/cutter-safety-guard-600.webp"
+          srcset="/images/vegetable-cutter/cutter-safety-guard-400.webp 400w, /images/vegetable-cutter/cutter-safety-guard-600.webp 600w"
+          sizes="(max-width: 480px) 100vw, 480px"
+          alt="Safety Hand Guard Pelindung Jari Tangan Aman Dari Teriris Pisau"
+          class="w-full h-auto block object-contain mx-auto"
+          loading="lazy"
+          decoding="async"
+          fetchpriority="low"
+          width="540"
+          height="674"
+        />
+      </div>
+    </section>
+
+    <!-- 5. SECTION FITUR VARIASI HASIL POTONGAN (FOTO DARI DOWNLOADS: 04-hasil-potongan-spring-slicer.webp) -->
+    <section class="px-5 py-9 border-b border-slate-100 bg-slate-50/50">
+      <div class="text-center">
+        <span class="text-[11.5px] font-extrabold uppercase tracking-widest text-[#EC7211]">VARIASI POTONGAN</span>
+        <h2 class={sectionTitle + ' mt-1.5'}>Variasi Potongan Sayur</h2>
+        <p class={body + ' mt-2.5 font-medium'}>
+          Potong dadu, iris lembaran tipis, parut halus, hingga potong korek api dengan rapi:
+        </p>
+      </div>
+
+      <!-- FOTO BANNER HASIL POTONGAN (PAS FLUID SESUAI UKURAN ASLI GAMBAR 04-HASIL-POTONGAN) -->
+      <div class="mt-6 w-full overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xs">
+        <img
+          src="/images/vegetable-cutter/cutter-variasi-potongan-600.webp"
+          srcset="/images/vegetable-cutter/cutter-variasi-potongan-400.webp 400w, /images/vegetable-cutter/cutter-variasi-potongan-600.webp 600w"
+          sizes="(max-width: 480px) 100vw, 480px"
+          alt="Variasi Hasil Potongan Sayur dan Buah Dengan Spring Slicer"
+          class="w-full h-auto block object-contain mx-auto"
+          loading="lazy"
+          decoding="async"
+          fetchpriority="low"
+          width="540"
+          height="675"
+        />
+      </div>
+    </section>
+
+    <!-- 6. SECTION FITUR CARA PAKAI (FOTO DARI DOWNLOADS: 03-cara-pakai-spring-slicer.webp) -->
+    <section class="px-5 py-9 border-b border-slate-100">
+      <div class="text-center">
+        <span class="text-[11.5px] font-extrabold uppercase tracking-widest text-[#EC7211]">CARA PENGGUNAAN MUDAH</span>
+        <h2 class={sectionTitle + ' mt-1.5'}>Cara Pakai & Keamanan</h2>
+        <p class={body + ' mt-2.5 font-medium'}>
+          Penggunaan praktis tanpa ganti pisau berulang kali & aman untuk penggunaan harian:
+        </p>
+      </div>
+
+      <!-- FOTO BANNER CARA PAKAI (PAS FLUID SESUAI UKURAN ASLI GAMBAR 03-CARA-PAKAI) -->
+      <div class="mt-6 w-full overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xs">
+        <img
+          src="/images/vegetable-cutter/cutter-cara-pakai-600.webp"
+          srcset="/images/vegetable-cutter/cutter-cara-pakai-400.webp 400w, /images/vegetable-cutter/cutter-cara-pakai-600.webp 600w"
+          sizes="(max-width: 480px) 100vw, 480px"
+          alt="Langkah Cara Pakai & Keamanan Penggunaan Spring Slicer"
+          class="w-full h-auto block object-contain mx-auto"
+          loading="lazy"
+          decoding="async"
+          fetchpriority="low"
+          width="540"
+          height="810"
+        />
+      </div>
+
+      <div class="mt-5 rounded-2xl border border-slate-200 bg-white p-5 shadow-xs">
+        <ul class="space-y-3.5 text-[14.5px] text-slate-800">
+          <li class="flex items-center justify-between border-b border-slate-200/80 pb-2.5">
+            <span class="text-slate-500 font-medium">Bahan Pisau</span>
+            <span class="font-bold text-slate-950">Stainless Steel 420 Anti Karat</span>
+          </li>
+          <li class="flex items-center justify-between border-b border-slate-200/80 pb-2.5">
+            <span class="text-slate-500 font-medium">Bahan Body Wadah</span>
+            <span class="font-bold text-slate-950">Food Grade ABS BPA Free Tebal</span>
+          </li>
+          <li class="flex items-center justify-between border-b border-slate-200/80 pb-2.5">
+            <span class="text-slate-500 font-medium">Kapasitas Penampung</span>
+            <span class="font-bold text-slate-950">2.0 Liter Jumbo + Saringan Tiris</span>
+          </li>
+          <li class="flex items-center justify-between border-b border-slate-200/80 pb-2.5">
+            <span class="text-slate-500 font-medium">Fitur Keamanan</span>
+            <span class="font-bold text-slate-950">Safety Hand Guard (Pelindung Jari)</span>
+          </li>
+          <li class="flex items-center justify-between">
+            <span class="text-slate-500 font-medium">Kelengkapan Paket</span>
+            <span class="font-bold text-slate-950">Set 14 in 1 + Sikat Pembersih</span>
+          </li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- 7. TESTIMONIALS PELANGGAN -->
+    <section class="px-5 py-9 border-b border-slate-100 bg-slate-50/50">
+      <div class="text-center">
+        <span class="text-[11.5px] font-extrabold uppercase tracking-widest text-[#EC7211]">ULASAN PEMBELI</span>
+        <h2 class={sectionTitle + ' mt-1.5'}>Testimoni Pembeli Real</h2>
+      </div>
+
+      <div class="mt-6 space-y-4">
+        {testimonials.map((t) => (
+          <div class="rounded-2xl border border-slate-200/80 bg-white p-4.5 shadow-xs">
+            <div class="flex items-center gap-3">
+              <img src={t.avatar} alt={t.name} class="h-10 w-10 rounded-full object-cover ring-2 ring-orange-100" />
+              <div>
+                <h3 class="text-[14.5px] font-bold text-slate-950">{t.name}</h3>
+                <p class="text-[12px] text-slate-500">{t.location}</p>
+              </div>
+            </div>
+            <div class="mt-3 rounded-xl bg-[#FFF5E5]/70 p-3 text-[13.5px] leading-relaxed text-slate-700">
+              <p set:html={t.comment} />
+            </div>
+            <div class="mt-2.5 flex items-center justify-between text-[11.5px]">
+              <span class="font-bold text-[#EC7211]">✓ {t.highlight}</span>
+              <span class="font-semibold text-slate-400">Pembeli Terverifikasi</span>
+            </div>
+          </div>
+        ))}
+      </div>
+    </section>
+
+    <!-- 8. SOCIAL PROOF DYNAMIC -->
+    <SocialProof productSlug="vegetable-big-cutter" />
+
+    <!-- 9. PRICING & HARGA SECTION (CHECKOUT FORM & BANNER GARANSI PROMO) -->
+    <section id="checkout" class="border-t-8 border-slate-100 bg-white py-12">
+      <div class="px-5 pb-8 text-center">
+        <p class="mx-auto mb-3 inline-flex items-center gap-1.5 text-[12px] font-bold uppercase tracking-[0.14em] text-[#EC7211]">
+          <Icon name="lucide:zap" class="h-4 w-4 shrink-0 text-[#EC7211]" aria-hidden="true" />
+          Promo Vegetable Big Cutter COD
+        </p>
+        <h2 class="mx-auto max-w-[340px] text-[clamp(28px,7.2vw,32px)] font-extrabold leading-[1.12] tracking-tight text-slate-950">
+          Isi Alamat Pengiriman, <span class="hl-brush">Bayar Saat Sampai</span>
+        </h2>
+        <p class="mx-auto mt-4 max-w-[320px] text-[15px] leading-relaxed text-slate-600">
+          Form otomatis menyesuaikan lokasi Anda. Produk dikirim aman bergaransi, bayar tunai ke kurir saat barang tiba di rumah.
+        </p>
+      </div>
+
+      <!-- FOTO BANNER GARANSI PROMO (PAS FLUID SESUAI UKURAN GAMBAR, UNTOUCHED/UNCROPPED) -->
+      <div class="mx-auto mb-6 max-w-[440px] px-5">
+        <div class="overflow-hidden rounded-2xl border border-slate-200 shadow-sm">
+          <img
+            src="/images/vegetable-cutter/cutter-garansi-600.webp"
+            srcset="/images/vegetable-cutter/cutter-garansi-400.webp 400w, /images/vegetable-cutter/cutter-garansi-600.webp 600w"
+            sizes="(max-width: 480px) 100vw, 480px"
+            alt="Banner Garansi Promo Vegetable Big Cutter 14 in 1 COD"
+            class="w-full h-auto block object-contain mx-auto"
+            loading="lazy"
+            decoding="async"
+            fetchpriority="low"
+            width="540"
+            height="720"
+          />
+        </div>
+      </div>
+
+      <div class="mx-auto mb-6 max-w-[380px] px-5 text-center">
+        <div class="rounded-2xl border-2 border-[#EC7211] bg-[#FFF5E5]/40 p-4">
+          <p class="text-[12px] font-bold text-[#EC7211] uppercase tracking-wider">HARGA PROMO SPESIAL</p>
+          <div class="mt-1 flex items-baseline justify-center gap-2">
+            <span class="text-[14px] text-slate-400 line-through">Rp 220.000</span>
+            <span class="text-[28px] font-black text-slate-950">Rp 105.000</span>
+          </div>
+          <p class="mt-0.5 text-[12px] font-medium text-slate-600">Set Lengkap 14 in 1 Jumbo • Promo Diskon 50% Khusus Hari Ini</p>
+        </div>
+      </div>
+
+      <GeoIpResolvedForm mode={formContext.mode} productSlug="vegetable-big-cutter" embedded={true} />
+    </section>
+
+    <!-- 10. FOOTER -->
+    <LpMiniFooter />
+
+    <!-- 11. STICKY CTA MOBILE -->
+    <StickyCTA productSlug="vegetable-big-cutter" />
+  </main>
+</BaseLayout>
+
+<style>
+  .hl-brush {
+    -webkit-box-decoration-break: clone;
+    box-decoration-break: clone;
+    padding-bottom: 0.14em;
+    background-image: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20320%2024'%20preserveAspectRatio='none'%3E%3Cpath%20d='M3%2013C55%206%20120%2016%20182%2011S292%208%20317%2012L315%2020C252%2015%20150%2023%2072%2019S13%2021%205%2020C2%2017%202%2016%203%2013Z'%20fill='%23EC7211'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: center 100%;
+    background-size: 100% 0.32em;
+  }
+</style>

@@ -1,0 +1,439 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import RatingStars from '../components/shared/RatingStars.astro';
+import GeoIpResolvedForm from '../components/forms/GeoIpResolvedForm.astro';
+import Icon from '../components/shared/Icon.astro';
+import LpMiniFooter from '../components/shared/LpMiniFooter.astro';
+import MetaLandingTracker from '../components/tracking/MetaLandingTracker.astro';
+import SocialProof from '../components/shared/SocialProof.astro';
+import StickyCTA from '../components/shared/StickyCTA.astro';
+import { getProductBySlug } from '../data/products';
+import { resolveFormModeContext } from '../lib/form-mode';
+import '../styles/form-hybrid.css';
+
+export const prerender = false;
+
+const product = getProductBySlug('bibit-bunga-sutra-bomba');
+if (!product) throw new Error('Product bibit-bunga-sutra-bomba not found');
+const formContext = await resolveFormModeContext(Astro.request);
+
+const canonical = 'https://pesantren.shop/bibit-bunga-sutra-bomba';
+const seoTitle = 'Benih Bunga Sutra Bombay Premium - 100% Tumbuh Mekar Indah Warna-Warni';
+const seoDescription =
+  'Benih Bunga Sutra Bombay Premium import. Daya tumbuh 98%, mekar gila-gilaan dalam 7 hari, tahan panas terik, gampang dirawat. Paket hemat isi ratusan benih, bisa COD.';
+
+const sectionTitle = 'text-[clamp(28px,7.2vw,32px)] font-extrabold leading-[1.12] tracking-tight text-slate-950';
+const bodyText = 'text-[16px] leading-relaxed text-slate-600';
+
+const testimonials = [
+  {
+    name: 'Bu Nur Hidayah',
+    location: 'Bogor, Jawa Barat',
+    avatar: '/images/bunga-sutra/testi-ibu-nur.webp',
+    photo: '/images/bunga-sutra/testi-ibu-nur-3x2.webp',
+    rating: 5,
+    problem: 'Pernah beli benih murah di pasar, tidak tumbuh sama sekali',
+    comment:
+      'Sumpah kaget banget! Dulu <strong class="box-decoration-clone bg-red-100 px-1.5 pb-0.5 font-semibold text-slate-950">beli benih murah gak ada yang tumbuh satu pun</strong>. Pas cobain benih ini, baru disemai seminggu bijinya udah pada tumbuh hijau rimbun. Sekarang <strong class="box-decoration-clone bg-[#FFEACC] px-1.5 pb-0.5 font-semibold text-slate-950">bunganya mekar gila-gilaan warna-warni meriah</strong> di halaman rumah. Tetangga pada mampir foto-foto!',
+    highlight: 'Bunga mekar gila-gilaan, tetangga kagum!',
+  },
+  {
+    name: 'Pak Bambang Setyo',
+    location: 'Solo, Jawa Tengah',
+    avatar: '/images/bunga-sutra/testi-pak-bambang-3x2.webp',
+    photo: '/images/bunga-sutra/testi-pak-bambang-3x2.webp',
+    rating: 5,
+    problem: 'Cuaca Solo panas terik, tanaman biasa cepat layu',
+    comment:
+      'Cuaca di Solo kan panas banget, biasanya <strong class="box-decoration-clone bg-red-100 px-1.5 pb-0.5 font-semibold text-slate-950">tanaman pot gampang gosong dan layu</strong>. Tapi benih Sutra Bombay ini beda pol, <strong class="box-decoration-clone bg-[#FFEACC] px-1.5 pb-0.5 font-semibold text-slate-950">ditaruh di terik matahari malah makin mekar warnanya</strong>. Daya tumbuh 98% terbukti nyata!',
+    highlight: 'Super tahan panas terik matahari',
+  },
+  {
+    name: 'Mbak Siska Rahmawati',
+    location: 'Bandung, Jawa Barat',
+    avatar: '/images/bunga-sutra/testi-mbak-siska-3x2.webp',
+    photo: '/images/bunga-sutra/testi-mbak-siska-3x2.webp',
+    rating: 5,
+    problem: 'Rumah kontrakan lahan sempit, bingung bikin asri',
+    comment:
+      'Rumah kontrakan lahan sempit, bingung mau nanam apa. Ditaruh di pot gantung balkon <strong class="box-decoration-clone bg-[#FFEACC] px-1.5 pb-0.5 font-semibold text-slate-950">langsung berubah adem dan cantik banget</strong>! Warna-warni meriah mekar tiap pagi. Senang banget lihatnya tiap bangun tidur.',
+    highlight: 'Balkon rumah makin adem & asri',
+  },
+  {
+    name: 'Mas Bayu Pratama',
+    location: 'Sleman, Yogyakarta',
+    avatar: '/images/bunga-sutra/testi-mas-bayu-3x2.webp',
+    photo: '/images/bunga-sutra/testi-mas-bayu-3x2.webp',
+    rating: 5,
+    problem: 'Sibuk kerja, tidak sempat perawatan rumit',
+    comment:
+      'Perawatan paling simpel yang pernah saya tahu. <strong class="box-decoration-clone bg-red-100 px-1.5 pb-0.5 font-semibold text-slate-950">Nggak usah sering-sering disiram</strong> tetap hidup dan <strong class="box-decoration-clone bg-[#FFEACC] px-1.5 pb-0.5 font-semibold text-slate-950">makin banyak bunga mekarnya</strong>. Kemasan benihnya isi ratusan biji, hemat banget!',
+    highlight: 'Sangat hemat & gampang dirawat',
+  },
+];
+---
+
+<BaseLayout
+  title={seoTitle}
+  description={seoDescription}
+  image="/images/bunga-sutra/bunga-sutra-hero.webp"
+  canonical={canonical}
+  hideHeader={true}
+  hideFooter={true}
+  breadcrumbs={[
+    { name: 'Beranda', url: '/' },
+    { name: 'Bibit Bunga Sutra Bombay', url: '/bibit-bunga-sutra-bomba' }
+  ]}
+
+  preloadImages={[
+    "/images/bunga-sutra/bunga-sutra-hero.webp",
+    "/images/bunga-sutra/bunga-sutra-pot.webp"
+  ]}>
+  <main class="mx-auto min-h-screen w-full max-w-[480px] bg-white text-slate-950">
+    <MetaLandingTracker slug="bibit-bunga-sutra-bomba" productId={product.productId} contentName={product.contentName} price={product.price} />
+
+    <!-- TOP URGENCY ANNOUNCEMENT BAR -->
+    <div class="bg-[#FF9900] px-4 py-2 text-center">
+      <p class="flex items-center justify-center gap-1.5 text-[12px] font-extrabold tracking-wide text-white">
+        <Icon name="lucide:zap" class="h-4 w-4 shrink-0" aria-hidden="true" />
+        BELI 1 DAPAT RATUSAN BENIH IMPORT, BAYAR DI TEMPAT (COD)
+      </p>
+    </div>
+
+    <!-- HERO SECTION -->
+    <section class="bg-white pb-8 text-center">
+      <div class="px-5 pt-7">
+        <div class="mx-auto mb-3 inline-flex items-center gap-1.5 rounded-full bg-[#FFF5E5] px-3.5 py-1 text-[11.5px] font-extrabold text-[#EC7211] border border-[#FFEACC]">
+          <Icon name="lucide:sparkles" class="h-3.5 w-3.5 text-[#EC7211]" />
+          BENIH UNGGUL GERMINASI 98%
+        </div>
+        <h1 class="mx-auto max-w-[440px] text-[clamp(32px,8.8vw,36px)] font-extrabold leading-[1.14] tracking-tight text-slate-950">
+          Sulap Halaman Rumah Jadi <span class="hl-brush">Taman Bunga Mewah</span> Warna-Warni Dalam 7 Hari!
+        </h1>
+        <p class="mx-auto mt-4 max-w-[400px] text-[16px] font-semibold leading-relaxed text-slate-700">
+          Benih Bunga Sutra Bombay Premium Import. <strong class="font-bold text-slate-950">Bunga mekar gila-gilaan</strong>, tahan panas terik matahari, & gampang dirawat. <span class="font-bold text-slate-950 underline decoration-[#FF9900]/60 decoration-2 underline-offset-4">Tanpa perlu pengalaman menanam!</span>
+        </p>
+      </div>
+
+      <!-- UNCROPPED HERO IMAGE -->
+      <div class="mt-7 w-full">
+        <img
+          src="/images/bunga-sutra/bunga-sutra-hero.webp"
+          alt="Bunga Sutra Bombay mekar warna-warni cantik di halaman rumah"
+          class="w-full h-auto block"
+          loading="eager"
+          fetchpriority="high"
+          decoding="async"
+          width="480"
+          height="360"
+        />
+        <div class="bg-slate-950 px-4 py-3 text-center">
+          <p class="text-[13px] font-bold text-slate-200 flex items-center justify-center gap-2">
+            <Icon name="lucide:flower-2" class="h-4 w-4 text-[#FF9900] shrink-0" />
+            <span>Kelopak ganda giga-bloom warna-warni cerah yang mekar sepanjang hari!</span>
+          </p>
+        </div>
+      </div>
+
+      <!-- PROOF BAR WITH SOLID GOLD STARS -->
+      <div class="bg-slate-50 py-4 px-4 border-b border-[#EAEDED] flex flex-col items-center gap-3">
+        <div class="flex items-center gap-1.5">
+          <RatingStars rating={5} max={5} starClass="h-4.5 w-4.5" />
+          <span class="text-[13px] font-extrabold text-slate-950">4.9 / 5.0</span>
+          <span class="text-[11.5px] font-medium text-slate-500">(3.200+ Pembeli Puas)</span>
+        </div>
+
+        <div class="flex flex-wrap justify-center gap-2">
+          <span class="inline-flex items-center gap-1.5 rounded-full bg-[#14532D] px-3.5 py-1 text-[12px] font-bold text-white">
+            <Icon name="lucide:check-circle-2" class="h-3.5 w-3.5" />
+            Daya Tumbuh 98%
+          </span>
+          <span class="inline-flex items-center gap-1.5 rounded-full bg-[#FF9900] px-3.5 py-1 text-[12px] font-bold text-white">
+            <Icon name="lucide:sun" class="h-3.5 w-3.5" />
+            Tahan Panas Terik
+          </span>
+          <span class="inline-flex items-center gap-1.5 rounded-full bg-slate-950 px-3.5 py-1 text-[12px] font-bold text-white">
+            <Icon name="lucide:truck" class="h-3.5 w-3.5 text-[#FF9900]" />
+            Bisa COD (Bayar di Tempat)
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <!-- PROBLEM SECTION: KECEWA BENIH BIASA -->
+    <section class="bg-red-50/70 px-5 py-9 border-b border-red-100">
+      <span class="text-[11px] font-extrabold uppercase tracking-[0.2em] text-red-600 block mb-1">
+        HATI-HATI BENIH PALSU & MANDUL
+      </span>
+      <h2 class={sectionTitle}>
+        Masih Nekat Beli Benih Pasaran? <span class="text-red-600 underline decoration-red-400 decoration-2 underline-offset-4">Siap-Siap Kecewa!</span>
+      </h2>
+      <p class={`${bodyText} mt-3 mb-6 text-slate-700`}>
+        Banyak orang berniat mempercantik rumah, tapi malah rugi waktu & uang karena jebakan benih murah:
+      </p>
+
+      <div class="space-y-3.5">
+        {[
+          ['Biji Mandul & Mati Total', 'Disemai & disiram berminggu-minggu tapi tidak tumbuh sama sekali. Hanya menyisakan tanah kosong & pot busuk.'],
+          ['Bunga Kerdil & Warna Pucat', 'Kalaupun tumbuh, bunganya sangat sedikit, ukurannya kerdil, dan warnanya pucat jauh dari foto promosi.'],
+          ['Gampang Layu Kena Panas', 'Tanaman tidak kuat dengan cuaca terik Indonesia. Baru kena sinar matahari siang langsung layu dan mati.']
+        ].map(([title, desc]) => (
+          <div class="flex items-start gap-3.5 rounded-xl bg-white p-4 border border-red-100">
+            <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-red-100 text-red-600">
+              <Icon name="lucide:x-circle" class="h-4 w-4 text-red-600" aria-hidden="true" />
+            </span>
+            <div>
+              <h3 class="text-[15px] font-bold text-slate-950">{title}</h3>
+              <p class="text-[13.5px] text-slate-600 mt-1 leading-relaxed">{desc}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+    </section>
+
+    <!-- SHOWCASE: UNCROPPED IMAGES -->
+    <section class="bg-white py-9 border-b border-slate-100">
+      <div class="px-5 mb-5 text-center">
+        <span class="text-[11px] font-extrabold uppercase tracking-[0.2em] text-[#EC7211] block mb-1">
+          SOLUSI PRAKTIS TANAM BUNGA MEWAH
+        </span>
+        <h2 class={sectionTitle}>
+          Benih Sutra Bombay Import: <span class="hl-brush">Pasti Mekar Indah!</span>
+        </h2>
+        <p class={`${bodyText} mt-2 max-w-[400px] mx-auto`}>
+          Bunga Sutra Bombay (Portulaca Grandiflora) sangat adaptif & bisa tumbuh subur di mana saja:
+        </p>
+      </div>
+
+      <!-- SHOWCASE 1 -->
+      <div class="w-full mb-7">
+        <img fetchpriority="low" src="/images/bunga-sutra/bunga-sutra-pot.webp"
+          alt="Bunga Sutra Bombay mekar rimbun di pot rumah"
+          class="w-full h-auto block"
+          loading="lazy"
+          decoding="async"
+          width="480"
+          height="360"
+        />
+        <div class="px-5 pt-3 text-center bg-slate-50 py-3 border-b border-slate-100">
+          <h3 class="text-[16px] font-bold text-slate-950">1. Tumbuh Rimbun Di Pot & Halaman</h3>
+          <p class="text-[13.5px] text-slate-600 mt-0.5">
+            Bunga mekar serentak dengan kelopak ganda tebal dan perpaduan warna-warni meriah yang memanjakan mata setiap hari.
+          </p>
+        </div>
+      </div>
+
+      <!-- SHOWCASE 2 -->
+      <div class="w-full">
+        <img fetchpriority="low" src="/images/bunga-sutra/bunga-sutra-balkon.webp"
+          alt="Bunga Sutra Bombay di pot gantung balkon apartemen"
+          class="w-full h-auto block"
+          loading="lazy"
+          decoding="async"
+          width="480"
+          height="360"
+        />
+        <div class="px-5 pt-3 text-center bg-slate-50 py-3 border-b border-slate-100">
+          <h3 class="text-[16px] font-bold text-slate-950">2. Cocok Untuk Balkon & Keranjang Gantung</h3>
+          <p class="text-[13.5px] text-slate-600 mt-0.5">
+            Tidak punya lahan luas? Bukan masalah! Cukup gunakan pot gantung di balkon rumah atau apartemen Anda.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- PRODUCT KNOWLEDGE & SPEC -->
+    <section class="bg-slate-950 py-10 text-white border-b border-slate-900">
+      <div class="px-5">
+        <span class="text-[11px] font-extrabold uppercase tracking-[0.2em] text-[#FF9900] block mb-1">
+          KUALITAS BENIH GRADE A IMPORT
+        </span>
+        <h2 class="text-[clamp(28px,7.2vw,32px)] font-extrabold leading-[1.12] text-white">
+          Jujur dari Awal: <span class="text-[#FF9900]">Benih Grade A Tumbuh Subur</span>
+        </h2>
+        <p class="mt-3 text-[15px] leading-relaxed text-slate-300">
+          Benih dipanen dari varietas pilihan terbaik dengan tingkat daya hidup (germination rate) hingga 98%:
+        </p>
+
+        <div class="mt-6 space-y-4">
+          <div class="rounded-xl bg-slate-900 p-4 border border-slate-800">
+            <div class="flex items-center gap-3">
+              <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-[#FF9900] font-black text-slate-950 text-[14px]">
+                <Icon name="lucide:check" class="h-4 w-4 text-slate-950 font-extrabold" aria-hidden="true" />
+              </span>
+              <div>
+                <h3 class="text-[15.5px] font-bold text-white">Tunas Cepat Muncul (3 - 7 Hari)</h3>
+                <p class="text-[12px] text-[#FFEACC] font-semibold">Tumbuh kilat tanpa perlu ditunggu berbulan-bulan</p>
+              </div>
+            </div>
+            <p class="mt-2.5 text-[13.5px] leading-relaxed text-slate-300">
+              Formula benih aktif kami memastikan kecambah muncul hanya dalam 3 hingga 7 hari setelah ditabur di media tanah lembap.
+            </p>
+          </div>
+
+          <div class="rounded-xl bg-slate-900 p-4 border border-slate-800">
+            <div class="flex items-center gap-3">
+              <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-[#FF9900] font-black text-slate-950 text-[14px]">
+                <Icon name="lucide:check" class="h-4 w-4 text-slate-950 font-extrabold" aria-hidden="true" />
+              </span>
+              <div>
+                <h3 class="text-[15.5px] font-bold text-white">Super Tahan Panas Terik Matahari</h3>
+                <p class="text-[12px] text-[#FFEACC] font-semibold">Semakin panas terik, bunga semakin mekar meriah!</p>
+              </div>
+            </div>
+            <p class="mt-2.5 text-[13.5px] leading-relaxed text-slate-300">
+              Sutra Bombay adalah tanaman penyuka sinar matahari. Sangat cocok dengan iklim tropis Indonesia dan hemat air.
+            </p>
+          </div>
+        </div>
+
+        <!-- SPEC FLAT LIST -->
+        <div class="mt-7 rounded-xl bg-slate-900 p-4 border border-slate-800 text-[13.5px]">
+          <h3 class="font-bold text-white mb-3 text-[15px] flex items-center gap-2">
+            <Icon name="lucide:package-check" class="h-4 w-4 text-[#FF9900]" />
+            Detail Paket & Spesifikasi
+          </h3>
+          <div class="space-y-2 text-slate-300">
+            <p><strong class="text-slate-100">Varietas:</strong> Portulaca Grandiflora (Sutra Bombay Premium)</p>
+            <p><strong class="text-slate-100">Kelopak Bunga:</strong> Double Petal (Ganda Rimbun Warna-Warni)</p>
+            <p><strong class="text-slate-100">Isi Paket:</strong> <span class="box-decoration-clone bg-[#FFF5E5] px-1.5 pb-0.5 font-bold text-slate-950">Ratusan Biji Siap Tanam + Panduan Care</span></p>
+            <p><strong class="text-slate-100">Garansi:</strong> 100% Benih Pasti Tumbuh & Mekar</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- CARA MENANAM (3 STEP FIGURE) -->
+    <section class="bg-white py-9 px-5 border-b border-[#EAEDED] text-center">
+      <span class="text-[11px] font-extrabold uppercase tracking-[0.2em] text-slate-500 block mb-1">
+        PRAKTIS UNTUK PEMULA
+      </span>
+      <h2 class={sectionTitle}>
+        3 Langkah Tanam <span class="hl-brush">Super Mudah</span>
+      </h2>
+      <p class={`${bodyText} mt-2 mb-6 max-w-[380px] mx-auto`}>
+        Tidak perlu keahlian khusus, siapa saja pasti bisa menanamnya:
+      </p>
+
+      <div class="grid grid-cols-3 gap-2.5">
+        {[
+          ['lucide:sprout', '1. Tabur Biji', 'Tabur benih di atas media tanah lembap.'],
+          ['lucide:sun', '2. Jemur Panas', 'Taruh di lokasi yang terkena sinar matahari.'],
+          ['lucide:flower-2', '3. Mekar Indah', 'Bunga mekar meriah warna-warni!']
+        ].map(([icon, step, desc]) => (
+          <div class="rounded-xl bg-slate-50 p-3 border border-slate-100 text-center ring-1 ring-slate-200/60">
+            <span class="mx-auto flex h-9 w-9 items-center justify-center rounded-full bg-[#EC7211] text-white mb-2 font-bold">
+              <Icon name={icon} class="h-4.5 w-4.5" />
+            </span>
+            <h3 class="text-[13px] font-bold text-slate-950">{step}</h3>
+            <p class="text-[11px] text-slate-500 mt-1 leading-tight">{desc}</p>
+          </div>
+        ))}
+      </div>
+    </section>
+
+    <!-- TESTIMONI PEMBELI INDONESIA WITH 3:2 PROOF PHOTOS -->
+    <section class="bg-slate-50/80 py-9 px-5 border-b border-[#EAEDED]">
+      <div class="text-center mb-6">
+        <span class="text-[11px] font-extrabold uppercase tracking-[0.2em] text-[#EC7211] block mb-1">
+          TESTIMONI PEMBELI ASLI INDONESIA
+        </span>
+        <h2 class={sectionTitle}>
+          Mereka Sudah Buktikan <span class="hl-brush">Bunga Mekar Indah!</span>
+        </h2>
+        <p class={`${bodyText} mt-2`}>
+          Foto & ulasan jujur dari pembeli lokal yang sudah panen bunga mekar di rumah:
+        </p>
+      </div>
+
+      <div class="space-y-6">
+        {testimonials.map((t) => (
+          <div class="rounded-xl bg-white p-5 border border-slate-200/90">
+            <div class="flex items-center gap-3 mb-3">
+              <img
+                src={t.avatar}
+                alt={t.name}
+                class="h-11 w-11 rounded-full object-cover shrink-0 border border-slate-200"
+                width="44"
+                height="44"
+                loading="lazy"
+                decoding="async"
+              />
+              <div>
+                <h3 class="text-[15px] font-bold text-slate-950 flex items-center gap-1">
+                  {t.name}
+                  <Icon name="lucide:badge-check" class="h-4 w-4 text-[#0073BB] shrink-0" />
+                </h3>
+                <p class="text-[12px] text-slate-500">{t.location}</p>
+              </div>
+              <div class="ml-auto flex gap-0.5">
+                <RatingStars rating={5} max={5} starClass="h-3.5 w-3.5" />
+              </div>
+            </div>
+
+            <div class="mb-2 inline-block text-[12px] font-bold text-[#B45309]">
+              Masalah: {t.problem}
+            </div>
+
+            <p class="text-[14px] leading-relaxed text-slate-700 italic border-l-2 border-[#FF9900] pl-3 py-0.5 mb-3" set:html={`"${t.comment}"`}></p>
+
+            <div class="mb-3 flex items-center gap-1.5 text-[12.5px] font-bold text-[#EC7211]">
+              <Icon name="lucide:check-circle-2" class="h-4 w-4 shrink-0" />
+              <span>Hasil: {t.highlight}</span>
+            </div>
+
+            {t.photo && (
+              <div class="overflow-hidden rounded-xl bg-slate-100 border border-slate-200 mt-3">
+                <img
+                  src={t.photo}
+                  alt={`Foto riil pembeli ${t.name}`}
+                  class="w-full aspect-[3/2] object-cover block"
+                  loading="lazy"
+                  decoding="async"
+                  width="600"
+                  height="400"
+                />
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+    </section>
+
+    <!-- FORM CHECKOUT ORDER -->
+    <section id="checkout" class="bg-white py-9 border-t-8 border-[#EAEDED]">
+      <div class="px-5 pb-6 text-center">
+        <div class="mx-auto mb-3 inline-flex items-center gap-1.5 rounded-full bg-[#FFF5E5] px-3.5 py-1 text-[12px] font-extrabold text-[#EC7211] border border-[#FFEACC]">
+          <span class="relative flex h-2 w-2">
+            <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#FF9900] opacity-75"></span>
+            <span class="relative inline-flex h-2 w-2 rounded-full bg-[#EC7211]"></span>
+          </span>
+          PROMO HARGA DISKON + BAYAR DI TEMPAT (COD)
+        </div>
+        <h2 class="mx-auto max-w-[360px] text-[clamp(28px,7.2vw,32px)] font-extrabold leading-[1.14] tracking-tight text-slate-950">
+          Isi Form Alamat <span class="hl-brush">Bayar Saat Sampai</span>
+        </h2>
+        <p class="mx-auto mt-2 max-w-[340px] text-[14px] leading-relaxed text-slate-600">
+          Paket dikirim rapi & aman. Anda cukup bayar tunai ke kurir saat benih tiba di rumah.
+        </p>
+      </div>
+      <GeoIpResolvedForm mode={formContext.mode} productSlug="bibit-bunga-sutra-bomba" embedded={true} />
+    </section>
+
+    <LpMiniFooter />
+    <StickyCTA productSlug="bibit-bunga-sutra-bomba" />
+    <SocialProof productSlug="bibit-bunga-sutra-bomba" />
+  </main>
+</BaseLayout>
+
+<style>
+  .hl-brush {
+    -webkit-box-decoration-break: clone;
+    box-decoration-break: clone;
+    padding-bottom: 0.14em;
+    background-image: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20320%2024'%20preserveAspectRatio='none'%3E%3Cpath%20d='M3%2013C55%206%20120%2016%20182%2011S292%208%20317%2012L315%2020C252%2015%20150%2023%2072%2019S13%2021%205%2020C2%2017%202%2016%203%2013Z'%20fill='%23FF9900'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: center 100%;
+    background-size: 100% 0.32em;
+  }
+</style>
