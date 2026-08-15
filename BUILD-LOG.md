@@ -1983,3 +1983,14 @@ Scope: Comprehensive UI/UX redesign and backend enhancement for `/admin/orders`,
   - `npx astro check`: **0 errors, 0 warnings**.
   - `npm run build`: **Complete!** (Server built in 4.15s).
   - `npx wrangler deploy`: **Live 200 OK** (`permatamall.shop`).
+
+### Entry 76: 5-Digit Minimum Product Content-ID Pattern Lock & Auto-Taxonomy Feed Synchronization
+- **Pattern Lock Validation (`meta-event-contract.ts`)**: Enforced `/^[A-Za-z0-9_./-]{5,128}$/` minimum 5-character/digit product content IDs for Meta Pixel, CAPI, GTM, and Google Ads events outbox validation.
+- **Automated Product Content ID Normalizer (`catalog-feed.ts` - `formatContentId`)**: Added central helper mapping all numeric product IDs < 10000 to 5-digit strings (`10001`+). Ensures clean multi-tenant cloning for any new tenant store.
+- **XML Catalog Feed Feed Synchronization**: Updated `google-catalog.xml` and `meta-catalog.xml` generators emitting 5-digit `<g:id>` and `<g:item_group_id>`, `<g:google_product_category>` (ID `6551` / *Handbags & Tas Wanita*), `<g:price>`, and `<g:sale_price>`.
+- **Verification & Build**:
+  - `npm test`: **194/194 Passed** (100% Lulus).
+  - `npx tsc --noEmit`: **0 errors, 0 warnings**.
+  - `npx astro check`: **0 errors, 0 warnings**.
+  - `npm run build`: **Complete!** (Server built in 4.28s).
+  - `npx wrangler deploy`: **Live 200 OK** (`https://permatamall.shop/`).

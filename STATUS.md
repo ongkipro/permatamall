@@ -676,3 +676,9 @@ The evidence below remains historical proof of the earlier implementation. Its c
 - **Sticky CTA Smooth Auto-Hide**: Updated `IntersectionObserver` in `[slug].astro` and `StickyCTA.astro` with `rootMargin: '0px 0px -40px 0px'`, hiding the sticky mobile bar when entering `#form-pemesanan`.
 - **Full SEO & Schema Compliance**: Enhanced `json-ld.ts` and `JsonLdSchema.astro` with full Open Graph, Twitter Cards, Canonical URLs, and Schema.org Google Merchant specs (`MerchantReturnPolicy`, `OfferShippingDetails`, `BreadcrumbList`).
 - **Validation & Deployment**: 192/192 Node tests passing (`npm test`), 0 TypeScript / Astro check errors (`npx tsc --noEmit` & `npx astro check`), clean build deployed live to `permatamall.shop` (Worker commit `f44c2f1`).
+## 71. 5-Digit Minimum Product Content-ID Pattern Lock & Auto-Taxonomy Feed Synchronization — Deployed to Production
+
+- **Pattern Lock Validation (`meta-event-contract.ts`)**: Enforced `/^[A-Za-z0-9_./-]{5,128}$/` minimum 5-character/digit product content IDs for Meta Pixel, CAPI, GTM, and Google Ads events outbox validation.
+- **Automated Product Content ID Normalizer (`catalog-feed.ts` - `formatContentId`)**: Added central helper mapping all numeric product IDs < 10000 to 5-digit strings (`10001`+). Ensures clean multi-tenant cloning for any new tenant store.
+- **XML Feed Feed Synchronization**: Updated `google-catalog.xml` and `meta-catalog.xml` generators emitting 5-digit `<g:id>` and `<g:item_group_id>`, `<g:google_product_category>` (ID `6551` / *Handbags & Tas Wanita*), `<g:price>`, and `<g:sale_price>`.
+- **Validation & Deployment**: 194/194 Node tests passing (`npm test`), 0 TypeScript / Astro check errors across 272 files (`npx tsc --noEmit` & `npx astro check`), clean build deployed live to `https://permatamall.shop/` (commit `bd98145`).

@@ -877,3 +877,10 @@ Implementation, contract tests, static checks, build, and focused authenticated 
       -> REQ: UI-9 · deps: [T291] · Done when: Open Graph, Twitter Cards, Canonical URLs, and Google Merchant Schema (MerchantReturnPolicy & OfferShippingDetails) are active.
 - [x] **T293** — Verification & Production Live Deployment (`npm test`, `npx tsc --noEmit`, `npx astro check`, `wrangler deploy`).
       -> REQ: UI-10 · deps: [T292] · Done when: 192/192 Node tests pass, 0 typecheck/Astro check errors, clean build deployed live to `https://permatamall.shop/` (commit `f44c2f1`).
+
+## Phase 80: 5-Digit Minimum Product Content-ID Pattern Lock & Auto-Taxonomy Feed Synchronization
+
+- [x] **T294** — 5-Digit Minimum Product Content-ID Pattern Lock (`src/lib/meta-event-contract.ts`).
+ -> REQ: TRK-4 · deps: [T293] · Done when: `PRODUCT_ID_PATTERN` enforces `/^[A-Za-z0-9_./-]{5,128}$/` minimum 5-character/digit product content IDs for Meta and Google tracking outbox validation.
+- [x] **T295** — Automated Product Content ID Normalization & Feed Synchronization (`src/lib/catalog-feed.ts`, `src/lib/catalog-feed.test.ts`).
+ -> REQ: TRK-5 · deps: [T294] · Done when: `formatContentId(id)` normalizes numeric product IDs < 10000 to 5-digit strings (`10001`+), XML feeds (`google-catalog.xml`, `meta-catalog.xml`) emit 5-digit `<g:id>` and `<g:item_group_id>`, unit tests pass 194/194, 0 TypeScript/Astro check errors, git committed and deployed live to `https://permatamall.shop/` (commit `bd98145`).
