@@ -829,3 +829,14 @@ Implementation, contract tests, static checks, build, and focused authenticated 
       -> REQ: TRK-3 · deps: [T272] · Done when: `google-catalog.xml` and `meta-catalog.xml` generate `<g:id>` strictly matching tracking `content_id` (`product.productId` for single variants and primary variant, ignoring variant SKUs like `variant_...`, with `<g:item_group_id>` for multi-variant products), unit test suite passes with 192/192 100% pass rate, 0 TypeScript/Astro check errors, and live build deployed to permatamall.shop.
 - [x] **T274** — Full Catalog Restoration, Responsive Multi-Photo Slider & D1 Product Variants Seed (`scripts/seed-catalog.sql`, `src/components/storefront/ProductImageSlider.tsx`, `src/lib/catalog-data.ts`, `src/data/products.ts`, D1 `OMS_DB`).
       -> REQ: CAT-1 · deps: [T273] · Done when: 22 products and 110 variants are seeded into D1 database `OMS_DB`, product page mounts interactive `ProductImageSlider` component with adaptive ratio frame and multi-photo thumbnail gallery, `catalog-data.ts` builds 7-photo image galleries per product, test suite passes with 192/192 100% pass rate, 0 TypeScript/Astro check errors, git pushed to main, and live deployment on `https://permatamall.shop/` verified.
+
+- [x] **T275** - Luxury Header, Footer & Base Layout Polish (`SiteHeader.astro`, `SiteFooter.astro`, `BaseLayout.astro`).
+ -> REQ: UI-1 · deps: [T274] · Done when: header announcement ticker uses dark onyx `#09090B` container with pulsing live status dot, glassmorphism sticky header with clean links, and footer uses deep onyx canvas with refined legal links.
+- [x] **T276** - Luxury Homepage Templates Rebuild (`WideCatalogHome.astro`, `CompactMarketHome.astro`, `ProductListItem.astro`).
+ -> REQ: UI-2 · deps: [T275] · Done when: `WideCatalogHome` displays warm studio canvas `#FBFBFB`, editorial typography, elevated product cards with discount badges, COD available indicator, and 4-point minimalist trust grid.
+- [x] **T277** - Product Detail Page PDP Luxury Overhaul (`src/pages/produk/[slug].astro`, `ProductImageSlider.tsx`).
+ -> REQ: UI-3 · deps: [T276] · Done when: PDP renders clean price block, aggregate rating summary, variant list, verified buyer reviews, and mounts a sticky mobile purchase bar for instant COD checkout trigger.
+- [x] **T278** - Order Form & Checkout Minimalist Visual Refinement (`GeoIpResolvedForm.astro`, `form-hybrid.css`).
+ -> REQ: UI-4 · deps: [T277] · Done when: order form visual colors align with luxury minimalist palette while preserving 100% of underlying form bindings, field handlers, and checkout submit logic.
+- [x] **T279** - Full Verification, Build & Live Production Deployment (`npm test`, `npx tsc --noEmit`, `npx astro check`, `wrangler deploy`).
+ -> REQ: UI-5 · deps: [T278] · Done when: unit test suite passes 192/192, 0 TypeScript and Astro check errors, production build deployed to Cloudflare Worker, git committed to main, and verified on `https://permatamall.shop/`.
