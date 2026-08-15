@@ -220,3 +220,44 @@ export function buildFaqJsonLd({ faqs }: { faqs: readonly FaqJsonLdInput[] }) {
     })),
   };
 }
+export type ItemListItemInput = {
+  name: string;
+  url: string;
+  image?: string;
+  price?: number;
+  description?: string;
+};
+
+export function buildItemListJsonLd({
+  siteUrl,
+  name,
+  items,
+}: {
+  siteUrl: string;
+  name: string;
+  items: readonly ItemListItemInput[];
+}) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "ItemList",
+    name,
+    numberOfItems: items.length,
+    itemListElement: items.map((item, index) => ({
+      "@type": "ListItem",
+      position: index + 1,
+      name: item.name,
+      url: absoluteUrl(item.url, siteUrl),
+      ...(item.image ? { image: absoluteUrl(item.image, siteUrl) } : {}),
+      ...(typeof item.price === "number"
+        ? {
+            offers: {
+              "@type": "Offer",
+              price: item.price,
+              priceCurrency: "IDR",
+              availability: "https://schema.org/InStock",
+            },
+          }
+        : {}),
+    })),
+  };
+}

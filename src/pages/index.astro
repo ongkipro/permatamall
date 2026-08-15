@@ -27,15 +27,27 @@ const products = catalog.map((product) => ({
   })),
 }));
 const isWide = tenantConfig.storefrontTemplate === 'wide-catalog';
+const homepageTitle = `${tenantConfig.name} — ${tenantConfig.tagline || tenantConfig.description}`;
+const itemList = {
+  name: `${tenantConfig.name} — Koleksi Produk pilihan`,
+  items: products.map((p) => ({
+    name: p.name,
+    url: p.href,
+    image: p.image,
+    price: p.price,
+    description: p.description,
+  })),
+};
 ---
 
 <BaseLayout
-  title={tenantConfig.name}
+  title={homepageTitle}
   description={tenantConfig.description}
   image={content?.heroSlides[0]?.image ?? tenantConfig.logo}
   hideHeader={isWide}
   hideFooter={isWide}
   contentWidth={isWide ? 'wide' : 'compact'}
+  itemList={itemList}
 >
   {
     !content ? (

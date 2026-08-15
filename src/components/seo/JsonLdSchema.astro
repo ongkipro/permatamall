@@ -2,10 +2,12 @@
 import {
   buildBreadcrumbJsonLd,
   buildFaqJsonLd,
+  buildItemListJsonLd,
   buildProductJsonLd,
   buildStorefrontJsonLd,
   type BreadcrumbJsonLdInput,
   type FaqJsonLdInput,
+  type ItemListItemInput,
   type OrganizationJsonLdInput,
   type ProductJsonLdInput,
   type WebsiteJsonLdInput,
@@ -18,6 +20,7 @@ interface Props {
   product?: ProductJsonLdInput;
   breadcrumbs?: readonly BreadcrumbJsonLdInput[];
   faqs?: readonly FaqJsonLdInput[];
+  itemList?: { name: string; items: readonly ItemListItemInput[] };
 }
 
 const {
@@ -27,6 +30,7 @@ const {
   product,
   breadcrumbs = [],
   faqs = [],
+  itemList,
 } = Astro.props;
 
 const schemas: object[] = [
@@ -46,6 +50,9 @@ const visibleFaqs = faqs.filter(
 );
 if (visibleFaqs.length) {
   schemas.push(buildFaqJsonLd({ faqs: visibleFaqs }));
+}
+if (itemList && itemList.items.length > 0) {
+  schemas.push(buildItemListJsonLd({ siteUrl, name: itemList.name, items: itemList.items }));
 }
 
 const serializedSchemas = schemas.map((schema) =>

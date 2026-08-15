@@ -32,6 +32,7 @@ interface Props {
   breadcrumbs?: JsonLdProps['breadcrumbs'];
   product?: JsonLdProps['product'];
   faqs?: JsonLdProps['faqs'];
+  itemList?: JsonLdProps['itemList'];
   contentWidth?: 'compact' | 'wide';
   preloadImages?: PreloadImageItem | readonly PreloadImageItem[];
   shell?: string;
@@ -48,6 +49,7 @@ const {
   breadcrumbs,
   product,
   faqs,
+  itemList,
   contentWidth = tenantConfig.storefrontTemplate === 'wide-catalog' ? 'wide' : 'compact',
   preloadImages,
 } = Astro.props;
@@ -147,6 +149,7 @@ const preloadImageUrls =
       product={product}
       breadcrumbs={breadcrumbs}
       faqs={faqs}
+      itemList={itemList}
     />
     <style is:global>
       :where(html) {
