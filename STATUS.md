@@ -688,3 +688,12 @@ The evidence below remains historical proof of the earlier implementation. Its c
 - **Admin Content ID Display**: Integrated `formatContentId` into `ProductCatalog.tsx` (table view, card view, search filter, and dropdown action) and `ProductForm.tsx` (product summary panel) for normalized 5-digit Content ID display and searching.
 - **Luxury Minimalist UI/UX Refactor (`/payment` & `/thanks`)**: Refactored `/payment` and `/thanks` storefront pages to adhere to the Luxury Minimalist Design System (`max-w-[480px]`, `rounded-none`, hairline borders `border-slate-200`, `#F8F7F4` warm canvas, `#8C6D3F` gold accents), retaining 100% of payment monitoring scripts, QRIS canvas generators, and WhatsApp confirmation deep-links.
 - **Validation & Deployment**: 194/194 Node tests passing (`npm test`), 0 TypeScript/Astro check errors (`npx tsc --noEmit` & `npx astro check`), clean build deployed live to `https://permatamall.shop/` (commit `631285a`).
+## 73. Full Product Catalog Load More Pagination & End-to-End System Audit — Deployed to Production
+
+- **PLP Catalog Page (`/produk`) Overhaul**: Removed the `slice(0, 15)` truncation limit on `src/pages/produk/index.astro`. Replaced it with full catalog loading, progressive 10-item pagination, a live counter (`Menampilkan X dari Y produk`), and a responsive "Muat Lebih Banyak" button.
+- **End-to-End System Audit & Verification**:
+  - **Expedition & Shipping (Mengantar)**: Validated `/api/locations` district search resolution and `/api/shipping-rates` rate calculation. Verified fallback destination logic and COD province restriction guards (`province.ts`).
+  - **Payment Gateway (AutoLaris & Manual)**: Validated `/api/payment-methods`, `autolaris-payment.ts`, fee policy (`buyer`/`seller`), QRIS/VA generation, and webhook signature verification (`/api/webhooks/autolaris`).
+  - **Checkout & Order Persistence**: Validated `/api/submit-order`, rate limiters, honeypot guards, `submit_token` idempotency, and invoice number promotion (`ABN-` -> `INV-`).
+  - **Tracking & Signal Pipeline**: Validated Meta Pixel/CAPI outbox, Google Ads signal engine, and 5-digit Content ID pattern lock (`10001`+).
+- **Validation & Deployment**: 194/194 Node tests passing (`npm test`), 0 TypeScript/Astro check errors (`npx tsc --noEmit` & `npx astro check`), clean build deployed live to `https://permatamall.shop/` (commit `aae371d`).
