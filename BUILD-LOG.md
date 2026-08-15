@@ -2037,3 +2037,12 @@ Scope: Comprehensive UI/UX redesign and backend enhancement for `/admin/orders`,
   - `npx astro check`: **0 errors, 272 warnings**.
   - `npm run build`: **Complete!** (Server built in 4.19s).
   - `npx wrangler deploy`: **Live 200 OK** (`https://permatamall.shop/`).
+### Entry 82: Homepage SEO Optimization & ItemList JSON-LD Schema
+- **Homepage Meta Title & H1 (`src/pages/index.astro`, `HeroSection.astro`)**: Enhanced homepage `<title>` format to `${name} — ${tagline}` (`Permata Mall — Pusat Belanja Online Pilihan`). Added semantic `<h1 class="sr-only">` header anchor for search crawlers and AI search engines.
+- **ItemList JSON-LD Schema (`src/lib/json-ld.ts`, `JsonLdSchema.astro`)**: Added `buildItemListJsonLd` generator and updated `BaseLayout` to emit structured `ItemList` JSON-LD schema for catalog items on homepage `/`.
+- **Verification & Build**:
+  - `npm test`: **194/194 Passed** (100% Lulus).
+  - `npx tsc --noEmit`: **0 errors, 0 warnings**.
+  - `npx astro check`: **0 errors, 272 warnings**.
+  - `npm run build`: **Complete!** (Server built in 4.16s).
+  - `npx wrangler deploy`: **Live 200 OK** (`https://permatamall.shop/`).

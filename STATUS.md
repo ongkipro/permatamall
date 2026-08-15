@@ -709,3 +709,8 @@ The evidence below remains historical proof of the earlier implementation. Its c
 - **Font Network & Parsing Optimization**: Reduced `@fontsource` CSS imports from 7 to 4 core weights in `BaseLayout.astro`, decreasing `@font-face` parsing overhead and unnecessary woff2 downloads.
 - **Zero Forced Reflow & Thumbnail Attributes**: Wrapped `scrollIntoView` in `requestAnimationFrame` and skipped index 0 mount reflow in `ProductImageSlider.tsx`, removing the 42 ms forced layout recalcs. Added `sizes="(max-width: 480px) 64px, 80px"` and `loading={idx < 3 ? 'eager' : 'lazy'}` to thumbnail images.
 - **Validation & Deployment**: 194/194 Node tests passing (`npm test`), 0 TypeScript/Astro check errors (`npx tsc --noEmit` & `npx astro check`), clean build deployed live to `https://permatamall.shop/` (commit `ef810aa`).
+## 76. Homepage SEO Optimization & ItemList JSON-LD Schema — Deployed to Production
+
+- **Homepage Meta Title & H1 Hierarchy**: Upgraded `<title>` tag on `/` to `Permata Mall — Pusat Belanja Online Pilihan` (Brand + Core Tagline Value Proposition). Added accessible `<h1 class="sr-only">` header anchor in `HeroSection.astro`.
+- **ItemList Structured Data**: Added `buildItemListJsonLd` generator and updated `BaseLayout` & `JsonLdSchema` to emit structured `ItemList` JSON-LD schema containing catalog items on homepage `/`.
+- **Validation & Deployment**: 194/194 Node tests passing (`npm test`), 0 TypeScript/Astro check errors (`npx tsc --noEmit` & `npx astro check`), clean build deployed live to `https://permatamall.shop/` (commit `2ad83a2`).
