@@ -703,3 +703,9 @@ The evidence below remains historical proof of the earlier implementation. Its c
 - **Zero CLS & Image Ratio Guard**: Added explicit `width={480}` `height={640}` and `fetchPriority="high"` on hero slider images in `ProductImageSlider.tsx` and `width={64}` `height={85}` on thumbnail images to eliminate layout shifts on mobile devices.
 - **Handbag PDP Mobile UX & Sticky Bar**: Added `scroll-mt-6` offset anchor to `#form-pemesanan` ensuring smooth scrolling when clicking mobile sticky purchase bar (`Pesan Sekarang (COD)`).
 - **Validation & Deployment**: 194/194 Node tests passing (`npm test`), 0 TypeScript/Astro check errors (`npx tsc --noEmit` & `npx astro check`), clean build deployed live to `https://permatamall.shop/` (commit `a037a8a`).
+## 75. PageSpeed Diagnostic Refinement & Render-Blocking CSS Elimination — Deployed to Production
+
+- **Render-Blocking CSS Elimination**: Removed duplicate `import '../../styles/form-hybrid.css'` imports from `[slug].astro` and `produk/[slug].astro`, consolidating styles into `global.css` and eliminating extra CSS network requests.
+- **Font Network & Parsing Optimization**: Reduced `@fontsource` CSS imports from 7 to 4 core weights in `BaseLayout.astro`, decreasing `@font-face` parsing overhead and unnecessary woff2 downloads.
+- **Zero Forced Reflow & Thumbnail Attributes**: Wrapped `scrollIntoView` in `requestAnimationFrame` and skipped index 0 mount reflow in `ProductImageSlider.tsx`, removing the 42 ms forced layout recalcs. Added `sizes="(max-width: 480px) 64px, 80px"` and `loading={idx < 3 ? 'eager' : 'lazy'}` to thumbnail images.
+- **Validation & Deployment**: 194/194 Node tests passing (`npm test`), 0 TypeScript/Astro check errors (`npx tsc --noEmit` & `npx astro check`), clean build deployed live to `https://permatamall.shop/` (commit `ef810aa`).

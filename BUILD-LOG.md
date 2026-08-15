@@ -2027,3 +2027,13 @@ Scope: Comprehensive UI/UX redesign and backend enhancement for `/admin/orders`,
   - `npx astro check`: **0 errors, 272 warnings**.
   - `npm run build`: **Complete!** (Server built in 4.20s).
   - `npx wrangler deploy`: **Live 200 OK** (`https://permatamall.shop/`).
+### Entry 81: PageSpeed Diagnostic Refinement & Render-Blocking CSS Elimination
+- **Render-Blocking CSS Elimination (`src/pages/produk/[slug].astro`, `src/pages/[slug].astro`)**: Removed duplicate `import '../../styles/form-hybrid.css'` statements since `form-hybrid.css` is already bundled via `global.css`. Eliminated extra network roundtrips for CSS files.
+- **Font Streamlining (`src/layouts/BaseLayout.astro`)**: Reduced font CSS imports from 7 down to 4 core weights (`inter/400.css`, `inter/600.css`, `inter/700.css`, `cinzel/600.css`), saving font parsing and woff2 download overhead.
+- **Forced Reflow & Thumbnail Image Optimization (`ProductImageSlider.tsx`)**: Replaced synchronous `scrollIntoView` in `useEffect` with `requestAnimationFrame` and skipped index 0, completely removing forced style recalculation reflow (42 ms). Added responsive `sizes="(max-width: 480px) 64px, 80px"` and `loading={idx < 3 ? 'eager' : 'lazy'}` to thumbnail images.
+- **Verification & Build**:
+  - `npm test`: **194/194 Passed** (100% Lulus).
+  - `npx tsc --noEmit`: **0 errors, 0 warnings**.
+  - `npx astro check`: **0 errors, 272 warnings**.
+  - `npm run build`: **Complete!** (Server built in 4.19s).
+  - `npx wrangler deploy`: **Live 200 OK** (`https://permatamall.shop/`).
