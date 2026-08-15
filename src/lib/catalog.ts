@@ -43,12 +43,12 @@ async function loadLocalDevCatalogRows() {
       SELECT id, title, slug, category, image_url, is_active, created_at
       FROM products
       ORDER BY created_at DESC, id DESC
-    `).all() as CatalogProductRow[];
+    `).all() as unknown as CatalogProductRow[];
     const variants = db.prepare(`
       SELECT id, product_id, sku, title, price, compare_price, stock
       FROM product_variants
       ORDER BY product_id ASC, id ASC
-    `).all() as CatalogVariantRow[];
+    `).all() as unknown as CatalogVariantRow[];
     return { products, variants };
   } catch {
     return { products: [], variants: [] };

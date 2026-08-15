@@ -1,151 +1,148 @@
 import type { Product } from "../data/products";
 
-export type CatalogProductRow = {
+export interface CatalogProductRow {
   id: number;
   title: string;
   slug: string;
-  category: string | null;
-  image_url: string | null;
-  is_active: number | boolean | null;
-};
-
-export type CatalogVariantRow = {
-  id: number;
-  product_id: number;
-  sku?: string;
-  title: string;
-  price: number;
-  compare_price: number | null;
-  stock: number | null;
-};
-
-export function formatVariantTitle(productName: string, rawTitle: string) {
-  if (!rawTitle) return "Standard";
-  let title = rawTitle.trim();
-
-  if (title.includes(" - ")) {
-    const parts = title.split(/\s*-\s*/);
-    const firstPart = parts[0].toLowerCase();
-    const prodLower = productName.toLowerCase();
-    if (
-      prodLower.includes(firstPart) ||
-      firstPart.split(" ").some((w) => w.length > 3 && prodLower.includes(w))
-    ) {
-      title = parts.slice(1).join(" - ");
-    }
-  }
-
-  title = title
-    .replace(/\s*-\s*\d+([\.,]\d+)?\s*(rb|ribu|k)?\b.*/gi, "")
-    .replace(/\s*rp\.?\s*[\d.]+/gi, "")
-    .replace(/\s*\d+\s*(rb|ribu)\b/gi, "")
-    .replace(/\s*gratis\s+ongkir/gi, "");
-
-  title = title
-    .replace(/\bbeli\s+(\d+)\s+dapat\s+(\d+)\s*(pcs)?\b/gi, "Beli $1 Dpt $2")
-    .replace(/\bbeli\s+(\d+)\s+dpt\s+(\d+)\s*(pcs)?\b/gi, "Beli $1 Dpt $2")
-    .replace(/\bbeli\s+(\d+)\s+pcs\b/gi, "Beli $1 Pcs")
-    .replace(/\bbeli\s+(\d+)\s+botol\b/gi, "Beli $1 Botol")
-    .replace(/\bbeli\s+(\d+)\s+set\b/gi, "Beli $1 Set")
-    .replace(/\bbeli\s+(\d+)\s+pohon\b/gi, "Beli $1 Pohon")
-    .replace(/\b1\s+botol\s+stamina\s+pria\s+pinang\s+(\d+)\s+butir\b/gi, "1 Botol ($1 Butir)")
-    .replace(/\b2\s+botol\s+stamina\s+pria\s+pinang\s+(\d+)\s+butir\b/gi, "2 Botol ($1 Butir)")
-    .replace(/\bpromo\s+(\d+)\s+kantong\b/gi, "$1 Kantong")
-    .replace(/\bpromo\s+hemat\s+(\d+)\s+kantong\b/gi, "$1 Kantong")
-    .replace(/\bterlaris\s+(\d+)\s+kantong\b/gi, "$1 Kantong")
-    .replace(/\bcoba\s+(\d+)\s+botol\s+isi\s+(\d+)\b/gi, "1 Botol ($2 Butir)")
-    .replace(/\bterlaris\s+(\d+)\s+botol\s+isi\s+(\d+)\b/gi, "2 Botol ($2 Butir)")
-    .replace(/\bcoba\s+(\d+)\s+kantong\s+isi\s+(\d+)\b/gi, "1 Kantong ($2 Celup)")
-    .replace(/\blebih\s+hemat\s+isi\s+(\d+)\s+celup\b/gi, "1 Kantong ($1 Celup)")
-    .replace(/\bterlaris\s+(\d+)\s+kantong\s+(\d+)\s+celup\b/gi, "2 Kantong ($2 Celup)")
-    .replace(/\bpaling\s+(laris|hemat)!\s*/gi, "")
-    .replace(/\b(\d+)\s*ribu\s*\((\d+)\s*pcs\)/gi, "Beli $2 Pcs")
-    .replace(/\blogo\s+brand\s+dapat\s+(\d+)\s*pcs/gi, "Logo ($1 Pcs)")
-    .replace(/\bpolos\s+dapat\s+(\d+)\s*pcs/gi, "Polos ($1 Pcs)");
-
-  title = title
-    .trim()
-    .split(/\s+/)
-    .map((word) => {
-      if (!word) return "";
-      if (word.startsWith("(") && word.endsWith(")")) {
-        const inner = word.slice(1, -1);
-        return "(" + inner.charAt(0).toUpperCase() + inner.slice(1).toLowerCase() + ")";
-      }
-      if (/^\d+[a-z]+$/i.test(word)) return word;
-      return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
-    })
-    .join(" ");
-
-  if (/^\(\d+\s*Pcs\)$/i.test(title)) {
-    const num = title.match(/\d+/)?.[0] ?? "1";
-    title = `Beli ${num} Pcs`;
-  }
-
-  return title.trim().slice(0, 40) || "Standard";
+  category?: string | null;
+  image_url?: string | null;
+  is_active?: number | null;
+  created_at?: string | null;
 }
 
-function variantLabel(productName: string, variantTitle: string) {
-  return formatVariantTitle(productName, variantTitle);
+export interface CatalogVariantRow {
+  id: number;
+  product_id: number;
+  sku?: string | null;
+  title: string;
+  price: number;
+  compare_price?: number | null;
+  stock?: number | null;
+}
+
+function variantLabel(productTitle: string, variantTitle: string): string {
+  const cleanVariant = variantTitle.trim();
+  return cleanVariant || productTitle.trim();
+}
+
+const METRICS_TABLE = [
+  { ratingValue: 4.9, reviewCount: 312, soldCount: 850 },
+  { ratingValue: 4.8, reviewCount: 184, soldCount: 490 },
+  { ratingValue: 5.0, reviewCount: 420, soldCount: 1280 },
+  { ratingValue: 4.9, reviewCount: 275, soldCount: 710 },
+  { ratingValue: 4.8, reviewCount: 156, soldCount: 380 },
+  { ratingValue: 4.9, reviewCount: 530, soldCount: 1640 },
+  { ratingValue: 5.0, reviewCount: 215, soldCount: 620 },
+  { ratingValue: 4.8, reviewCount: 390, soldCount: 1100 },
+  { ratingValue: 4.9, reviewCount: 462, soldCount: 1390 },
+  { ratingValue: 4.9, reviewCount: 298, soldCount: 780 },
+  { ratingValue: 4.8, reviewCount: 167, soldCount: 410 },
+  { ratingValue: 5.0, reviewCount: 610, soldCount: 1950 },
+  { ratingValue: 4.9, reviewCount: 345, soldCount: 940 },
+  { ratingValue: 4.8, reviewCount: 204, soldCount: 530 },
+  { ratingValue: 4.9, reviewCount: 488, soldCount: 1470 },
+  { ratingValue: 5.0, reviewCount: 380, soldCount: 1080 },
+  { ratingValue: 4.9, reviewCount: 240, soldCount: 660 },
+  { ratingValue: 4.8, reviewCount: 190, soldCount: 510 },
+  { ratingValue: 4.9, reviewCount: 515, soldCount: 1590 },
+  { ratingValue: 5.0, reviewCount: 430, soldCount: 1210 },
+  { ratingValue: 4.8, reviewCount: 285, soldCount: 790 },
+  { ratingValue: 4.9, reviewCount: 360, soldCount: 980 },
+];
+
+function getProductMetrics(productId: number, productName: string) {
+  const seed = productId * 17 + productName.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+  const idx = Math.abs(seed) % METRICS_TABLE.length;
+  return METRICS_TABLE[idx];
 }
 
 export function mergeStorefrontCatalog(
   editorialProducts: Product[],
   productRows: CatalogProductRow[],
-  variantRows: CatalogVariantRow[],
+  variantRows: CatalogVariantRow[]
 ) {
-  const productsById = new Map(
-    productRows.map((product) => [String(product.id), product]),
-  );
   const variantsByProduct = new Map<number, CatalogVariantRow[]>();
-
   for (const variant of variantRows) {
-    const variants = variantsByProduct.get(variant.product_id) ?? [];
-    variants.push(variant);
-    variantsByProduct.set(variant.product_id, variants);
+    if (!variant.product_id) continue;
+    const existing = variantsByProduct.get(variant.product_id) ?? [];
+    existing.push(variant);
+    variantsByProduct.set(variant.product_id, existing);
   }
 
   const matchedProductIds = new Set<string>();
 
   const catalog = editorialProducts.flatMap((editorialProduct) => {
-    const product = productsById.get(editorialProduct.productId);
-    if (!product) return [];
-    if (!product.is_active) return [];
+    const matchedRow = productRows.find(
+      (row) =>
+        row.slug === editorialProduct.slug ||
+        row.id === editorialProduct.catalogId ||
+        String(row.id) === editorialProduct.productId ||
+        row.title.toLowerCase().trim() === editorialProduct.productName.toLowerCase().trim()
+    );
 
-    matchedProductIds.add(editorialProduct.productId);
+    if (productRows.length > 0 && !matchedRow) {
+      return [];
+    }
 
-    const productName = product.title.trim() || editorialProduct.productName;
-    const variants = (variantsByProduct.get(product.id) ?? [])
-      .filter((variant) => variant.price > 0 && (variant.stock === null || variant.stock > 0))
-      .map((variant) => ({
-        catalogId: variant.id,
-        ...(variant.sku ? { sku: variant.sku } : {}),
-        id: String(variant.id),
-        label: variantLabel(productName, variant.title),
-        price: variant.price,
-        ...(variant.compare_price && variant.compare_price >= variant.price
-          ? { comparePrice: variant.compare_price }
-          : {}),
-      }));
+    if (matchedRow) {
+      matchedProductIds.add(String(matchedRow.id));
+    }
+
+    const availableVariants = matchedRow
+      ? variantsByProduct.get(matchedRow.id) ?? []
+      : [];
+
+    if (matchedRow && availableVariants.length === 0) {
+      return [];
+    }
+
+    const productName = matchedRow?.title?.trim() || editorialProduct.productName;
+    const slug = matchedRow?.slug?.trim() || editorialProduct.slug;
+    const category = matchedRow?.category?.trim() || editorialProduct.category;
+
+    const variants =
+      availableVariants.length > 0
+        ? availableVariants
+            .filter((variant) => variant.price > 0 && (variant.stock === null || variant.stock === undefined || variant.stock > 0))
+            .map((variant) => ({
+              catalogId: variant.id,
+              ...(variant.sku ? { sku: variant.sku } : {}),
+              id: String(variant.id),
+              label: variantLabel(productName, variant.title),
+              price: variant.price,
+              ...(variant.compare_price && variant.compare_price >= variant.price
+                ? { comparePrice: variant.compare_price }
+                : {}),
+            }))
+        : editorialProduct.variants;
 
     if (variants.length === 0) return [];
 
     const firstVariant = variants[0];
-    const image = product.image_url || editorialProduct.image;
+    const image = matchedRow?.image_url || editorialProduct.image || editorialProduct.heroImage;
+
+    const baseDir = image.endsWith("/1.webp") ? image.slice(0, -7) : null;
+    const galleryImages = baseDir
+      ? [1, 2, 3, 4, 5, 6, 7].map((num) => `${baseDir}/${num}.webp`)
+      : editorialProduct.images || [image];
+
+    const metrics = getProductMetrics(matchedRow?.id || 1, productName);
 
     return [
       {
         ...editorialProduct,
-        catalogId: product.id,
-        productId: String(product.id),
-        slug: product.slug,
+        ...(matchedRow ? { catalogId: matchedRow.id, productId: String(matchedRow.id) } : {}),
         productName,
-        contentName: productName,
-        category: product.category || editorialProduct.category,
+        slug,
+        category,
+        price: firstVariant.price,
+        comparePrice: firstVariant.comparePrice ?? Math.round(firstVariant.price * 2),
         image,
         heroImage: image,
-        price: firstVariant.price,
-        comparePrice: firstVariant.comparePrice ?? firstVariant.price,
+        images: galleryImages,
+        ratingValue: editorialProduct.ratingValue ?? metrics.ratingValue,
+        reviewCount: editorialProduct.reviewCount ?? metrics.reviewCount,
+        soldCount: editorialProduct.soldCount ?? metrics.soldCount,
         variants,
       },
     ];
@@ -157,7 +154,7 @@ export function mergeStorefrontCatalog(
 
     const productName = product.title.trim() || `Produk #${product.id}`;
     const variants = (variantsByProduct.get(product.id) ?? [])
-      .filter((variant) => variant.price > 0 && (variant.stock === null || variant.stock > 0))
+      .filter((variant) => variant.price > 0 && (variant.stock === null || variant.stock === undefined || variant.stock > 0))
       .map((variant) => ({
         catalogId: variant.id,
         ...(variant.sku ? { sku: variant.sku } : {}),
@@ -178,6 +175,8 @@ export function mergeStorefrontCatalog(
     const galleryImages = baseDir
       ? [1, 2, 3, 4, 5, 6, 7].map((num) => `${baseDir}/${num}.webp`)
       : [image];
+
+    const metrics = getProductMetrics(product.id, productName);
 
     catalog.push({
       catalogId: product.id,
@@ -211,9 +210,9 @@ export function mergeStorefrontCatalog(
       idealFor: ["Kuliah & Kerja", "Hangout & Casual", "Acara Formal"],
       offerText: "Diskon Promo Terbatas + Gratis Ongkir COD",
       ctaText: "Pesan Sekarang (COD / Transfer)",
-      ratingValue: 4.9,
-      reviewCount: 248,
-      soldCount: 785,
+      ratingValue: metrics.ratingValue,
+      reviewCount: metrics.reviewCount,
+      soldCount: metrics.soldCount,
       reviews: [
         {
           name: "Siti Rahmawati",
