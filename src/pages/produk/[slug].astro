@@ -6,6 +6,7 @@ import { getStorefrontProduct } from '../../lib/catalog';
 import Icon from '../../components/shared/Icon.astro';
 import RatingStars from '../../components/shared/RatingStars.astro';
 import GeoIpResolvedForm from '../../components/forms/GeoIpResolvedForm.astro';
+import ProductImageSlider from '../../components/storefront/ProductImageSlider';
 import { resolveFormModeContext } from '../../lib/form-mode';
 import { tenantConfig } from '../../lib/tenant';
 import '../../styles/form-hybrid.css';
@@ -37,8 +38,9 @@ const soldLabel = hasSoldCount
     : `${soldCount} terjual`
   : null;
 
+const productImages = product.images && product.images.length > 0 ? product.images : [product.heroImage];
+
 const productAccentMap: Record<string, string> = {
-  bensu: '#0F2A5F',
   aussie: '#8B1E1E',
   kojien: '#4C1D95',
   saratoga: '#14532D',
@@ -134,19 +136,12 @@ const productSchemaJson = JSON.stringify(productSchema).replace(/</g, '\\u003c')
       price={displayPrice}
     />
     <section class:list={['bg-white', tenantConfig.storefrontTemplate === 'wide-catalog' && 'lg:grid lg:grid-cols-2 lg:overflow-hidden lg:rounded-xl lg:border lg:border-slate-200']}>
-      <img
-        src={product.heroImage}
-        alt={`Gambar produk ${product.productName} untuk kategori ${product.category}`}
-        title={`${product.productName} - ${product.headline}`}
-        width="480"
-        height="480"
-        fetchpriority="high"
-        loading="eager"
-        decoding="async"
-        class:list={[
-          'aspect-square w-full object-cover',
-          tenantConfig.storefrontTemplate === 'wide-catalog' && 'bg-white object-contain p-6 lg:p-10',
-        ]}
+      <ProductImageSlider
+        client:load
+        images={productImages}
+        productName={product.productName}
+        badgeText={product.tag || 'Bestseller'}
+        discountPercentage={displayDiscount}
       />
 
       <div class:list={['px-5 py-5', tenantConfig.storefrontTemplate === 'wide-catalog' && 'lg:flex lg:flex-col lg:justify-center lg:p-10']}>

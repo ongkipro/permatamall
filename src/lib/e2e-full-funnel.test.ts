@@ -460,10 +460,10 @@ test("5. product and storefront JSON-LD builders generate complete schema", () =
   });
   const organizationSchema = storefront["@graph"].find(
     (entry) => entry["@type"] === "Organization",
-  ) as { "@type": "Organization"; url: string; logo: string } | undefined;
+  ) as Record<string, any> | undefined;
   const websiteSchema = storefront["@graph"].find(
     (entry) => entry["@type"] === "WebSite",
-  ) as { "@type": "WebSite"; url: string; publisher: unknown } | undefined;
+  ) as Record<string, any> | undefined;
   assert.equal(storefront["@context"], "https://schema.org");
   assert.equal(organizationSchema?.url, siteUrl);
   assert.equal(organizationSchema?.logo, "https://shop.example/logo.webp");

@@ -31,7 +31,8 @@ export type Product = {
   comparePrice: number;
   image: string;
   heroImage: string;
-  tag: string;
+  images?: string[];
+  tag?: string;
   category: string;
   relatedCategories: string[];
   relatedTags?: string[];
