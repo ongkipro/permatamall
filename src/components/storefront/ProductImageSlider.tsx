@@ -83,6 +83,8 @@ export default function ProductImageSlider({
                 <img
                   src={imgUrl}
                   alt={`${productName} thumbnail ${idx + 1}`}
+                  width={64}
+                  height={85}
                   className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
                   loading="lazy"
                   decoding="async"
@@ -105,9 +107,12 @@ export default function ProductImageSlider({
         <img
           src={activeImage}
           alt={`${productName} foto ${activeIndex + 1}`}
+          width={480}
+          height={640}
           className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.02]"
           loading="eager"
           decoding="async"
+          fetchPriority="high"
         />
 
         {/* Badge Overlay Top */}

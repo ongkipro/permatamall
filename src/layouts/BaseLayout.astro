@@ -79,6 +79,8 @@ const preloadImageUrls =
     <meta name="generator" content={Astro.generator} />
     <link rel="dns-prefetch" href="https://www.googletagmanager.com" />
     <link rel="dns-prefetch" href="https://connect.facebook.net" />
+    <link rel="preconnect" href="https://connect.facebook.net" crossorigin />
+    <link rel="preconnect" href="https://www.googletagmanager.com" crossorigin />
     {
       preloadImageUrls.map((item) =>
         typeof item === 'string' ? (
