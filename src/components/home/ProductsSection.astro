@@ -117,7 +117,9 @@ const formatPrice = (val: number) => `Rp${val.toLocaleString('id-ID')}`;
               {product.ratingValue && (
                 <div class="mt-2 flex flex-wrap items-center gap-1.5 text-[10px] text-[#555555]">
                   <span class="flex items-center gap-1">
-                    <Icon name="lucide:star" class="h-3 w-3 fill-[#C5A880] text-[#C5A880]" aria-hidden="true" />
+                    <svg class="h-3 w-3 fill-[#C5A880] text-[#C5A880]" viewBox="0 0 20 20" aria-hidden="true">
+                      <path fill="currentColor" d="M10 1.45l2.58 5.23 5.77.84-4.18 4.07.99 5.75L10 14.62 4.84 17.34l.99-5.75L1.65 7.52l5.77-.84L10 1.45Z" />
+                    </svg>
                     <span class="font-semibold text-[#111111]">{product.ratingValue.toFixed(1)}</span>
                   </span>
                   {sold && <span class="border-l border-[#D8D6D0] pl-1.5">{sold} terjual</span>}
