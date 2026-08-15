@@ -61,7 +61,7 @@ function getRealisticComparePrice(productId: number, price: number): number {
   const seed = Math.abs(productId * 29 + Math.round(price / 100));
   const mult = multipliers[seed % multipliers.length];
   const rawCompare = Math.round((price * mult) / 1000) * 1000;
-  return Math.max(rawCompare, price + 25000);
+  return Math.max(rawCompare, Math.round(price * 1.32));
 }
 
 function getRichProductDetails(productId: number, title: string, category: string) {
@@ -104,7 +104,7 @@ function getRichProductDetails(productId: number, title: string, category: strin
     description = "CANDY Tote Bag Zipper Premium merupakan pilihan favorit mahasiswa dan wanita karir muda. Desainnya yang simpel nan elegan dipercantik dengan jahitan quilting halus dan resleting berkualitas tinggi yang menjaga barang pribadi Kamu tetap aman.";
     benefits = [
       "Zipper penutup penuh menjaga keamanan barang berharga di dalam",
-      "Lapisan furing satin lembut berkwalitas tinggi di bagian interior",
+      "Lapisan furing satin lembut berkualitas tinggi di bagian interior",
       "Muat dokumen A4, buku catatan, iPad/Tablet 11-inch & kebutuhan harian",
       "Pilihan warna pastel elegan yang cocok dipadukan dengan berbagai outfit",
     ];
@@ -125,6 +125,15 @@ function getRichProductDetails(productId: number, title: string, category: strin
       "Tali selempang dapat diatur panjangnya sesuai tinggi badan",
       "Bukaan kancing jepret magnetik praktis untuk akses cepat",
       "Pilihan tepat untuk jalan-jalan santai, kondangan, maupun berbelanja",
+    ];
+  } else if (t.includes("soraya")) {
+    subheadline = "Tote Bag Casual Minimalis Bergaris Bersih untuk Aktivitas Harian Wanita Modern.";
+    description = "SORAYA Tote Bag Casual Minimalis dirancang bagi Kamu yang mengutamakan tampilan simpel namun tetap memancarkan kesan classy. Dibuat dari sintetis tebal bertekstur halus yang awet dan mudah dirawat.";
+    benefits = [
+      "Siluet minimalis clean-cut yang netral dipadukan busana apa saja",
+      "Material sintetis tebal berstruktur kokoh yang tidak gampang mengelupas",
+      "Kompartemen interior ber-zipper rapi muat berbagai kebutuhan harian",
+      "Pegangan bahu yang pas dan tidak gampang melorot saat jalan",
     ];
   } else if (t.includes("lenzy")) {
     subheadline = "Karya Seni Anyaman Tikar Modern dengan Karakter Tekstur Unik dan Elegan.";
@@ -161,6 +170,114 @@ function getRichProductDetails(productId: number, title: string, category: strin
       "Material sintetis berserat tebal dengan proteksi anti-scratch",
       "Interior terbagi menjadi kompartemen berzipper dan saku terbuka ganda",
       "Tersedia pilihan warna netral favorit wanita Indonesia",
+    ];
+  } else if (t.includes("keisya")) {
+    subheadline = "Tas Selempang Chic Colorblock Kontras Warna Estetik Berkelas.";
+    description = "KEISYA Tas Selempang Chic Colorblock memadukan kombinasi tone warna harmonis yang memberikan sentuhan segar pada OOTD Kamu. Ringan, kokoh, dan dilengkapi pengunci emas mewah.";
+    benefits = [
+      "Kombinasi warna kontras elegan khas boutique Korea",
+      "Pengunci putar logam emas anti-karat berdaya tahan tinggi",
+      "Tali selempang kulit sintetis dapat diatur fleksibel",
+      "Kapasitas ideal untuk HP, dompet, kunci & lipstik",
+    ];
+  } else if (t.includes("jemina")) {
+    subheadline = "Tote Bag Minimalis 2-in-1 dengan Kompartemen Ganda & Strap Fleksibel.";
+    description = "JEMINA Tote Bag Minimalis 2-in-1 menghadirkan kepraktisan ganda dalam satu siluet ringkas. Dilengkapi dua kompartemen terpisah agar barang pribadi Kamu tertata sempurna.";
+    benefits = [
+      "Dua kompartemen terpisah dengan resleting independen",
+      "Struktur 2-in-1: bisa ditinjau sebagai tote bag maupun shoulder bag",
+      "Bahan luar tahan cipratan air dengan tekstur serat halus",
+      "Ukuran proporsional untuk aktivitas kantor, kampus & santai",
+    ];
+  } else if (t.includes("halona")) {
+    subheadline = "Tote Bag Double Lock System untuk Keamanan Maksimal Barang Berharga.";
+    description = "HALONA Tote Bag Double Lock System menghadirkan pengunci ganda kombinasi magnetik dan resleting utama. Memberikan ketenangan ekstra saat membawa barang berharga di tempat umum.";
+    benefits = [
+      "Sistem pengunci ganda (Magnetik + Resleting Utama)",
+      "Kompartemen khusus dompet & smartphone terlindung aman",
+      "Bahan sintetis tebal berstruktur kokoh berdiri",
+      "Pegangan halus yang tidak mengikis pakaian saat disandang",
+    ];
+  } else if (t.includes("emira")) {
+    subheadline = "Tas Selempang & Handbag Dual Tone dengan Tekstur Kulit Lembut Mewah.";
+    description = "EMIRA Tas Selempang & Handbag Dual Tone menawarkan fleksibilitas gaya dua warna yang anggun. Cocok dipadukan baik dengan gaun formal maupun busana casual sehari-hari.";
+    benefits = [
+      "Dua opsi pemakaian: digenggam sebagai handbag atau disandang sling bag",
+      "Material sintetis elastis dengan sentuhan serat kulit ultra-lembut",
+      "Aksen gantungan dekoratif berlapis emas yang menawan",
+      "Interior berlapis furing tebal ber-resleting",
+    ];
+  } else if (t.includes("dily")) {
+    subheadline = "Tote Bag Handle Bag Elegant dengan Pegangan Bundar Kokoh Khas Boutique.";
+    description = "DILY Tote Bag Handle Bag Elegant memiliki ciri khas pegangan bundar kokoh yang memberikan struktur tegas dan mewah. Pilihan sempurna untuk wanita yang ingin tampil percaya diri.";
+    benefits = [
+      "Pegangan bundar terstruktur kokoh khas desain high-fashion",
+      "Material sintetis tebal dengan keawetan jangka panjang",
+      "Kapasitas muat iPad, dompet panjang & kosmetik",
+      "Tersedia tali panjang fleksibel untuk pemakaian bahu",
+    ];
+  } else if (t.includes("caroline")) {
+    subheadline = "Tas Selempang Moon Bag Korea dengan Siluet Bulan Sabit Ikonis Trendi.";
+    description = "CAROLINE Tas Selempang Moon Bag Korea mengusung siluet bulan sabit melengkung yang sedang hits di kalangan fashion influencer Korea. Sangat nyaman disandangkan di bahu mengikuti bentuk tubuh.";
+    benefits = [
+      "Siluet Moon Bag bulan sabit yang ergonomis & fleksibel",
+      "Resleting melengkung anti-macet untuk akses mudah",
+      "Bahan ringan bertekstur lembut anti-stratch",
+      "Tali bahu adjustable dengan gesper adjuster presisi",
+    ];
+  } else if (t.includes("berlyn")) {
+    subheadline = "Tas Selempang Crescent Elegance dengan Aksen Quilting Presisi & Gold Hardware.";
+    description = "BERLYN Tas Selempang Crescent Elegance menyajikan keindahan jahitan quilting simetris dengan paduan hardware emas mengkilap. Memancarkan aura feminin yang anggun dan berkelas.";
+    benefits = [
+      "Quilting presisi tebal dengan permukaan empuk menawan",
+      "Hardware rantai emas berbobot mantap yang dilapisi anti-karat",
+      "Klip pengunci magnetik kuat berdesain tersembunyi",
+      "Ideal untuk pesta, dinner formal, hingga hangout akhir pekan",
+    ];
+  } else if (t.includes("ayien")) {
+    subheadline = "Tote Bag Work & Campus Muat Laptop 14 Inch & Berkas A4.";
+    description = "AYIEN Tote Bag Work & Campus dirancang khusus untuk memenuhi kebutuhan produktivitas wanita berkarir dan mahasiswi. Ukurannya pas memuat laptop 13-14 inch, binder A4, dan charger.";
+    benefits = [
+      "Kapasitas proporsional muat Laptop 14 inci & berkas A4",
+      "Resleting utama tebal yang membendung air hujan ringan",
+      "Saku sisipan luar untuk simpan kartu akses & HP",
+      "Tali bahu diperkuat jahitan silang untuk daya tahan beban tinggi",
+    ];
+  } else if (t.includes("ariela")) {
+    subheadline = "Tas Selempang Leather Look Tahan Cipratan Air & Mudah Dibersihkan.";
+    description = "ARIELA Tas Selempang Leather Look menyajikan tampilan serat kulit asli yang kaya tekstur tanpa perawatan rumit. Tahan cipratan air dan cukup diusap lap basah untuk menjaga kebersihannya.";
+    benefits = [
+      "Finishing Leather Look serat alami yang tahan air & debu",
+      "Mudah dibersihkan dan tidak gampang berjamur",
+      "Kompartemen interior ganda dengan tempat penyimpan kartu",
+      "Siluet tegas yang tetap rapi meski dalam keadaan kosong",
+    ];
+  } else if (t.includes("anggun")) {
+    subheadline = "Tote Bag Plaid Multi-Kompartemen Sekat Interior Rapi & Terorganisir.";
+    description = "ANGGUN Tote Bag Plaid Multi-Kompartemen hadir dengan desain sekat dalam yang terencana rapi. Tidak ada lagi barang yang berantakan atau bercampur di dalam tas.";
+    benefits = [
+      "Multi-Kompartemen interior dengan 3 sekat utama + 2 saku resleting",
+      "Aksen jahitan geometris yang memberikan kesan modern",
+      "Material sintetis tebal tidak letoy dan mempertahankan bentuk",
+      "Sangat cocok untuk ibu muda, wanita pekerja & mahasiswi",
+    ];
+  } else if (t.includes("ajuna")) {
+    subheadline = "Tas Bahu Korean Business Casual Menyempurnakan Gaya Profesional & Santai.";
+    description = "AJUNA Tas Bahu Korean Business Casual memadukan kesan rapi profesional untuk suasana kerja dengan kepraktisan santai saat jam makan siang maupun weekend.";
+    benefits = [
+      "Gaya Business Casual ala drama Korea favorit",
+      "Tali bahu datar yang empuk dan tidak menimbulkan bekas di pundak",
+      "Kompartemen berkapasitas sedang muat tablet, mukena mini & pouch",
+      "Tersedia dalam pilihan warna netral elegan",
+    ];
+  } else if (t.includes("daira")) {
+    subheadline = "Tas Selempang & Bahu Kanvas Premium Berserat Rapat, Kuat & Timeless.";
+    description = "DAIRA Tas Selempang & Bahu Kanvas terbuat dari bahan kanvas premium berserat rapat yang kuat namun tetap lembut disentuh. Membawa kesan youthful, eco-friendly, dan timeless.";
+    benefits = [
+      "Kanvas berserat tebal & rapat yang tahan aus serta tidak gampang berbulu",
+      "Tali kanvas adjustable lebar yang sangat nyaman untuk mobilitas tinggi",
+      "Resleting logam kokoh dan pengunci magnetik tambahan",
+      "Dapat dicuci dengan mudah jika terkena noda",
     ];
   }
 
@@ -273,7 +390,7 @@ export function mergeStorefrontCatalog(
     const variants = (variantsByProduct.get(product.id) ?? [])
       .filter((variant) => variant.price > 0 && (variant.stock === null || variant.stock === undefined || variant.stock > 0))
       .map((variant) => {
-        const comparePrice = variant.compare_price && variant.compare_price > variant.price
+        const comparePrice = variant.compare_price && variant.compare_price > variant.price && variant.compare_price < variant.price * 1.8 && variant.compare_price !== 300000
           ? variant.compare_price
           : getRealisticComparePrice(product.id, variant.price);
         return {

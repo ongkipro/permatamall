@@ -472,7 +472,7 @@ const productSchemaJson = JSON.stringify(productSchema).replace(/</g, '\\u003c')
             }
           });
         },
-        { threshold: 0.05 }
+        { threshold: 0, rootMargin: '0px 0px -40px 0px' }
       );
 
       observer.observe(orderForm);
