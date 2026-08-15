@@ -30,13 +30,29 @@ export function escapeXml(value: string): string {
     .replace(/'/g, "&apos;");
 }
 
+export function formatContentId(id: number | string): string {
+  const str = String(id || "").trim();
+  if (!str) return "10001";
+  if (/^\d+$/.test(str)) {
+    const num = Number(str);
+    if (num < 10000) {
+      return String(10000 + num);
+    }
+    return str;
+  }
+  if (str.length < 5) {
+    return str.padStart(5, "0");
+  }
+  return str;
+}
+
 export function formatCatalogItemId(
   productId: number | string,
   variant: CatalogProductVariant,
   variantIndex: number,
   totalVariants: number,
 ): { itemId: string; itemGroupId?: string } {
-  const pId = String(productId);
+  const pId = formatContentId(productId);
   if (totalVariants === 1 || variantIndex === 0) {
     return { itemId: pId };
   }
@@ -69,7 +85,11 @@ export function generateGoogleCatalogXml(
     product.variants.forEach((variant, index) => {
       const { itemId, itemGroupId } = formatCatalogItemId(product.productId, variant, index, product.variants.length);
       const titleText = product.variants.length > 1 ? `${product.productName} - ${variant.label}` : product.productName;
-      const priceFormatted = `${variant.price} IDR`;
+      const hasSale = typeof variant.comparePrice === "number" && variant.comparePrice > variant.price;
+      const basePriceFormatted = `${hasSale ? variant.comparePrice : variant.price} IDR`;
+      const salePriceXml = hasSale
+        ? `\n      <g:sale_price>${escapeXml(`${variant.price} IDR`)}</g:sale_price>`
+        : "";
       const itemDescription = product.seoDescription || product.headline || product.description || siteDescription;
 
       let groupXml = "";
@@ -85,7 +105,7 @@ export function generateGoogleCatalogXml(
       <g:link>${escapeXml(productLink)}</g:link>
       <g:image_link>${escapeXml(imageLink)}</g:image_link>
       <g:availability>in_stock</g:availability>
-      <g:price>${escapeXml(priceFormatted)}</g:price>
+      <g:price>${escapeXml(basePriceFormatted)}</g:price>${salePriceXml}
       <g:google_product_category>${taxonomy.googleCategoryId}</g:google_product_category>
       <g:product_type>${escapeXml(taxonomy.productType)}</g:product_type>
       <g:brand>${escapeXml(siteTitle)}</g:brand>
@@ -128,7 +148,11 @@ export function generateMetaCatalogXml(
     product.variants.forEach((variant, index) => {
       const { itemId, itemGroupId } = formatCatalogItemId(product.productId, variant, index, product.variants.length);
       const titleText = product.variants.length > 1 ? `${product.productName} - ${variant.label}` : product.productName;
-      const priceFormatted = `${variant.price} IDR`;
+      const hasSale = typeof variant.comparePrice === "number" && variant.comparePrice > variant.price;
+      const basePriceFormatted = `${hasSale ? variant.comparePrice : variant.price} IDR`;
+      const salePriceXml = hasSale
+        ? `\n      <g:sale_price>${escapeXml(`${variant.price} IDR`)}</g:sale_price>`
+        : "";
       const itemDescription = product.seoDescription || product.headline || product.description || siteDescription;
 
       let groupXml = "";
@@ -144,7 +168,7 @@ export function generateMetaCatalogXml(
       <g:link>${escapeXml(productLink)}</g:link>
       <g:image_link>${escapeXml(imageLink)}</g:image_link>
       <g:availability>in_stock</g:availability>
-      <g:price>${escapeXml(priceFormatted)}</g:price>
+      <g:price>${escapeXml(basePriceFormatted)}</g:price>${salePriceXml}
       <g:fb_product_category>${escapeXml(taxonomy.metaCategoryName)}</g:fb_product_category>
       <g:google_product_category>${taxonomy.googleCategoryId}</g:google_product_category>
       <g:product_type>${escapeXml(taxonomy.productType)}</g:product_type>

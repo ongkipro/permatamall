@@ -26,9 +26,9 @@ test("automatically classifies herbal stamina products to Google Category ID 642
   assert.equal(result.productType, "Kesehatan > Suplemen Herbal");
 });
 
-test("automatically classifies kitchen sharpening tools to Google Category ID 645", () => {
+test("automatically classifies kitchen sharpening tools to Google Category ID 1630", () => {
   const result = getAdTaxonomy("Perkakas", "Pengasah Pisau Portable", "Alat asahan pisau dapur serbaguna");
-  assert.equal(result.googleCategoryId, 645);
+  assert.equal(result.googleCategoryId, 1630);
   assert.equal(result.googleCategoryName, "Home & Garden > Kitchen & Dining > Kitchen Tools & Utensils");
   assert.equal(result.metaCategoryName, "Home & Garden > Kitchen & Dining > Kitchen Tools & Utensils");
   assert.equal(result.productType, "Perkakas & Rumah Tangga > Alat Dapur");
@@ -36,6 +36,6 @@ test("automatically classifies kitchen sharpening tools to Google Category ID 64
 
 test("provides clean fallback taxonomy when product input is empty or custom", () => {
   const result = getAdTaxonomy("Custom Category", "Unclassified Item", "");
-  assert.equal(result.googleCategoryId, 645);
+  assert.equal(result.googleCategoryId, 6551);
   assert.equal(result.productType, "Umum > Custom Category");
 });

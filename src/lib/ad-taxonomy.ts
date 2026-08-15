@@ -27,6 +27,16 @@ interface TaxonomyRule {
 
 const TAXONOMY_RULES: TaxonomyRule[] = [
   {
+    id: 6551,
+    googlePath: "Apparel & Accessories > Handbags, Wallets & Cases > Handbags",
+    metaPath: "Apparel & Accessories > Handbags, Wallets & Cases > Handbags",
+    productType: "Fashion Wanita > Tas & Aksesori",
+    keywords: [
+      "tas", "tote", "bag", "dompet", "selempang", "shoulder", "handbag",
+      "clutch", "ransel", "pouch", "sling", "canvas", "tote bag", "sling bag"
+    ],
+  },
+  {
     id: 2863,
     googlePath: "Home & Garden > Lawn & Garden > Gardening > Fertilizer",
     metaPath: "Home & Garden > Lawn & Garden > Gardening > Fertilizer",
@@ -78,7 +88,7 @@ const TAXONOMY_RULES: TaxonomyRule[] = [
     keywords: ["baju", "kaos", "shirt", "celana", "jaket", "hoodie", "pakaian", "dress", "gamis", "fashion"],
   },
   {
-    id: 645,
+    id: 1630,
     googlePath: "Home & Garden > Kitchen & Dining > Kitchen Tools & Utensils",
     metaPath: "Home & Garden > Kitchen & Dining > Kitchen Tools & Utensils",
     productType: "Perkakas & Rumah Tangga > Alat Dapur",
@@ -94,10 +104,10 @@ const TAXONOMY_RULES: TaxonomyRule[] = [
 ];
 
 const DEFAULT_TAXONOMY: AdTaxonomy = {
-  googleCategoryId: 645,
-  googleCategoryName: "Home & Garden > Kitchen & Dining > Kitchen Tools & Utensils",
-  metaCategoryName: "Home & Garden > Kitchen & Dining > Kitchen Tools & Utensils",
-  productType: "Umum > Produk Pilihan",
+  googleCategoryId: 6551,
+  googleCategoryName: "Apparel & Accessories > Handbags, Wallets & Cases > Handbags",
+  metaCategoryName: "Apparel & Accessories > Handbags, Wallets & Cases > Handbags",
+  productType: "Fashion Wanita > Tas & Aksesori",
 };
 
 /**
