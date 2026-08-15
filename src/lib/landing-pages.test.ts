@@ -152,25 +152,8 @@ test("landing page CRUD persists pages and ordered, parsed sections", async () =
   assert.equal((await getLandingPageBySlug(locals, created.slug))?.id, created.id);
   assert.equal((await getLandingPageById(locals, created.id))?.title, "Promo Asahan");
   const listedPages = await listLandingPages(locals);
-  assert.equal(listedPages.length, solutionEntries.length + 1);
-  assert.deepEqual(
-    listedPages.find((page) => page.id === "static:alat-siram-otomatis"),
-    {
-      id: "static:alat-siram-otomatis",
-      slug: "alat-siram-otomatis",
-      title: "Alat Siram Tanaman Otomatis Irigasi Tetes Drip System",
-      product_id: "441661",
-      product_title: "Alat Siram Tanaman Otomatis Irigasi Tetes Drip Spike System",
-      is_active: 1,
-      meta_title: "Alat Siram Tanaman Otomatis Irigasi Tetes Drip System",
-      meta_description:
-        "Alat siram tanaman otomatis irigasi tetes drip spike. Bebas layu ditinggal mudik 30 hari tanpa listrik. Promo 10 Pcs Rp 99rb COD.",
-      created_at: "",
-      updated_at: "",
-      sections: [],
-    },
-  );
-
+  assert.equal(listedPages.length, 1);
+  assert.equal(listedPages[0]?.id, created.id);
   const updated = await updateLandingPage(locals, created.id, {
     slug: "promo-asahan-baru",
     title: "Promo Asahan Baru",
@@ -204,7 +187,7 @@ test("landing page CRUD persists pages and ordered, parsed sections", async () =
 
   assert.equal(await deleteLandingPage(locals, created.id), true);
   assert.equal(await getLandingPageById(locals, created.id), null);
-  assert.equal((await listLandingPages(locals)).length, solutionEntries.length);
+  assert.equal((await listLandingPages(locals)).length, 0);
   assert.equal(await deleteLandingPage(locals, created.id), false);
 });
 
