@@ -846,6 +846,25 @@
   color: #0f172a;
   text-align: right;
 }
+.summary-product-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  text-align: right;
+  gap: 0.1rem;
+}
+.summary-product-name {
+  font-size: 0.82rem !important;
+  font-weight: 400 !important;
+  color: #475467 !important;
+  line-height: 1.25;
+}
+.summary-product-meta strong {
+  font-size: 0.82rem !important;
+  font-weight: 600 !important;
+  color: #0f172a !important;
+  line-height: 1.25;
+}
 .summary-row-discount {
   background: #fff;
 }

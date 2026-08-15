@@ -478,7 +478,7 @@ export function initMiddleOrderForm(
     setNodeText(summaryDiscount, `- ${fmt(Math.max(0, compare - price))}`);
     setNodeText(
       summaryTotalNote,
-      "Biaya admin dan pengiriman dikonfirmasi Customer Service setelah checkout",
+      "Ongkir & admin dikonfirmasi via CS",
     );
     setNodeText(summaryTotal, fmt(total));
     syncSubmitState();

@@ -127,7 +127,13 @@ const formId = embedded ? `${instanceId}-form` : 'middle-form';
             <p class="section-lead">Periksa kembali detail pesanan sebelum melanjutkan ke proses order.</p>
           </div>
           <div class="summary-card">
-            <div class="summary-row"><span>Produk</span><strong id="summary-label">{defaultVariant.label}</strong></div>
+            <div class="summary-row">
+              <span>Produk</span>
+              <div class="summary-product-meta">
+                <span class="summary-product-name">{product.productName}</span>
+                <strong id="summary-label">{defaultVariant.label}</strong>
+              </div>
+            </div>
             <div id="summary-compare-row" class="summary-row" hidden={!defaultHasDiscount}>
               <span>Harga Normal</span><strong id="summary-compare">{formatIdr(defaultComparePrice)}</strong>
             </div>
@@ -139,7 +145,7 @@ const formId = embedded ? `${instanceId}-form` : 'middle-form';
             <div class="total-box">
               <div>
                 <p>Total Pembayaran</p>
-                <small id="summary-total-note">Biaya admin dan pengiriman dikonfirmasi Customer Service setelah checkout</small>
+                <small id="summary-total-note">Ongkir &amp; admin dikonfirmasi via CS</small>
               </div>
               <div class="total-box-side">
                 <strong id="summary-total">{formatIdr(defaultVariant.price)}</strong>
