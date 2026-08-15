@@ -21,10 +21,11 @@ export default function ProductImageSlider({
   const activeImage = gallery[activeIndex] || gallery[0];
 
   useEffect(() => {
-    if (thumbnailRefs.current[activeIndex]) {
-      thumbnailRefs.current[activeIndex]?.scrollIntoView({
-        behavior: 'smooth',
-        block: 'nearest',
+    if (activeIndex === 0) return;
+    const el = thumbnailRefs.current[activeIndex];
+    if (el) {
+      requestAnimationFrame(() => {
+        el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
       });
     }
   }, [activeIndex]);
@@ -85,8 +86,9 @@ export default function ProductImageSlider({
                   alt={`${productName} thumbnail ${idx + 1}`}
                   width={64}
                   height={85}
+                  sizes="(max-width: 480px) 64px, 80px"
                   className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
-                  loading="lazy"
+                  loading={idx < 3 ? 'eager' : 'lazy'}
                   decoding="async"
                 />
                 {isActive && (
