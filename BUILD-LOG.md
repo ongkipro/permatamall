@@ -2017,3 +2017,13 @@ Scope: Comprehensive UI/UX redesign and backend enhancement for `/admin/orders`,
   - `npx astro check`: **0 errors, 272 warnings**.
   - `npm run build`: **Complete!** (Server built in 4.30s).
   - `npx wrangler deploy`: **Live 200 OK** (`https://permatamall.shop/`).
+### Entry 80: Google PageSpeed Insights & Handbag Catalog Mobile Optimization
+- **LCP & Preloader Optimization (`src/layouts/BaseLayout.astro`)**: Added `rel="preconnect"` for `connect.facebook.net` and `www.googletagmanager.com` with `crossorigin`. Ensured `<head>` image preloading delivers `as="image"` with `fetchpriority="high"`.
+- **Product Hero Image & CLS Guard (`ProductImageSlider.tsx`)**: Configured explicit `width={480}` `height={640}` dimensions and `fetchPriority="high"` on the main product hero slider image. Added `width={64}` `height={85}` to thumbnail buttons to lock image layout ratios and eliminate CLS.
+- **Mobile Handbag PDP & Sticky CTA UX (`/produk/[slug].astro`)**: Added `scroll-mt-6` offset anchor to `#form-pemesanan` ensuring smooth navigation when clicking mobile sticky purchase bar (`Pesan Sekarang (COD)`).
+- **Verification & Build**:
+  - `npm test`: **194/194 Passed** (100% Lulus).
+  - `npx tsc --noEmit`: **0 errors, 0 warnings**.
+  - `npx astro check`: **0 errors, 272 warnings**.
+  - `npm run build`: **Complete!** (Server built in 4.20s).
+  - `npx wrangler deploy`: **Live 200 OK** (`https://permatamall.shop/`).

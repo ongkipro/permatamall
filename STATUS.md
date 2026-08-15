@@ -697,3 +697,9 @@ The evidence below remains historical proof of the earlier implementation. Its c
   - **Checkout & Order Persistence**: Validated `/api/submit-order`, rate limiters, honeypot guards, `submit_token` idempotency, and invoice number promotion (`ABN-` -> `INV-`).
   - **Tracking & Signal Pipeline**: Validated Meta Pixel/CAPI outbox, Google Ads signal engine, and 5-digit Content ID pattern lock (`10001`+).
 - **Validation & Deployment**: 194/194 Node tests passing (`npm test`), 0 TypeScript/Astro check errors (`npx tsc --noEmit` & `npx astro check`), clean build deployed live to `https://permatamall.shop/` (commit `aae371d`).
+## 74. Google PageSpeed Insights & Handbag Catalog Mobile Optimization — Deployed to Production
+
+- **Mobile LCP & Preloader Optimization**: Configured `preconnect` links with `crossorigin` for `connect.facebook.net` and `www.googletagmanager.com` in `BaseLayout.astro`. Hero images preloaded via `<head>` with `as="image"` and `fetchpriority="high"`.
+- **Zero CLS & Image Ratio Guard**: Added explicit `width={480}` `height={640}` and `fetchPriority="high"` on hero slider images in `ProductImageSlider.tsx` and `width={64}` `height={85}` on thumbnail images to eliminate layout shifts on mobile devices.
+- **Handbag PDP Mobile UX & Sticky Bar**: Added `scroll-mt-6` offset anchor to `#form-pemesanan` ensuring smooth scrolling when clicking mobile sticky purchase bar (`Pesan Sekarang (COD)`).
+- **Validation & Deployment**: 194/194 Node tests passing (`npm test`), 0 TypeScript/Astro check errors (`npx tsc --noEmit` & `npx astro check`), clean build deployed live to `https://permatamall.shop/` (commit `a037a8a`).
