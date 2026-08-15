@@ -1966,3 +1966,20 @@ Scope: Comprehensive UI/UX redesign and backend enhancement for `/admin/orders`,
   - `npm test`: **192/192 Passed** (100% Lulus).
   - `npx tsc --noEmit`: **0 errors, 0 warnings**.
   - `npx astro check`: **0 errors, 0 warnings**.
+
+### Entry 75: Wave 1–6 Zanobyshop Audit Repairs, Storefront 22-Product Content, Realistic Compare Prices & Full SEO Schema Compliance
+- **Wave 1–6 Full Repository Audit Repairs**:
+  - Resolved P0 Security vulnerabilities: added API key validation to `/api/v1/*` in `headless-api.ts`, sanitized `phone` & `order_id` XSS sinks in `thanks.astro`, protected landing page draft previews, imported `AutoLarisClient` in `settings.ts`, fixed TDZ errors (`nextCustomerPhone` in `orders/[id].ts` & `qrPayload` in `payment.astro`), fixed single order deletion SQL column name (`reference_id`), and rotated admin seed credentials.
+  - Resolved P1 Order & Money logic: minted `submit_token` during initial session load for client-side idempotency retries, standardized phone normalization to `628` format, fixed COD excluded area province code mapping (`PA` vs `papua`), and enforced server-side rate quotation verification in headless checkout.
+- **Storefront 22/22 Bespoke Content & Compare Price Overhaul**:
+  - Completed bespoke editorial content for 100% of catalog products (ZIVIA, AIRA, CANDY, AMARA, NOURA, SORAYA, LENZY, SHELIN, LUNNA, LUCKY, KEISYA, JEMINA, HALONA, EMIRA, DILY, CAROLINE, BERLYN, AYIEN, ARIELA, ANGGUN, AJUNA, DAIRA) in `catalog-data.ts`.
+  - Added `getRealisticComparePrice` calculation to eliminate static `300.000` compare price placeholders and display dynamic 26%–41% discount badges.
+- **Sticky CTA Auto-Hide & SEO Schema Compliance**:
+  - Refined `IntersectionObserver` in `[slug].astro` and `StickyCTA.astro` (`rootMargin: '0px 0px -40px 0px'`), auto-hiding the mobile sticky bar upon entering `#form-pemesanan`.
+  - Enhanced `json-ld.ts` and `JsonLdSchema.astro` with full Open Graph, Twitter Cards, Canonical URLs, and Schema.org Google Merchant specs (`MerchantReturnPolicy`, `OfferShippingDetails`, `BreadcrumbList`).
+- **Verification & Build**:
+  - `npm test`: **192/192 Passed** (100% Lulus).
+  - `npx tsc --noEmit`: **0 errors, 0 warnings**.
+  - `npx astro check`: **0 errors, 0 warnings**.
+  - `npm run build`: **Complete!** (Server built in 4.15s).
+  - `npx wrangler deploy`: **Live 200 OK** (`permatamall.shop`).

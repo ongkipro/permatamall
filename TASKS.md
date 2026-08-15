@@ -864,3 +864,16 @@ Implementation, contract tests, static checks, build, and focused authenticated 
 - [x] **T288** — Full System Verification & Tailscale Preview (`npm test`, `npx tsc --noEmit`, `npx astro check`).
       -> REQ: UI-5 · deps: [T287] · Done when: unit test suite passes 192/192, 0 TypeScript and Astro check errors, local dev server running on Tailscale IP `http://100.127.67.86:4321/`, and 0 git push / 0 wrangler deploy executed.
  -> REQ: UI-5 · deps: [T278] · Done when: unit test suite passes 192/192, 0 TypeScript and Astro check errors, production build deployed to Cloudflare Worker, git committed to main, and verified on `https://permatamall.shop/`.
+
+## Phase 79: Storefront 22-Product Content, Realistic Compare Prices & Full SEO Schema Overhaul
+
+- [x] **T289** — Complete 22/22 Bespoke Product Descriptions (`src/lib/catalog-data.ts`).
+      -> REQ: UI-6 · deps: [T288] · Done when: bespoke editorial details (subheadline, boutique description, 4 benefits, QC guarantee, usage scenario) are implemented for all 22 products in catalog-data.ts.
+- [x] **T290** — Realistic Compare Price & Dynamic Discount Calculation (`src/lib/catalog-data.ts`).
+      -> REQ: UI-7 · deps: [T289] · Done when: `getRealisticComparePrice` calculates dynamic compare prices (26%–41% discount) and static 300k placeholders are eliminated.
+- [x] **T291** — Sticky Mobile Purchase Bar Auto-Hide (`src/pages/produk/[slug].astro`, `StickyCTA.astro`).
+      -> REQ: UI-8 · deps: [T290] · Done when: IntersectionObserver rootMargin `0px 0px -40px 0px` smoothly hides sticky bar upon reaching `#form-pemesanan`.
+- [x] **T292** — Full SEO Meta & Google Merchant Schema Compliance (`json-ld.ts`, `JsonLdSchema.astro`, `[slug].astro`).
+      -> REQ: UI-9 · deps: [T291] · Done when: Open Graph, Twitter Cards, Canonical URLs, and Google Merchant Schema (MerchantReturnPolicy & OfferShippingDetails) are active.
+- [x] **T293** — Verification & Production Live Deployment (`npm test`, `npx tsc --noEmit`, `npx astro check`, `wrangler deploy`).
+      -> REQ: UI-10 · deps: [T292] · Done when: 192/192 Node tests pass, 0 typecheck/Astro check errors, clean build deployed live to `https://permatamall.shop/` (commit `f44c2f1`).
