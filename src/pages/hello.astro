@@ -56,45 +56,39 @@ if (Astro.request.method === 'POST' && crossSiteLogin) {
           Astro.response.status = 429;
           errorMessage = 'Terlalu banyak percobaan. Coba kembali dalam 15 menit.';
         } else {
-          if (isDefaultAdminCredential(credential) && bootstrapAdminPassword.trim().length < 16) {
-            Astro.response.status = 503;
-            errorMessage = 'Bootstrap admin password belum dikonfigurasi di server.';
-          } else {
-            const [usernameMatches, passwordMatches] = await Promise.all([
-              secureEqual(username, credential.username),
-              verifyAdminLoginPassword(password, credential, bootstrapAdminPassword),
+          const [usernameMatches, passwordMatches] = await Promise.all([
+            secureEqual(username, credential.username),
+            verifyAdminLoginPassword(password, credential, bootstrapAdminPassword),
+          ]);
+
+          if (usernameMatches && passwordMatches) {
+            const { token, session } = await signJwt({ username: credential.username, role: credential.role }, authSecret);
+            await Promise.all([
+              sessions.put(
+                `admin-session:${session.jti}`,
+                JSON.stringify({
+                  username: session.username,
+                  role: session.role,
+                  must_change_password: credential.mustChangePassword,
+                  credential_updated_at: credential.updatedAt,
+                }),
+                { expirationTtl: 60 * 60 * 24 },
+              ),
+              sessions.delete(attemptKey),
             ]);
-
-            if (usernameMatches && passwordMatches) {
-              const { token, session } = await signJwt({ username: credential.username, role: credential.role }, authSecret);
-              await Promise.all([
-                sessions.put(
-                  `admin-session:${session.jti}`,
-                  JSON.stringify({
-                    username: session.username,
-                    role: session.role,
-                    must_change_password: credential.mustChangePassword,
-                    credential_updated_at: credential.updatedAt,
-                  }),
-                  { expirationTtl: 60 * 60 * 24 },
-                ),
-                sessions.delete(attemptKey),
-              ]);
-              Astro.cookies.set('cmsads_session', token, {
-                path: '/',
-                httpOnly: true,
-                secure: import.meta.env.PROD,
-                sameSite: 'lax',
-                maxAge: 60 * 60 * 24,
-              });
-              return Astro.redirect(credential.mustChangePassword ? '/admin/profile' : '/admin/dashboard');
-            }
-
-            await sessions.put(attemptKey, String(attempts + 1), { expirationTtl: 15 * 60 });
-            focusPassword = true;
-            errorMessage = 'Username atau password salah.';
+            Astro.cookies.set('cmsads_session', token, {
+              path: '/',
+              httpOnly: true,
+              secure: import.meta.env.PROD,
+              sameSite: 'lax',
+              maxAge: 60 * 60 * 24,
+            });
+            return Astro.redirect(credential.mustChangePassword ? '/admin/profile' : '/admin/dashboard');
           }
 
+          await sessions.put(attemptKey, String(attempts + 1), { expirationTtl: 15 * 60 });
+          focusPassword = true;
+          errorMessage = 'Username atau password salah.';
         }
       }
     }
