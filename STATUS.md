@@ -1,16 +1,16 @@
 # STATUS — AdsBookCMS
 
 > Verified against the current branch and production: 2026-08-16. Source
-> commit `f649fc5` was manually deployed after the explicitly approved login
-> release.
+> commit `c0adc8f` was manually deployed after the explicitly approved catalog
+> identity release.
 >
 > Current release gates: `npm run check` 312 files / 0 errors / 0 warnings /
 > 0 hints · `npm test` 249 / 249 · `npm run build` complete · local and
 > production D1 migrations complete through `0037`.
 >
-> The current branch also contains a locally verified, not-yet-deployed catalog
-> identity split: Google items use D1 variant IDs grouped by product ID, while
-> Meta catalog and Pixel/CAPI continue to use D1 product IDs.
+> Production catalog identity is platform-specific: Google items use canonical
+> D1 variant IDs grouped by product ID, while Meta catalog and Pixel/CAPI use
+> canonical D1 product IDs.
 
 Current state of the system. Implemented behaviour lives here; history lives in `BUILD-LOG.md`; remaining work lives in `UNIMPLEMENTED_SPECS.md`; structure lives in `ARCHITECTURE.md`.
 
@@ -24,7 +24,7 @@ The previous version of this file described a different repository — it opened
 | --- | --- |
 | Product | AdsBookCMS (single) |
 | Worker | `cmsads-permatamall` |
-| Worker version | `a7fada59-ea16-4e63-b99a-3760b2562ff5` |
+| Worker version | `37dc4293-4624-4245-9560-5c2f67222d1c` |
 | Domains | `permatamall.shop`, `www.permatamall.shop` (both custom domains) |
 | D1 | `cmsads-permatamall-d1` |
 | R2 | `cmsads-permatamall-assets` |
@@ -35,6 +35,8 @@ The previous version of this file described a different repository — it opened
 | CI | push to `main` → check → test → build → `wrangler deploy` |
 
 Live check on 2026-08-16 after Worker version `a7fada59-ea16-4e63-b99a-3760b2562ff5`: redesigned `/hello` returned 200 at 390×844 and 1440×900 with no horizontal overflow, separate desktop authentication/visual regions, a mobile single-column flow, 44 px controls, autofocus on username, synchronized password visibility, and no browser console errors. The login response remained `Cache-Control: no-store` with `Cache-Status: cmsads; fwd=request`.
+
+Live catalog check on 2026-08-16 after Worker version `37dc4293-4624-4245-9560-5c2f67222d1c`: Google returned DAIRA variant IDs `106`–`110`, each grouped under product `22`; Meta returned one DAIRA item with ID `22`, matching the production page's product-level Meta identity. Both feeds returned 200 XML responses without generated `_vN` IDs.
 
 ---
 

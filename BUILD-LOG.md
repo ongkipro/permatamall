@@ -2147,4 +2147,5 @@ Scope: Comprehensive UI/UX redesign and backend enhancement for `/admin/orders`,
   - `npm run check`: **312 files, 0 errors, 0 warnings, 0 hints**.
   - `npm run build`: **complete**; `git diff --check` returned no errors.
   - Local Worker using remote production D1 data emitted DAIRA Google IDs `106`–`110`, each grouped under product `22`; the Meta feed emitted one DAIRA item with ID `22`.
-- **Delivery**: source-only; no commit, push, deploy, or remote D1 mutation was performed.
+  - Production returned the same identities after deployment: Google contained five DAIRA items (`106`–`110`) grouped under `22`, Meta contained one DAIRA item with ID `22`, and neither feed contained generated `_vN` IDs.
+- **Delivery**: source commit `c0adc8f` pushed to `origin/docs/login-panel-ux-audit`; Worker version `37dc4293-4624-4245-9560-5c2f67222d1c` deployed to `permatamall.shop` and `www.permatamall.shop`. No remote D1 mutation was performed.
