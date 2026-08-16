@@ -467,7 +467,7 @@ function initHybridOrderFormInstance(formRoot: HTMLElement) {
         const parentOrigin = document.referrer ? new URL(document.referrer).origin : "*";
         window.parent.postMessage(
           {
-            type: eventName === "AddToCart" ? "cmsads:add-to-cart" : "cmsads:initiate-checkout",
+            type: eventName === "AddToCart" ? "adsbook:add-to-cart" : "adsbook:initiate-checkout",
             content_name: meta.contentName,
             content_ids: meta.productId ? [meta.productId] : undefined,
             content_type: "product",

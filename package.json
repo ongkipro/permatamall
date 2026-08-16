@@ -19,7 +19,8 @@
     "deploy": "wrangler deploy",
     "db:generate": "drizzle-kit generate",
     "db:migrate:local": "wrangler d1 migrations apply OMS_DB --local",
-    "db:migrate:remote": "wrangler d1 migrations apply OMS_DB --remote"
+    "db:migrate:remote": "wrangler d1 migrations apply OMS_DB --remote",
+    "db:reset:demo:local": "wrangler d1 execute OMS_DB --local --file=./scripts/seed-catalog.sql"
   },
   "dependencies": {
     "@astrojs/cloudflare": "^14.2.0",

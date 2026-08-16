@@ -70,7 +70,7 @@ export function generateGoogleCatalogXml(
   description?: string,
 ): string {
   const origin = siteOrigin.replace(/\/$/, "");
-  const siteTitle = title || "CMSAds Merchant Store";
+  const siteTitle = title || "AdsBookCMS Merchant Store";
   const siteDescription = description || "Solusi Produk Berkualitas";
 
   let itemsXml = "";
@@ -133,7 +133,7 @@ export function generateMetaCatalogXml(
   description?: string,
 ): string {
   const origin = siteOrigin.replace(/\/$/, "");
-  const siteTitle = title || "CMSAds Merchant Store";
+  const siteTitle = title || "AdsBookCMS Merchant Store";
   const siteDescription = description || "Solusi Produk Berkualitas";
 
   let itemsXml = "";

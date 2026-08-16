@@ -19,18 +19,27 @@ export interface PublicTenantConfig {
   adminName: string;
 }
 
+/**
+ * Product defaults for an install that has not been configured yet. A real
+ * install supplies every one of these through PUBLIC_SITE_* — these values
+ * exist so an unconfigured install describes itself honestly instead of
+ * inheriting the identity of whichever store the bundle was built from.
+ *
+ * `siteUrl` intentionally defaults to a placeholder origin: a wrong-but-obvious
+ * canonical URL is easier to notice than one silently pointing at another store.
+ */
 const defaults = {
-  slug: "permatamall",
-  name: "Permata Mall",
-  siteUrl: "https://permatamall.shop",
+  slug: "adsbook",
+  name: "AdsBookCMS Store",
+  siteUrl: "https://example.com",
   description:
-    "Pusat belanja produk pilihan berkualitas. Pengiriman cepat, transaksi aman, dan bayar di tempat (COD) ke seluruh Indonesia.",
+    "Toko online dengan pengiriman ke seluruh Indonesia dan pembayaran di tempat (COD).",
   logo: "/images/logo.webp",
-  tagline: "Pusat Belanja Online Pilihan",
-  themeColor: "#0F172A",
+  tagline: "Belum Dikonfigurasi",
+  themeColor: "#111111",
   locale: "id-ID",
   storefrontTemplate: "compact-market",
-  adminName: "Permata Mall Ops",
+  adminName: "AdsBookCMS Admin",
 } as const;
 
 function configured(key: string, fallback: string): string {

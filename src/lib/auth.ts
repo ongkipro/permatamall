@@ -1,4 +1,5 @@
-const COOKIE_NAME = 'cmsads_session';
+/** Admin session cookie. Exported so every setter, reader, and deleter shares one name. */
+export const SESSION_COOKIE_NAME = 'adsbook_session';
 const JWT_ALGORITHM = { name: 'HMAC', hash: 'SHA-256' } as const;
 
 export const ADMIN_ROLES = [
@@ -192,6 +193,6 @@ export async function verifyPasswordHash(password: string, encodedHash: string) 
 export function getSessionCookie(request: Request): string | null {
   const cookieHeader = request.headers.get('cookie');
   if (!cookieHeader) return null;
-  const match = cookieHeader.match(new RegExp(`(?:^|;\\s*)${COOKIE_NAME}=([^;]+)`));
+  const match = cookieHeader.match(new RegExp(`(?:^|;\\s*)${SESSION_COOKIE_NAME}=([^;]+)`));
   return match ? decodeURIComponent(match[1]) : null;
 }

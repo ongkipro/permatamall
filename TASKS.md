@@ -913,9 +913,9 @@ Active backlog. Every task below references a requirement in the current `PRD.md
  -> REQ: REQ-16 · Done when: the three hardcoded named reviews, `METRICS_TABLE` rating/review/sold values, and `getRealisticComparePrice()` no longer reach any public page; `aggregateRating` is emitted only from recorded data or omitted entirely; `npm test` green.
 - [x] **A-2** — Replace vendor advertising artwork used as store brand (`public/images/logo.webp`, `public/favicon.*`, `public/admin-login.webp`, `public/og-admin.webp`). **Done 2026-08-16** — placeholders pending real brand assets.
  -> REQ: REQ-18 · Done when: no CMS Ads artwork remains reachable; `tenantConfig.logo`, the admin shell logo, the product-image fallback (`catalog-data.ts`), the landing-card image (`tenant-content.ts`), and the admin `og:image` all resolve to this store's own assets.
-- [ ] **A-3** — Neutralise the canonical sample product.
+- [x] **A-3** — Neutralise the canonical sample product. **Done 2026-08-16** — resolved by *removing* the immutability concept, not repointing it.
  -> REQ: REQ-9 · gap: G4 · ADR-006 · Done when: a new forward migration replaces product 10001 with a neutral, clearly labelled placeholder using an owned image; `src/lib/sample-product.ts` and the admin strings in `ProductForm.tsx` / `ProductCatalog.tsx` / `admin/products/edit.astro` agree with it; the record is deletable once a real product exists.
-- [ ] **A-4** — Scrub or delete `src/db/seed.sql`.
+- [x] **A-4** — Scrub or delete `src/db/seed.sql`. **Done 2026-08-16** — deleted and consolidated into `scripts/seed-catalog.sql` behind `npm run db:reset:demo:local`.
  -> REQ: REQ-9 · Done when: the file no longer contains another merchant's catalog, the two genuine-looking Mengantar ObjectIds, the Surabaya warehouse address, or the contact phone number; either replaced by a neutral install seed or removed with its image trees.
 - [ ] **A-5** — Make ad taxonomy matching deterministic (`src/lib/ad-taxonomy.ts`).
  -> REQ: REQ-56 · Done when: category resolution no longer relies on an unweighted keyword count across title and description with no minimum score; a handbag whose description mentions unrelated terms cannot be shipped to Merchant Center under a fertilizer, skincare, or cutlery category. Note: the handbag rule (`6551`) is already both the first rule and the default — the defect is the scoring, not the mapping.
@@ -972,14 +972,20 @@ Active backlog. Every task below references a requirement in the current `PRD.md
  -> Done when: `form-hybrid.css` is imported only by the routes that need it; the five redundant page-level imports are removed.
 - [ ] **A-32** — Remove unused font payload.
  -> Done when: Plus Jakarta Sans weight files are no longer downloaded, since no rule references the family; imported Inter and Cinzel weights match the weights actually used, eliminating synthetic bold.
-- [ ] **A-33** — Align `themeColor` with the shipped palette.
- -> REQ: REQ-7 · Done when: browser chrome colour matches the storefront rather than `#0F172A`, which belongs to neither template.
+- [x] **A-33** — Align `themeColor` with the shipped palette. **Done 2026-08-16.**
+ -> REQ: REQ-7 · `PUBLIC_SITE_THEME_COLOR` and the code default are now `#111111` (ebony), verified baked into the build output. Also corrected a documentation error found while testing this: `wrangler.jsonc` vars *do* reach the bundle — they are read at build time, so a change needs a rebuild, not merely a redeploy.
 - [x] **A-34** — Delete orphan components and stale artifacts. **Done 2026-08-16.**
  -> Removed: eight zero-importer components, `pnpm-lock.yaml`, `pnpm-workspace.yaml`, and the root `migrations/` duplicate. The root copy was not actually unreferenced — `src/lib/landing-pages.test.ts` read it to build its SQLite fixture; the fixture now points at the byte-identical `src/db/migrations/0027_landing_page_builder.sql`. ADR-009.
 - [x] **A-35** — Fix `/solusi-terbaru` and the HTML sitemap. **Done 2026-08-16.**
  -> `/solusi-terbaru` now redirects to `/produk` instead of a slug with no route; `/sitemap` reads products and active landing pages from D1 like `/sitemap.xml` does.
-- [ ] **A-36** — Decide the fate of the `zanoby_*` cookie namespace.
- -> Done when: either the legacy name is documented as permanent with its reason, or the cookie constant and its two embed writers and one reader are renamed in a single commit with the attribution consequence accepted.
+- [x] **A-36** — Decide the fate of the `zanoby_*` cookie namespace. **Done 2026-08-16.**
+ -> Renamed to `adsbook_click_ids` **with** a read-only fallback on the legacy name, so no in-flight attribution was lost. Delete the fallback once 90 days have passed since deploy. The session cookie moved to `adsbook_session` and the embed namespace to `adsbook:` in the same change.
+
+- [ ] **A-8** — Migrate the developer API key prefix off `cmsads_live_` (`src/lib/developer-api-keys.ts`).
+ -> REQ: REQ-71 · Done when: newly issued keys carry an AdsBookCMS prefix and previously issued keys still validate. The prefix is part of every stored and masked key, so this needs a dual-prefix read, not a rename.
+
+- [ ] **A-9** — Finish the brand sweep in the admin embed dialog (`src/components/admin/ProductCatalog.tsx`).
+ -> Done when: the `cmsads-order-form-<id>` embed id template and the four user-visible "CMSAds" strings match the snippet the dialog actually generates, which now emits `adsbook-*`.
 
 ## A5 — Operability
 

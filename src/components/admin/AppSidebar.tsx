@@ -50,7 +50,7 @@ export function AppSidebar({
     .replace(/\s+dashboard$/i, "")
     .replace(/\s+cms$/i, "")
     .trim();
-  const displayDomain = siteUrl.replace(/^https?:\/\//, "") || "cmsads.internal";
+  const displayDomain = siteUrl.replace(/^https?:\/\//, "") || "adsbook.internal";
   const groups = getVisibleNavGroups(adminRole);
   const [openItem, setOpenItem] = React.useState<string | null>(activeMenu);
   const itemRefs = React.useRef(new Map<string, HTMLDivElement>());

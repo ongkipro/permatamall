@@ -46,7 +46,7 @@ test('receiver parser rejects responses without courier history', () => {
   );
 });
 
-test('receiver risk thresholds follow the documented CMSAds operational policy', () => {
+test('receiver risk thresholds follow the documented AdsBookCMS operational policy', () => {
   assert.equal(classifyReceiverRisk(null), 'UNKNOWN');
   assert.equal(classifyReceiverRisk(39.9), 'HIGH');
   assert.equal(classifyReceiverRisk(40), 'MEDIUM');

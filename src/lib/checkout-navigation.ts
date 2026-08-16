@@ -1,4 +1,4 @@
-export const CHECKOUT_REDIRECT_MESSAGE = "cmsads:checkout-redirect";
+export const CHECKOUT_REDIRECT_MESSAGE = "adsbook:checkout-redirect";
 
 function getParentOrigin() {
   try {
@@ -36,7 +36,7 @@ export function navigateAfterCheckout(
   // are deliberately limited to opaque order lookup values to avoid leaking PII.
   if (!isCheckoutCompletion) {
     try {
-      const trackingRaw = typeof sessionStorage !== "undefined" ? sessionStorage.getItem("zanoby_click_ids") : null;
+      const trackingRaw = typeof sessionStorage !== "undefined" ? sessionStorage.getItem("adsbook_click_ids") : null;
       const tracking = trackingRaw ? JSON.parse(trackingRaw) : {};
       const currentParams = new URLSearchParams(window.location.search);
       const trackingKeys = [
@@ -66,7 +66,7 @@ export function navigateAfterCheckout(
       };
       window.parent.postMessage(payload, parentOrigin);
       window.parent.postMessage(
-        { ...payload, type: "cmsads:order-complete" },
+        { ...payload, type: "adsbook:order-complete" },
         parentOrigin,
       );
     }

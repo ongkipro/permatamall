@@ -57,7 +57,9 @@
     "PUBLIC_SITE_DESCRIPTION": "Solusi Belanja Online Praktis & Terpercaya.",
     "PUBLIC_SITE_LOGO": "/images/logo.webp",
     "PUBLIC_SITE_TAGLINE": "Pusat Belanja Online Pilihan",
-    "PUBLIC_SITE_THEME_COLOR": "#0F172A",
+    // Ebony, matching the storefront ink. The previous #0F172A belonged to
+    // neither template, so browser chrome disagreed with the page.
+    "PUBLIC_SITE_THEME_COLOR": "#111111",
     "PUBLIC_SITE_LOCALE": "id-ID",
     "PUBLIC_STOREFRONT_TEMPLATE": "compact-market",
     "PUBLIC_ADMIN_NAME": "Permata Mall Ops"

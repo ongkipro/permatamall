@@ -204,7 +204,7 @@ export function initMiddleOrderForm(
         const parentOrigin = document.referrer ? new URL(document.referrer).origin : "*";
         window.parent.postMessage(
           {
-            type: eventName === "AddToCart" ? "cmsads:add-to-cart" : "cmsads:initiate-checkout",
+            type: eventName === "AddToCart" ? "adsbook:add-to-cart" : "adsbook:initiate-checkout",
             content_name: contentName,
             content_ids: contentId ? [contentId] : undefined,
             content_type: "product",

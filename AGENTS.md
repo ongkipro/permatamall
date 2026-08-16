@@ -70,16 +70,16 @@ Every document carries a `> Verified against disk: <date> @ <sha>` line. If you 
 ## 4. Verification
 
 ```bash
-npm test          # 194 tests, node --test over src/lib/*.test.ts
+npm test          # node --test over src/lib/*.test.ts
 npm run check     # astro check && tsc --noEmit
 npm run build     # astro build
 ```
 
-Baseline on `main`: 194 passing, 0 type errors, `astro check` 0 errors / 0 warnings / 38 hints. A change that reduces this baseline is not done.
+Baseline on `chore/adsbookcms-foundation`: **215 passing**, 0 type errors, `astro check` 0 errors / 0 warnings / 37 hints. A change that reduces this baseline is not done.
 
 New non-trivial logic — a branch, a parser, a money or auth path — leaves one runnable check behind. Trivial one-liners do not need a test.
 
-`src/lib/auth.ts` has no test coverage and carries the entire session and role policy. Adding coverage there is high value; changing it without coverage is high risk.
+`src/lib/auth.ts` is covered by `src/lib/auth.test.ts` (12 tests, mutation-verified). That suite asserts security *properties* — a tampered signature is rejected, a rotated credential closes the session, a role never reaches a route it should not. Keep it that way: a test that merely asserts a valid token is valid buys nothing.
 
 ---
 
@@ -114,7 +114,9 @@ Do not "fix" these silently or treat them as bugs to be surprised by — they ar
 - Migration `0017` seeds a foreign sample product that admin refuses to delete (`G4`, ADR-006).
 - Home content falls back to compiled copy instead of failing closed (`G5`, ADR-007).
 - The Drizzle journal is broken (ADR-005).
-- The first-party click cookie is named `zanoby_click_ids` — a legacy brand. Renaming it breaks existing attribution, so it is a deliberate deferral, not an oversight.
+- The admin session cookie is `adsbook_session`, declared once as `SESSION_COOKIE_NAME` in `src/lib/auth.ts`. Never write the literal string; a writer and reader that disagree is a silent lockout.
+- The click cookie is `adsbook_click_ids`. The former `zanoby_click_ids` is still **read** as a fallback so an upgrading install does not lose 90 days of in-flight attribution. Never write the legacy name; it ages out on its own.
+- The developer API key prefix is still `cmsads_live_` (`src/lib/developer-api-keys.ts`). It is part of every issued key, so changing it needs a dual-prefix migration, not a rename. Tracked as A-8.
 - `pnpm-lock.yaml` and `pnpm-workspace.yaml` are stale artifacts pending deletion (ADR-009).
 
 ---

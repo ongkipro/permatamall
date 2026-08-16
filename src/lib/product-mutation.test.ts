@@ -1,11 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { deleteCatalogProduct } from "./product-mutation.ts";
-import {
-  CANONICAL_SAMPLE_PRODUCT,
-  getSampleProductMutationError,
-  SAMPLE_PRODUCT_MUTATION_ERROR,
-} from "./sample-product.ts";
 
 type MockStatement = {
   sql: string;
@@ -49,57 +44,19 @@ function createDatabase(options: { exists: boolean; referenceCount: number }) {
   return { database, batches };
 }
 
-test("canonical sample product keeps the approved identity and variants", () => {
-  assert.deepEqual(
-    {
-      id: CANONICAL_SAMPLE_PRODUCT.id,
-      slug: CANONICAL_SAMPLE_PRODUCT.slug,
-      variants: CANONICAL_SAMPLE_PRODUCT.variants.map((variant) => ({
-        title: variant.title,
-        price: variant.price,
-        weightGrams: variant.weightGrams,
-      })),
-    },
-    {
-      id: 10001,
-      slug: "asahan-portable",
-      variants: [
-        { title: "Beli 1 Pcs", price: 79000, weightGrams: 300 },
-        { title: "Beli 2 Pcs (Hemat)", price: 119000, weightGrams: 600 },
-      ],
-    },
-  );
+test("no product id is exempt from deletion", async () => {
+  // 10001 used to be an un-deletable "canonical sample". It is an ordinary
+  // product now: the same delete path and the same order-reference guard apply.
+  const { database, batches } = createDatabase({
+    exists: true,
+    referenceCount: 0,
+  });
+
+  assert.deepEqual(await deleteCatalogProduct(database, 10001), {
+    status: "deleted",
+  });
+  assert.equal(batches.length, 1);
 });
-
-test("sample product mutation guard rejects the canonical ID only", () => {
-  assert.equal(
-    getSampleProductMutationError(CANONICAL_SAMPLE_PRODUCT.id),
-    SAMPLE_PRODUCT_MUTATION_ERROR,
-  );
-  assert.equal(
-    getSampleProductMutationError(String(CANONICAL_SAMPLE_PRODUCT.id)),
-    SAMPLE_PRODUCT_MUTATION_ERROR,
-  );
-  assert.equal(getSampleProductMutationError(10002), null);
-});
-
-test("sample product deletion is protected without touching D1", async () => {
-  let databaseTouched = false;
-  const database = {
-    prepare() {
-      databaseTouched = true;
-      throw new Error("D1 must not be called for the sample product");
-    },
-  } as unknown as D1Database;
-
-  assert.deepEqual(
-    await deleteCatalogProduct(database, CANONICAL_SAMPLE_PRODUCT.id),
-    { status: "protected" },
-  );
-  assert.equal(databaseTouched, false);
-});
-
-
 
 test("product deletion rejects products referenced by orders", async () => {
   const { database, batches } = createDatabase({

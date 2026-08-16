@@ -1,4 +1,4 @@
-import { editorialProducts, type Product } from "../data/products";
+import { type Product } from "../data/products";
 import { getRuntimeEnv } from "./env";
 import {
   mergeStorefrontCatalog,
@@ -9,7 +9,6 @@ import {
   loadPublishedProductContent,
   mergeRuntimeProductContent,
 } from "./storefront-content";
-import { CANONICAL_SAMPLE_PRODUCT } from "./sample-product";
 
 async function loadCatalogRows(database: D1Database) {
   const [products, variants] = await database.batch([
@@ -73,21 +72,6 @@ export async function getStorefrontProducts(
       rows.products,
       runtimeContent,
     );
-    const samplePresentation = editorialProducts.find(
-      (product) =>
-        product.productId === String(CANONICAL_SAMPLE_PRODUCT.id),
-    );
-    if (
-      samplePresentation &&
-      rows.products.some(
-        (product) => product.id === CANONICAL_SAMPLE_PRODUCT.id,
-      ) &&
-      !presentations.some(
-        (product) => product.productId === samplePresentation.productId,
-      )
-    ) {
-      presentations.push(samplePresentation);
-    }
     return mergeStorefrontCatalog(presentations, rows.products, rows.variants);
   } catch (error) {
     console.error("storefront-catalog-load", error);

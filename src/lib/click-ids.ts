@@ -12,7 +12,14 @@
  * plumbing), and stored on the order for later upload.
  */
 
-export const CLICK_ID_COOKIE = "zanoby_click_ids";
+export const CLICK_ID_COOKIE = "adsbook_click_ids";
+
+/**
+ * Cookie name used before the AdsBookCMS rename. Read-only: an install upgraded
+ * mid-campaign would otherwise drop up to 90 days of in-flight click ids that
+ * can never be re-captured. Never written, so it ages out on its own.
+ */
+export const LEGACY_CLICK_ID_COOKIE = "zanoby_click_ids";
 
 /** Click identifiers and attribution tags across Google, Meta, TikTok, and UTMs. */
 export const CLICK_ID_KEYS = [
@@ -75,9 +82,9 @@ export function parseClickIds(raw: string | null | undefined): ClickIds {
 export function readClickIdCookie(request: Request): ClickIds {
   const cookieHeader = request.headers.get("cookie");
   if (!cookieHeader) return {};
-  const match = cookieHeader.match(
-    new RegExp(`(?:^|;\\s*)${CLICK_ID_COOKIE}=([^;]+)`),
-  );
+  const match =
+    cookieHeader.match(new RegExp(`(?:^|;\\s*)${CLICK_ID_COOKIE}=([^;]+)`)) ||
+    cookieHeader.match(new RegExp(`(?:^|;\\s*)${LEGACY_CLICK_ID_COOKIE}=([^;]+)`));
   if (!match) return {};
   try {
     return parseClickIds(decodeURIComponent(match[1]));

@@ -176,7 +176,7 @@ Flow:
 4. **Persist.** The serialized value is written to `orders.ad_click_ids` (`src/db/schema.ts`, migration `0024_daily_typhoid_mary.sql`).
 5. **Classify.** `src/lib/traffic-source.ts` reads that stored JSON and derives a `TrafficSourceType` of `meta`, `google`, `tiktok`, `organic`, or `custom`, precedence Meta → Google → TikTok → UTM heuristics. The admin surfaces it through `TrafficSourceBadge` in `OrdersTable.tsx` and `OrderDetail.tsx`.
 
-The cookie name `zanoby_click_ids` is a legacy brand string that is still live in shipped code, in `src/lib/checkout-navigation.ts` (`sessionStorage` key), and in every browser that already holds one. Renaming it is a breaking change for in-flight attribution, not a cosmetic rename. See `docs/GOOGLE_ADS_SETUP.md` §4.
+The cookie is `adsbook_click_ids`, renamed from `zanoby_click_ids` on 2026-08-16. `readClickIdCookie()` still **reads** the legacy name when the current one is absent, so attribution captured before the rename survives; nothing writes the legacy name, so it ages out with its own 90-day expiry.
 
 Why this matters for COD: the real conversion happens days after the click, when the courier collects cash. Without the click ID captured at landing and stored on the order, delivered revenue can never be uploaded back as an offline conversion, and Smart Bidding only ever learns from unconfirmed form submissions.
 
@@ -203,7 +203,7 @@ What does **not** exist:
 - no `event_id` deduplication between the browser `ttq` call and any server event;
 - the embed `CompletePayment` call carries no `content_id` and no TikTok-specific `event_id`.
 
-The `cmsads:` prefix on the embed `postMessage` types is a legacy wire-protocol string. Renaming it breaks every already-published embed on a customer's site.
+The embed `postMessage` types use the `adsbook:` prefix, renamed from `cmsads:` on 2026-08-16 together with the widget file and its custom element. This **breaks every already-published embed**: an existing parent page loads a script that now 404s and listens for events that are no longer emitted. Its fallback iframe still renders and still takes orders, but auto-height, tracking-parameter forwarding, and parent-page Pixel/gtag/ttq firing stop until the operator re-copies the snippet from `/admin/products`.
 
 ## 9. Google Ads Conversion Signal Protocol
 

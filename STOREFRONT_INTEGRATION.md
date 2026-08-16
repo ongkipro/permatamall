@@ -286,9 +286,9 @@ This repository was re-founded from a prior deployment and still carries a previ
 
 | Path | What it is | Consequence of a careless rename |
 | --- | --- | --- |
-| `src/lib/click-ids.ts` | `CLICK_ID_COOKIE = "zanoby_click_ids"` | Renaming orphans every existing click-ID cookie; `gclid`/`gbraid`/`wbraid` stop reaching new orders |
+| `src/lib/click-ids.ts` | `CLICK_ID_COOKIE = "adsbook_click_ids"`, with `LEGACY_CLICK_ID_COOKIE` read-only | Renamed 2026-08-16 with a read fallback, so no in-flight attribution was lost. Delete the fallback only after 90 days from deploy |
 | `src/pages/embed/form.astro` | Writes the same name to `sessionStorage` and `document.cookie` | Must change in the same commit as the constant or the embed form and the reader disagree |
-| `src/lib/checkout-navigation.ts` | Reads `sessionStorage.getItem("zanoby_click_ids")` | Same — three call sites, one name |
+| `src/lib/checkout-navigation.ts` | Reads the `adsbook_click_ids` `sessionStorage` key | Writer and reader ship in one page load, so no migration window was needed |
 | `src/pages/admin/ads/google.astro` | Documents the Google Ads conversion name `Zanoby Purchase` | Operator-facing copy that references a conversion action **configured in a Google Ads account**; changing the docs does not rename the conversion action |
 
 Do not relabel these opportunistically while doing unrelated work. Renaming the cookie is a deliberate migration: change the constant, both embed writers, and the reader together, and accept that click IDs captured under the old name are lost unless a dual-read fallback ships first.

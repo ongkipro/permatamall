@@ -182,17 +182,17 @@ The rationale recorded in the source: the consent requirement is EEA/UK law, thi
 
 **Two consequences you must accept before advertising into those regions.** No consent management platform exists in this repository, so nothing ever calls `gtag('consent', 'update', …)`; the 500 ms `wait_for_update` window expires unanswered and visitors from the 32 listed regions stay denied for the entire session. If the store ever targets the EEA or UK, install a real CMP and wire the `update` call first — otherwise that traffic cannot be measured at all. The region list is compiled into the component and is not configurable per store.
 
-### The `zanoby_click_ids` cookie name is legacy — renaming it is a breaking change
+### Click-ID cookie naming and the legacy read fallback
 
-The cookie name is the literal string `zanoby_click_ids`, defined as `CLICK_ID_COOKIE` in `src/lib/click-ids.ts`. It carries a brand from an earlier deployment and does not match the AdsBookCMS product name or this store's brand.
+The cookie is `adsbook_click_ids`, defined as `CLICK_ID_COOKIE` in `src/lib/click-ids.ts`. It was renamed from `zanoby_click_ids` — a brand carried over from an earlier deployment — on 2026-08-16.
 
-The name is nonetheless **correct as documented**, because it is what ships and what every browser already holds. Renaming it is not cosmetic:
+The rename shipped **with** a read fallback rather than as a find-and-replace, because a bare rename would have silently dropped attribution mid-funnel for every visitor who clicked an ad in the previous 90 days:
 
-- every visitor who clicked an ad in the last 90 days holds a cookie under the old name; a rename silently drops their attribution mid-funnel;
-- `src/lib/checkout-navigation.ts` uses the same string as a `sessionStorage` key, and `src/lib/embed-markup.ts` ships a parent-page script already embedded on customers' own sites;
-- a rename therefore requires a dual-read migration window, not a find-and-replace.
+- `readClickIdCookie()` matches `adsbook_click_ids` first and falls back to `zanoby_click_ids` only when the current cookie is absent;
+- nothing writes the legacy name, so it expires naturally and the fallback can be deleted once 90 days have passed since deploy;
+- the `sessionStorage` key in `src/lib/checkout-navigation.ts` needed no fallback — its writer and reader ship in the same page load and cannot straddle a deploy.
 
-The same applies to the `cmsads:` prefix on embed `postMessage` types. Both are recorded here so the legacy naming is a known, deliberate carry-over rather than an undocumented surprise.
+The embed `postMessage` prefix moved from `cmsads:` to `adsbook:` in the same change. That one **is** breaking for already-published embeds; see `TRACKING_SPECS.md` §8.
 
 ---
 

@@ -19,7 +19,7 @@ The previous version of this file described a different repository — it opened
 | R2 | `cmsads-permatamall-assets` |
 | KV | `SESSION` |
 | Version | `1.2.0` / `2026.08-hardened` (`src/lib/version.ts`) |
-| Schema | 34 migration files, `0000`–`0033` |
+| Schema | 35 migration files, `0000`–`0034` |
 | Environments | one — no staging, no `env.*` blocks |
 | CI | push to `main` → check → test → build → `wrangler deploy` |
 
@@ -31,9 +31,9 @@ Live check on 2026-08-16: `/` 200, `/produk` 200, `sitemap.xml` lists 8 pages + 
 
 | Gate | Result |
 | --- | --- |
-| `npm test` | **194 / 194 passing** (42 test files) |
+| `npm test` | **215 / 215 passing** |
 | `npx tsc --noEmit` | 0 errors |
-| `npx astro check` | 0 errors, 0 warnings, 38 hints (308 files) |
+| `npx astro check` | 0 errors, 0 warnings, 37 hints |
 | `npm run build` | server built, ~4s |
 
 ---
@@ -66,8 +66,8 @@ Live catalog: 22 women's handbag products with 110 variants, seeded by `scripts/
 
 Known data issues, all tracked:
 
-- Migration `0017` seeds a sample product belonging to a previous merchant, which the admin API refuses to delete and which is recreated on every migration run (gap **G4**).
-- `src/db/seed.sql` contains 36 products from two previous merchants, is wired to no npm script, and includes what appear to be genuine provider ids and a real contact phone number. It must be scrubbed or deleted before reuse.
+- The local development D1 still holds the previously provisioned warehouse row — a real address, phone number, and Mengantar ObjectIds. The repository is clean, but that data lives in local state and presumably in the remote database; scrubbing it needs a remote write and is a separate decision.
+- The demo seed is `scripts/seed-catalog.sql`, run with `npm run db:reset:demo:local`. It is **destructive to the catalog** by design — a demo seed's job is a known state — but its deletes are guarded so they never touch order history. The former `src/db/seed.sql`, which held two previous merchants' catalogs plus genuine-looking provider ids, a real address and a real phone number, was deleted on 2026-08-16.
 - `schema.ts` is missing two tables and three columns that exist in migrations; the Drizzle journal stops at `0030`.
 
 ---
@@ -90,8 +90,6 @@ Content and identity cleanup, on branch `chore/adsbookcms-foundation`:
 
 | Severity | Issue |
 | --- | --- |
-| High | Fabricated reviews and ratings are attached to every product detail page and feed the JSON-LD `aggregateRating`. Three named reviews plus invented rating, sold, and compare-price values are generated in `src/lib/catalog-data.ts` for any product without editorial data. This violates Google structured-data policy and is not defensible as marketing copy |
-| High | Site logo, favicon, and admin login background are the upstream vendor's advertising artwork, not this store's brand. They appear sitewide, including as the product-image fallback and as the `og:image` for admin links |
 | High | The embedded checkout snippet fires Meta Purchase with **no** event id, at redirect time before payment is verified. Any embedded install sharing the store's pixel double-counts, and counts unpaid online orders (gap **G10**) |
 | Note | Meta Purchase deduplication between the hosted storefront and CAPI was broken until 2026-08-16 and is now fixed. The correction is forward-only: Meta offers no retroactive merge, so historical Purchase counts remain roughly doubled and historical ROAS understated. Treat the deploy date as a reporting break |
 | High | The headless origin allowlist is not connected to the admin. `resolveAllowedOrigins` reads environment only, and the variable it expects is declared nowhere — authorising a new storefront domain requires a code change and a deploy |

@@ -76,9 +76,9 @@ Keep `"workers_dev": false` so the install never gets an unreviewed `*.workers.d
 
 ## 5. Set store identity — read this before building
 
-Store identity is **compiled into the bundle at build time** from the local `.env` file, not read from `wrangler.jsonc` at runtime. Setting `vars` alone will not change the storefront.
+Store identity is **compiled into the bundle at build time**, not read at runtime. Both `wrangler.jsonc` `vars` and the local `.env` feed it, so setting either works — but only if you **rebuild afterwards**. Deploying an already-built bundle with new vars changes nothing on the storefront.
 
-Set these in `.env` before running `npm run build`:
+Set these in `wrangler.jsonc` `vars` (and mirror them in `.env` for local development) before running `npm run build`:
 
 | Variable | Effect |
 | --- | --- |
@@ -94,7 +94,7 @@ Set these in `.env` before running `npm run build`:
 | `PUBLIC_COD_DISABLED_PROVINCES` | comma-separated province names excluded from COD |
 | `PUBLIC_EMBED_ALLOWED_ORIGINS` | fallback embed allowlist until one is saved in the database |
 
-Mirror the same values into `wrangler.jsonc` `vars` so runtime and build-time agree. They are separate sources and nothing enforces that they match.
+Keep `wrangler.jsonc` `vars` and `.env` in agreement. Both feed the build, precedence between them is undetermined, and a few keys (`PUBLIC_COD_DISABLED_PROVINCES`, `PUBLIC_EMBED_ALLOWED_ORIGINS`) are additionally read at runtime through `getRuntimeEnv()`, where only the Worker's own vars apply.
 
 One identity field cannot be configured at all: `slug` is hardcoded to `"permatamall"` in `src/lib/tenant.ts`. It is used only for diagnostics, but it is wrong on every install that is not the reference one. This is gap **G1** — see `DECISIONS.md` ADR-003.
 

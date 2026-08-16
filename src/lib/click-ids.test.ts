@@ -49,11 +49,30 @@ test("a corrupt cookie degrades to no attribution, never an order-path throw", (
 test("reads the click id back off the checkout request", () => {
   const request = new Request("https://permatamall.shop/api/submit-order", {
     headers: {
-      cookie: `a=1; zanoby_click_ids=${encodeURIComponent('{"gclid":"Cj0abc"}')}; b=2`,
+      cookie: `a=1; adsbook_click_ids=${encodeURIComponent('{"gclid":"Cj0abc"}')}; b=2`,
     },
   });
   assert.deepEqual(readClickIdCookie(request), { gclid: "Cj0abc" });
   assert.equal(hasClickId(readClickIdCookie(request)), true);
+});
+
+test("an install upgraded mid-campaign still reads the pre-rename cookie", () => {
+  const legacyOnly = new Request("https://permatamall.shop/api/submit-order", {
+    headers: {
+      cookie: `a=1; zanoby_click_ids=${encodeURIComponent('{"gclid":"Cj0legacy"}')}; b=2`,
+    },
+  });
+  assert.deepEqual(readClickIdCookie(legacyOnly), { gclid: "Cj0legacy" });
+
+  // Once the current cookie exists it wins; the legacy value is never preferred.
+  const both = new Request("https://permatamall.shop/api/submit-order", {
+    headers: {
+      cookie:
+        `adsbook_click_ids=${encodeURIComponent('{"gclid":"Cj0current"}')}; ` +
+        `zanoby_click_ids=${encodeURIComponent('{"gclid":"Cj0legacy"}')}`,
+    },
+  });
+  assert.deepEqual(readClickIdCookie(both), { gclid: "Cj0current" });
 });
 
 test("no cookie means no click id, not a crash", () => {

@@ -1,4 +1,3 @@
-import { isCanonicalSampleProductId } from "./sample-product.ts";
 
 const MAX_VARIANTS = 200;
 export function createCatalogProductId() {
@@ -265,15 +264,12 @@ export function parseProductMutationPayload(
 export type ProductDeletionResult =
   | { status: "deleted" }
   | { status: "not_found" }
-  | { status: "protected" }
   | { status: "referenced" };
 
 export async function deleteCatalogProduct(
   database: D1Database,
   productId: number,
 ): Promise<ProductDeletionResult> {
-  if (isCanonicalSampleProductId(productId)) return { status: "protected" };
-
   const product = await database
     .prepare("SELECT id FROM products WHERE id = ? LIMIT 1")
     .bind(productId)

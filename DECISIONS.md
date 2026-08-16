@@ -68,13 +68,13 @@ Status values: **Accepted** · **Superseded by ADR-nnn** · **Proposed** (decide
 
 ## ADR-006 — Sample data must be neutral, ours, and deletable
 
-**Date:** 2026-08-16 · **Status:** Proposed
+**Date:** 2026-08-16 · **Status:** Accepted, implemented 2026-08-16 · **Amended by ADR-011**
 
 **Context.** Migration `0017` seeds a product belonging to a previous merchant, and `product-mutation.ts` blocks deleting it through the admin API. Three sources disagree on what the "canonical sample" even is.
 
-**Decision.** A fresh install seeds exactly one clearly-labelled placeholder product using our own asset. It is deletable once the merchant has created a real product. No prior merchant's data ships in the installer.
+**Decision (as implemented).** The bundled demo catalog *is* the sample data (ADR-011) — it is ours, it is editable, and it is deletable. The separate "canonical immutable sample product" concept was therefore **removed**, not repointed: four sources disagreed on its identity, and an un-deletable row contradicts a CMS whose promise is that the merchant owns their catalog.
 
-**Consequences.** Requires a forward migration; editing `0017` in place does nothing to databases that already applied it.
+**Consequences.** Migration `0034` removes the foreign row from databases that already applied `0017`, guarded on identity (slug and title must still match what `0017` wrote, so an edited row survives) and on order references (nothing is removed while an `order_items` row points at one of its variants). Every statement is a guarded `DELETE`, so the migration is idempotent. `isCanonicalSampleProductId` and its five call sites are gone.
 
 ---
 
@@ -105,6 +105,22 @@ Status values: **Accepted** · **Superseded by ADR-nnn** · **Proposed** (decide
 **Date:** 2026-08-16 · **Status:** Accepted
 
 **Decision.** `package-lock.json` + `npm ci` are authoritative, matching CI. This is a single-package repository. `pnpm-lock.yaml` and the `pnpm-workspace.yaml` stub are to be deleted.
+
+---
+
+## ADR-011 — "Permata Mall" is the bundled demo dataset, not a merchant
+
+**Date:** 2026-08-16 · **Status:** Accepted
+
+**Context.** The repository ships a complete storefront — 22 women's handbag products, 110 variants, product photography, and the `permatamall.shop` deployment. Earlier cleanup work treated this as live merchant data to be protected, which made every content decision unnecessarily cautious.
+
+**Decision.** Permata Mall is the **demo dataset** that AdsBookCMS installs with. It exists so a fresh install has something real to look at, and it is replaced through the CMS when a merchant onboards. It is neither production data to be preserved at all costs nor foreign content to be purged.
+
+**Consequences.**
+- `scripts/seed-catalog.sql` and `public/images/products/` are product assets and stay.
+- Breaking changes to this install — invalidating its sessions, rotating its cookie names, resetting its attribution — are acceptable when they improve the product.
+- Content belonging to *other* merchants is still removed. The distinction is ours-versus-theirs, not demo-versus-real.
+- Product identity in code defaults to AdsBookCMS, never to the demo store. An unconfigured install must describe itself, not inherit the bundle it was built from.
 
 ---
 

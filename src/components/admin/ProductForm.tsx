@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState, type SyntheticEvent } from "react";
 import { Input } from "../ui/input";
-import { isCanonicalSampleProductId } from "../../lib/sample-product";
 import { formatContentId } from "../../lib/catalog-feed";
 type Variant = {
   key: string;
@@ -66,7 +65,6 @@ const slugify = (value: string) =>
 
 export function ProductForm({ productId }: { productId?: string }) {
   const editing = Boolean(productId);
-  const isSampleProduct = editing && isCanonicalSampleProductId(productId);
   const nextVariantKey = useRef(1);
   const [title, setTitle] = useState("");
   const [slug, setSlug] = useState("");
@@ -317,20 +315,7 @@ export function ProductForm({ productId }: { productId?: string }) {
       className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_340px]"
       noValidate
     >
-      <fieldset disabled={isSampleProduct} className="contents">
       <div className="space-y-6">
-        {isSampleProduct && (
-          <section
-            className="rounded-xl border border-slate-200 bg-slate-50 p-5 text-slate-900 shadow-sm"
-            aria-label="Data contoh terkunci"
-          >
-            <p className="text-sm font-black">Data contoh bawaan</p>
-            <p className="mt-1 text-xs leading-5 text-slate-600">
-              Produk contoh Aussie tidak dapat diubah atau dihapus. Unggah
-              produk lain untuk menjual produk Anda sendiri.
-            </p>
-          </section>
-        )}
         <section className="rounded-xl border border-slate-200 bg-white shadow-sm">
           <div className="border-b border-slate-200 p-5">
             <h2 className="text-base font-black text-slate-950">
@@ -644,20 +629,13 @@ export function ProductForm({ productId }: { productId?: string }) {
               Product ID menjadi <code>content_id</code> untuk tracking Meta
               dan Google.
             </p>
-            {isSampleProduct ? (
-              <p className="mt-6 rounded-lg border border-slate-200 bg-slate-50 p-3 text-xs font-bold leading-5 text-slate-700">
-                Data contoh hanya dapat dilihat. Buat atau unggah produk lain
-                untuk penggunaan sebenarnya.
-              </p>
-            ) : (
-              <button
-                type="submit"
-                disabled={saving || uploading}
-                className="btn-primary mt-6 min-h-11 w-full !bg-emerald-700 px-5 text-xs hover:!bg-emerald-800 focus-visible:!outline-emerald-700"
-              >
-                {saving ? "Menyimpan…" : "Simpan Produk"}
-              </button>
-            )}
+            <button
+              type="submit"
+              disabled={saving || uploading}
+              className="btn-primary mt-6 min-h-11 w-full !bg-emerald-700 px-5 text-xs hover:!bg-emerald-800 focus-visible:!outline-emerald-700"
+            >
+              {saving ? "Menyimpan…" : "Simpan Produk"}
+            </button>
             <a
               href="/admin/products"
               className="btn-secondary mt-2 min-h-11 w-full px-5 text-xs"
@@ -674,7 +652,6 @@ export function ProductForm({ productId }: { productId?: string }) {
           </div>
         </section>
       </aside>
-      </fieldset>
     </form>
   );
 }

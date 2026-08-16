@@ -9,7 +9,6 @@ import {
   updateProductActiveStatus,
   type ProductMutationPayload,
 } from "../../../lib/product-mutation";
-import { getSampleProductMutationError } from "../../../lib/sample-product";
 
 export const prerender = false;
 
@@ -267,11 +266,6 @@ export const PATCH: APIRoute = async ({ request, locals }) => {
   if (statusToggle) {
     if ("error" in statusToggle) return jsonError(statusToggle.error, 400);
 
-    const sampleProductError = getSampleProductMutationError(
-      statusToggle.value.id,
-    );
-    if (sampleProductError) return jsonError(sampleProductError, 409);
-
     try {
       const db = database as D1Database;
       const wasUpdated = await updateProductActiveStatus(
@@ -296,9 +290,6 @@ export const PATCH: APIRoute = async ({ request, locals }) => {
   }
 
   const body = rawBody as ProductMutationPayload | null;
-  const sampleProductError = getSampleProductMutationError(body?.id);
-  if (sampleProductError) return jsonError(sampleProductError, 409);
-
   const parsed = parseProductMutationPayload(body, true);
   if ("error" in parsed) return jsonError(parsed.error, 400);
   try {
@@ -477,13 +468,6 @@ export const DELETE: APIRoute = async ({ locals, url }) => {
     );
     if (result.status === "not_found") {
       return jsonError("Produk tidak ditemukan.", 404);
-    }
-    if (result.status === "protected") {
-      return jsonError(
-        getSampleProductMutationError(productId) ||
-          "Produk contoh tidak dapat dihapus.",
-        409,
-      );
     }
     if (result.status === "referenced") {
       return jsonError(

@@ -156,10 +156,15 @@ test('a tampered payload, header, or signature is rejected', async () => {
   assert.notEqual(borrowed, signature);
   assert.equal(await verifyJwt(`${header}.${payload}.${borrowed}`, AUTH_SECRET), null);
 
-  // A single flipped signature character.
-  const flippedChar = signature.at(-1) === 'A' ? 'B' : 'A';
+  // A single flipped signature character. Flip the FIRST character, not the
+  // last: a 32-byte HMAC encodes to 43 base64url chars, and the final char
+  // carries only 2 significant bits, so several different trailing characters
+  // decode to identical bytes. Flipping the last one leaves the signature
+  // unchanged whenever it happens to land in the same class, which made this
+  // assertion fail intermittently. The first character is fully significant.
+  const flippedChar = signature[0] === 'A' ? 'B' : 'A';
   assert.equal(
-    await verifyJwt(`${header}.${payload}.${signature.slice(0, -1)}${flippedChar}`, AUTH_SECRET),
+    await verifyJwt(`${header}.${payload}.${flippedChar}${signature.slice(1)}`, AUTH_SECRET),
     null,
   );
 
@@ -260,14 +265,14 @@ test('the session cookie is read only under its exact name', async () => {
   const read = (cookie?: string) =>
     getSessionCookie(new Request('https://admin.test/admin', cookie ? { headers: { cookie } } : undefined));
 
-  assert.equal(read(`cmsads_session=${token}`), token);
-  assert.equal(read(`theme=dark; cmsads_session=${token}; other=1`), token);
-  assert.equal(read(`cmsads_session=${encodeURIComponent(token)}`), token);
+  assert.equal(read(`adsbook_session=${token}`), token);
+  assert.equal(read(`theme=dark; adsbook_session=${token}; other=1`), token);
+  assert.equal(read(`adsbook_session=${encodeURIComponent(token)}`), token);
   assert.equal(read(), null);
   assert.equal(read('theme=dark'), null);
   // A cookie whose name merely ends with the session name must not be accepted.
-  assert.equal(read('xcmsads_session=forged'), null);
-  assert.equal(read('evil_cmsads_session=forged'), null);
+  assert.equal(read('xadsbook_session=forged'), null);
+  assert.equal(read('evil_adsbook_session=forged'), null);
 });
 
 test('a session is closed once the credential behind it rotates', async () => {
@@ -440,7 +445,7 @@ async function runAdminRequest(options: {
   credential: CredentialRow;
 }) {
   const headers = new Headers();
-  if (options.token) headers.set('cookie', `cmsads_session=${encodeURIComponent(options.token)}`);
+  if (options.token) headers.set('cookie', `adsbook_session=${encodeURIComponent(options.token)}`);
   const context = {
     request: new Request(`https://admin.test${options.pathname}`, { headers }),
     locals: {

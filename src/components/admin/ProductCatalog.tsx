@@ -14,7 +14,6 @@ import {
   Copy,
   Plus,
   RefreshCw,
-  Sparkles,
   Eye,
   Filter,
 } from "lucide-react";
@@ -50,7 +49,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "../ui/dropdown-menu";
-import { isCanonicalSampleProductId } from "../../lib/sample-product";
 import { buildEmbedMarkup } from "../../lib/embed-markup";
 
 export type ProductVariant = {
@@ -123,7 +121,6 @@ function ProductActions({
 }) {
   const editUrl = `/admin/products/edit?id=${encodeURIComponent(String(product.id))}`;
   const storefrontUrl = `/produk/${product.slug}`;
-  const isSample = isCanonicalSampleProductId(product.id);
 
   return (
     <DropdownMenu>
@@ -142,7 +139,7 @@ function ProductActions({
         <DropdownMenuItem asChild>
           <a href={editUrl} className="flex items-center gap-2">
             <Pencil className="size-4 text-slate-500" aria-hidden="true" />
-            <span>{isSample ? "Lihat data contoh" : "Edit produk"}</span>
+            <span>Edit produk</span>
           </a>
         </DropdownMenuItem>
         <DropdownMenuItem asChild>
@@ -160,19 +157,15 @@ function ProductActions({
           <span>Salin Content ID</span>
         </DropdownMenuItem>
 
-        {!isSample && (
-          <>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem
-              variant="destructive"
-              onSelect={() => onDelete(product)}
-              className="flex items-center gap-2"
-            >
-              <Trash2 className="size-4" aria-hidden="true" />
-              <span>Hapus produk</span>
-            </DropdownMenuItem>
-          </>
-        )}
+        <DropdownMenuSeparator />
+        <DropdownMenuItem
+          variant="destructive"
+          onSelect={() => onDelete(product)}
+          className="flex items-center gap-2"
+        >
+          <Trash2 className="size-4" aria-hidden="true" />
+          <span>Hapus produk</span>
+        </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   );
@@ -598,21 +591,6 @@ export function ProductCatalog({
         </Card>
       </section>
 
-      {/* Banner Data Contoh */}
-      {products.some((product) => isCanonicalSampleProductId(product.id)) && (
-        <div className="flex items-start gap-3 rounded-xl border border-blue-200 bg-blue-50/80 p-4 text-blue-950">
-          <Sparkles className="mt-0.5 size-5 shrink-0 text-blue-600" />
-          <div className="text-xs leading-5">
-            <p className="font-bold text-blue-950 text-sm">
-              Terdapat data contoh bawaan (Aussie / Portable).
-            </p>
-            <p className="mt-0.5 text-blue-800">
-              Data contoh digunakan untuk pengujian alur checkout & embed form. Anda dapat menambah produk baru kapan saja.
-            </p>
-          </div>
-        </div>
-      )}
-
       {/* Main Catalog Container */}
       <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xs">
         {/* Controls Header: Search, Filters, Stats */}
@@ -773,7 +751,6 @@ export function ProductCatalog({
           <div className="grid gap-3 p-4 lg:hidden" aria-label="Daftar produk mobile">
             {paginated.map((product) => {
               const priceRange = getProductPriceRange(product.variants);
-              const isSample = isCanonicalSampleProductId(product.id);
 
               return (
                 <article
@@ -798,16 +775,12 @@ export function ProductCatalog({
                       <div className="flex items-start justify-between gap-2">
                         <div className="min-w-0">
                           <h3 className="font-bold text-sm text-slate-950 truncate">
-                            {isSample ? (
-                              product.title
-                            ) : (
-                              <a
-                                href={`/admin/products/edit?id=${encodeURIComponent(String(product.id))}`}
-                                className="hover:text-emerald-700 hover:underline"
-                              >
-                                {product.title}
-                              </a>
-                            )}
+                            <a
+                              href={`/admin/products/edit?id=${encodeURIComponent(String(product.id))}`}
+                              className="hover:text-emerald-700 hover:underline"
+                            >
+                              {product.title}
+                            </a>
                           </h3>
                           <p className="mt-0.5 font-mono text-[11px] text-slate-500 truncate">
                             /{product.slug}
@@ -827,20 +800,15 @@ export function ProductCatalog({
                           <Switch
                             size="sm"
                             checked={Boolean(product.is_active)}
-                            disabled={
-                              isSample ||
-                              togglingProductIds.has(String(product.id))
-                            }
+                            disabled={togglingProductIds.has(String(product.id))}
                             onCheckedChange={(checked) =>
                               void toggleProductStatus(product, checked)
                             }
                             aria-label={`${Boolean(product.is_active) ? "Nonaktifkan" : "Aktifkan"} ${product.title}`}
                             title={
-                              isSample
-                                ? "Produk contoh tidak dapat diubah"
-                                : Boolean(product.is_active)
-                                  ? "Jadikan draft"
-                                  : "Aktifkan produk"
+                              Boolean(product.is_active)
+                                ? "Jadikan draft"
+                                : "Aktifkan produk"
                             }
                           />
                         </div>
@@ -907,7 +875,6 @@ export function ProductCatalog({
               <TableBody>
                 {paginated.map((product) => {
                   const priceRange = getProductPriceRange(product.variants);
-                  const isSample = isCanonicalSampleProductId(product.id);
 
                   return (
                     <TableRow key={product.id} className="hover:bg-slate-50/60 transition-colors">
@@ -929,23 +896,12 @@ export function ProductCatalog({
                           </div>
                           <div className="min-w-0">
                             <div className="flex items-center gap-2">
-                              {isSample ? (
-                                <span className="font-bold text-slate-950 text-sm">
-                                  {product.title}
-                                </span>
-                              ) : (
-                                <a
-                                  href={`/admin/products/edit?id=${encodeURIComponent(String(product.id))}`}
-                                  className="font-bold text-slate-950 text-sm hover:text-emerald-700 hover:underline"
-                                >
-                                  {product.title}
-                                </a>
-                              )}
-                              {isSample && (
-                                <Badge variant="secondary" className="text-[9px] px-1.5 py-0 bg-blue-50 text-blue-700 border-blue-200 font-semibold">
-                                  Contoh
-                                </Badge>
-                              )}
+                              <a
+                                href={`/admin/products/edit?id=${encodeURIComponent(String(product.id))}`}
+                                className="font-bold text-slate-950 text-sm hover:text-emerald-700 hover:underline"
+                              >
+                                {product.title}
+                              </a>
                             </div>
                             <div className="flex items-center gap-2 mt-0.5">
                               <span className="font-mono text-[11px] text-slate-400">
@@ -1010,20 +966,15 @@ export function ProductCatalog({
                           <Switch
                             size="sm"
                             checked={Boolean(product.is_active)}
-                            disabled={
-                              isSample ||
-                              togglingProductIds.has(String(product.id))
-                            }
+                            disabled={togglingProductIds.has(String(product.id))}
                             onCheckedChange={(checked) =>
                               void toggleProductStatus(product, checked)
                             }
                             aria-label={`${Boolean(product.is_active) ? "Nonaktifkan" : "Aktifkan"} ${product.title}`}
                             title={
-                              isSample
-                                ? "Produk contoh tidak dapat diubah"
-                                : Boolean(product.is_active)
-                                  ? "Jadikan draft"
-                                  : "Aktifkan produk"
+                              Boolean(product.is_active)
+                                ? "Jadikan draft"
+                                : "Aktifkan produk"
                             }
                           />
                         </div>

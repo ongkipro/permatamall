@@ -2,7 +2,7 @@
 
 > **Product:** AdsBookCMS (single) — a self-contained direct-response commerce CMS that installs onto Cloudflare Workers.
 > **Install model:** **1 installer = 1 Worker = 1 store.** Isolation comes from the deployment boundary, not from request-time tenant routing.
-> **Reference instance:** `permatamall.shop` (Worker `cmsads-permatamall`).
+> **Reference install:** `permatamall.shop` (Worker `cmsads-permatamall`), carrying the bundled demo dataset (ADR-011). The `cmsads-*` resource names are legacy and deliberately not renamed.
 > **Last verified against disk:** 2026-08-16 @ `0d2e56a`.
 
 This document describes what the system **actually is**. Where the intended AdsBookCMS product differs from what ships today, the gap is stated explicitly in §10 rather than written as if it were already true. Code and executable evidence win over this document; when they disagree, fix the document.
@@ -107,9 +107,9 @@ Configuration comes from **three independent sources** that are easy to mistake 
 | **Worker runtime env** | `getRuntimeEnv(locals)` in `src/lib/env.ts` | deploy (no rebuild needed) |
 | **D1 `stores` row** | `provider-config.ts`, `store-ads.ts`, `public-store.ts` | immediately |
 
-`tenantConfig` calls `getEnvValue(key)` **without an env argument**, which skips the Cloudflare runtime env entirely and resolves from `import.meta.env` — a literal object frozen into the bundle by Astro at build time from the local `.env` file. Consequences that must be understood before touching identity:
+`tenantConfig` calls `getEnvValue(key)` **without an env argument**, which skips the Cloudflare runtime env entirely and resolves from `import.meta.env` — a literal object frozen into the bundle by Astro at build time. Both `wrangler.jsonc` `vars` and the local `.env` feed that object; verified 2026-08-16 by changing a var in `wrangler.jsonc` alone and observing the new value baked into `dist/server/chunks/env_*.mjs`. Which of the two wins when both define the same key was not determined. Consequences that must be understood before touching identity:
 
-- Site name, URL, description, logo, tagline, theme color, locale, storefront template, and admin name are **baked at build time**. Editing `vars` in `wrangler.jsonc` alone does not change them.
+- Site name, URL, description, logo, tagline, theme color, locale, storefront template, and admin name are **baked at build time**. Editing `vars` and redeploying an already-built bundle changes nothing — the value only moves after `npm run build`.
 - `slug` is hardcoded to `"permatamall"` with no override path.
 - `stores.name` in D1 and `tenantConfig.name` are **different values**. Renaming the store in `/admin` changes CRM messages and admin display but leaves every storefront `<title>`, header, footer, JSON-LD, and OG tag untouched.
 - An unknown `PUBLIC_STOREFRONT_TEMPLATE` throws at module load, which in a Worker means every route returns 500.
@@ -120,7 +120,7 @@ Provider credentials follow a **D1-first, env-fallback** rule: a key saved in th
 
 ## 6. Authentication and Access
 
-Session is a signed JWT in the `cmsads_session` cookie, verified in middleware against a KV record and the `admin_credentials` row. `admin_credentials.updated_at` doubles as a session revision: rotating a credential invalidates existing sessions. Roles are defined in `src/lib/auth.ts` (`ADMIN_ROLES`) and enforced per route by `canAccessAdminRoute`.
+Session is a signed JWT in the `adsbook_session` cookie (`SESSION_COOKIE_NAME` in `src/lib/auth.ts` — the single source for the name), verified in middleware against a KV record and the `admin_credentials` row. `admin_credentials.updated_at` doubles as a session revision: rotating a credential invalidates existing sessions. Roles are defined in `src/lib/auth.ts` (`ADMIN_ROLES`) and enforced per route by `canAccessAdminRoute`.
 
 The login route is `/hello` rather than `/admin/login`, and `robots.txt` disallows `/admin/`, `/api/`, `/embed/`, and `/hello`.
 
@@ -180,7 +180,7 @@ These are the differences between the current single-store deployment and the in
 | G1 | Identity is build-time | A new install cannot state its own name, domain, or logo without a rebuild | `src/lib/tenant.ts`, `src/lib/env.ts` |
 | G2 | No `/install` wizard | Onboarding requires an operator with a terminal and Cloudflare credentials | new route + `src/lib/installer.ts` |
 | G3 | No schema auto-upgrade | Each install is upgraded manually; nothing compares `schemaVersion` to the applied chain at boot | `src/lib/version.ts`, migration runner |
-| G4 | Sample product is another merchant's | A fresh install ships a foreign product that admin refuses to delete | `0017`, `src/lib/sample-product.ts` |
+| ~~G4~~ | ~~Sample product is another merchant's~~ | **Closed 2026-08-16.** Migration `0034` removes the foreign row under identity and order-reference guards; the immutability concept was dropped rather than repointed, since the demo catalog already serves the purpose and is fully editable | `src/db/migrations/0034_remove_foreign_sample_product.sql` |
 | G5 | Home content falls back to compiled copy | A fresh install shows inherited marketing copy instead of a setup state | `src/lib/tenant-content.ts` |
 | G6 | Theme set is compile-time | Templates cannot be added or switched without a rebuild | `src/lib/tenant-contract.ts` |
 | G7 | No observability | No Workers logs, no error reporting, no way to diagnose a customer install | `wrangler.jsonc` (no `observability` block) |

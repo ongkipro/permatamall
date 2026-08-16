@@ -6,7 +6,7 @@ import {
   normalizeAdminUsername,
   verifyAdminLoginPassword,
 } from '../lib/admin-credentials';
-import { secureEqual, signJwt } from '../lib/auth';
+import { SESSION_COOKIE_NAME, secureEqual, signJwt } from '../lib/auth';
 import { getEnvValue, getRuntimeEnv } from '../lib/env';
 import { tenantConfig } from '../lib/tenant';
 
@@ -76,7 +76,7 @@ if (Astro.request.method === 'POST' && crossSiteLogin) {
               ),
               sessions.delete(attemptKey),
             ]);
-            Astro.cookies.set('cmsads_session', token, {
+            Astro.cookies.set(SESSION_COOKIE_NAME, token, {
               path: '/',
               httpOnly: true,
               secure: import.meta.env.PROD,
@@ -107,11 +107,11 @@ if (Astro.request.method === 'POST' && crossSiteLogin) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="robots" content="noindex, nofollow" />
     <meta property="og:type" content="website" />
-    <meta property="og:title" content={`Login ADScms - ${tenantConfig.adminName}`} />
+    <meta property="og:title" content={`Login AdsBookCMS - ${tenantConfig.adminName}`} />
     <meta property="og:image" content="/og-admin.webp" />
     <meta property="twitter:card" content="summary_large_image" />
     <meta property="twitter:image" content="/og-admin.webp" />
-    <title>Login ADScms - {tenantConfig.adminName}</title>
+    <title>Login AdsBookCMS - {tenantConfig.adminName}</title>
     <link rel="icon" type="image/x-icon" href="/favicon.ico" />
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon.png" />
     <link rel="icon" type="image/svg+xml" href="/images/logo.svg" />
@@ -124,7 +124,7 @@ if (Astro.request.method === 'POST' && crossSiteLogin) {
     <div class="admin-login-card w-full max-w-sm rounded-2xl border border-white/70 bg-white/95 text-slate-950 shadow-2xl backdrop-blur-md">
       <!-- Header -->
       <div class="admin-login-header flex flex-col items-center px-6 pt-7 pb-3 text-center">
-        <img src="/images/logo.webp" alt="ADScms Logo" width="180" height="188" class="mx-auto mb-3 h-36 w-auto max-w-[220px] object-contain drop-shadow-md" />
+        <img src="/images/logo.webp" alt="AdsBookCMS Logo" width="180" height="188" class="mx-auto mb-3 h-36 w-auto max-w-[220px] object-contain drop-shadow-md" />
       </div>
 
       <div class="p-6 pt-0">

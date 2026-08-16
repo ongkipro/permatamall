@@ -1,5 +1,5 @@
 (() => {
-  const tagName = "cmsads-form-widget";
+  const tagName = "adsbook-form-widget";
   if (window.customElements.get(tagName)) return;
 
   const scriptOrigin = (() => {
@@ -44,7 +44,7 @@
     } catch {}
     return params;
   }
-  class CmsadsFormWidget extends HTMLElement {
+  class AdsBookFormWidget extends HTMLElement {
     static observedAttributes = [
       "base-url",
       "mode",
@@ -66,12 +66,12 @@
       }
 
       if (
-        event.data.type === "cmsads:add-to-cart" ||
-        event.data.type === "cmsads:initiate-checkout"
+        event.data.type === "adsbook:add-to-cart" ||
+        event.data.type === "adsbook:initiate-checkout"
       ) {
         try {
           const payload = event.data;
-          const eventName = payload.type === "cmsads:add-to-cart" ? "AddToCart" : "InitiateCheckout";
+          const eventName = payload.type === "adsbook:add-to-cart" ? "AddToCart" : "InitiateCheckout";
           if (typeof window.fbq === "function") {
             window.fbq(
               "track",
@@ -98,8 +98,8 @@
       }
 
       if (
-        event.data.type === "cmsads:checkout-redirect" ||
-        event.data.type === "cmsads:order-complete"
+        event.data.type === "adsbook:checkout-redirect" ||
+        event.data.type === "adsbook:order-complete"
       ) {
         try {
           const payload = event.data;
@@ -127,7 +127,7 @@
               });
             }
           }
-          if (payload.type === "cmsads:checkout-redirect" && payload.url) {
+          if (payload.type === "adsbook:checkout-redirect" && payload.url) {
             const target = this.#checkoutTarget(payload.url);
             if (target) {
               const targetUrl = new URL(target);
@@ -142,7 +142,7 @@
         return;
       }
 
-      if (event.data.type !== "cmsads:embed-resize") return;
+      if (event.data.type !== "adsbook:embed-resize") return;
 
       const height = Number(event.data.height);
       if (!Number.isFinite(height)) return;
@@ -170,12 +170,12 @@
     }
 
     #initialize() {
-      const frames = [...this.querySelectorAll("iframe[data-cmsads-form]")];
+      const frames = [...this.querySelectorAll("iframe[data-adsbook-form]")];
       this.#frame = frames.find((frame) => frame.id) || frames[0] || null;
 
       if (!this.#frame) {
         this.#frame = document.createElement("iframe");
-        this.#frame.dataset.cmsadsForm = "";
+        this.#frame.dataset.adsbookForm = "";
         this.append(this.#frame);
       }
       for (const frame of frames) {
@@ -252,5 +252,5 @@
     }
   }
 
-  window.customElements.define(tagName, CmsadsFormWidget);
+  window.customElements.define(tagName, AdsBookFormWidget);
 })();

@@ -6,7 +6,9 @@ A self-contained direct-response commerce CMS that installs onto Cloudflare Work
 
 **Install model: 1 installer = 1 Worker = 1 store.** Isolation comes from the deployment boundary, not from tenant routing inside the application. See `DECISIONS.md` ADR-001.
 
-Reference instance: [permatamall.shop](https://permatamall.shop) — Worker `cmsads-permatamall`.
+Ships with a demo dataset — 22 products with photography — so a fresh install has something real to look at. It is replaced through the CMS when a merchant onboards (`DECISIONS.md` ADR-011).
+
+Reference install: [permatamall.shop](https://permatamall.shop) — Worker `cmsads-permatamall`. The `cmsads-*` resource names are legacy from the upstream engine and are not renamed, because renaming a Worker creates a new one and drops its custom domain, and D1 and R2 names cannot be changed in place.
 
 ---
 
@@ -38,7 +40,7 @@ npm install            # or npm ci for a clean, lockfile-exact install
 npm run dev            # astro dev on :4321
 npm run cf:dev         # wrangler dev --local, closer to production
 
-npm test               # node --test over src/lib/*.test.ts  (194 tests)
+npm test               # node --test over src/lib/*.test.ts  (212 tests)
 npm run check          # astro check && tsc --noEmit
 npm run build          # astro build
 
@@ -106,7 +108,7 @@ Documentation states only what is verifiable against the tree, and carries the d
 
 Configuration currently resolves from three independent places, and the difference matters:
 
-- **Baked at build time** — site name, URL, description, logo, tagline, theme colour, locale, storefront template. These come from `.env` through `import.meta.env` and require a rebuild to change. Editing `vars` in `wrangler.jsonc` alone will not change them.
+- **Baked at build time** — site name, URL, description, logo, tagline, theme colour, locale, storefront template. These reach `import.meta.env` from `wrangler.jsonc` `vars` and `.env`, and are frozen into the bundle by `astro build`. Changing them requires a **rebuild**; redeploying an existing bundle with new vars changes nothing.
 - **Worker runtime env** — secrets and a few public vars, read through `getRuntimeEnv()`. Changing these needs a deploy but no rebuild.
 - **D1 `stores` row** — provider keys, tracking IDs, fee policy, payment toggles, CRM templates, support contact. Editable from `/admin` and effective immediately.
 
@@ -116,4 +118,4 @@ Note that `stores.name` and the build-time site name are **different values**: r
 
 ## Status
 
-The product goal is a WordPress-style installable CMS for Cloudflare. What ships today is the commerce engine running as a single deployed store. The distance between the two is tracked honestly as gaps **G1–G8** in `ARCHITECTURE.md` §10 — principally: runtime-owned identity, a first-run `/install` wizard, schema auto-upgrade, a neutral sample dataset, and observability.
+The product goal is a WordPress-style installable CMS for Cloudflare. What ships today is the commerce engine running as a single deployed store. The distance between the two is tracked honestly as gaps **G1–G10** in `ARCHITECTURE.md` §10 — principally: runtime-owned identity, a first-run `/install` wizard, and schema auto-upgrade. The active backlog is Phase A in `TASKS.md`.
