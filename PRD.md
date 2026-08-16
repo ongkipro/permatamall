@@ -142,6 +142,7 @@ AdsBookCMS gives one merchant a complete direct-response storefront: catalog, la
 | REQ-68 | A bootstrap administrator authenticated with `BOOTSTRAP_ADMIN_PASSWORD` shall be able to rotate that credential using the same current-password contract, clear `must_change_password`, and invalidate existing sessions. | Implemented |
 | REQ-69 | Logout shall remain idempotent for missing, malformed, expired, or revoked sessions: invalid cookie input shall degrade to an unauthenticated state and the logout endpoint shall still clear the browser cookie. | Implemented |
 | REQ-70 | The admin session cookie shall use its exact name, `HttpOnly`, `SameSite=Lax`, root path scope, and `Secure` whenever the login request uses HTTPS. | Implemented |
+| REQ-85 | When an operator opens `/hello`, the admin login shall present a visible page heading, tenant identity, concise access context, persistent field labels, and one dominant sign-in action; at 1440×900 it shall separate authentication from the branded visual asset, while at 390×844 and a keyboard-reduced 390×500 it shall remain scrollable, expose 44px minimum controls, and produce no horizontal overflow. Password visibility, pending submission, and server error states shall remain visually and programmatically synchronized without changing the authentication contract. | Implemented |
 
 ---
 

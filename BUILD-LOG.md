@@ -2121,3 +2121,18 @@ Scope: Comprehensive UI/UX redesign and backend enhancement for `/admin/orders`,
   - Local Worker: public product HTML observed `fwd=uri-miss → hit`; cookie-bearing requests remained `fwd=request`; login, bootstrap credential rotation, secure `__Host-` cookie invariants, logout deletion, stale private-route denial, and 390 px mobile targets passed. An authenticated Jakarta-bounded analytics request returned 200, sixteen zero-filled daily buckets, and `Cache-Control: no-store`.
   - Production: `/hello` and product detail returned 200 at 390×844 with no horizontal overflow, expected accessible controls/content, and a 44 px login submit target. Anonymous home/product requests returned `cmsads; hit`; cookies, attribution, preview, and login remained `cmsads; fwd=request` with `Cache-Control: no-store`.
   - Delivery: source commits `fbe9dec` and `a9247a6`; migrations `0036`/`0037`; Worker version `6d7eb0cc-86f4-4e1e-9609-3290a7a509f1` deployed to `permatamall.shop` and `www.permatamall.shop`.
+
+## Admin Login Experience Redesign — 2026-08-16
+
+- **Specification first**: added REQ-85 and task A-52 before implementation. The accepted contract covers 1440×900 desktop composition, 390×844 mobile layout, keyboard-reduced 390×500 reachability, persistent labels, one dominant sign-in action, 44 px controls, logical keyboard order, synchronized password visibility/pending/error states, reduced-motion handling, and forced-colors usability.
+- **Responsive composition** (`src/pages/hello.astro`, `src/styles/global.css`): replaced the centered login card with a restrained two-region desktop layout using the existing `/admin-login.webp` asset and a top-aligned single-column mobile flow. Removed the external Google Fonts request; the page now uses the existing local UI font stack.
+- **Authentication preserved**: the Astro POST handler, D1 rate limiting, credential verification, session persistence, cookie contract, rotation redirect, response codes, and error copy remain unchanged. Invalid credentials still return 401, preserve the normalized username, clear the password, focus the password input, and expose an assertive alert.
+- **Accessibility**: visible H1 and tenant identity, persistent labels, password-manager autocomplete, `username → password → toggle → submit` keyboard order, 44 px input/toggle/submit targets, synchronized `aria-pressed`/label/text password state, announced `aria-busy` pending state, safe-area padding, effective reduced-motion transitions, and forced-colors control borders.
+- **Verification**:
+  - `npm test`: **249/249 passed**.
+  - Focused authentication tests: **24/24 passed**.
+  - `npm run check`: **312 files, 0 errors, 0 warnings, 0 hints**.
+  - `npm run build`: **complete** (Cloudflare server bundle); `git diff --check` returned no errors.
+  - Browser: 1440×900 renders separate authentication and branded visual regions; 390×844 hides the decorative visual and keeps all controls at 44 px with `scrollWidth === clientWidth === 390`; keyboard-reduced 390×500 keeps the submit action in the initial viewport and the remaining note reachable by scrolling.
+  - Interaction: keyboard order, password reveal semantics, announced disabled `Memverifikasi...` state, and invalid-credential 401 behavior passed. Under `prefers-reduced-motion: reduce`, all login control transitions resolve to an effectively zero duration; under forced colors, the submit control retains a visible 1 px system-colored border.
+  - No deploy, remote database write, commit, or push was performed.

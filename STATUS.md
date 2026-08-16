@@ -4,8 +4,8 @@
 > commit `a9247a6` was manually deployed after the explicitly approved D1
 > migrations.
 >
-> Current release gates: `npm run check` 310 files / 0 errors / 0 warnings /
-> 0 hints · `npm test` 244 / 244 · `npm run build` complete · local and
+> Current release gates: `npm run check` 312 files / 0 errors / 0 warnings /
+> 0 hints · `npm test` 249 / 249 · `npm run build` complete · local and
 > production D1 migrations complete through `0037`.
 
 Current state of the system. Implemented behaviour lives here; history lives in `BUILD-LOG.md`; remaining work lives in `UNIMPLEMENTED_SPECS.md`; structure lives in `ARCHITECTURE.md`.
@@ -38,10 +38,10 @@ Live check on 2026-08-16 after Worker version `6d7eb0cc-86f4-4e1e-9609-3290a7a50
 
 | Gate | Result |
 | --- | --- |
-| `npm test` | **244 / 244 passing** |
-| `npm run check` | 310 files · 0 errors · 0 warnings · 0 hints |
+| `npm test` | **249 / 249 passing** |
+| `npm run check` | 312 files · 0 errors · 0 warnings · 0 hints |
 | `npm run build` | Cloudflare server bundle complete; `wrangler deploy --dry-run` complete |
-| Browser/runtime smoke | Production `/hello` and product detail passed at 390×844 with `scrollWidth === clientWidth === 390`, expected accessible controls, visible tenant/product content, and a 44 px login submit target. Production cache boundaries returned hits only for anonymous public HTML; login, cookies, attribution, and preview requests remained `no-store` bypasses. Local Worker verification additionally covered secure cookie invariants, bootstrap login, logout recovery, private-route denial, and cache miss → hit behavior |
+| Browser/runtime smoke | Production `/hello` and product detail passed at 390×844 with `scrollWidth === clientWidth === 390`, expected accessible controls, visible tenant/product content, and a 44 px login submit target. Production cache boundaries returned hits only for anonymous public HTML; login, cookies, attribution, and preview requests remained `no-store` bypasses. Local Worker verification additionally covered secure cookie invariants, bootstrap login, logout recovery, private-route denial, and cache miss → hit behavior. The redesigned local `/hello` passed at 1440×900, 390×844, and keyboard-reduced 390×500 with logical keyboard order, synchronized password visibility and pending states, 44 px controls, zero horizontal overflow, a preserved 401 invalid-credential response, effective reduced-motion transitions, and visible forced-colors control boundaries. |
 
 ---
 
@@ -57,7 +57,7 @@ Live check on 2026-08-16 after Worker version `6d7eb0cc-86f4-4e1e-9609-3290a7a50
 
 **Orders and shipping** — operator-controlled dispatch to Mengantar under a single-flight lease, sequential shipment creation with independent per-order results, pickup address and schedule synchronisation with the provider, receiver RTS scoring, and a shipping lifecycle view separate from pending intake.
 
-**Admin** — 27 pages: dashboard analytics, orders and order detail, product CRUD, landing pages, content workbench with Workers AI drafting, shipping, expeditions, RTS/rate checker, payments, balance reconciliation ledger, ads configuration for Meta and Google, store/warehouse/CRM settings, operator access management, and developer API keys. Navigation and route authorization share one deny-by-default role policy; scoped operators see only the complete workspace their role owns. Bootstrap rotation, JWT/KV/D1 revision validation, atomic D1-backed IP/username login throttling, idempotent logout, and malformed-cookie recovery are verified.
+**Admin** — 27 pages: dashboard analytics, orders and order detail, product CRUD, landing pages, content workbench with Workers AI drafting, shipping, expeditions, RTS/rate checker, payments, balance reconciliation ledger, ads configuration for Meta and Google, store/warehouse/CRM settings, operator access management, and developer API keys. Navigation and route authorization share one deny-by-default role policy; scoped operators see only the complete workspace their role owns. The `/hello` operator login uses a split desktop composition and a single-column mobile flow with persistent labels, explicit tenant context, accessible error/pending/password-visibility states, and no mobile horizontal overflow. Bootstrap rotation, JWT/KV/D1 revision validation, atomic D1-backed IP/username login throttling, idempotent logout, and malformed-cookie recovery are verified.
 
 **Headless API** — seven `/api/v1/*` routes (storefront descriptor, products list and detail, district lookup, shipping rates, checkout, tracking events) authenticated by API key against `developer_api_keys`. The independently validated Headless origin allowlist is persisted on `stores.headless_allowed_origins` and editable in Developer settings.
 
