@@ -1,10 +1,10 @@
 # STATUS — AdsBookCMS
 
-> Verified against disk: 2026-08-16 · uncommitted worktree atop `7593664` · branch `docs/login-panel-ux-audit`
+> Verified against disk and production: 2026-08-16 · deployed source commit `93d86f0` · branch `docs/login-panel-ux-audit` pushed
 >
-> Gates were run on this exact tree: `npm run check` 306 files / 0 errors /
-> 0 warnings / 0 hints · `npm test` 232 / 232 · `npm run build` Cloudflare
-> server bundle complete · fresh local D1 migrations complete through `0035`.
+> Gates on the deployed source: `npm run check` 306 files / 0 errors /
+> 0 warnings / 0 hints · `npm test` 232 / 232 · `npm run build` complete ·
+> fresh local D1 migrations complete through `0035`.
 
 Current state of the system. Implemented behaviour lives here; history lives in `BUILD-LOG.md`; remaining work lives in `UNIMPLEMENTED_SPECS.md`; structure lives in `ARCHITECTURE.md`.
 
@@ -18,6 +18,7 @@ The previous version of this file described a different repository — it opened
 | --- | --- |
 | Product | AdsBookCMS (single) |
 | Worker | `cmsads-permatamall` |
+| Worker version | `8e908287-4544-4876-a1e1-5dd0e8438628` |
 | Domains | `permatamall.shop`, `www.permatamall.shop` (both custom domains) |
 | D1 | `cmsads-permatamall-d1` |
 | R2 | `cmsads-permatamall-assets` |
@@ -27,7 +28,7 @@ The previous version of this file described a different repository — it opened
 | Environments | one — no staging, no `env.*` blocks |
 | CI | push to `main` → check → test → build → `wrangler deploy` |
 
-Live check on 2026-08-16: `/` 200, `/produk` 200, `sitemap.xml` lists 8 pages + 22 products.
+Live check on 2026-08-16: `/hello` and `/produk/daira-tas-selempang-bahu-kanvas` returned 200 after deployment with no browser console/page/request errors; `/` and `/produk` returned 200 in the preceding production smoke; `sitemap.xml` lists 8 pages + 22 products.
 
 ---
 
@@ -38,7 +39,7 @@ Live check on 2026-08-16: `/` 200, `/produk` 200, `sitemap.xml` lists 8 pages + 
 | `npm test` | **232 / 232 passing** |
 | `npm run check` | 306 files · 0 errors · 0 warnings · 0 hints |
 | `npm run build` | Cloudflare server bundle complete |
-| Browser smoke | Login at 390×844 and keyboard-reduced 390×500 has no horizontal overflow, one H1, correct keyboard/toggle/live-submit semantics, working bootstrap rotation, dual-counter 429 behaviour, and corrupt-session logout recovery; public 8/8 menu routes and current-role admin menu/profile 5/5 remain the prior production baseline |
+| Browser smoke | Production `/hello` passed at 390×844 and 1280×900 with no horizontal overflow, one H1, visible tenant identity, synchronized password toggle, and no console/page errors; the production product detail returned 200 with one `<main>` and the expected H1. Local Worker verification additionally covered bootstrap rotation, dual-counter 429 behaviour, and corrupt-session logout recovery |
 
 ---
 
