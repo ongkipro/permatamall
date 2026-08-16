@@ -32,5 +32,5 @@ const description = `Form pemesanan resmi ${product.productName} dengan alur rin
     contentName={product.productName}
     price={product.price}
   />
-  <GeoIpResolvedForm mode={formContext.mode} province={formContext.province} productSlug={product.slug} />
+  <GeoIpResolvedForm mode={formContext.mode} province={formContext.province} productSlug={product.slug} product={product} />
 </BaseLayout>

@@ -37,9 +37,14 @@ INSERT INTO `product_variants` (
   `compare_price`,
   `weight_grams`,
   `stock`
-) VALUES
-  (20001, 10001, 'AUS-500ML', '500ml', 150000, 229000, 600, 350),
-  (20002, 10001, 'AUS-1L', '1 Liter', 300000, 349000, 1100, 180)
+)
+SELECT 20001, 10001, 'AUS-500ML', '500ml', 150000, 229000, 600, 350
+FROM `products`
+WHERE `id` = 10001
+UNION ALL
+SELECT 20002, 10001, 'AUS-1L', '1 Liter', 300000, 349000, 1100, 180
+FROM `products`
+WHERE `id` = 10001
 ON CONFLICT(`id`) DO UPDATE SET
   `product_id` = excluded.`product_id`,
   `sku` = excluded.`sku`,

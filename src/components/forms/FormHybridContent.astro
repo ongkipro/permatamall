@@ -23,9 +23,10 @@ const {
   bannerImage,
   province = '',
   codDisabledProvinceCodes: codDisabledProvinceCodesProp,
+  product: productProp,
 } = Astro.props;
 
-const product = await getStorefrontProduct(Astro.locals, productSlug);
+const product = productProp ?? await getStorefrontProduct(Astro.locals, productSlug);
 if (!product) throw new Error(`Product ${productSlug} not found`);
 const defaultVariant = resolveFormVariant(product, selectedVariantId) || product.variants[0];
 const defaultComparePrice = defaultVariant.comparePrice ?? defaultVariant.price;

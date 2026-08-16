@@ -1,6 +1,7 @@
 import type { APIRoute } from 'astro';
 import { jsonError, jsonOk } from '../../../lib/api';
 import { getRuntimeEnv } from '../../../lib/env';
+import { getJakartaUtcDateBounds } from '../../../lib/admin-date-filter';
 
 export const prerender = false;
 
@@ -51,22 +52,29 @@ export const GET: APIRoute = async ({ locals, url }) => {
   }
   const interval = url.searchParams.get('interval') === 'hour' ? 'hour' : 'day';
   
-  let dateFilter = "";
+  const dateConditions: string[] = [];
   const params: string[] = [];
-  
-  if (startParam && endParam) {
-    dateFilter = "WHERE date(created_at, '+7 hours') BETWEEN ? AND ?";
-    params.push(startParam, endParam);
-  } else if (startParam) {
-    dateFilter = "WHERE date(created_at, '+7 hours') >= ?";
-    params.push(startParam);
-  } else if (endParam) {
-    dateFilter = "WHERE date(created_at, '+7 hours') <= ?";
-    params.push(endParam);
+  const { startInclusive, endExclusive } = getJakartaUtcDateBounds(
+    startParam,
+    endParam,
+  );
+
+  if (startInclusive) {
+    dateConditions.push('created_at >= ?');
+    params.push(startInclusive);
   }
+  if (endExclusive) {
+    dateConditions.push('created_at < ?');
+    params.push(endExclusive);
+  }
+  const dateFilter =
+    dateConditions.length > 0
+      ? `WHERE ${dateConditions.join(' AND ')}`
+      : '';
 
   try {
-    const row = await (database as D1Database).prepare(`
+    const db = database as D1Database;
+    const analyticsStatement = db.prepare(`
       SELECT
         COUNT(*) AS total_orders,
         COALESCE(SUM(total_amount), 0) AS total_revenue,
@@ -77,8 +85,25 @@ export const GET: APIRoute = async ({ locals, url }) => {
         COALESCE(SUM(CASE WHEN payment_method = 'qris' THEN 1 ELSE 0 END), 0) AS qris_orders
       FROM orders
       ${dateFilter}
-    `).bind(...params).first() as AnalyticsRow | null;
+    `).bind(...params);
 
+    const groupBy = interval === 'hour' ? "STRFTIME('%Y-%m-%d %H:00:00', created_at, '+7 hours')" : "DATE(created_at, '+7 hours')";
+    const trendsStatement = db.prepare(`
+      SELECT
+        ${groupBy} as date,
+        COALESCE(SUM(total_amount), 0) as revenue,
+        COUNT(*) as orders
+      FROM orders
+      ${dateFilter || "WHERE 1=1"}
+      GROUP BY ${groupBy}
+      ORDER BY date ASC
+    `).bind(...params);
+    const [analyticsResult, trendsResult] = await db.batch([
+      analyticsStatement,
+      trendsStatement,
+    ]);
+    const row = (analyticsResult.results?.[0] ?? null) as AnalyticsRow | null;
+    const trendRows = (trendsResult.results ?? []) as unknown as TrendRow[];
     const totalOrders = Number(row?.total_orders ?? 0);
     const totalRevenue = Number(row?.total_revenue ?? 0);
     const returnedOrders = Number(row?.returned_orders ?? 0);
@@ -88,18 +113,6 @@ export const GET: APIRoute = async ({ locals, url }) => {
     const qrisOrders = Number(row?.qris_orders ?? 0);
     const ratio = (value: number) => (totalOrders > 0 ? Number(((value / totalOrders) * 100).toFixed(2)) : 0);
 
-    const groupBy = interval === 'hour' ? "STRFTIME('%Y-%m-%d %H:00:00', created_at, '+7 hours')" : "DATE(created_at, '+7 hours')";
-    const trendsResult = await (database as D1Database).prepare(`
-      SELECT 
-        ${groupBy} as date,
-        COALESCE(SUM(total_amount), 0) as revenue,
-        COUNT(*) as orders
-      FROM orders
-      ${dateFilter ? dateFilter : "WHERE 1=1"}
-      GROUP BY ${groupBy}
-      ORDER BY date ASC
-    `).bind(...params).all<TrendRow>();
-
     const trends = [];
     if (startParam && endParam) {
       if (interval === 'hour') {
@@ -108,7 +121,7 @@ export const GET: APIRoute = async ({ locals, url }) => {
         for (let i = 0; i < 24; i++) {
           const hourStr = String(i).padStart(2, '0');
           const dateStr = `${baseDate} ${hourStr}:00:00`;
-          const match = trendsResult.results?.find(r => r.date === dateStr);
+          const match = trendRows.find(r => r.date === dateStr);
           trends.push({
             date: dateStr,
             revenue: Number(match?.revenue ?? 0),
@@ -127,7 +140,7 @@ export const GET: APIRoute = async ({ locals, url }) => {
           const d = new Date(end);
           d.setDate(d.getDate() - i);
           const dateStr = d.toISOString().split('T')[0];
-          const match = trendsResult.results?.find(r => r.date === dateStr);
+          const match = trendRows.find(r => r.date === dateStr);
           trends.push({
             date: dateStr,
             revenue: Number(match?.revenue ?? 0),
@@ -137,7 +150,7 @@ export const GET: APIRoute = async ({ locals, url }) => {
       }
     } else {
       // Default fallback (e.g. All Data) just returns existing grouped results
-      trendsResult.results?.forEach(r => {
+      trendRows.forEach(r => {
         trends.push({
           date: r.date,
           revenue: Number(r.revenue ?? 0),

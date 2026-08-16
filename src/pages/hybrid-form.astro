@@ -49,6 +49,7 @@ const formContext = await resolveFormModeContext(
       formContext.resolvedMode === 'middle' ? (
         <FormMiddleContent
           productSlug={product.slug}
+          product={product}
           selectedVariantId={selectedVariant.id}
           province={formContext.province}
           codDisabledProvinceCodes={codDisabledProvinceCodes}
@@ -57,6 +58,7 @@ const formContext = await resolveFormModeContext(
       ) : (
         <FormHybridContent
           productSlug={product.slug}
+          product={product}
           selectedVariantId={selectedVariant.id}
           codDisabledProvinceCodes={codDisabledProvinceCodes}
           embedded={true}

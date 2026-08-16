@@ -32,6 +32,6 @@ if (!selectedVariant) return Astro.redirect(`/produk/${product.slug}`);
     price={selectedVariant.price}
   />
   <div class="mx-auto max-w-[480px] bg-white py-4">
-    <GeoIpResolvedForm mode="middle" productSlug={product.slug} selectedVariantId={selectedVariant.id} />
+    <GeoIpResolvedForm mode="middle" productSlug={product.slug} product={product} selectedVariantId={selectedVariant.id} />
   </div>
 </BaseLayout>

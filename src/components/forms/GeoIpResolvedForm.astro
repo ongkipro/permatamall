@@ -2,6 +2,7 @@
 import FormHybridContent from './FormHybridContent.astro';
 import FormMiddleContent from './FormMiddleContent.astro';
 import { getRuntimeEnv } from '../../lib/env';
+import type { Product } from '../../data/products';
 import {
   loadStoreCodDisabledProvinceCodes,
   resolveFormModeContext,
@@ -12,6 +13,7 @@ interface Props {
   bannerImage?: string;
   mode?: FormMode;
   productSlug?: string;
+  product?: Product;
   selectedVariantId?: string;
   province?: string;
   embedded?: boolean;
@@ -23,6 +25,7 @@ const {
   productSlug = 'asahan-portable',
   embedded = false,
   selectedVariantId,
+  product,
   bannerImage,
 } = Astro.props;
 const database = getRuntimeEnv(Astro.locals)?.OMS_DB as D1Database | undefined;
@@ -45,6 +48,7 @@ const resolvedProvince = province || formContext.province;
     resolvedMode === 'full' ? (
       <FormHybridContent
         productSlug={productSlug}
+        product={product}
         selectedVariantId={selectedVariantId}
         embedded={embedded}
         bannerImage={bannerImage}
@@ -53,6 +57,7 @@ const resolvedProvince = province || formContext.province;
     ) : (
       <FormMiddleContent
         productSlug={productSlug}
+        product={product}
         selectedVariantId={selectedVariantId}
         province={resolvedProvince}
         embedded={embedded}

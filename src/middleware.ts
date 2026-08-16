@@ -17,6 +17,13 @@ import {
   buildEmbedFrameAncestors,
   resolveEmbedAllowedOrigins,
 } from './lib/embed-security';
+import {
+  buildPublicStorefrontCacheKey,
+  isAnonymousPublicCacheRequest,
+  isCacheablePublicResponse,
+  PUBLIC_STOREFRONT_CACHE_TTL_SECONDS,
+  shouldForceNoStore,
+} from './lib/public-storefront-cache';
 
 const JSON_HEADERS = { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' };
 const UNSAFE_METHODS = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
@@ -37,6 +44,28 @@ function applySecurityHeaders(
   response.headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
   if (isPrivate) response.headers.set('Cache-Control', 'no-store');
   return response;
+}
+
+type CloudflareCacheStorage = CacheStorage & { default?: Cache };
+
+function getDefaultCache() {
+  return (
+    globalThis as typeof globalThis & {
+      caches?: CloudflareCacheStorage;
+    }
+  ).caches?.default;
+}
+
+function cloneResponse(
+  response: Response,
+  headers: Headers,
+  withoutBody = false,
+) {
+  return new Response(withoutBody ? null : response.body, {
+    status: response.status,
+    statusText: response.statusText,
+    headers,
+  });
 }
 
 function readStoredSession(
@@ -114,6 +143,35 @@ export const onRequest = defineMiddleware(async (context, next) => {
         );
       }
     } catch {}
+  }
+
+  const isPublicCacheRequest = isAnonymousPublicCacheRequest(context.request);
+  const edgeCache = isPublicCacheRequest ? getDefaultCache() : undefined;
+  const publicCacheKey = edgeCache
+    ? await buildPublicStorefrontCacheKey(
+        context.request,
+        getEnvValue('PUBLIC_TENANT_SLUG', runtime) || url.hostname,
+      )
+    : undefined;
+  if (edgeCache && publicCacheKey) {
+    try {
+      const cached = await edgeCache.match(publicCacheKey);
+      if (cached) {
+        const headers = new Headers(cached.headers);
+        headers.set('Cache-Control', 'no-store');
+        headers.set('Cache-Status', 'cmsads; hit');
+        return applySecurityHeaders(
+          cloneResponse(
+            cached,
+            headers,
+            context.request.method === 'HEAD',
+          ),
+          false,
+        );
+      }
+    } catch {
+      // Cache availability must never make the public storefront unavailable.
+    }
   }
   const isEmbedForm =
     url.pathname === '/embed/form' || url.pathname === '/embed/form/';
@@ -263,6 +321,50 @@ export const onRequest = defineMiddleware(async (context, next) => {
       }
     }
   }
+
+  if (shouldForceNoStore(context.request)) {
+    response.headers.set('Cache-Control', 'no-store');
+    response.headers.set('Cache-Status', 'cmsads; fwd=request');
+    return response;
+  }
+
+  if (!isPublicCacheRequest) return response;
+
+  const isCacheableResponse = isCacheablePublicResponse(response);
+  if (!isCacheableResponse) {
+    response.headers.set('Cache-Control', 'no-store');
+    response.headers.set('Cache-Status', 'cmsads; fwd=request');
+    return response;
+  }
+
+  response.headers.set(
+    'Cache-Control',
+    `public, max-age=${PUBLIC_STOREFRONT_CACHE_TTL_SECONDS}, s-maxage=${PUBLIC_STOREFRONT_CACHE_TTL_SECONDS}`,
+  );
+  if (!edgeCache || !publicCacheKey || context.request.method === 'HEAD') {
+    response.headers.set('Cache-Status', 'cmsads; fwd=uri-miss');
+    return response;
+  }
+
+  const cacheSource = response.clone();
+  const cachedResponse = cloneResponse(
+    cacheSource,
+    new Headers(cacheSource.headers),
+  );
+  cachedResponse.headers.delete('Cache-Status');
+  const cacheWrite = edgeCache.put(publicCacheKey, cachedResponse).catch(
+    (error: unknown) => {
+      console.error('public-storefront-cache-write', error);
+    },
+  );
+  if (context.locals.cfContext) {
+    context.locals.cfContext.waitUntil(cacheWrite);
+  } else {
+    await cacheWrite;
+  }
+  // Keep the Cache API copy for one minute without exposing browser/CDN caching.
+  response.headers.set('Cache-Control', 'no-store');
+  response.headers.set('Cache-Status', 'cmsads; fwd=uri-miss');
 
   return response;
 });

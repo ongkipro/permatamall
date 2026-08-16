@@ -40,6 +40,22 @@ export function shiftAdminDate(value: string, days: number) {
   return shifted.toISOString().slice(0, 10);
 }
 
+export function getJakartaUtcDateBounds(
+  startDate: string | null,
+  endDate: string | null,
+) {
+  return {
+    startInclusive: startDate
+      ? new Date(`${startDate}T00:00:00+07:00`).toISOString()
+      : null,
+    endExclusive: endDate
+      ? new Date(
+          `${shiftAdminDate(endDate, 1)}T00:00:00+07:00`,
+        ).toISOString()
+      : null,
+  };
+}
+
 export function resolveAdminDateRange(
   filter: AdminDateFilter,
   now = new Date(),

@@ -68,6 +68,23 @@ CF_DEPLOY_REMOTE=1 npm run tenant:deploy:all
 CF_DEPLOY_REMOTE=1 npm run tenant:deploy -- petanisejahtera-preview
 ```
 
+#### Option C: Deploy Directly from a Local Working Copy (No GitHub Required)
+
+GitHub is source control and an optional CI/CD trigger; it is not required by Cloudflare Workers. A maintainer authenticated through Wrangler can build, migrate, and deploy this project directly from the local working copy:
+
+```bash
+npx wrangler whoami
+npm test
+npm run check
+npm run build
+npx wrangler deploy --dry-run
+npm run db:migrate:remote
+npm run cf:deploy
+npx wrangler deployments list
+```
+
+Remote migration and deployment commands mutate production and require explicit release approval. Apply a migration before the Worker only when it is backward-compatible with the currently deployed code; breaking schema changes require an expand/deploy/contract sequence.
+
 ---
 
 ## 4. Manual / Cron Sync Command for External AI Agents
@@ -91,3 +108,6 @@ CF_DEPLOY_REMOTE=1 npm run tenant:deploy:all
 | `npm run tenant:build -- <tenant>` | Build standalone Worker bundle for target tenant |
 | `npm run tenant:deploy -- <tenant>` | Deploy Worker build for target tenant to Cloudflare |
 | `npm run tenant:deploy:all` | **Batch auto-deploy ALL registered tenant Workers** |
+| `npm run db:migrate:remote` | Apply pending D1 migrations directly from the local working copy |
+| `npm run cf:deploy` | Deploy the built project directly with Wrangler; GitHub is not required |
+| `npx wrangler deployments list` | Inspect deployed Worker versions and active traffic allocation |

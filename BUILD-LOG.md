@@ -2046,3 +2046,27 @@ Scope: Comprehensive UI/UX redesign and backend enhancement for `/admin/orders`,
   - `npx astro check`: **0 errors, 272 warnings**.
   - `npm run build`: **Complete!** (Server built in 4.16s).
   - `npx wrangler deploy`: **Live 200 OK** (`https://permatamall.shop/`).
+
+### Entry 83: Storefront D1 Query Optimization, Analytics Batching, and Anonymous Edge Cache
+
+- **Scoped product query (`src/lib/catalog.ts`)**: Replaced the all-products single-item lookup with one active-product query and one D1 batch containing product-ID-scoped variant and `storefront_content` statements. Updated landing and product-page consumers to batch dependent reads and reuse already loaded product data.
+- **Analytics query plan (`src/pages/api/admin/analytics.ts`, `src/lib/admin-date-filter.ts`)**: Replaced `date(created_at)` filtering with Jakarta-to-UTC inclusive/exclusive raw timestamp bounds and batched summary/trend statements into one D1 call.
+- **Public cache (`src/middleware.ts`, `src/lib/public-storefront-cache.ts`)**: Added a 60-second Cache API policy for anonymous `/` and `/produk` reads, with explicit credential, attribution, preview, private route, unsafe response, and `Set-Cookie` exclusions.
+- **TTFB evidence**:
+  - Production baseline versus optimized product detail: 330.78 ms versus 323.22 ms median across 10 repeated uncached requests.
+  - Production anonymous homepage: 418.28 ms cache miss, then 43.70 ms median cache hit across 10 requests.
+  - Cache hits and misses return `Cache-Control: no-store`; the 60-second TTL remains internal to the Worker Cache API.
+- **Cloudflare plan decision**: Remain on Workers Free until measured production request, CPU, or D1 consumption approaches plan limits. Paid Workers would not inherently reduce this path's latency.
+- **D1 schema refinement (`0017_freezing_greymalkin.sql`, `0034_remove_redundant_indexes.sql`)**: Made the historical sample-variant seed conditional on the sample product so an empty fresh database can run the complete migration chain. Removed duplicate landing slug, order timestamp, order number, and public status token indexes; expanded `idx_landing_sections_page` to `(landing_page_id, sort_order, created_at)` so landing section reads no longer require a temporary sort B-tree.
+- **Remote Cloudflare evidence**: D1 is APAC-hosted and fully migrated through `0034`. Remote query plans retained indexed product, variant, content, landing, analytics, order-number, and public-token lookups after the redundant-index cleanup.
+- **Direct release contract**: Documented the Wrangler-only local-to-Cloudflare path in `AUTO_UPDATE_DEPLOY.md`; GitHub is optional CI/source control and is not a runtime deployment dependency. Worker version `08a2f8ed-aafa-4439-9438-3544508b3e6f` is live on both custom domains.
+- **Verification & Build**:
+  - `npm test`: **202/202 passed**.
+  - `npm run check`: **0 errors**; 38 non-blocking hints reported.
+  - `npm run build`: **passed**.
+  - `npx wrangler deploy --dry-run`: **passed**.
+  - Local analytics smoke: one D1 batch, two statements, raw `created_at >= ? AND created_at < ?` bounds.
+  - Chromium smoke: product identity, five variants, prices, and checkout form rendered; the two local Meta event 400 responses were reproduced unchanged on the baseline branch.
+  - Fresh empty D1 sandbox: migrations `0000` through `0034` all passed.
+  - Remote D1: migration `0034` applied and no migrations remain pending.
+  - Production deployment: Worker `08a2f8ed-aafa-4439-9438-3544508b3e6f` live; cache miss/hit headers and TTFB verified.

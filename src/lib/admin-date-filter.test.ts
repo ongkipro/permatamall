@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {
   formatJakartaDate,
+  getJakartaUtcDateBounds,
   isAdminDateFilter,
   resolveAdminDateRange,
 } from "./admin-date-filter.ts";
@@ -29,6 +30,21 @@ test("date presets use Jakarta calendar boundaries and inclusive day counts", ()
     start: "2026-07-13",
     end: "2026-08-11",
     interval: "day",
+  });
+});
+
+test("Jakarta calendar dates convert to inclusive/exclusive UTC bounds", () => {
+  assert.deepEqual(getJakartaUtcDateBounds("2026-08-11", "2026-08-11"), {
+    startInclusive: "2026-08-10T17:00:00.000Z",
+    endExclusive: "2026-08-11T17:00:00.000Z",
+  });
+  assert.deepEqual(getJakartaUtcDateBounds("2026-01-01", null), {
+    startInclusive: "2025-12-31T17:00:00.000Z",
+    endExclusive: null,
+  });
+  assert.deepEqual(getJakartaUtcDateBounds(null, "2025-12-31"), {
+    startInclusive: null,
+    endExclusive: "2025-12-31T17:00:00.000Z",
   });
 });
 

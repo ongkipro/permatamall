@@ -145,6 +145,7 @@ const productSchemaJson = JSON.stringify(productSchema).replace(/</g, '\\u003c')
         <div id={section.id === firstFormSectionId ? 'checkout-form' : `checkout-form-${section.id}`} class="scroll-mt-8">
           <GeoIpResolvedForm
             productSlug={product.slug}
+            product={product}
             mode={formConfig.mode}
             embedded={true}
             selectedVariantId={formConfig.selected_variant_id}
@@ -156,7 +157,7 @@ const productSchemaJson = JSON.stringify(productSchema).replace(/</g, '\\u003c')
   {
     formSections.length === 0 && (
       <div id="checkout-form" class="scroll-mt-8">
-        <GeoIpResolvedForm productSlug={product.slug} mode="hybrid" embedded={true} />
+        <GeoIpResolvedForm productSlug={product.slug} product={product} mode="hybrid" embedded={true} />
       </div>
     )
   }
