@@ -4,8 +4,10 @@ import { getStorefrontProducts } from '../../../../lib/catalog';
 
 export const prerender = false;
 
-const PUBLIC_CACHE_CONTROL =
-  'public, max-age=60, s-maxage=300, stale-while-revalidate=600';
+// Catalog data is identical for every key holder, but a shared cache stores by URL and not
+// by API key, so `public` here would let unauthenticated callers replay the catalog. The
+// longer client-side freshness window this route wants survives; the CDN copy does not.
+const CLIENT_CACHE_CONTROL = 'private, max-age=60, stale-while-revalidate=600';
 
 export const OPTIONS = handleOptions;
 
@@ -78,13 +80,13 @@ export const GET: APIRoute = async ({ request, locals }) => {
       200,
       {
         ...validation.corsHeaders,
-        'cache-control': PUBLIC_CACHE_CONTROL,
+        'cache-control': CLIENT_CACHE_CONTROL,
       }
     );
   } catch (error) {
     return headlessError('Gagal memuat katalog produk.', 500, {
       code: 'PRODUCTS_LOAD_ERROR',
       details: error instanceof Error ? error.message : String(error),
-    });
+    }, validation.corsHeaders);
   }
 };

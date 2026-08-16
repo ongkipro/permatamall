@@ -92,16 +92,14 @@ Content and identity cleanup, on branch `chore/adsbookcms-foundation`:
 | --- | --- |
 | High | Fabricated reviews and ratings are attached to every product detail page and feed the JSON-LD `aggregateRating`. Three named reviews plus invented rating, sold, and compare-price values are generated in `src/lib/catalog-data.ts` for any product without editorial data. This violates Google structured-data policy and is not defensible as marketing copy |
 | High | Site logo, favicon, and admin login background are the upstream vendor's advertising artwork, not this store's brand. They appear sitewide, including as the product-image fallback and as the `og:image` for admin links |
-| High | Meta Purchase deduplication is broken. The browser sends `purchase_<slug>_<random>`; `/api/meta-event` discards it and substitutes the order number. The two legs never match, so every online purchase is likely counted twice by Meta (gap **G9**) |
+| High | The embedded checkout snippet fires Meta Purchase with **no** event id, at redirect time before payment is verified. Any embedded install sharing the store's pixel double-counts, and counts unpaid online orders (gap **G10**) |
+| Note | Meta Purchase deduplication between the hosted storefront and CAPI was broken until 2026-08-16 and is now fixed. The correction is forward-only: Meta offers no retroactive merge, so historical Purchase counts remain roughly doubled and historical ROAS understated. Treat the deploy date as a reporting break |
 | High | The headless origin allowlist is not connected to the admin. `resolveAllowedOrigins` reads environment only, and the variable it expects is declared nowhere — authorising a new storefront domain requires a code change and a deploy |
 | Medium | `src/lib/auth.ts` — session signing, verification, and the entire admin role policy — has no test coverage |
 | Medium | `/hybrid-form` renders a different visual system from every other checkout surface — green float labels, green focus ring, and an orange gradient submit button against the boutique palette used everywhere else |
 | Medium | Authenticated `/api/v1/*` responses, including `/api/v1/storefront`, are served with `public` cache directives |
 | Medium | No observability: Workers Logs disabled, no error reporting, no alerting (`OBSERVABILITY.md`) |
 | Medium | Identity is build-time; renaming the store in `/admin` does not change storefront branding (gap **G1**) |
-| Low | `/solusi-terbaru` redirects to `/landing-page`, which has no static route and 404s unless a landing page with that exact slug exists |
-| Low | The HTML `/sitemap` page renders from now-empty compiled arrays and therefore lists no products, while `/sitemap.xml` correctly reads D1 |
-| Low | Root `migrations/` holds a misnumbered duplicate of `src/db/migrations/0027`, outside the configured migrations directory |
 
 ---
 

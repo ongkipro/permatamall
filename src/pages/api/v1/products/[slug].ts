@@ -17,14 +17,14 @@ export const GET: APIRoute = async ({ params, request, locals }) => {
     if (!slug) {
       return headlessError('Slug atau ID produk wajib diisi.', 400, {
         code: 'SLUG_REQUIRED',
-      });
+      }, validation.corsHeaders);
     }
 
     const product = await getStorefrontProduct(locals, slug);
     if (!product) {
       return headlessError(`Produk "${slug}" tidak ditemukan.`, 404, {
         code: 'PRODUCT_NOT_FOUND',
-      });
+      }, validation.corsHeaders);
     }
 
     const allProducts = await getStorefrontProducts(locals);
@@ -97,6 +97,6 @@ export const GET: APIRoute = async ({ params, request, locals }) => {
     return headlessError('Gagal memuat rincian produk.', 500, {
       code: 'PRODUCT_DETAIL_ERROR',
       details: error instanceof Error ? error.message : String(error),
-    });
+    }, validation.corsHeaders);
   }
 };

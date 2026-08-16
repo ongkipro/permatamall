@@ -1882,10 +1882,10 @@ function initHybridOrderFormInstance(formRoot: HTMLElement) {
     const label = String(checked.dataset.label || config.productName);
     const shippingCost = Number(state.shipping.shipping_cost || 0);
     const totalPayment = price + shippingCost;
-    // eventId tetap untuk flow awal/funnel, jangan dipakai ulang untuk Purchase.
-    // purchaseEventId khusus untuk event Purchase agar 1 order dari 1 page/produk = 1 conversion.
+    // eventId hanya untuk flow awal/funnel. Purchase tidak pernah memakai id
+    // buatan browser: thanks page memakai order_number, sama persis dengan
+    // event_id yang dipakai server CAPI, supaya Meta bisa dedup jadi 1 conversion.
     const eventId = createId(`lead_${config.productSlug}`);
-    const purchaseEventId = createId(`purchase_${config.productSlug}`);
     const guardToken = createId(`tg_${config.productSlug}`);
     if (!state.submitToken) {
       state.submitToken = createId(`sb_${config.productSlug}`);
@@ -2053,7 +2053,6 @@ function initHybridOrderFormInstance(formRoot: HTMLElement) {
       order_status: orderStatus,
       payment_status: paymentStatus,
       event_id: eventId,
-      purchase_event_id: purchaseEventId,
       value: price,
       name: customerName,
       phone: customerPhone,

@@ -242,9 +242,9 @@ Do not map page scroll, CTA impression, menu click, or form focus to `Lead` or `
 
 ### Deduplication
 
-- Generate a dedicated Purchase event ID per order attempt; never reuse a funnel event ID.
-- Browser Pixel and server CAPI must send the identical Purchase event ID.
-- `/thanks` guards both `Purchase_<purchase_event_id>` and `Purchase_order_<order_id>` in the browser.
+- Key the Purchase event ID on the order number (`INV-<n>`); never reuse a funnel event ID and never mint a random one.
+- Browser Pixel and server CAPI must send the identical Purchase event ID. Both read it from the server-authoritative `order_number`, so an order that cannot be resolved emits no Purchase at all rather than a mismatched one.
+- `/thanks` guards `Purchase_order_<order_id>` in the browser against refresh and revisit.
 - COD Purchase requires a successfully persisted order. Online Purchase waits for authenticated paid reconciliation.
 - Refreshing or revisiting confirmation must not emit another Purchase for the same order.
 - Server-side, `capi_event_outbox` deduplicates on `event_id` and retries delivery.

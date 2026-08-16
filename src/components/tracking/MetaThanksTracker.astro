@@ -59,7 +59,6 @@ const { tenantName, tenantSlug } = Astro.props;
     const pick = (key, fallback = '') => String(state?.[key] ?? params.get(key) ?? fallback);
     const pickNum = (key, fallback = 0) => Number(state?.[key] ?? params.get(key) ?? fallback);
     const queryEventId = String(params.get('event_id') || '').trim();
-    const queryPurchaseEventId = String(params.get('purchase_event_id') || '').trim();
     const queryOrderId = String(params.get('order_id') || '').trim();
     const once = (key) => {
       const fullKey = `meta_once_${key}`;
@@ -83,11 +82,12 @@ const { tenantName, tenantSlug } = Astro.props;
       }).catch(() => {});
     };
 
-    // event_id dipakai untuk event funnel awal.
-    // purchase_event_id wajib khusus untuk Purchase agar browser Pixel + server CAPI
-    // tetap ter-dedup menjadi 1 hasil final untuk order yang sama.
+    // event_id dipakai untuk event funnel awal (ViewContent/AddToCart/InitiateCheckout).
+    // Purchase TIDAK memakai id buatan browser: server CAPI selalu memakai
+    // order_number sebagai event_id (lihat resolveMetaEventId), jadi leg browser
+    // wajib memakai order_number yang sama - dibaca ulang dari /api/order-status
+    // di dalam fire() supaya dua leg mengutip baris order yang sama.
     const eventId = pick('event_id', '');
-    const purchaseEventId = pick('purchase_event_id', eventId);
     const orderId = pick('order_id', '');
     const productName = pick('product_name', tenantName);
     const variantId = pick('variant_unique_id', pick('lp_name', tenantSlug));
@@ -106,12 +106,8 @@ const { tenantName, tenantSlug } = Astro.props;
     let conversionValue = productPrice * quantity;
     let verifiedPaymentStatus = pick('payment_status', '').toLowerCase();
     const eventName = 'Purchase';
-    const finalEventId = purchaseEventId;
 
-    if (!finalEventId) return;
     if (state && queryEventId && queryEventId !== String(state?.event_id || '')) return;
-    if (state && queryPurchaseEventId && queryPurchaseEventId !== String(state?.purchase_event_id || state?.event_id || ''))
-      return;
     if (state && queryOrderId && queryOrderId !== String(state?.order_id || '')) return;
 
     const paymentMethod = pick('pm', pick('payment_method', 'cod')).toLowerCase();
@@ -130,6 +126,7 @@ const { tenantName, tenantSlug } = Astro.props;
       const orderPk = pick('order_pk', '');
       const statusToken = pick('status_token', '');
       if (!orderPk || !statusToken) return;
+      let finalEventId = '';
       try {
         const resp = await fetch(
           `/api/order-status?order_pk=${encodeURIComponent(orderPk)}&status_token=${encodeURIComponent(statusToken)}`,
@@ -137,6 +134,11 @@ const { tenantName, tenantSlug } = Astro.props;
         );
         const statusData = await resp.json().catch(() => ({}));
         if (!resp.ok || !statusData?.success) return;
+        // The event_id for both legs. The server CAPI leg substitutes this exact
+        // column, so an order that cannot be resolved gets no Purchase at all -
+        // firing a browser-minted id here would be an undeduplicatable double count.
+        finalEventId = String(statusData.order_number || '').trim();
+        if (!finalEventId) return;
         verifiedPaymentStatus = String(statusData.payment_status || verifiedPaymentStatus).toLowerCase();
         if (paymentMethod !== 'cod' && !statusData.is_paid) return;
         // Report what the customer actually owes, taken from the order we just
@@ -217,6 +219,10 @@ const { tenantName, tenantSlug } = Astro.props;
       postMeta({
         event_name: eventName,
         event_id: finalEventId,
+        // The order reference the server re-resolves the Purchase from. Sent
+        // explicitly instead of leaving the route to parse the address bar.
+        order_number: finalEventId,
+        status_token: statusToken,
         lp_name: pick('lp_name', ''),
         product_id: productId || undefined,
         content_name: productName,

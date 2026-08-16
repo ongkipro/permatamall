@@ -772,10 +772,9 @@ export function initMiddleOrderForm(
       return;
     }
 
-    // eventId tetap dipakai untuk lead/funnel awal.
-    // purchaseEventId dibuat terpisah agar Purchase di thanks page tidak double
-    // dan tidak bentrok dengan event funnel lain untuk order yang sama.
-    const purchaseEventId = createId(`purchase_${productSlug}`);
+    // eventId hanya untuk lead/funnel awal. Purchase di thanks page memakai
+    // order_number - nilai yang sama dengan event_id server CAPI - supaya Meta
+    // dedup jadi 1 conversion, bukan id acak yang tidak pernah cocok.
     const orderId = String(
       order?.order_id ||
         order?.invoice_number ||
@@ -802,7 +801,6 @@ export function initMiddleOrderForm(
       order_status: orderStatus,
       payment_status: paymentStatus,
       event_id: eventId,
-      purchase_event_id: purchaseEventId,
       value: price,
       name: customerName,
       phone: customerPhone,

@@ -10,10 +10,6 @@ export default defineConfig({
     host: true,
   },
   adapter: cloudflare({
-    configPath: process.env.CMSADS_TENANT_CONFIG,
-    inspectorPort: process.env.CMSADS_INSPECTOR_PORT
-      ? Number(process.env.CMSADS_INSPECTOR_PORT)
-      : undefined,
     imageService: 'passthrough',
     sessionKVBindingName: 'SESSION',
   }),

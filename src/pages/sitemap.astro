@@ -1,12 +1,18 @@
 ---
 import PageIntro from '../components/shared/PageIntro.astro';
 import BaseLayout from '../layouts/BaseLayout.astro';
-import { solutionEntries } from '../data/content';
-import { products } from '../data/products';
 import { footerLegal, footerNavigation } from '../data/site';
 import { tenantConfig } from '../lib/tenant';
+import { getStorefrontProducts } from '../lib/catalog';
+import { listLandingPages } from '../lib/landing-pages';
 
 const mainLinks = [{ label: 'Beranda (Halaman Depan)', href: '/' }, ...footerNavigation];
+
+// Read from D1 like /sitemap.xml does. This page used to render from compiled
+// arrays that are now empty, so it listed no products at all.
+const products = await getStorefrontProducts(Astro.locals);
+const landingPages = (await listLandingPages(Astro.locals).catch(() => []))
+  .filter((page) => Boolean(page.is_active) && !page.id.startsWith('static:'));
 ---
 
 <BaseLayout
@@ -78,9 +84,9 @@ const mainLinks = [{ label: 'Beranda (Halaman Depan)', href: '/' }, ...footerNav
             <h3 class="text-[12px] font-bold uppercase tracking-wider text-[#545B64]">Landing Page Solusi</h3>
             <div class="mt-2 space-y-2">
               {
-                solutionEntries.map((item) => (
+                landingPages.map((item) => (
                   <a
-                    href={item.href}
+                    href={`/${item.slug}`}
                     class="flex items-center justify-between rounded-lg border border-[#EAEDED]/60 bg-[#FAFAFA] px-4 py-2.5 text-[13px] font-semibold text-[#414B57] hover:border-[#232F3E]/30 hover:bg-[#FFF5E5] hover:text-[#232F3E] transition-all"
                   >
                     <span class="truncate">{item.title}</span>

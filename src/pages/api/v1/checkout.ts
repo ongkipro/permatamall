@@ -27,20 +27,20 @@ export const POST: APIRoute = async ({ request, locals }) => {
     if (!rateLimit.allowed) {
       return headlessError('Terlalu banyak percobaan order. Silakan tunggu 1 menit.', 429, {
         code: 'RATE_LIMITED',
-      });
+      }, validation.corsHeaders);
     }
 
     const body = (await request.json().catch(() => null)) as Record<string, unknown> | null;
     if (!body) {
       return headlessError('Payload JSON order tidak valid.', 400, {
         code: 'INVALID_PAYLOAD',
-      });
+      }, validation.corsHeaders);
     }
 
     if (String(body.website || body.honeypot || '').trim()) {
       return headlessError('Request ditolak.', 400, {
         code: 'HONEYPOT_TRIGGERED',
-      });
+      }, validation.corsHeaders);
     }
 
     const parsed = orderSubmitSchema.safeParse(body);
@@ -48,7 +48,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
       return headlessError(parsed.error.errors[0]?.message || 'Data order tidak valid.', 422, {
         code: 'VALIDATION_ERROR',
         errors: parsed.error.format(),
-      });
+      }, validation.corsHeaders);
     }
 
     const data = parsed.data;
@@ -56,7 +56,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
     if (!database?.prepare) {
       return headlessError('Database order belum dikonfigurasi.', 503, {
         code: 'DATABASE_UNAVAILABLE',
-      });
+      }, validation.corsHeaders);
     }
 
     const disabledProvinceCodes = await loadStoreCodDisabledProvinceCodes(database);
@@ -64,7 +64,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
     if (data.payment_method === 'cod' && (!provinceCode || isProvinceExcluded(provinceCode, disabledProvinceCodes))) {
       return headlessError('COD tidak tersedia untuk wilayah tujuan ini. Silakan gunakan pembayaran transfer/online.', 422, {
         code: 'COD_DISABLED_FOR_REGION',
-      });
+      }, validation.corsHeaders);
     }
 
     const shipping = await resolveTrustedHeadlessShipping(body, data, (input) =>
@@ -120,21 +120,21 @@ export const POST: APIRoute = async ({ request, locals }) => {
     if (error instanceof DuplicateSubmissionError) {
       return headlessError('Order sedang diproses atau sudah dibuat sebelumnya.', 409, {
         code: 'DUPLICATE_ORDER',
-      });
+      }, validation.corsHeaders);
     }
     if (isShippingQuoteFailure(error)) {
       return headlessError(error.message, error.status, {
         code: error.code,
-      });
+      }, validation.corsHeaders);
     }
     if (error instanceof OrderInputError) {
       return headlessError(error.message, 422, {
         code: 'ORDER_INPUT_ERROR',
-      });
+      }, validation.corsHeaders);
     }
     return headlessError('Gagal memproses checkout pesanan.', 500, {
       code: 'CHECKOUT_PROCESSING_ERROR',
       details: error instanceof Error ? error.message : String(error),
-    });
+    }, validation.corsHeaders);
   }
 };

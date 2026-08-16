@@ -1,4 +1,5 @@
 import { getRuntimeEnv } from "./env";
+import { tenantConfig } from "./tenant";
 import {
   loadPublishedHomeContent,
   type HomeContent,
@@ -17,12 +18,18 @@ const staticSolutions = solutionEntries.map((entry) => ({
   crop: entry.category,
 }));
 
+/**
+ * Structural shell used only while the merchant has not published home content
+ * from /admin/content. It carries generic section labels and the store's own
+ * identity — never marketing claims, and never copy inherited from another
+ * install. `homeContentSource` records which path produced the page so a
+ * degraded render is distinguishable from a configured one.
+ */
 export const DEFAULT_HOME_CONTENT: HomeContent = {
   hero: {
-    title: "Belanja Praktis, Kirim ke Seluruh Indonesia",
-    description:
-      "Pilih produk sesuai kebutuhan Anda, checkout dalam hitungan detik, dan nikmati fasilitas bayar di tempat (COD) ke seluruh Indonesia.",
-    ratingLabel: "Kepuasan Pelanggan Terjamin",
+    title: tenantConfig.name,
+    description: tenantConfig.tagline || tenantConfig.description,
+    ratingLabel: "",
   },
   catalog: {
     eyebrow: "Katalog Produk Pilihan",
@@ -76,6 +83,9 @@ export async function getTenantHomeContent(
 
   const database = getRuntimeEnv(locals)?.OMS_DB;
   if (!database || typeof database !== "object") {
+    // No binding at all: the install is not wired up. Serving the structural
+    // shell keeps the catalog reachable, but it is a degraded render.
+    console.error("home-content-no-database-binding");
     return {
       ...DEFAULT_HOME_CONTENT,
       solutions: combinedSolutions,
@@ -84,6 +94,9 @@ export async function getTenantHomeContent(
 
   const content = await loadPublishedHomeContent(database as D1Database);
   if (!content) {
+    // Nothing published yet. Never inherit marketing copy — the shell carries
+    // this store's own identity and generic section labels only.
+    console.error("home-content-unpublished");
     return {
       ...DEFAULT_HOME_CONTENT,
       solutions: combinedSolutions,

@@ -115,7 +115,7 @@ AdsBookCMS gives one merchant a complete direct-response storefront: catalog, la
 
 | ID | Requirement | Status |
 | --- | --- | --- |
-| REQ-50 | Browser and server Purchase events shall share one per-order event id and canonical product ids so the platform deduplicates them. | **Violated** — the browser sends `purchase_<slug>_<random>` while `/api/meta-event` discards it and substitutes the order number, so the two legs never match |
+| REQ-50 | Browser and server Purchase events shall share one per-order event id and canonical product ids so the platform deduplicates them. | Implemented for the hosted storefront as of 2026-08-16 — both legs key on the `INV-` order number. Still violated by the embedded checkout snippet, which fires Purchase with no event id (gap **G10**) |
 | REQ-51 | Server-side conversion delivery shall be durable, with retry and attempt accounting, and shall survive a failed outbound call. | Implemented |
 | REQ-52 | CAPI tokens shall remain server-side and shall never reach the browser. | Implemented |
 | REQ-53 | The system shall capture and preserve `gclid`, `gbraid`, `wbraid`, `fbclid`, and `ttclid` from landing through order persistence. | Implemented |

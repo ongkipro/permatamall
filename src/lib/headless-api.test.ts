@@ -1,4 +1,6 @@
 import assert from 'node:assert/strict';
+import { readdir, readFile } from 'node:fs/promises';
+import path from 'node:path';
 import test from 'node:test';
 import { hashApiKeySecret } from './developer-api-keys.ts';
 import {
@@ -6,6 +8,7 @@ import {
   matchOriginAgainstPattern,
   isOriginAllowed,
   validateHeadlessRequest,
+  buildCorsHeaders,
   headlessOk,
   headlessError,
   getRequestOrigin,
@@ -133,4 +136,61 @@ test('headlessError returns proper error payload structure', async () => {
   assert.equal(json.success, false);
   assert.equal(json.error.message, 'Invalid request parameters');
   assert.equal(json.error.code, 'TEST_ERROR');
+});
+
+test('authenticated success responses are never stored by a shared cache', async () => {
+  const cacheControl = headlessOk({ test_data: 'hello' }, 200).headers.get('cache-control') || '';
+
+  // A shared cache keys on URL, not on the API key, so `public`/`s-maxage` would replay an
+  // authenticated body to callers holding no key.
+  assert.match(cacheControl, /(^|,\s*)private(,|$)/);
+  assert.doesNotMatch(cacheControl, /public|s-maxage/);
+
+  // No /api/v1 route may widen the default back to a shared-cacheable policy.
+  const routeDir = path.join(import.meta.dirname, '..', 'pages', 'api', 'v1');
+  const routeFiles = await readdir(routeDir, { recursive: true, withFileTypes: true });
+  for (const entry of routeFiles) {
+    if (!entry.isFile() || !entry.name.endsWith('.ts')) continue;
+    const source = await readFile(path.join(entry.parentPath, entry.name), 'utf8');
+    assert.doesNotMatch(
+      source,
+      /['"]\s*public\s*,|s-maxage/,
+      `${entry.name} declares a shared-cacheable Cache-Control on an authenticated route`
+    );
+  }
+});
+
+test('headlessError echoes the same allowed origin as the success path', () => {
+  const origin = 'https://my-authorized-app.com';
+  const corsHeaders = buildCorsHeaders(origin);
+
+  const failure = headlessError('Data order tidak valid.', 422, { code: 'VALIDATION_ERROR' }, corsHeaders);
+  const success = headlessOk({ ok: true }, 200, corsHeaders);
+
+  // A browser integration can only read the error body when the origin is echoed back.
+  assert.equal(failure.headers.get('access-control-allow-origin'), origin);
+  assert.equal(
+    failure.headers.get('access-control-allow-origin'),
+    success.headers.get('access-control-allow-origin')
+  );
+  assert.equal(failure.headers.get('access-control-allow-credentials'), 'true');
+  assert.equal(failure.headers.get('cache-control'), 'no-store');
+
+  // Without CORS headers the error stays closed rather than falling back to a blanket '*'.
+  assert.equal(
+    headlessError('Data order tidak valid.', 422).headers.get('access-control-allow-origin'),
+    null
+  );
+});
+
+test('rejected requests carry CORS headers so the caller can read the reason', async () => {
+  const req = new Request('https://api.permatamall.shop/api/v1/storefront', {
+    headers: { origin: 'https://my-authorized-app.com' },
+  });
+  const res = await validateHeadlessRequest(req);
+  assert.equal(res.errorResponse?.status, 401);
+  assert.equal(
+    res.errorResponse?.headers.get('access-control-allow-origin'),
+    'https://my-authorized-app.com'
+  );
 });

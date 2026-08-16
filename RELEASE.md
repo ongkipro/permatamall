@@ -54,7 +54,7 @@ npm run db:migrate:remote   # wrangler d1 migrations apply OMS_DB --remote  ← 
 - **Never edit an applied migration in place.** A database that already ran `0017` will never see your edit. Corrections ship as a new forward migration.
 - **Write migrations by hand.** The Drizzle journal stops at `0030` while 34 files exist, so `npm run db:generate` would emit a destructive diff. See `DECISIONS.md` ADR-005.
 - **Apply the migration before deploying code that depends on it.** Deploy and migration are independent operations against the same live store.
-- `migrations/` at the repository root is a stray duplicate outside the configured `migrations_dir` and must not be used.
+- `src/db/migrations/` is the only migration directory. A duplicate previously sat at the repository root outside the configured `migrations_dir`; it was removed on 2026-08-16 and the test fixture that read it now points at the canonical copy.
 
 ---
 

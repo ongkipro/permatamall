@@ -1,7 +1,7 @@
 {
-  "name": "permatamall",
-  "version": "1.0.0",
-  "description": "Permatamall — Storefront & Order Management System",
+  "name": "adsbookcms",
+  "version": "1.2.0",
+  "description": "AdsBookCMS — single-install direct-response commerce CMS for Cloudflare Workers",
   "engines": {
     "node": ">=22",
     "npm": ">=10"

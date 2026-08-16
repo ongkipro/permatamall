@@ -32,6 +32,13 @@
   "ai": {
     "binding": "AI"
   },
+  // Without this, Workers Logs are off and the ~76 labelled console.error
+  // calls in src/ are unqueryable — a failing install cannot be diagnosed
+  // after the fact. See OBSERVABILITY.md.
+  "observability": {
+    "enabled": true,
+    "head_sampling_rate": 1
+  },
   "routes": [
     {
       "pattern": "permatamall.shop",

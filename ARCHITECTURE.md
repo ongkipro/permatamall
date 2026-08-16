@@ -185,7 +185,8 @@ These are the differences between the current single-store deployment and the in
 | G6 | Theme set is compile-time | Templates cannot be added or switched without a rebuild | `src/lib/tenant-contract.ts` |
 | G7 | No observability | No Workers logs, no error reporting, no way to diagnose a customer install | `wrangler.jsonc` (no `observability` block) |
 | G8 | Drizzle journal broken | Migration generation is unusable; the upgrade path depends on hand-authored SQL | `src/db/migrations/meta/` |
-| G9 | Meta Purchase deduplication is broken | Browser and server legs carry different `event_id` values, so Meta counts one order twice and attribution is distorted on every install | `src/pages/api/meta-event.ts`, `src/scripts/form-hybrid.ts` |
+| ~~G9~~ | ~~Meta Purchase deduplication is broken~~ | **Closed 2026-08-16.** Both legs now key on the `INV-` order number. Historical data stays inflated — Meta offers no retroactive merge | `src/components/tracking/MetaThanksTracker.astro` |
+| G10 | Embedded checkout fires Purchase with no event ID, at redirect time | An event without `event_id` cannot deduplicate against CAPI, and firing on redirect counts unpaid online orders | `src/lib/embed-markup.ts` |
 
 ---
 

@@ -919,8 +919,12 @@ Active backlog. Every task below references a requirement in the current `PRD.md
  -> REQ: REQ-9 · Done when: the file no longer contains another merchant's catalog, the two genuine-looking Mengantar ObjectIds, the Surabaya warehouse address, or the contact phone number; either replaced by a neutral install seed or removed with its image trees.
 - [ ] **A-5** — Make ad taxonomy matching deterministic (`src/lib/ad-taxonomy.ts`).
  -> REQ: REQ-56 · Done when: category resolution no longer relies on an unweighted keyword count across title and description with no minimum score; a handbag whose description mentions unrelated terms cannot be shipped to Merchant Center under a fertilizer, skincare, or cutlery category. Note: the handbag rule (`6551`) is already both the first rule and the default — the defect is the scoring, not the mapping.
-- [ ] **A-6** — Align Meta Purchase `event_id` across browser and server.
- -> REQ: REQ-50 · Done when: the browser leg and `/api/meta-event` emit the same identifier for one order, so Meta deduplicates them. The server currently discards the posted `event_id` and substitutes `order_number`, which makes the server leg idempotent per order — align the browser onto the order-number key rather than weakening the server gate. Verify with Meta Events Manager showing one deduplicated Purchase, not two.
+- [x] **A-6** — Align Meta Purchase `event_id` across browser and server. **Done 2026-08-16.**
+ -> REQ: REQ-50 · gap: G9 · The browser now derives the Purchase `eventID` from `order_number` in the `/api/order-status` response — the same D1 column the CAPI leg uses — instead of minting `purchase_<slug>_<random>`. If the order cannot be resolved the tracker fires nothing rather than a mismatched id. The server gate (`order_number` + `status_token`, 404 on mismatch) and the outbox idempotency key are untouched. Test `src/lib/meta-purchase-dedup.test.ts` executes the real inline tracker script against a stubbed browser and asserts the Pixel `eventID`, the posted `event_id`, and `resolveMetaEventId()` all produce one string; mutation-checked.
+ · **Forward-only.** Meta dedups at ingestion within 48 hours with no retroactive merge, so historical Purchase counts stay roughly doubled and historical ROAS stays understated. Treat the deploy date as a reporting break.
+
+- [ ] **A-7** — Embedded checkout fires Purchase with no event ID (`src/lib/embed-markup.ts`). *(found while fixing A-6)*
+ -> REQ: REQ-50, REQ-55 · Done when: the embed snippet no longer fires `fbq('track','Purchase')` without an `eventID`, and no longer fires it at redirect time before payment is verified. Two defects in one call: an event with no `event_id` can never deduplicate against the CAPI leg, so any embedded install sharing the store's pixel double-counts independently of A-6; and firing on `cmsads:checkout-redirect` counts unpaid online orders as purchases.
 
 ## A2 — Installer foundation
 
@@ -928,17 +932,29 @@ Active backlog. Every task below references a requirement in the current `PRD.md
  -> REQ: REQ-7 · gap: G1 · ADR-003 · Done when: identity reads from the `stores` row with a KV cache and env only as first-boot fallback; changing the store name in `/admin` changes storefront `<title>`, header, footer, JSON-LD, and OG tags without a rebuild; the hardcoded `slug` is gone.
 - [ ] **A-11** — First-run `/install` wizard.
  -> REQ: REQ-6 · gap: G2 · ADR-004 · deps: [A-10] · Done when: an uninitialised database routes every request to `/install`; the wizard writes store identity, administrator credentials, and locale to D1; completing it locks the route permanently; re-running against an initialised database is refused.
-- [ ] **A-12** — Fail closed on missing home content (`src/lib/tenant-content.ts`).
- -> REQ: REQ-13 · gap: G5 · ADR-007 · Done when: no published home row renders an explicit setup state; `DEFAULT_HOME_CONTENT` is deleted; a D1 error is logged rather than silently degrading to compiled copy.
+- [~] **A-12a** — Stop inheriting marketing copy on missing home content (`src/lib/tenant-content.ts`). **Done 2026-08-16.**
+ -> REQ: REQ-13 · gap: G5 · ADR-007 · Done when: the fallback carries only this store's own identity and generic section labels, never marketing claims; the unpublished path and the missing-binding path each log a distinct label so a degraded render is visible in logs. A D1 query failure was already logged separately as `storefront-home-content-load`.
+- [ ] **A-12b** — Render an explicit setup state instead of the structural shell.
+ -> REQ: REQ-13 · gap: G5 · ADR-007 · deps: [A-12a] · Done when: an install with no published home row renders the setup state that already exists in `src/pages/index.astro`, and `DEFAULT_HOME_CONTENT` is deleted.
+ · **Blocked on data, not code:** the reference install has no published `storefront_content` row, so flipping this today would replace a live storefront homepage with a setup notice. Publish home content from `/admin/content` first, then flip.
 - [ ] **A-13** — Schema version check at boot.
  -> REQ: REQ-8 · gap: G3 · Done when: the applied migration count is compared with `CMS_VERSION.schemaVersion` and a mismatch is surfaced to the operator instead of failing at the first broken query.
-- [ ] **A-14** — Remove inert tenant machinery.
- -> REQ: REQ-1 · ADR-002 · Done when: `CONTENT_PACK_IDS`, `isTenantContentPackId`, `PUBLIC_TENANT_SLUG`, `PUBLIC_CONTENT_PACK`, and the unused `CMSADS_TENANT_CONFIG` hook in `astro.config.mjs` are deleted; `astro check` hints drop accordingly.
+- [x] **A-14** — Remove inert tenant machinery. **Done 2026-08-16.**
+ -> REQ: REQ-1 · ADR-002 · Removed `CONTENT_PACK_IDS`, `TenantContentPackId`, `isTenantContentPackId`, the `contentPack` default, `PUBLIC_TENANT_SLUG`, `PUBLIC_CONTENT_PACK`, and the dead `CMSADS_TENANT_CONFIG` / `CMSADS_INSPECTOR_PORT` hooks in `astro.config.mjs`. `astro check` hints dropped 38 -> 36.
 
 ## A3 — Correctness and security
 
-- [ ] **A-20** — Test coverage for `src/lib/auth.ts`.
- -> REQ: REQ-60, REQ-61 · Done when: JWT signing and verification, expiry, tampering rejection, credential-rotation invalidation, and `canAccessAdminRoute` per role each have a runnable test.
+- [x] **A-20** — Test coverage for `src/lib/auth.ts`. **Done 2026-08-16.**
+ -> REQ: REQ-60, REQ-61 · 12 tests in `src/lib/auth.test.ts` covering round-trip, wrong secret, six tampering shapes, validly-signed-but-hostile claims, lifetime and clock skew, 15 malformed inputs, exact cookie-name matching, credential-rotation invalidation driven through the real `onRequest`, cross-user session records, and the full role matrix including denied routes. Mutation-verified: five deliberate breaks in `auth.ts` were each caught.
+
+- [ ] **A-25** — Harden the authorisation policy in `src/lib/auth.ts`. *(found while writing A-20)*
+ -> REQ: REQ-61 · Done when each of these is resolved:
+ · `canAccessAdminRoute` **throws** on a role outside `ADMIN_ROLES` (`ROLE_PAGE_ROUTES[role]` is undefined) instead of returning false. It fails closed today only because `verifyJwt` gates the role first, so an unhandled 500 stands in for a deny.
+ · `canAccessAdminRoute(anything, '/admin')` returns `true` unconditionally, before any role check.
+ · The `admin` role is default-**allow** — a two-entry blacklist — so every privileged route added in future is granted to it silently. Advertiser and customer_service are allowlists; make `admin` one too.
+ · `verifyJwt` enforces no maximum lifetime; it honours whatever `exp` a validly signed token carries. Only `signJwt` caps at 24h.
+ · The token is URL-decoded twice (`getSessionCookie`, then `verifyJwt`). Harmless for base64url, but a latent double-decode.
+ · Middleware gates `/api/admin/` **with** a trailing slash, so exactly `/api/admin` is ungated. Nothing is reachable there today; adding `src/pages/api/admin/index.ts` would ship an unauthenticated endpoint.
 - [ ] **A-21** — Connect the headless origin allowlist to the admin (`src/lib/headless-api.ts`).
  -> REQ: REQ-71 · Done when: authorising a new storefront origin is an admin action rather than a code change and deploy; the currently undeclared `PUBLIC_HEADLESS_ALLOWED_ORIGINS` is either implemented or removed; the embed allowlist and the API allowlist have documented, distinct scopes.
 - [ ] **A-22** — Stop marking authenticated API responses publicly cacheable.
@@ -958,20 +974,20 @@ Active backlog. Every task below references a requirement in the current `PRD.md
  -> Done when: Plus Jakarta Sans weight files are no longer downloaded, since no rule references the family; imported Inter and Cinzel weights match the weights actually used, eliminating synthetic bold.
 - [ ] **A-33** — Align `themeColor` with the shipped palette.
  -> REQ: REQ-7 · Done when: browser chrome colour matches the storefront rather than `#0F172A`, which belongs to neither template.
-- [ ] **A-34** — Delete orphan components and stale artifacts.
- -> Done when: the eight zero-importer components, the root `migrations/` duplicate of `0027`, `pnpm-lock.yaml`, and `pnpm-workspace.yaml` are removed. ADR-009.
-- [ ] **A-35** — Fix `/solusi-terbaru` and the HTML sitemap.
- -> Done when: `/solusi-terbaru` no longer redirects to a slug with no route, and `/sitemap` lists products from D1 rather than from now-empty compiled arrays.
+- [x] **A-34** — Delete orphan components and stale artifacts. **Done 2026-08-16.**
+ -> Removed: eight zero-importer components, `pnpm-lock.yaml`, `pnpm-workspace.yaml`, and the root `migrations/` duplicate. The root copy was not actually unreferenced — `src/lib/landing-pages.test.ts` read it to build its SQLite fixture; the fixture now points at the byte-identical `src/db/migrations/0027_landing_page_builder.sql`. ADR-009.
+- [x] **A-35** — Fix `/solusi-terbaru` and the HTML sitemap. **Done 2026-08-16.**
+ -> `/solusi-terbaru` now redirects to `/produk` instead of a slug with no route; `/sitemap` reads products and active landing pages from D1 like `/sitemap.xml` does.
 - [ ] **A-36** — Decide the fate of the `zanoby_*` cookie namespace.
  -> Done when: either the legacy name is documented as permanent with its reason, or the cookie constant and its two embed writers and one reader are renamed in a single commit with the attribution consequence accepted.
 
 ## A5 — Operability
 
-- [ ] **A-40** — Enable Workers Logs.
- -> REQ: REQ-82 · gap: G7 · Done when: `wrangler.jsonc` declares an `observability` block and the existing labelled `console.error` calls are queryable.
+- [x] **A-40** — Enable Workers Logs. **Done 2026-08-16.**
+ -> REQ: REQ-82 · gap: G7 · `wrangler.jsonc` declares `observability: { enabled: true, head_sampling_rate: 1 }`, validated against the wrangler config schema and a `--dry-run`. Takes effect on the next deploy.
 - [ ] **A-41** — Log degradation paths.
  -> REQ: REQ-82 · Done when: every silent fallback listed in `OBSERVABILITY.md` §3 emits a labelled warning distinguishing degraded operation from success.
 - [ ] **A-42** — Surface outbox and provider health in `/admin`.
  -> REQ: REQ-82 · Done when: undelivered `capi_event_outbox` depth, last successful Mengantar call, last AutoLaris callback, and last CAPI delivery are visible to the operator.
-- [ ] **A-43** — Reconcile the version registries.
- -> REQ: REQ-83 · Done when: `package.json` and `src/lib/version.ts` agree, or `package.json` is documented as not being a version source.
+- [x] **A-43** — Reconcile the version registries. **Done 2026-08-16.**
+ -> REQ: REQ-83 · `package.json` is now `adsbookcms@1.2.0`, matching `src/lib/version.ts`.

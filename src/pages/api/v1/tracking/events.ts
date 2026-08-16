@@ -22,7 +22,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
     if (!validated.ok) {
       return headlessError(validated.error, 400, {
         code: 'INVALID_TRACKING_PAYLOAD',
-      });
+      }, validation.corsHeaders);
     }
 
     const payload = validated.value;
@@ -42,7 +42,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
     if (!database?.prepare) {
       return headlessError('Database tracking event store belum dikonfigurasi.', 503, {
         code: 'DATABASE_UNAVAILABLE',
-      });
+      }, validation.corsHeaders);
     }
 
     const event = {
@@ -109,6 +109,6 @@ export const POST: APIRoute = async ({ request, locals }) => {
     return headlessError('Gagal memproses tracking signal event.', 500, {
       code: 'TRACKING_SIGNAL_ERROR',
       details: error instanceof Error ? error.message : String(error),
-    });
+    }, validation.corsHeaders);
   }
 };

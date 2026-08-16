@@ -374,6 +374,14 @@ export async function validateHeadlessRequest(
   };
 }
 
+/**
+ * Every `/api/v1` response is gated by a developer API key, but shared caches key on the
+ * request URL and never on that key, so a `public` response would be stored once and then
+ * replayed to callers holding no key at all. Client-side caching stays allowed; shared-cache
+ * storage does not. Routes may narrow this further (e.g. `no-store`), never widen it.
+ */
+const AUTHENTICATED_CACHE_CONTROL = 'private, max-age=60';
+
 export function headlessJson(
   data: Record<string, unknown>,
   status = 200,
@@ -383,7 +391,7 @@ export function headlessJson(
     status,
     headers: {
       'content-type': 'application/json; charset=utf-8',
-      'cache-control': status === 200 ? 'public, max-age=60, s-maxage=300' : 'no-store',
+      'cache-control': status === 200 ? AUTHENTICATED_CACHE_CONTROL : 'no-store',
       ...DEFAULT_CORS_HEADERS,
       ...(extraHeaders || {}),
     },
@@ -398,10 +406,17 @@ export function headlessOk(
   return headlessJson({ success: true, timestamp: new Date().toISOString(), ...data }, status, extraHeaders);
 }
 
+/**
+ * Always pass `validation.corsHeaders` from `validateHeadlessRequest` so a browser-based
+ * integration can read the error body instead of seeing an opaque network failure. Without
+ * it the response carries no `Access-Control-Allow-Origin` at all — the error path echoes
+ * exactly the origin the success path would, never a blanket `*`.
+ */
 export function headlessError(
   message: string,
   status = 400,
-  extra?: Record<string, unknown>
+  extra?: Record<string, unknown>,
+  corsHeaders?: Record<string, string>
 ) {
   return headlessJson(
     {
@@ -414,7 +429,7 @@ export function headlessError(
       },
     },
     status,
-    { 'cache-control': 'no-store' }
+    { ...(corsHeaders || {}), 'cache-control': 'no-store' }
   );
 }
 

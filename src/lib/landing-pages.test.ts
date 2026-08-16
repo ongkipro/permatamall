@@ -81,7 +81,7 @@ class SqliteD1Database {
 
   constructor() {
     const migration = readFileSync(
-      new URL("../../migrations/0010_landing_page_builder.sql", import.meta.url),
+      new URL("../db/migrations/0027_landing_page_builder.sql", import.meta.url),
       "utf8",
     );
     this.#database.exec(migration);

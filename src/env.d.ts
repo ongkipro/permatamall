@@ -7,7 +7,6 @@ type Ai = import("@cloudflare/workers-types/index.ts").Ai;
 
 interface SharedEnvVars {
   PUBLIC_COD_DISABLED_PROVINCES?: string;
-  PUBLIC_TENANT_SLUG?: string;
   PUBLIC_SITE_NAME?: string;
   PUBLIC_SITE_URL?: string;
   PUBLIC_SITE_DESCRIPTION?: string;
@@ -15,7 +14,6 @@ interface SharedEnvVars {
   PUBLIC_SITE_TAGLINE?: string;
   PUBLIC_SITE_THEME_COLOR?: string;
   PUBLIC_SITE_LOCALE?: string;
-  PUBLIC_CONTENT_PACK?: string;
   PUBLIC_STOREFRONT_TEMPLATE?: string;
   PUBLIC_ADMIN_NAME?: string;
   PUBLIC_EMBED_ALLOWED_ORIGINS?: string;

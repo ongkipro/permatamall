@@ -52,6 +52,6 @@ export const GET: APIRoute = async ({ request, url, locals }) => {
     return headlessError('Gagal mencari lokasi kecamatan.', 500, {
       code: 'DISTRICT_SEARCH_ERROR',
       details: error instanceof Error ? error.message : String(error),
-    });
+    }, validation.corsHeaders);
   }
 };

@@ -122,16 +122,16 @@ A funnel event and a Purchase event must not reuse one ID.
 
 ### What ships today
 
-Guards 1, 2, 4, 5, and 6 hold. **Rule 3 does not.** The two legs currently send different strings for the same Purchase:
+All six guards hold as of 2026-08-16. Both legs key Purchase on the `INV-` order number:
 
 | Leg | Value sent | Source |
 | --- | --- | --- |
-| Browser `fbq('track', 'Purchase', …, { eventID })` | `purchase_<productSlug>_<random>` | `createId()` in `src/scripts/form-hybrid.ts` / `form-middle.ts`, forwarded as `purchase_event_id` and read by `MetaThanksTracker.astro` |
-| Server CAPI | the `INV-` order number | `src/pages/api/meta-event.ts` overwrites `eventId` with `purchaseOrder.order_number` for every `Purchase` |
+| Browser `fbq('track', 'Purchase', …, { eventID })` | the `INV-` order number | `MetaThanksTracker.astro` derives it from `order_number` in the `/api/order-status` response — the same D1 column the server leg uses — and fires nothing at all if it cannot be resolved |
+| Server CAPI | the `INV-` order number | `src/pages/api/meta-event.ts` sets `eventId` from `purchaseOrder.order_number` for every `Purchase` |
 
-The browser posts its own `event_id` to `/api/meta-event`, but the route discards it for Purchase and substitutes the order number. Meta therefore has no matching key between the two legs and will count the browser Purchase and the server Purchase as separate events. Treat cross-leg deduplication as **unverified and probably broken** until this is either reconciled or confirmed against Meta's own deduplication report. Track it in `ARCHITECTURE.md` §10 before relying on browser-plus-server Purchase counts.
+Until 2026-08-16 the browser minted `purchase_<productSlug>_<random>` instead, which the server discarded — so the two legs never matched and Meta counted each Purchase twice. The fix aligned the browser onto the server's key rather than weakening the server gate, because the order-number key is what makes the server leg idempotent per order. **The correction is forward-only:** Meta deduplicates at ingestion inside a 48-hour window and offers no retroactive merge, so historical Purchase counts and values remain inflated and historical ROAS remains understated. Treat the deploy date as a reporting break, not a performance drop.
 
-The override is not accidental — using the order number makes the server leg naturally idempotent per order, and `/api/meta-event` additionally requires `order_number` plus a valid `status_token` before it will emit any Purchase (unknown or mismatched tokens return `404`). The correct fix is to make the browser adopt the same order-number key, not to remove the server gate.
+The server gate is unchanged: `/api/meta-event` requires `order_number` plus a valid `status_token` before it will emit any Purchase, and returns `404` for an unknown or mismatched token.
 
 Server-side, `capi_event_outbox.event_id` carries a `UNIQUE` constraint and `enqueueCapiEvent()` uses `INSERT OR IGNORE`, so a replayed request returns `{ deduplicated: true }` instead of producing a second outbound conversion. Combined with the order-number key, that means one CAPI Purchase per order for all time — a durable dedupe layer above Meta's own `event_id` handling.
 

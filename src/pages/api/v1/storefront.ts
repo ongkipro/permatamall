@@ -52,12 +52,14 @@ export const GET: APIRoute = async ({ request, locals }) => {
         },
       },
       200,
-      validation.corsHeaders
+      // Install-specific configuration: pixel/CAPI IDs and the live COD province policy.
+      // Never store it anywhere, so an admin change takes effect on the next request.
+      { ...validation.corsHeaders, 'cache-control': 'no-store' }
     );
   } catch (error) {
     return headlessError('Gagal memuat data storefront.', 500, {
       code: 'STOREFRONT_LOAD_ERROR',
       details: error instanceof Error ? error.message : String(error),
-    });
+    }, validation.corsHeaders);
   }
 };

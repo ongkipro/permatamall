@@ -37,7 +37,7 @@ async function calculateRates({ request, url, locals }: Parameters<APIRoute>[0])
     if (!destinationId) {
       return headlessError('destination_id / location_id wajib diisi.', 400, {
         code: 'DESTINATION_ID_REQUIRED',
-      });
+      }, validation.corsHeaders);
     }
 
     const paymentMethod = String(
@@ -57,7 +57,7 @@ async function calculateRates({ request, url, locals }: Parameters<APIRoute>[0])
     if (!database) {
       return headlessError('Database belum dikonfigurasi.', 503, {
         code: 'DATABASE_UNAVAILABLE',
-      });
+      }, validation.corsHeaders);
     }
 
     const { originId, rates, fallbackUsed } = await resolveEligibleShippingRates(
@@ -96,7 +96,8 @@ async function calculateRates({ request, url, locals }: Parameters<APIRoute>[0])
     return headlessError(
       quoteErr?.message || 'Gagal menghitung tarif pengiriman.',
       quoteErr?.status || 500,
-      { code: quoteErr?.code || 'SHIPPING_RATES_ERROR' }
+      { code: quoteErr?.code || 'SHIPPING_RATES_ERROR' },
+      validation.corsHeaders
     );
   }
 }

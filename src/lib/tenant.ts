@@ -1,9 +1,7 @@
 import { getEnvValue } from "./env.ts";
 import {
   isStorefrontTemplateId,
-  isTenantContentPackId,
   type StorefrontTemplateId,
-  type TenantContentPackId,
 } from "./tenant-contract.ts";
 
 export interface PublicTenantConfig {
@@ -31,7 +29,6 @@ const defaults = {
   tagline: "Pusat Belanja Online Pilihan",
   themeColor: "#0F172A",
   locale: "id-ID",
-  contentPack: "runtime-managed",
   storefrontTemplate: "compact-market",
   adminName: "Permata Mall Ops",
 } as const;
