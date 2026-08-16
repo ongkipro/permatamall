@@ -20,7 +20,7 @@ if (!product) {
 
 const cheapestVariant = [...product.variants].sort((a, b) => a.price - b.price)[0] ?? null;
 const displayPrice = cheapestVariant?.price ?? product.price;
-const displayComparePrice = cheapestVariant?.comparePrice ?? product.comparePrice;
+const displayComparePrice = cheapestVariant?.comparePrice ?? product.comparePrice ?? 0;
 const displayDiscount =
   displayComparePrice > displayPrice ? Math.round((1 - displayPrice / displayComparePrice) * 100) : 0;
 

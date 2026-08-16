@@ -1,4 +1,5 @@
 import type { Product } from "../data/products";
+import { tenantConfig } from "./tenant.ts";
 
 export interface CatalogProductRow {
   id: number;
@@ -23,45 +24,6 @@ export interface CatalogVariantRow {
 function variantLabel(productTitle: string, variantTitle: string): string {
   const cleanVariant = variantTitle.trim();
   return cleanVariant || productTitle.trim();
-}
-
-const METRICS_TABLE = [
-  { ratingValue: 4.9, reviewCount: 312, soldCount: 850 },
-  { ratingValue: 4.8, reviewCount: 184, soldCount: 490 },
-  { ratingValue: 5.0, reviewCount: 420, soldCount: 1280 },
-  { ratingValue: 4.9, reviewCount: 275, soldCount: 710 },
-  { ratingValue: 4.8, reviewCount: 156, soldCount: 380 },
-  { ratingValue: 4.9, reviewCount: 530, soldCount: 1640 },
-  { ratingValue: 5.0, reviewCount: 215, soldCount: 620 },
-  { ratingValue: 4.8, reviewCount: 390, soldCount: 1100 },
-  { ratingValue: 4.9, reviewCount: 462, soldCount: 1390 },
-  { ratingValue: 4.9, reviewCount: 298, soldCount: 780 },
-  { ratingValue: 4.8, reviewCount: 167, soldCount: 410 },
-  { ratingValue: 5.0, reviewCount: 610, soldCount: 1950 },
-  { ratingValue: 4.9, reviewCount: 345, soldCount: 940 },
-  { ratingValue: 4.8, reviewCount: 204, soldCount: 530 },
-  { ratingValue: 4.9, reviewCount: 488, soldCount: 1470 },
-  { ratingValue: 5.0, reviewCount: 380, soldCount: 1080 },
-  { ratingValue: 4.9, reviewCount: 240, soldCount: 660 },
-  { ratingValue: 4.8, reviewCount: 190, soldCount: 510 },
-  { ratingValue: 4.9, reviewCount: 515, soldCount: 1590 },
-  { ratingValue: 5.0, reviewCount: 430, soldCount: 1210 },
-  { ratingValue: 4.8, reviewCount: 285, soldCount: 790 },
-  { ratingValue: 4.9, reviewCount: 360, soldCount: 980 },
-];
-
-function getProductMetrics(productId: number, productName: string) {
-  const seed = productId * 17 + productName.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-  const idx = Math.abs(seed) % METRICS_TABLE.length;
-  return METRICS_TABLE[idx];
-}
-
-function getRealisticComparePrice(productId: number, price: number): number {
-  const multipliers = [1.38, 1.45, 1.52, 1.62, 1.68, 1.72, 1.36, 1.48, 1.55, 1.65, 1.42, 1.58];
-  const seed = Math.abs(productId * 29 + Math.round(price / 100));
-  const mult = multipliers[seed % multipliers.length];
-  const rawCompare = Math.round((price * mult) / 1000) * 1000;
-  return Math.max(rawCompare, Math.round(price * 1.32));
 }
 
 function getRichProductDetails(productId: number, title: string, category: string) {
@@ -332,16 +294,17 @@ export function mergeStorefrontCatalog(
         ? availableVariants
             .filter((variant) => variant.price > 0 && (variant.stock === null || variant.stock === undefined || variant.stock > 0))
             .map((variant) => {
-              const comparePrice = variant.compare_price && variant.compare_price > variant.price
-                ? variant.compare_price
-                : getRealisticComparePrice(matchedRow?.id || 1, variant.price);
+              const comparePrice =
+                variant.compare_price && variant.compare_price > variant.price
+                  ? variant.compare_price
+                  : undefined;
               return {
                 catalogId: variant.id,
                 ...(variant.sku ? { sku: variant.sku } : {}),
                 id: String(variant.id),
                 label: variantLabel(productName, variant.title),
                 price: variant.price,
-                comparePrice,
+                ...(comparePrice ? { comparePrice } : {}),
               };
             })
         : editorialProduct.variants;
@@ -356,11 +319,6 @@ export function mergeStorefrontCatalog(
       ? [1, 2, 3, 4, 5, 6, 7].map((num) => `${baseDir}/${num}.webp`)
       : editorialProduct.images || [image];
 
-    const metrics = getProductMetrics(matchedRow?.id || 1, productName);
-    const calculatedComparePrice = firstVariant.comparePrice && firstVariant.comparePrice > firstVariant.price
-      ? firstVariant.comparePrice
-      : getRealisticComparePrice(matchedRow?.id || 1, firstVariant.price);
-
     return [
       {
         ...editorialProduct,
@@ -369,13 +327,10 @@ export function mergeStorefrontCatalog(
         slug,
         category,
         price: firstVariant.price,
-        comparePrice: calculatedComparePrice,
+        ...(firstVariant.comparePrice ? { comparePrice: firstVariant.comparePrice } : {}),
         image,
         heroImage: image,
         images: galleryImages,
-        ratingValue: editorialProduct.ratingValue ?? metrics.ratingValue,
-        reviewCount: editorialProduct.reviewCount ?? metrics.reviewCount,
-        soldCount: editorialProduct.soldCount ?? metrics.soldCount,
         variants,
       },
     ];
@@ -389,16 +344,18 @@ export function mergeStorefrontCatalog(
     const variants = (variantsByProduct.get(product.id) ?? [])
       .filter((variant) => variant.price > 0 && (variant.stock === null || variant.stock === undefined || variant.stock > 0))
       .map((variant) => {
-        const comparePrice = variant.compare_price && variant.compare_price > variant.price && variant.compare_price < variant.price * 1.8 && variant.compare_price !== 300000
-          ? variant.compare_price
-          : getRealisticComparePrice(product.id, variant.price);
+        // Compare price is merchant data or nothing. Never synthesised.
+        const comparePrice =
+          variant.compare_price && variant.compare_price > variant.price
+            ? variant.compare_price
+            : undefined;
         return {
           catalogId: variant.id,
           ...(variant.sku ? { sku: variant.sku } : {}),
           id: String(variant.id),
           label: variantLabel(productName, variant.title),
           price: variant.price,
-          comparePrice,
+          ...(comparePrice ? { comparePrice } : {}),
         };
       });
 
@@ -412,11 +369,6 @@ export function mergeStorefrontCatalog(
       ? [1, 2, 3, 4, 5, 6, 7].map((num) => `${baseDir}/${num}.webp`)
       : [image];
 
-    const metrics = getProductMetrics(product.id, productName);
-    const calculatedComparePrice = firstVariant.comparePrice && firstVariant.comparePrice > firstVariant.price
-      ? firstVariant.comparePrice
-      : getRealisticComparePrice(product.id, firstVariant.price);
-
     const details = getRichProductDetails(product.id, productName, product.category || "Tote Bag");
 
     catalog.push({
@@ -427,10 +379,10 @@ export function mergeStorefrontCatalog(
       contentName: productName,
       headline: `${productName} — Korean Style Premium`,
       subheadline: details.subheadline,
-      seoTitle: `${productName} | Permata Mall`,
-      seoDescription: `Beli ${productName} original online di Permata Mall. Garansi kualitas premium, pengiriman cepat & bayar di tempat (COD).`,
+      seoTitle: `${productName} | ${tenantConfig.name}`,
+      seoDescription: `Beli ${productName} original online di ${tenantConfig.name}. Garansi kualitas premium, pengiriman cepat & bayar di tempat (COD).`,
       price: firstVariant.price,
-      comparePrice: calculatedComparePrice,
+      ...(firstVariant.comparePrice ? { comparePrice: firstVariant.comparePrice } : {}),
       image,
       heroImage: image,
       images: galleryImages,
@@ -443,38 +395,11 @@ export function mergeStorefrontCatalog(
       idealFor: details.idealFor,
       offerText: "Diskon Promo Terbatas + Gratis Ongkir COD",
       ctaText: "Pesan Sekarang (COD / Transfer)",
-      ratingValue: metrics.ratingValue,
-      reviewCount: metrics.reviewCount,
-      soldCount: metrics.soldCount,
-      reviews: [
-        {
-          name: "Siti Rahmawati",
-          location: "Jakarta Selatan",
-          avatar: "",
-          verified: true,
-          date: "Kemarin",
-          comment: "Bagus banget tasnya! Bahannya tebal, warnanya presisi sesuai gambar. Pengiriman COD sangat cepat dan kurir ramah.",
-          rating: 5,
-        },
-        {
-          name: "Diah Permata",
-          location: "Surabaya",
-          avatar: "",
-          verified: true,
-          date: "2 hari lalu",
-          comment: "Jahitan super rapi, muat HP, dompet & makeup. Kualitas luxury untuk harga promo segini, worth it banget!",
-          rating: 5,
-        },
-        {
-          name: "Maya Anggraini",
-          location: "Bandung",
-          avatar: "",
-          verified: true,
-          date: "4 hari lalu",
-          comment: "Desainnya mewah & elegan. Suka banget kancing emas & resletingnya yang kokoh. Packing aman & rapi.",
-          rating: 5,
-        },
-      ],
+      // Ratings, sold counts and reviews are merchant-owned evidence. They are
+      // published through /admin/content or they do not exist. Downstream
+      // consumers already omit the rating block, the review section and the
+      // JSON-LD aggregateRating when these are absent.
+      reviews: [],
       variants,
     });
   }

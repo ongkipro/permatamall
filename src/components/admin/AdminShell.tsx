@@ -176,7 +176,7 @@ export function AdminShell({
             <div className="flex min-w-0 flex-1 items-center gap-2.5 md:gap-3">
               <SidebarTrigger className="hidden size-9 rounded-lg text-slate-500 hover:bg-slate-100 md:inline-flex" />
               <a href="/admin/dashboard" className="flex size-9 shrink-0 items-center justify-center md:hidden" aria-label={`Dashboard ${adminName}`}>
-                <img src="/images/logo.webp" alt="CMS Logo" className="size-8 object-contain" />
+                <img src="/images/logo.webp" alt="Logo" className="size-8 object-contain" />
               </a>
               <div className="min-w-0">
                 <h1 className="truncate text-[15px] font-extrabold tracking-[-0.02em] text-slate-950 md:text-base">

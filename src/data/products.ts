@@ -28,7 +28,8 @@ export type Product = {
   seoTitle: string;
   seoDescription: string;
   price: number;
-  comparePrice: number;
+  /** Merchant-set strike-through price. Absent when the merchant has not set one. */
+  comparePrice?: number;
   image: string;
   heroImage: string;
   images?: string[];

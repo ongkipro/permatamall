@@ -8,7 +8,7 @@ interface ProductCard {
   href: string;
   image: string;
   price: number;
-  comparePrice: number;
+  comparePrice?: number;
   variants: Array<{ label: string; price: number }>;
 }
 
@@ -118,8 +118,9 @@ const shortVariantLabel = (label: string) => label.split(' - ').at(-1) || label;
       <!-- Product Cards Grid: Flat Minimalist without card borders -->
       <div class="mt-10 grid grid-cols-2 lg:grid-cols-4 gap-x-6 gap-y-10">
         {products.map((product) => {
-          const discount = product.comparePrice > product.price 
-            ? Math.round((1 - product.price / product.comparePrice) * 100) 
+          const comparePrice = product.comparePrice ?? 0;
+          const discount = comparePrice > product.price 
+            ? Math.round((1 - product.price / comparePrice) * 100) 
             : 0;
           return (
             <article class="group flex flex-col transition-all duration-300">
@@ -149,9 +150,9 @@ const shortVariantLabel = (label: string) => label.split(' - ').at(-1) || label;
                   <p class="text-base font-extrabold text-zinc-950">
                     Rp{product.price.toLocaleString('id-ID')}
                   </p>
-                  {product.comparePrice > product.price && (
+                  {comparePrice > product.price && (
                     <p class="text-xs text-zinc-400 line-through">
-                      Rp{product.comparePrice.toLocaleString('id-ID')}
+                      Rp{comparePrice.toLocaleString('id-ID')}
                     </p>
                   )}
                 </div>

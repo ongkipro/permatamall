@@ -8,7 +8,7 @@ interface Product {
   href: string;
   image: string;
   price: number;
-  comparePrice: number;
+  comparePrice?: number;
   ratingValue?: number;
   reviewCount?: number;
   soldCount?: number;
@@ -62,9 +62,10 @@ const formatPrice = (val: number) => `Rp${val.toLocaleString('id-ID')}`;
   <div id="product-grid" class="grid grid-cols-2 gap-2.5">
     {
       products.map((product, idx) => {
+        const comparePrice = product.comparePrice ?? 0;
         const discount =
-          product.comparePrice > product.price
-            ? Math.round((1 - product.price / product.comparePrice) * 100)
+          comparePrice > product.price
+            ? Math.round((1 - product.price / comparePrice) * 100)
             : 0;
 
         const sold = product.soldCount
@@ -131,9 +132,9 @@ const formatPrice = (val: number) => `Rp${val.toLocaleString('id-ID')}`;
                   <span class="text-[14px] font-bold tracking-tight text-[#111111]">
                     {formatPrice(product.price)}
                   </span>
-                  {product.comparePrice > product.price && (
+                  {comparePrice > product.price && (
                     <span class="text-[10.5px] font-medium text-[#77736C] line-through">
-                      {formatPrice(product.comparePrice)}
+                      {formatPrice(comparePrice)}
                     </span>
                   )}
                 </div>

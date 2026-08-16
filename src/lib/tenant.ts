@@ -1,10 +1,10 @@
-import { getEnvValue } from "./env";
+import { getEnvValue } from "./env.ts";
 import {
   isStorefrontTemplateId,
   isTenantContentPackId,
   type StorefrontTemplateId,
   type TenantContentPackId,
-} from "./tenant-contract";
+} from "./tenant-contract.ts";
 
 export interface PublicTenantConfig {
   slug: string;
