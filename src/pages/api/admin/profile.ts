@@ -5,7 +5,7 @@ import {
   updateAdminCredential,
 } from '../../../lib/admin-credentials';
 import { jsonError, jsonOk } from '../../../lib/api';
-import { SESSION_COOKIE_NAME } from '../../../lib/auth';
+import { ADMIN_SESSION_COOKIE_OPTIONS, SESSION_COOKIE_NAME } from '../../../lib/auth';
 import { getEnvValue, getRuntimeEnv } from '../../../lib/env';
 
 export const prerender = false;
@@ -29,7 +29,7 @@ export const GET: APIRoute = async ({ locals }) => {
   if (!database) return jsonError('Database profil admin belum tersedia.', 503);
 
   try {
-    const credential = await getAdminCredential(database, locals.admin?.username);
+    const credential = await getAdminCredential(database, locals.admin?.username ?? '');
     if (!credential) return jsonError('Kredensial admin belum tersedia.', 404);
     return jsonOk({
       data: {
@@ -76,7 +76,7 @@ export const PUT: APIRoute = async ({ request, locals, cookies }) => {
     if (!result.ok) return jsonError(result.error, 400);
 
     await revokeAdminSessions(sessions, actorUsername);
-    cookies.delete(SESSION_COOKIE_NAME, { path: '/' });
+    cookies.delete(SESSION_COOKIE_NAME, ADMIN_SESSION_COOKIE_OPTIONS);
     return jsonOk({
       message: 'Profil admin diperbarui. Silakan login kembali.',
       data: { username: result.username, reauthenticate: true },

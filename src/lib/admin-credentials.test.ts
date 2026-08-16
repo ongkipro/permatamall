@@ -18,6 +18,11 @@ test('default admin credential fails closed without a configured bootstrap passw
     passwordHash: DEFAULT_ADMIN_PASSWORD_HASH,
   };
   assert.equal(isDefaultAdminCredential(defaultCredential), true);
+  const renamedCredential = {
+    username: 'renamed-admin',
+    passwordHash: DEFAULT_ADMIN_PASSWORD_HASH,
+  };
+  assert.equal(isDefaultAdminCredential(renamedCredential), true);
   assert.equal(await verifyAdminLoginPassword('admin', defaultCredential, ''), false);
   assert.equal(await verifyAdminLoginPassword('admin', defaultCredential, 'short'), false);
   assert.equal(

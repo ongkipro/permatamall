@@ -1,10 +1,12 @@
 # STATUS — AdsBookCMS
 
-> Verified against disk and production: 2026-08-16 · deployed source commit `93d86f0` · branch `docs/login-panel-ux-audit` pushed
+> Verified against the current branch and production: 2026-08-16. Production
+> remains on source commit `93d86f0`; the performance and durable-throttling
+> follow-up on this branch is verified but not deployed.
 >
-> Gates on the deployed source: `npm run check` 306 files / 0 errors /
-> 0 warnings / 0 hints · `npm test` 232 / 232 · `npm run build` complete ·
-> fresh local D1 migrations complete through `0035`.
+> Current source gates: `npm run check` 310 files / 0 errors / 0 warnings /
+> 0 hints · `npm test` 243 / 243 · `npm run build` complete · fresh local D1
+> migrations complete through `0037`. Production D1 remains through `0035`.
 
 Current state of the system. Implemented behaviour lives here; history lives in `BUILD-LOG.md`; remaining work lives in `UNIMPLEMENTED_SPECS.md`; structure lives in `ARCHITECTURE.md`.
 
@@ -24,7 +26,7 @@ The previous version of this file described a different repository — it opened
 | R2 | `cmsads-permatamall-assets` |
 | KV | `SESSION` |
 | Version | `1.2.0` / `2026.08-hardened` (`src/lib/version.ts`) |
-| Schema | 36 migration files, `0000`–`0035` |
+| Schema | 38 migration files, `0000`–`0037`; production applied through `0035` |
 | Environments | one — no staging, no `env.*` blocks |
 | CI | push to `main` → check → test → build → `wrangler deploy` |
 
@@ -36,16 +38,16 @@ Live check on 2026-08-16: `/hello` and `/produk/daira-tas-selempang-bahu-kanvas`
 
 | Gate | Result |
 | --- | --- |
-| `npm test` | **232 / 232 passing** |
-| `npm run check` | 306 files · 0 errors · 0 warnings · 0 hints |
-| `npm run build` | Cloudflare server bundle complete |
-| Browser smoke | Production `/hello` passed at 390×844 and 1280×900 with no horizontal overflow, one H1, visible tenant identity, synchronized password toggle, and no console/page errors; the production product detail returned 200 with one `<main>` and the expected H1. Local Worker verification additionally covered bootstrap rotation, dual-counter 429 behaviour, and corrupt-session logout recovery |
+| `npm test` | **243 / 243 passing** |
+| `npm run check` | 310 files · 0 errors · 0 warnings · 0 hints |
+| `npm run build` | Cloudflare server bundle complete; `wrangler deploy --dry-run` complete |
+| Browser/runtime smoke | Production `/hello` passed at 390×844 and 1280×900 with no horizontal overflow, one H1, visible tenant identity, synchronized password toggle, and no console/page/request errors. The production product detail returned 200 with one `<main>` and the expected H1. Local Worker verification additionally covered 44 px mobile targets, secure cookie invariants, bootstrap login, logout recovery, private-route `no-store`, cache miss → hit behavior, and cookie-based cache bypass |
 
 ---
 
 ## 3. What is implemented
 
-**Storefront** — SSR home with two selectable templates, product listing with progressive load-more, product detail with variant selection and sticky mobile CTA, custom 404 with related products, hand-authored `sitemap.xml`, Google and Meta catalog feeds, JSON-LD (Organization, WebSite, Product, ItemList, Breadcrumb).
+**Storefront** — SSR home with two selectable templates, product listing with progressive load-more, product detail with variant selection and sticky mobile CTA, custom 404 with related products, hand-authored `sitemap.xml`, Google and Meta catalog feeds, JSON-LD (Organization, WebSite, Product, ItemList, Breadcrumb), and a 60-second edge cache restricted to anonymous public HTML.
 
 **Landing pages** — D1-backed builder with ordered `html` and `form` sections, drag reorder, shortcode pills, 480px mobile canvas preview, rendered through the `/[slug]` catch-all with admin-gated `?preview=1`.
 
@@ -55,7 +57,7 @@ Live check on 2026-08-16: `/hello` and `/produk/daira-tas-selempang-bahu-kanvas`
 
 **Orders and shipping** — operator-controlled dispatch to Mengantar under a single-flight lease, sequential shipment creation with independent per-order results, pickup address and schedule synchronisation with the provider, receiver RTS scoring, and a shipping lifecycle view separate from pending intake.
 
-**Admin** — 27 pages: dashboard analytics, orders and order detail, product CRUD, landing pages, content workbench with Workers AI drafting, shipping, expeditions, RTS/rate checker, payments, balance reconciliation ledger, ads configuration for Meta and Google, store/warehouse/CRM settings, operator access management, and developer API keys. Navigation and route authorization share one deny-by-default role policy; scoped operators see only the complete workspace their role owns. Bootstrap rotation, JWT/KV/D1 revision validation, dual IP/username login damping, idempotent logout, and malformed-cookie recovery are verified.
+**Admin** — 27 pages: dashboard analytics, orders and order detail, product CRUD, landing pages, content workbench with Workers AI drafting, shipping, expeditions, RTS/rate checker, payments, balance reconciliation ledger, ads configuration for Meta and Google, store/warehouse/CRM settings, operator access management, and developer API keys. Navigation and route authorization share one deny-by-default role policy; scoped operators see only the complete workspace their role owns. Bootstrap rotation, JWT/KV/D1 revision validation, atomic D1-backed IP/username login throttling, idempotent logout, and malformed-cookie recovery are verified.
 
 **Headless API** — seven `/api/v1/*` routes (storefront descriptor, products list and detail, district lookup, shipping rates, checkout, tracking events) authenticated by API key against `developer_api_keys`. The independently validated Headless origin allowlist is persisted on `stores.headless_allowed_origins` and editable in Developer settings.
 
@@ -106,6 +108,13 @@ Login, product identity, and fresh-install follow-up:
 - Repaired the bootstrap rotation contract, moved login damping ahead of lookup, added normalized-username damping beside IP damping, equalised unknown-user and wrong-password failures, made logout recover stale sessions, and made malformed cookies fail closed.
 - Refined `/hello` for mobile keyboards, assistive technology, password managers, accurate password-toggle semantics, and announced submitting state.
 - Fixed migration `0017` so an empty tenant database does not create orphan variants; a fresh foreign-key-enforced migration smoke and Wrangler local migration both complete through `0035`.
+
+Storefront, D1, and login-throttling performance follow-up:
+
+- Product detail now reads exactly one active product and batches only its variants and published content; landing reads batch the page and ordered sections; analytics uses one raw UTC `created_at` range and one D1 batch instead of date-function predicates and sequential requests.
+- Public home, catalog, product detail, and published landing HTML use a 60-second `caches.default` entry only for anonymous `GET`/`HEAD` requests. Credentials, cookies, preview/token/auth query parameters, redirects, errors, private responses, and any `Set-Cookie` response bypass storage.
+- Login throttling moved from isolate-local/KV read-modify-write behavior to atomic D1 `INSERT ... ON CONFLICT ... RETURNING` counters keyed by source IP and username/IP. Migration `0036` adds the counter table; migration `0037` removes redundant indexes and aligns the landing-section index with its query order.
+- A 20-request production baseline before deployment measured product-detail TTFB at 344.51 ms median and 643.32 ms p95 with no cache headers. The final local Worker measured 20 cache misses at 18.67 ms median / 21.44 ms p95 and the corresponding 20 hits at 7.09 ms median / 7.99 ms p95. Local and production timings are not directly comparable; a production before/after remains pending deployment.
 
 ---
 

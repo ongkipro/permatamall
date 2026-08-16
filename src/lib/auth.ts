@@ -1,5 +1,11 @@
 /** Admin session cookie. Exported so every setter, reader, and deleter shares one name. */
-export const SESSION_COOKIE_NAME = 'adsbook_session';
+export const SESSION_COOKIE_NAME = '__Host-adsbook_session';
+export const ADMIN_SESSION_COOKIE_OPTIONS = {
+  path: '/',
+  httpOnly: true,
+  secure: true,
+  sameSite: 'lax',
+} as const;
 const JWT_ALGORITHM = { name: 'HMAC', hash: 'SHA-256' } as const;
 
 export const ADMIN_ROLES = [

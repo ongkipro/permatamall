@@ -1,6 +1,7 @@
 import type { APIRoute } from 'astro';
 import { jsonError, jsonOk } from '../../../lib/api';
 import { getRuntimeEnv } from '../../../lib/env';
+import { getJakartaUtcDateBounds } from '../../../lib/admin-date-filter';
 
 export const prerender = false;
 
@@ -53,31 +54,48 @@ export const GET: APIRoute = async ({ locals, url }) => {
   
   let dateFilter = "";
   const params: string[] = [];
-  
-  if (startParam && endParam) {
-    dateFilter = "WHERE date(created_at, '+7 hours') BETWEEN ? AND ?";
-    params.push(startParam, endParam);
-  } else if (startParam) {
-    dateFilter = "WHERE date(created_at, '+7 hours') >= ?";
-    params.push(startParam);
-  } else if (endParam) {
-    dateFilter = "WHERE date(created_at, '+7 hours') <= ?";
-    params.push(endParam);
+
+  if (startParam) {
+    dateFilter = "WHERE created_at >= ?";
+    params.push(getJakartaUtcDateBounds(startParam).startInclusive);
+  }
+  if (endParam) {
+    dateFilter += dateFilter ? " AND created_at < ?" : "WHERE created_at < ?";
+    params.push(getJakartaUtcDateBounds(endParam).endExclusive);
   }
 
   try {
-    const row = await (database as D1Database).prepare(`
-      SELECT
-        COUNT(*) AS total_orders,
-        COALESCE(SUM(total_amount), 0) AS total_revenue,
-        COALESCE(SUM(CASE WHEN shipping_status = 'returned' THEN 1 ELSE 0 END), 0) AS returned_orders,
-        COALESCE(SUM(CASE WHEN payment_status IN ('paid', 'settled', 'success') THEN 1 ELSE 0 END), 0) AS paid_orders,
-        COALESCE(SUM(CASE WHEN payment_method = 'cod' THEN 1 ELSE 0 END), 0) AS cod_orders,
-        COALESCE(SUM(CASE WHEN payment_method = 'bank_transfer' THEN 1 ELSE 0 END), 0) AS transfer_orders,
-        COALESCE(SUM(CASE WHEN payment_method = 'qris' THEN 1 ELSE 0 END), 0) AS qris_orders
-      FROM orders
-      ${dateFilter}
-    `).bind(...params).first() as AnalyticsRow | null;
+    const db = database as D1Database;
+    const groupBy =
+      interval === 'hour'
+        ? "STRFTIME('%Y-%m-%d %H:00:00', created_at, '+7 hours')"
+        : "DATE(created_at, '+7 hours')";
+    const [summaryResult, trendsResult] = await db.batch([
+      db.prepare(`
+        SELECT
+          COUNT(*) AS total_orders,
+          COALESCE(SUM(total_amount), 0) AS total_revenue,
+          COALESCE(SUM(CASE WHEN shipping_status = 'returned' THEN 1 ELSE 0 END), 0) AS returned_orders,
+          COALESCE(SUM(CASE WHEN payment_status IN ('paid', 'settled', 'success') THEN 1 ELSE 0 END), 0) AS paid_orders,
+          COALESCE(SUM(CASE WHEN payment_method = 'cod' THEN 1 ELSE 0 END), 0) AS cod_orders,
+          COALESCE(SUM(CASE WHEN payment_method = 'bank_transfer' THEN 1 ELSE 0 END), 0) AS transfer_orders,
+          COALESCE(SUM(CASE WHEN payment_method = 'qris' THEN 1 ELSE 0 END), 0) AS qris_orders
+        FROM orders
+        ${dateFilter}
+      `).bind(...params),
+      db.prepare(`
+        SELECT
+          ${groupBy} AS date,
+          COALESCE(SUM(total_amount), 0) AS revenue,
+          COUNT(*) AS orders
+        FROM orders
+        ${dateFilter || "WHERE 1=1"}
+        GROUP BY ${groupBy}
+        ORDER BY date ASC
+      `).bind(...params),
+    ]);
+    const row = summaryResult.results?.[0] as AnalyticsRow | undefined;
+    const trendRows = (trendsResult.results ?? []) as TrendRow[];
 
     const totalOrders = Number(row?.total_orders ?? 0);
     const totalRevenue = Number(row?.total_revenue ?? 0);
@@ -88,18 +106,6 @@ export const GET: APIRoute = async ({ locals, url }) => {
     const qrisOrders = Number(row?.qris_orders ?? 0);
     const ratio = (value: number) => (totalOrders > 0 ? Number(((value / totalOrders) * 100).toFixed(2)) : 0);
 
-    const groupBy = interval === 'hour' ? "STRFTIME('%Y-%m-%d %H:00:00', created_at, '+7 hours')" : "DATE(created_at, '+7 hours')";
-    const trendsResult = await (database as D1Database).prepare(`
-      SELECT 
-        ${groupBy} as date,
-        COALESCE(SUM(total_amount), 0) as revenue,
-        COUNT(*) as orders
-      FROM orders
-      ${dateFilter ? dateFilter : "WHERE 1=1"}
-      GROUP BY ${groupBy}
-      ORDER BY date ASC
-    `).bind(...params).all<TrendRow>();
-
     const trends = [];
     if (startParam && endParam) {
       if (interval === 'hour') {
@@ -108,7 +114,7 @@ export const GET: APIRoute = async ({ locals, url }) => {
         for (let i = 0; i < 24; i++) {
           const hourStr = String(i).padStart(2, '0');
           const dateStr = `${baseDate} ${hourStr}:00:00`;
-          const match = trendsResult.results?.find(r => r.date === dateStr);
+          const match = trendRows.find((trend) => trend.date === dateStr);
           trends.push({
             date: dateStr,
             revenue: Number(match?.revenue ?? 0),
@@ -127,7 +133,7 @@ export const GET: APIRoute = async ({ locals, url }) => {
           const d = new Date(end);
           d.setDate(d.getDate() - i);
           const dateStr = d.toISOString().split('T')[0];
-          const match = trendsResult.results?.find(r => r.date === dateStr);
+          const match = trendRows.find((trend) => trend.date === dateStr);
           trends.push({
             date: dateStr,
             revenue: Number(match?.revenue ?? 0),
@@ -137,11 +143,11 @@ export const GET: APIRoute = async ({ locals, url }) => {
       }
     } else {
       // Default fallback (e.g. All Data) just returns existing grouped results
-      trendsResult.results?.forEach(r => {
+      trendRows.forEach((trend) => {
         trends.push({
-          date: r.date,
-          revenue: Number(r.revenue ?? 0),
-          orders: Number(r.orders ?? 0)
+          date: trend.date,
+          revenue: Number(trend.revenue ?? 0),
+          orders: Number(trend.orders ?? 0)
         });
       });
     }

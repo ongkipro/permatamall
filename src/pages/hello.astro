@@ -6,7 +6,11 @@ import {
   normalizeAdminUsername,
   verifyAdminLoginPassword,
 } from '../lib/admin-credentials';
-import { SESSION_COOKIE_NAME, secureEqual, signJwt } from '../lib/auth';
+import { ADMIN_SESSION_COOKIE_OPTIONS, SESSION_COOKIE_NAME, secureEqual, signJwt } from '../lib/auth';
+import {
+  clearAdminLoginAttempts,
+  consumeAdminLoginAttempt,
+} from '../lib/admin-login-rate-limit';
 import { getEnvValue, getRuntimeEnv } from '../lib/env';
 import { tenantConfig } from '../lib/tenant';
 
@@ -16,25 +20,12 @@ let errorMessage = '';
 let submittedUsername = '';
 let focusPassword = false;
 
-// The middleware's cross-site guard only covers /api/admin/*, and this form
-// posts to itself — so the login POST needs its own origin check. Without it a
-// third-party page can silently log an admin into an attacker's session.
-const loginOrigin = Astro.request.headers.get('origin');
-const loginFetchSite = Astro.request.headers.get('sec-fetch-site');
-const crossSiteLogin =
-  (loginOrigin !== null && loginOrigin !== Astro.url.origin) ||
-  loginFetchSite === 'cross-site';
-
-if (Astro.request.method === 'POST' && crossSiteLogin) {
-  Astro.response.status = 403;
-  errorMessage = 'Permintaan login ditolak karena berasal dari domain lain.';
-} else if (Astro.request.method === 'POST') {
+if (Astro.request.method === 'POST') {
   const env = getRuntimeEnv(Astro.locals);
   const sessions = env?.SESSION as KVNamespace | undefined;
   const database = env?.OMS_DB as D1Database | undefined;
   const authSecret = getEnvValue('AUTH_SECRET', env);
   const clientIp = Astro.request.headers.get('cf-connecting-ip')?.trim() || 'local';
-  const ipAttemptKey = `admin-login-attempts:ip:${clientIp}`;
 
   try {
     if (!sessions || !database || authSecret.length < 32) {
@@ -47,16 +38,23 @@ if (Astro.request.method === 'POST' && crossSiteLogin) {
       focusPassword = true;
       const password = String(data.get('password') || '').slice(0, 1024);
       const bootstrapAdminPassword = getEnvValue('BOOTSTRAP_ADMIN_PASSWORD', env);
-      const userAttemptKey = `admin-login-attempts:user:${username || 'invalid'}`;
-      const [ipAttemptsRaw, userAttemptsRaw] = await Promise.all([
-        sessions.get(ipAttemptKey),
-        sessions.get(userAttemptKey),
-      ]);
-      const ipAttempts = Number(ipAttemptsRaw) || 0;
-      const userAttempts = Number(userAttemptsRaw) || 0;
+      const rateLimit = await consumeAdminLoginAttempt(
+        database,
+        username,
+        clientIp,
+      );
 
-      if (ipAttempts >= 5 || userAttempts >= 5) {
+      if (!rateLimit.allowed) {
         Astro.response.status = 429;
+        Astro.response.headers.set(
+          'Retry-After',
+          String(
+            Math.max(
+              1,
+              Math.ceil((rateLimit.resetAt - Date.now()) / 1000),
+            ),
+          ),
+        );
         errorMessage = 'Terlalu banyak percobaan. Coba kembali dalam 15 menit.';
       } else {
         const credential = await getAdminCredential(database, username);
@@ -82,23 +80,15 @@ if (Astro.request.method === 'POST' && crossSiteLogin) {
               }),
               { expirationTtl: 60 * 60 * 24 },
             ),
-            sessions.delete(ipAttemptKey),
-            sessions.delete(userAttemptKey),
+            clearAdminLoginAttempts(database, rateLimit.scopeKeys),
           ]);
           Astro.cookies.set(SESSION_COOKIE_NAME, token, {
-            path: '/',
-            httpOnly: true,
-            secure: Astro.url.protocol === 'https:',
-            sameSite: 'lax',
+            ...ADMIN_SESSION_COOKIE_OPTIONS,
             maxAge: 60 * 60 * 24,
           });
           return Astro.redirect(credential.mustChangePassword ? '/admin/profile' : '/admin/dashboard');
         }
 
-        await Promise.all([
-          sessions.put(ipAttemptKey, String(ipAttempts + 1), { expirationTtl: 15 * 60 }),
-          sessions.put(userAttemptKey, String(userAttempts + 1), { expirationTtl: 15 * 60 }),
-        ]);
         Astro.response.status = 401;
         errorMessage = 'Username atau password salah.';
       }
@@ -150,17 +140,17 @@ if (Astro.request.method === 'POST' && crossSiteLogin) {
         <form id="loginForm" method="POST" class="space-y-4" aria-busy="false" aria-describedby={errorMessage ? 'loginError' : undefined}>
           <div class="space-y-2">
             <label for="username" class="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">Username Admin</label>
-            <input id="username" type="text" name="username" required autocomplete="username" autofocus={!focusPassword} value={submittedUsername} class="admin-input-flat" />
+            <input id="username" type="text" name="username" required autocomplete="username" autofocus={!focusPassword} value={submittedUsername} class="admin-input-flat focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-1" />
           </div>
 
           <div class="space-y-2">
             <label for="password" class="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">Password</label>
             <div class="relative">
-              <input id="password" type="password" name="password" required autocomplete="current-password" autofocus={focusPassword} class="admin-input-flat pr-20" />
-              <button id="togglePassword" type="button" class="absolute right-0 top-0 h-full px-3 py-2 text-xs font-medium text-slate-500 hover:text-slate-900 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-slate-300" aria-controls="password" aria-label="Tampilkan password" aria-pressed="false">Lihat</button>
+              <input id="password" type="password" name="password" required autocomplete="current-password" autofocus={focusPassword} class="admin-input-flat pr-20 focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-1" />
+              <button id="togglePassword" type="button" class="absolute right-0 top-0 h-full rounded-r-md px-3 py-2 text-xs font-medium text-slate-500 hover:text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-blue-600" aria-controls="password" aria-label="Tampilkan password" aria-pressed="false">Lihat</button>
             </div>
           </div>
-          <button id="loginSubmit" type="submit" class="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-slate-300 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-slate-900 text-slate-50 hover:bg-slate-900/90 h-10 px-4 py-2 w-full">
+          <button id="loginSubmit" type="submit" class="btn-primary min-h-[44px] w-full px-4 py-2">
             Masuk Dashboard
           </button>
         <p id="loginStatus" class="sr-only" role="status" aria-live="polite" aria-atomic="true"></p>

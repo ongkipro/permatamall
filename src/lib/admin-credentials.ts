@@ -50,8 +50,10 @@ export function validateNewAdminPassword(password: string, username: string) {
   return '';
 }
 
-export function isDefaultAdminCredential(credential: Pick<AdminCredential, 'username' | 'passwordHash'>) {
-  return credential.username === DEFAULT_ADMIN_USERNAME && credential.passwordHash === DEFAULT_ADMIN_PASSWORD_HASH;
+export function isDefaultAdminCredential(
+  credential: Pick<AdminCredential, 'passwordHash'>,
+) {
+  return credential.passwordHash === DEFAULT_ADMIN_PASSWORD_HASH;
 }
 
 export async function verifyAdminLoginPassword(
@@ -61,6 +63,9 @@ export async function verifyAdminLoginPassword(
 ) {
   if (isDefaultAdminCredential(credential)) {
     const configuredBootstrap = bootstrapPassword.trim();
+    // Match the PBKDF2 cost of rotated and unknown credentials before checking
+    // the bootstrap secret, so the seeded state is not a timing oracle.
+    await verifyPasswordHash(password, DEFAULT_ADMIN_PASSWORD_HASH);
     if (configuredBootstrap.length < 16) return false;
     return secureEqual(password, configuredBootstrap);
   }
@@ -87,7 +92,7 @@ export async function hashAdminPassword(password: string) {
 
 export async function getAdminCredential(
   database: D1Database,
-  username = DEFAULT_ADMIN_USERNAME,
+  username: string,
 ): Promise<AdminCredential | null> {
   const normalizedUsername = normalizeAdminUsername(username);
   const row = await database.prepare(`

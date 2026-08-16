@@ -33,6 +33,15 @@ export function getAdminDateFilterLabel(value: string) {
 export function formatJakartaDate(value: Date) {
   return jakartaDateFormatter.format(value);
 }
+export function getJakartaUtcDateBounds(value: string) {
+  const start = new Date(`${value}T00:00:00.000+07:00`);
+  const endExclusive = new Date(start.getTime() + 24 * 60 * 60 * 1000);
+  return {
+    startInclusive: start.toISOString(),
+    endExclusive: endExclusive.toISOString(),
+  };
+}
+
 
 export function shiftAdminDate(value: string, days: number) {
   const [year, month, day] = value.split("-").map(Number);

@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { registerHooks } from 'node:module';
 import test from 'node:test';
 import {
+  ADMIN_SESSION_COOKIE_OPTIONS,
   ADMIN_ROLES,
   canAccessAdminRoute,
   getDefaultAdminRoute,
@@ -267,22 +268,32 @@ test('a malformed or corrupt token degrades to no session instead of throwing', 
   );
 });
 
+test('the __Host session cookie invariant is shared by setters and deleters', () => {
+  assert.deepEqual(ADMIN_SESSION_COOKIE_OPTIONS, {
+    path: '/',
+    httpOnly: true,
+    secure: true,
+    sameSite: 'lax',
+  });
+});
+
 test('the session cookie is read only under its exact name', async () => {
   const { token } = await signJwt({ username: 'paduka.admin', role: 'owner' }, AUTH_SECRET);
   const read = (cookie?: string) =>
     getSessionCookie(new Request('https://admin.test/admin', cookie ? { headers: { cookie } } : undefined));
 
-  assert.equal(read(`adsbook_session=${token}`), token);
-  assert.equal(read(`theme=dark; adsbook_session=${token}; other=1`), token);
-  assert.equal(read(`adsbook_session=${encodeURIComponent(token)}`), token);
+  assert.equal(read(`__Host-adsbook_session=${token}`), token);
+  assert.equal(read(`theme=dark; __Host-adsbook_session=${token}; other=1`), token);
+  assert.equal(read(`__Host-adsbook_session=${encodeURIComponent(token)}`), token);
   assert.equal(read(), null);
   assert.equal(read('theme=dark'), null);
-  assert.equal(read('adsbook_session=%'), '%');
-  assert.equal(read('adsbook_session=%ZZ'), '%ZZ');
+  assert.equal(read('__Host-adsbook_session=%'), '%');
+  assert.equal(read('__Host-adsbook_session=%ZZ'), '%ZZ');
   // A cookie whose name merely ends with the session name must not be accepted.
-  assert.equal(read('xadsbook_session=forged'), null);
-  assert.equal(read('evil_adsbook_session=forged'), null);
+  assert.equal(read('x__Host-adsbook_session=forged'), null);
+  assert.equal(read('evil___Host-adsbook_session=forged'), null);
 });
+
 
 test('a session is closed once the credential behind it rotates', async () => {
   const { token, session } = await signJwt({ username: 'paduka.admin', role: 'advertiser' }, AUTH_SECRET);
@@ -468,7 +479,7 @@ async function runAdminRequest(options: {
   credential: CredentialRow;
 }) {
   const headers = new Headers();
-  if (options.token) headers.set('cookie', `adsbook_session=${encodeURIComponent(options.token)}`);
+  if (options.token) headers.set('cookie', `__Host-adsbook_session=${encodeURIComponent(options.token)}`);
   const context = {
     request: new Request(`https://admin.test${options.pathname}`, { headers }),
     locals: {

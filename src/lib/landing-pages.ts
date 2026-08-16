@@ -307,12 +307,31 @@ export async function getLandingPageBySlug(
   slug: string,
 ): Promise<LandingPage | null> {
   const database = getDatabase(locals);
-  const page = await findPageBySlug(database, slug);
+  const [pageResult, sectionResult] = await database.batch<
+    LandingPageRow | LandingSectionRow
+  >([
+    database
+      .prepare(`SELECT ${PAGE_COLUMNS} FROM landing_pages WHERE slug = ? LIMIT 1`)
+      .bind(slug),
+    database
+      .prepare(
+        `SELECT ${SECTION_COLUMNS}
+         FROM landing_sections
+         WHERE landing_page_id = (
+           SELECT id FROM landing_pages WHERE slug = ? LIMIT 1
+         )
+         ORDER BY sort_order ASC, created_at ASC`,
+      )
+      .bind(slug),
+  ]);
+  const page = (pageResult?.results?.[0] ?? null) as LandingPageRow | null;
   if (!page) return null;
 
   return {
     ...page,
-    sections: await loadSections(database, page.id),
+    sections: (sectionResult?.results ?? []).map((row) =>
+      mapSection(row as LandingSectionRow),
+    ),
   };
 }
 
