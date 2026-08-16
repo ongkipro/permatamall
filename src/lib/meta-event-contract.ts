@@ -35,9 +35,9 @@ type ValidationResult =
 
 const EVENT_NAMES = new Set<string>(META_EVENT_NAMES);
 const EVENT_ID_PATTERN = /^[A-Za-z0-9_.:-]{1,128}$/;
-// Catalog IDs are numeric D1 product ids or formatted strings - minimum 5 characters / digits
-// (e.g. 10001, 434683). The 5-character minimum pattern lock ensures Meta Commerce & Google Catalog match.
-const PRODUCT_ID_PATTERN = /^[A-Za-z0-9_./-]{5,128}$/;
+// Numeric D1 ids start at 1 and can be one digit. Formatted catalog ids retain
+// the five-character minimum so arbitrary punctuation-only values stay invalid.
+const PRODUCT_ID_PATTERN = /^(?:[1-9]\d{0,127}|[A-Za-z0-9_./-]{5,128})$/;
 // fb.<subdomainIndex>.<timestamp>.<payload>
 const FB_COOKIE_PATTERN = /^fb\.\d\.\d{10,20}\..+$/;
 

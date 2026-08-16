@@ -44,13 +44,28 @@ test('the payload the storefront actually sends is accepted intact', () => {
   assert.equal(result.value.eventSourceUrl, 'https://permatamall.shop/thanks');
 });
 
-test('live six-digit catalog ids reach Meta', () => {
-  // Real Zanoby catalog ids. The old /^\d{5}$/ rule rejected all of them.
-  for (const id of ['434683', '434685', '441672']) {
+test('live Permatamall D1 product ids reach Meta', () => {
+  for (const id of ['1', '22', '434683']) {
     const result = validateMetaEventPayload({ ...wirePayload, product_id: id }, requestUrl);
     assert.equal(result.ok, true, `catalog id ${id} must reach Meta`);
     if (result.ok) assert.deepEqual(result.value.contentIds, [id]);
   }
+});
+
+test('PageView is accepted without a catalog product id', () => {
+  const result = validateMetaEventPayload(
+    {
+      event_name: 'PageView',
+      event_id: 'pv_1786886653878_26osn2',
+      event_source_url: 'https://permatamall.shop/',
+      content_name: 'Permata Mall',
+      value: 1,
+      currency: 'IDR',
+    },
+    requestUrl,
+  );
+  assert.equal(result.ok, true);
+  if (result.ok) assert.equal(result.value.contentIds, undefined);
 });
 
 test('match signals survive the contract instead of being dropped', () => {
