@@ -2074,3 +2074,12 @@ Scope: Comprehensive UI/UX redesign and backend enhancement for `/admin/orders`,
   - `npm run build`: **complete** (Cloudflare server bundle).
   - Browser: **public menu 8/8**, **current-role admin menu/profile 5/5**, both skip links functional, no 390 px horizontal overflow, `/thanks` and `/payment` clean before downstream requests, and `/api/order-status` observed as POST JSON only.
   - No deploy, remote database write, commit, or push was performed.
+
+## Production Data Minimisation — 2026-08-16
+
+- Audited the only production `warehouses` row against its order and pickup-schedule references. The row is still required by checkout and shipping, but its previously provisioned contact, address, provider-origin, and pickup-address values were not referenced by any production order or pickup schedule.
+- Scrubbed those stale values in both local and remote D1 while retaining warehouse `id = 1`, `store_id = 1`, and all relational structure. The guarded update required the row to have no `orders.warehouse_id` or `pickup_schedules.warehouse_id` references; each database reported exactly one updated row.
+- Remote post-write proof: 1 store, 1 retained warehouse shell, 22 products, 110 variants, 1 order, 0 pickup schedules, 0 foreign sample products, no warehouse order/pickup references, all sensitive warehouse fields empty, and `PRAGMA foreign_key_check` returned no rows.
+- Local post-write proof: the warehouse fields are empty and `PRAGMA foreign_key_check` returned no rows.
+- Public production smoke: `/`, `/produk`, and `/produk/daira-tas-selempang-bahu-kanvas` each returned HTTP 200 with a rendered `<main>`; `/admin/settings` redirected an unauthenticated browser to `/hello`.
+- The cleanup is intentionally an operator data action, not a distributable migration: a migration cannot identify private/provider values safely across unrelated installs, and replaying such a write would risk erasing merchant configuration.

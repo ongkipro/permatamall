@@ -112,7 +112,7 @@ System-wide security, correctness, documentation, navigation, and UX audit:
 | Medium | Headless key scope/quota, authenticated order-status read, a published OpenAPI contract, and an executable adapter remain open (**H4**, **H6**, **H7**, **H8**) |
 | Medium | Workers observability, alerting, and an install-visible health surface remain absent (**G7**, `OBSERVABILITY.md`) |
 | Blocked | Unpaid-order recovery and several provider edge contracts require an explicitly approved live capture before implementation |
-| Data note | Local/remote D1 may still contain a previously provisioned warehouse address, phone, and provider ObjectIds; scrubbing it is a separate destructive/remote-data action |
+| Data note | The previously provisioned warehouse contact, address, provider-origin, and pickup-address values were scrubbed from local and remote D1 on 2026-08-16. The required warehouse shell and all relational integrity were retained; post-write `PRAGMA foreign_key_check` returned no rows |
 
 ---
 
