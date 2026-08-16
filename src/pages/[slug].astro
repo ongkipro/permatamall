@@ -3,6 +3,7 @@ import GeoIpResolvedForm from '../components/forms/GeoIpResolvedForm.astro';
 import MetaLandingTracker from '../components/tracking/MetaLandingTracker.astro';
 import BaseLayout from '../layouts/BaseLayout.astro';
 import { getStorefrontProduct } from '../lib/catalog';
+import { resolveFormVariant } from '../lib/form-config';
 import { getLandingPageBySlug, parseShortcodes } from '../lib/landing-pages';
 import { getStoreSupportWhatsapp } from '../lib/public-store';
 import { getSessionCookie, verifyJwt } from '../lib/auth';
@@ -78,6 +79,13 @@ if (!product) {
 const csPhone = await getStoreSupportWhatsapp(Astro.locals);
 const formSections = page.sections.filter((section) => section.type === 'form');
 const firstFormSectionId = formSections[0]?.id;
+const selectedVariant = resolveFormVariant(
+  product,
+  formSections[0]?.form_config?.selected_variant_id,
+);
+if (!selectedVariant) {
+  return new Response('Landing page product has no available variant', { status: 404 });
+}
 
 // Clean title and description: focus strictly on product name without redundant "landing page" text
 const rawTitle = page.meta_title || page.title || product.seoTitle || product.productName;
@@ -129,9 +137,9 @@ const productSchemaJson = JSON.stringify(productSchema).replace(/</g, '\\u003c')
   </Fragment>
   <MetaLandingTracker
     slug={page.slug}
-    productId={product.productId}
-    contentName={product.contentName}
-    price={product.price}
+    contentId={selectedVariant.id}
+    contentName={`${product.contentName} - ${selectedVariant.label}`}
+    price={selectedVariant.price}
   />
 
   {

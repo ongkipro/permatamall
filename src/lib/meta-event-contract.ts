@@ -25,6 +25,7 @@ export type ValidMetaEvent = {
   fbc?: string;
   contentName?: string;
   contentIds?: string[];
+  contentType?: 'product';
   value?: number;
   currency: 'IDR';
 };
@@ -115,11 +116,18 @@ export function validateMetaEventPayload(input: unknown, requestUrl: string): Va
   // that follow the Meta payload shape verbatim. Reading only the nested shape is
   // what previously sent Meta an event with no value and no catalog id at all.
   const commerce = customData ?? payload;
+  const isCatalogEvent = payload.event_name !== 'PageView';
+  if (isCatalogEvent && commerce.content_type !== 'product') {
+    return { ok: false, error: 'Meta catalog event membutuhkan content_type product.' };
+  }
+  if (!isCatalogEvent && commerce.content_type !== undefined) {
+    return { ok: false, error: 'Meta PageView tidak menerima content_type katalog.' };
+  }
 
   const contentName = optionalString(commerce.content_name, 200);
   if (contentName === null) return { ok: false, error: 'Meta content_name tidak valid.' };
 
-  const rawContentIds = commerce.content_ids ?? (commerce.product_id === undefined ? undefined : [commerce.product_id]);
+  const rawContentIds = commerce.content_ids;
   let contentIds: string[] | undefined;
   if (rawContentIds !== undefined) {
     if (
@@ -128,9 +136,16 @@ export function validateMetaEventPayload(input: unknown, requestUrl: string): Va
       rawContentIds.length > 20 ||
       rawContentIds.some((id) => typeof id !== 'string' || !PRODUCT_ID_PATTERN.test(id))
     ) {
-      return { ok: false, error: 'Meta content_ids harus berisi maksimal 20 ID produk katalog.' };
+      return { ok: false, error: 'Meta content_ids harus berisi maksimal 20 variant ID katalog.' };
     }
     contentIds = rawContentIds as string[];
+  }
+  if (
+    isCatalogEvent &&
+    payload.event_name !== 'Purchase' &&
+    !contentIds
+  ) {
+    return { ok: false, error: 'Meta catalog event membutuhkan variant content_ids.' };
   }
 
   let value: number | undefined;
@@ -162,6 +177,7 @@ export function validateMetaEventPayload(input: unknown, requestUrl: string): Va
       fbc: fbc && FB_COOKIE_PATTERN.test(fbc) ? fbc : undefined,
       contentName,
       contentIds,
+      contentType: isCatalogEvent ? 'product' : undefined,
       value,
       currency: 'IDR',
     },

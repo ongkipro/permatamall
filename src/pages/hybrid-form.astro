@@ -40,8 +40,8 @@ const formContext = await resolveFormModeContext(
 >
   <MetaLandingTracker
     slug="hybrid-form"
-    productId={product.productId}
-    contentName={product.productName}
+    contentId={selectedVariant.id}
+    contentName={`${product.productName} - ${selectedVariant.label}`}
     price={selectedVariant.price}
   />
   <div class="mx-auto max-w-[480px] bg-white py-4">

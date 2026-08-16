@@ -152,10 +152,9 @@ export function initMiddleOrderForm(
     const selected = form?.querySelector<HTMLInputElement>(
       'input[name="variant"]:checked',
     );
-    const contentName = String(selected?.dataset.label || productName);
-    // content_ids Meta harus product ID (match katalog + funnel ViewContent), bukan variant unique id.
-    const contentId = String(productId || '');
-    const variantUniqueId = String(selected?.value || "");
+    const variantLabel = String(selected?.dataset.label || "").trim();
+    const contentName = variantLabel ? `${productName} - ${variantLabel}` : productName;
+    const contentId = String(selected?.value || "");
     const value = Number(selected?.dataset.price || 1);
     if ((window as any).fbq) {
       await ensureMetaAdvancedMatching(extraUserData);
@@ -176,7 +175,7 @@ export function initMiddleOrderForm(
       event_name: eventName,
       event_id: eventId,
       lp_name: productSlug,
-      product_id: contentId || undefined,
+      content_ids: contentId ? [contentId] : undefined,
       content_name: contentName,
       value,
       currency: "IDR",
@@ -195,7 +194,7 @@ export function initMiddleOrderForm(
         value,
         item_id: contentId,
         item_name: contentName,
-        item_variant: variantUniqueId || undefined,
+        item_variant: contentId || undefined,
         event_id: eventId,
       },
     );

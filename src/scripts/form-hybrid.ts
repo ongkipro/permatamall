@@ -361,11 +361,12 @@ function initHybridOrderFormInstance(formRoot: HTMLElement) {
     const checked = form.querySelector<HTMLInputElement>(
       'input[name="variant"]:checked',
     );
+    const variantLabel = String(checked?.dataset.label || "").trim();
     return {
-      // content_ids Meta harus product ID (match katalog + funnel ViewContent), bukan variant unique id.
-      productId: String(config.productId || ''),
-      variantUniqueId: String(checked?.value || ""),
-      contentName: String(checked?.dataset.label || config.productName),
+      contentId: String(checked?.value || ""),
+      contentName: variantLabel
+        ? `${config.productName} - ${variantLabel}`
+        : config.productName,
       value: Number(checked?.dataset.price || 1),
     };
   };
@@ -426,7 +427,7 @@ function initHybridOrderFormInstance(formRoot: HTMLElement) {
         eventName,
         {
           content_name: meta.contentName,
-          content_ids: meta.productId ? [meta.productId] : undefined,
+          content_ids: meta.contentId ? [meta.contentId] : undefined,
           content_type: "product",
           value: meta.value,
           currency: "IDR",
@@ -438,7 +439,7 @@ function initHybridOrderFormInstance(formRoot: HTMLElement) {
       event_name: eventName,
       event_id: eventId,
       lp_name: config.productSlug,
-      product_id: meta.productId || undefined,
+      content_ids: meta.contentId ? [meta.contentId] : undefined,
       content_name: meta.contentName,
       value: meta.value,
       currency: "IDR",
@@ -455,9 +456,9 @@ function initHybridOrderFormInstance(formRoot: HTMLElement) {
       {
         currency: "IDR",
         value: meta.value,
-        item_id: meta.productId,
+        item_id: meta.contentId,
         item_name: meta.contentName,
-        item_variant: meta.variantUniqueId || undefined,
+        item_variant: meta.contentId || undefined,
         event_id: eventId,
       },
     );
@@ -468,7 +469,7 @@ function initHybridOrderFormInstance(formRoot: HTMLElement) {
           {
             type: eventName === "AddToCart" ? "adsbook:add-to-cart" : "adsbook:initiate-checkout",
             content_name: meta.contentName,
-            content_ids: meta.productId ? [meta.productId] : undefined,
+            content_ids: meta.contentId ? [meta.contentId] : undefined,
             content_type: "product",
             value: meta.value,
             currency: "IDR",

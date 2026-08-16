@@ -23,6 +23,7 @@ type OrderStatus = Record<string, unknown>;
 
 type TrackerRun = {
   pixelEventIds: string[];
+  pixelPayloads: Record<string, unknown>[];
   postedPayloads: Record<string, unknown>[];
 };
 
@@ -41,7 +42,7 @@ function storageStub() {
  * stubbed browser, with /api/order-status answering `orderStatus`.
  */
 async function runTracker(orderStatus: OrderStatus): Promise<TrackerRun> {
-  const run: TrackerRun = { pixelEventIds: [], postedPayloads: [] };
+  const run: TrackerRun = { pixelEventIds: [], pixelPayloads: [], postedPayloads: [] };
   const thanksState = {
     order_id: "INV-10042",
     order_pk: "42",
@@ -79,8 +80,10 @@ async function runTracker(orderStatus: OrderStatus): Promise<TrackerRun> {
       search: "",
       href: "https://permatamall.shop/thanks",
     },
-    fbq: (action: string, _eventName: string, _data: unknown, options?: { eventID?: string }) => {
-      if (action === "track") run.pixelEventIds.push(String(options?.eventID || ""));
+    fbq: (action: string, _eventName: string, data: unknown, options?: { eventID?: string }) => {
+      if (action !== "track") return;
+      run.pixelEventIds.push(String(options?.eventID || ""));
+      run.pixelPayloads.push(data as Record<string, unknown>);
     },
   };
 
@@ -122,6 +125,7 @@ test("browser and server Purchase legs derive the same event_id for one order", 
     payment_method: "cod",
     is_paid: false,
     total_amount: 189_000,
+    variant_ids: ["106", "107"],
   });
 
   const serverEventId = resolveMetaEventId("Purchase", "browser-generated-event-id", "INV-10042");
@@ -135,6 +139,8 @@ test("browser and server Purchase legs derive the same event_id for one order", 
   // as the event_id - the same string the Pixel just used.
   assert.equal(run.postedPayloads[0].order_number, "INV-10042");
   assert.equal(run.postedPayloads[0].status_token, "status-token-42");
+  assert.deepEqual(run.pixelPayloads[0].content_ids, ["106", "107"]);
+  assert.deepEqual(run.postedPayloads[0].content_ids, ["106", "107"]);
 });
 
 test("a Purchase without a resolvable order number emits nothing at all", async () => {
@@ -145,10 +151,26 @@ test("a Purchase without a resolvable order number emits nothing at all", async 
     payment_method: "cod",
     is_paid: false,
     total_amount: 189_000,
+    variant_ids: ["106"],
   });
 
   assert.equal(run.pixelEventIds.length, 0, "no order number means no Pixel Purchase");
   assert.equal(run.postedPayloads.length, 0, "no order number means no CAPI Purchase");
+});
+
+test("a Purchase without canonical variant IDs emits nothing at all", async () => {
+  const run = await runTracker({
+    success: true,
+    order_number: "INV-10042",
+    payment_status: "unpaid",
+    payment_method: "cod",
+    is_paid: false,
+    total_amount: 189_000,
+    variant_ids: [],
+  });
+
+  assert.equal(run.pixelEventIds.length, 0);
+  assert.equal(run.postedPayloads.length, 0);
 });
 
 test("no checkout form mints a random Purchase event_id any more", () => {

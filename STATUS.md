@@ -1,16 +1,15 @@
 # STATUS — AdsBookCMS
 
-> Verified against the current branch and production: 2026-08-16. Source
-> commit `c99f46d` was manually deployed after the catalog feed cache
-> correction.
+> Verified against the current branch and production: 2026-08-16. Production
+> Worker `c72c7133-15af-4355-97ec-fdaa3ca41f3c` was deployed from the current
+> worktree based on source commit `c99f46d`.
 >
-> Current release gates: `npm run check` 312 files / 0 errors / 0 warnings /
-> 0 hints · `npm test` 249 / 249 · `npm run build` complete · local and
-> production D1 migrations complete through `0037`.
+> Current release gates: `npm run check` 312 files / 0 errors / 0 warnings / 0
+> hints · `npm test` 250 / 250 · `npm run build` complete.
+> `npm run deploy -- --dry-run` complete. Local and production D1 are migrated through `0039`.
 >
-> Production catalog identity is platform-specific: Google items use canonical
-> D1 variant IDs grouped by product ID, while Meta catalog and Pixel/CAPI use
-> canonical D1 product IDs.
+> `product_variants.id` is now the one immutable external catalog identity for
+> Google items, Meta catalog items, and every Meta catalog event.
 
 Current state of the system. Implemented behaviour lives here; history lives in `BUILD-LOG.md`; remaining work lives in `UNIMPLEMENTED_SPECS.md`; structure lives in `ARCHITECTURE.md`.
 
@@ -24,19 +23,19 @@ The previous version of this file described a different repository — it opened
 | --- | --- |
 | Product | AdsBookCMS (single) |
 | Worker | `cmsads-permatamall` |
-| Worker version | `2beee1ea-e57b-477f-be4b-4ec5c247b019` |
+| Worker version | `c72c7133-15af-4355-97ec-fdaa3ca41f3c` |
 | Domains | `permatamall.shop`, `www.permatamall.shop` (both custom domains) |
 | D1 | `cmsads-permatamall-d1` |
 | R2 | `cmsads-permatamall-assets` |
 | KV | `SESSION` |
 | Version | `1.2.1` / `2026.08-optimized` (`src/lib/version.ts`) |
-| Schema | 38 migration files, `0000`–`0037`; production applied through `0037` |
+| Schema | 40 migration files, `0000`–`0039`; production applied through `0039` |
 | Environments | one — no staging, no `env.*` blocks |
 | CI | push to `main` → check → test → build → `wrangler deploy` |
 
 Live check on 2026-08-16 after Worker version `a7fada59-ea16-4e63-b99a-3760b2562ff5`: redesigned `/hello` returned 200 at 390×844 and 1440×900 with no horizontal overflow, separate desktop authentication/visual regions, a mobile single-column flow, 44 px controls, autofocus on username, synchronized password visibility, and no browser console errors. The login response remained `Cache-Control: no-store` with `Cache-Status: cmsads; fwd=request`.
 
-Live catalog check on 2026-08-16 after Worker version `2beee1ea-e57b-477f-be4b-4ec5c247b019`: the bare Google and Meta URLs returned 200 XML responses with `Cache-Control: no-cache`. Google returned DAIRA variant IDs `106`–`110`, each grouped under product `22`; Meta returned one DAIRA item with ID `22`, matching the production page's product-level Meta identity. Neither feed contained generated `_vN` IDs.
+Live catalog check on 2026-08-16 after Worker version `c72c7133-15af-4355-97ec-fdaa3ca41f3c`: Google and Meta returned 200 XML responses with `Cache-Control: no-cache`; both emitted the same 110 unique variant IDs `1`–`110` (sum `6105`), one item per variant, and no generated `_vN` IDs. Production D1 reported the same 110 active variant rows and the immutable-ID trigger, with no pending migrations. The production ZIVIA product page at 390×844 selected variant `1`, emitted ViewContent with `content_ids: ["1"]`, `content_type: product`, and `content_name: "ZIVIA Tote Bag Wanita Premium - Warna Black"`, emitted a PageView without catalog identity, and had zero horizontal overflow.
 
 ---
 
@@ -44,9 +43,9 @@ Live catalog check on 2026-08-16 after Worker version `2beee1ea-e57b-477f-be4b-4
 
 | Gate | Result |
 | --- | --- |
-| `npm test` | **249 / 249 passing** |
+| `npm test` | **250 / 250 passing** |
 | `npm run check` | 312 files · 0 errors · 0 warnings · 0 hints |
-| `npm run build` | Cloudflare server bundle complete; `wrangler deploy --dry-run` complete |
+| `npm run build` | Cloudflare server bundle complete; `wrangler deploy --dry-run` complete; Worker `c72c7133-15af-4355-97ec-fdaa3ca41f3c` deployed |
 | Browser/runtime smoke | Production `/hello` and product detail passed at 390×844 with `scrollWidth === clientWidth === 390`, expected accessible controls, visible tenant/product content, and a 44 px login submit target. Production cache boundaries returned hits only for anonymous public HTML; login, cookies, attribution, and preview requests remained `no-store` bypasses. Local Worker verification additionally covered secure cookie invariants, bootstrap login, logout recovery, private-route denial, and cache miss → hit behavior. The redesigned local `/hello` passed at 1440×900, 390×844, and keyboard-reduced 390×500 with logical keyboard order, synchronized password visibility and pending states, 44 px controls, zero horizontal overflow, a preserved 401 invalid-credential response, effective reduced-motion transitions, and visible forced-colors control boundaries. |
 
 ---
@@ -67,7 +66,7 @@ Live catalog check on 2026-08-16 after Worker version `2beee1ea-e57b-477f-be4b-4
 
 **Headless API** — seven `/api/v1/*` routes (storefront descriptor, products list and detail, district lookup, shipping rates, checkout, tracking events) authenticated by API key against `developer_api_keys`. The independently validated Headless origin allowlist is persisted on `stores.headless_allowed_origins` and editable in Developer settings.
 
-**Tracking** — Meta Pixel plus server-side CAPI through a durable outbox with retry and a shared, order-derived `event_id`; Google Tag and Ads conversion configuration with region-scoped Consent Mode v2; TikTok event hooks; and click-id capture for `gclid`/`gbraid`/`wbraid`/`fbclid`/`ttclid`. Hosted and embedded checkout surfaces emit Purchase only after the order can be resolved and verified. Meta events and Google/Meta feeds use the same unpadded positive D1 product IDs.
+**Tracking** — Meta Pixel plus server-side CAPI through a durable outbox with retry and a shared, order-derived `event_id`; Google Tag and Ads conversion configuration with region-scoped Consent Mode v2; TikTok event hooks; and click-id capture for `gclid`/`gbraid`/`wbraid`/`fbclid`/`ttclid`. Hosted and embedded checkout surfaces emit Purchase only after the order can be resolved and verified. Meta browser events, server CAPI, and both Google/Meta feeds use the same unpadded positive D1 `product_variants.id`; non-catalog PageView events carry no catalog type or ID.
 
 ---
 

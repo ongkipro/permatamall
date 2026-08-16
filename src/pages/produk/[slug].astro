@@ -19,6 +19,9 @@ if (!product) {
 }
 
 const cheapestVariant = [...product.variants].sort((a, b) => a.price - b.price)[0] ?? null;
+if (!cheapestVariant) {
+  return Astro.rewrite('/404');
+}
 const displayPrice = cheapestVariant?.price ?? product.price;
 const displayComparePrice = cheapestVariant?.comparePrice ?? product.comparePrice ?? 0;
 const displayDiscount =
@@ -133,8 +136,8 @@ const productSchemaJson = JSON.stringify(productSchema).replace(/</g, '\\u003c')
 >
   <MetaViewContentTracker
     slug={product.slug}
-    productId={product.productId}
-    contentName={product.productName}
+    contentId={cheapestVariant.id}
+    contentName={`${product.productName} - ${cheapestVariant.label}`}
     price={displayPrice}
   />
   <script is:inline type="application/ld+json" set:html={productSchemaJson} />
@@ -432,7 +435,13 @@ const productSchemaJson = JSON.stringify(productSchema).replace(/</g, '\\u003c')
 
     <!-- Direct Order Form Container -->
     <section id="form-pemesanan" class="mt-4 scroll-mt-6 overflow-hidden rounded-none border border-[#D8D6D0] bg-white p-2">
-      <GeoIpResolvedForm mode={formContext.mode} province={formContext.province} productSlug={product.slug} embedded={true} />
+      <GeoIpResolvedForm
+        mode={formContext.mode}
+        province={formContext.province}
+        productSlug={product.slug}
+        selectedVariantId={cheapestVariant.id}
+        embedded={true}
+      />
     </section>
 
     <!-- Sticky Mobile Purchase Bar (Auto-hides when order form is visible) -->

@@ -36,7 +36,7 @@ test('Meta CAPI uses supported API version and forwards test event code', async 
     'settings_test_1',
     'https://petanisejahtera.com/admin/ads/meta',
     { phone: '081234567890', name: 'Siti', clientIp: '127.0.0.1', userAgent: 'test' },
-    { contentName: 'AdsBookCMS Meta CAPI connection test' },
+    { contentName: 'DAIRA Tas Selempang - Warna Black', contentIds: ['106'], contentType: 'product' },
     '123456789',
     'test-token',
     'TEST12345',
@@ -47,8 +47,13 @@ test('Meta CAPI uses supported API version and forwards test event code', async 
   assert.ok(requestBody && typeof requestBody === 'object');
   const payload = requestBody as Record<string, unknown>;
   assert.equal(payload.test_event_code, 'TEST12345');
-  const data = payload.data as Array<{ user_data: { ph: string[]; fn: string[] } }>;
+  const data = payload.data as Array<{
+    user_data: { ph: string[]; fn: string[] };
+    custom_data: { content_ids: string[]; content_type: string };
+  }>;
   assert.match(data[0].user_data.ph[0], /^[a-f0-9]{64}$/);
   assert.match(data[0].user_data.fn[0], /^[a-f0-9]{64}$/);
   assert.notEqual(data[0].user_data.ph[0], '081234567890');
+  assert.deepEqual(data[0].custom_data.content_ids, ['106']);
+  assert.equal(data[0].custom_data.content_type, 'product');
 });

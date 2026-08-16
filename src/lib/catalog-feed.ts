@@ -6,6 +6,7 @@ export type CatalogProductVariant = {
   price: number;
   comparePrice?: number;
   sku?: string;
+  stock?: number | null;
 };
 
 export type CatalogProduct = {
@@ -132,34 +133,60 @@ export function generateMetaCatalogXml(
   for (const product of products) {
     if (!product.variants || product.variants.length === 0) continue;
 
-    const taxonomy = getAdTaxonomy(product.category, product.productName, product.description || product.headline);
+    const taxonomy = getAdTaxonomy(
+      product.category,
+      product.productName,
+      product.description || product.headline,
+    );
     const productLink = `${origin}/produk/${product.slug}`;
-    const imageLink = product.heroImage.startsWith("http") ? product.heroImage : `${origin}${product.heroImage}`;
+    const imageLink = product.heroImage.startsWith("http")
+      ? product.heroImage
+      : `${origin}${product.heroImage}`;
+    const itemDescription =
+      product.seoDescription ||
+      product.headline ||
+      product.description ||
+      siteDescription;
 
-    const variant = product.variants[0];
-    const itemId = formatContentId(product.productId);
-    const hasSale = typeof variant.comparePrice === "number" && variant.comparePrice > variant.price;
-    const basePriceFormatted = `${hasSale ? variant.comparePrice : variant.price} IDR`;
-    const salePriceXml = hasSale
-      ? `\n      <g:sale_price>${escapeXml(`${variant.price} IDR`)}</g:sale_price>`
-      : "";
-    const itemDescription = product.seoDescription || product.headline || product.description || siteDescription;
+    for (const variant of product.variants) {
+      const { itemId, itemGroupId } = formatCatalogItemId(
+        product.productId,
+        variant.id,
+        product.variants.length,
+      );
+      const hasSale =
+        typeof variant.comparePrice === "number" &&
+        variant.comparePrice > variant.price;
+      const basePriceFormatted =
+        `${hasSale ? variant.comparePrice : variant.price} IDR`;
+      const salePriceXml = hasSale
+        ? `\n      <g:sale_price>${escapeXml(`${variant.price} IDR`)}</g:sale_price>`
+        : "";
+      const itemGroupXml = itemGroupId
+        ? `\n      <g:item_group_id>${escapeXml(itemGroupId)}</g:item_group_id>`
+        : "";
+      const color = /^warna\s+(.+)$/i.exec(variant.label)?.[1]?.trim();
+      const colorXml = color
+        ? `\n      <g:color>${escapeXml(color)}</g:color>`
+        : "";
 
-    itemsXml += `
+      itemsXml += `
     <item>
-      <g:id>${escapeXml(itemId)}</g:id>
-      <g:title>${escapeXml(product.productName)}</g:title>
+      <g:id>${escapeXml(itemId)}</g:id>${itemGroupXml}
+      <g:title>${escapeXml(`${product.productName} - ${variant.label}`)}</g:title>
       <g:description>${escapeXml(itemDescription)}</g:description>
       <g:link>${escapeXml(productLink)}</g:link>
       <g:image_link>${escapeXml(imageLink)}</g:image_link>
-      <g:availability>in_stock</g:availability>
+      <g:availability>${variant.stock === 0 ? "out_of_stock" : "in_stock"}</g:availability>
       <g:price>${escapeXml(basePriceFormatted)}</g:price>${salePriceXml}
       <g:fb_product_category>${escapeXml(taxonomy.metaCategoryName)}</g:fb_product_category>
       <g:google_product_category>${taxonomy.googleCategoryId}</g:google_product_category>
       <g:product_type>${escapeXml(taxonomy.productType)}</g:product_type>
+      <g:custom_label_0>${escapeXml(variant.label)}</g:custom_label_0>${colorXml}
       <g:brand>${escapeXml(siteTitle)}</g:brand>
       <g:condition>new</g:condition>
     </item>`;
+    }
   }
 
   return `<?xml version="1.0" encoding="UTF-8"?>

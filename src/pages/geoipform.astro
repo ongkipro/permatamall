@@ -3,6 +3,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 import GeoIpResolvedForm from '../components/forms/GeoIpResolvedForm.astro';
 import MetaLandingTracker from '../components/tracking/MetaLandingTracker.astro';
 import { getStorefrontProduct } from '../lib/catalog';
+import { resolveFormVariant } from '../lib/form-config';
 import { resolveFormModeContext } from '../lib/form-mode';
 import { tenantConfig } from '../lib/tenant';
 import '../styles/form-hybrid.css';
@@ -13,6 +14,8 @@ const productKey = Astro.url.searchParams.get('product_id')?.trim();
 if (!productKey) return Astro.redirect('/produk');
 const product = await getStorefrontProduct(Astro.locals, productKey);
 if (!product) return Astro.redirect('/produk');
+const selectedVariant = resolveFormVariant(product);
+if (!selectedVariant) return Astro.redirect(`/produk/${product.slug}`);
 const formContext = await resolveFormModeContext(Astro.request);
 const title = `Form Pemesanan ${product.productName} - ${tenantConfig.name}`;
 const description = `Form pemesanan ${product.productName} di ${tenantConfig.name}.`;
@@ -28,9 +31,14 @@ const description = `Form pemesanan ${product.productName} di ${tenantConfig.nam
 >
   <MetaLandingTracker
     slug="geoipform"
-    productId={product.productId}
-    contentName={product.productName}
-    price={product.price}
+    contentId={selectedVariant.id}
+    contentName={`${product.productName} - ${selectedVariant.label}`}
+    price={selectedVariant.price}
   />
-  <GeoIpResolvedForm mode={formContext.mode} province={formContext.province} productSlug={product.slug} />
+  <GeoIpResolvedForm
+    mode={formContext.mode}
+    province={formContext.province}
+    productSlug={product.slug}
+    selectedVariantId={selectedVariant.id}
+  />
 </BaseLayout>

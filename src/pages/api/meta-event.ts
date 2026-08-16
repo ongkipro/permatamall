@@ -23,6 +23,7 @@ type PurchaseOrderRow = {
   city: string;
   postal_code: string | null;
   total_amount: number;
+  variant_ids: string | null;
 };
 
 type PurchaseReference = {
@@ -79,11 +80,17 @@ async function findPurchaseOrder(
   return database
     .prepare(
       `SELECT
-         order_number, customer_name, customer_phone, customer_email,
-         province, city, postal_code, total_amount
-       FROM orders
-       WHERE (CAST(id AS TEXT) = ? OR order_number = ?)
-         AND public_status_token = ?
+         o.order_number, o.customer_name, o.customer_phone, o.customer_email,
+         o.province, o.city, o.postal_code, o.total_amount,
+         (
+           SELECT GROUP_CONCAT(DISTINCT oi.variant_id)
+           FROM order_items oi
+           WHERE oi.order_id = o.id
+             AND oi.variant_id IS NOT NULL
+         ) AS variant_ids
+       FROM orders o
+       WHERE (CAST(o.id AS TEXT) = ? OR o.order_number = ?)
+         AND o.public_status_token = ?
        LIMIT 1`,
     )
     .bind(reference.orderLocator, reference.orderLocator, reference.statusToken)
@@ -128,6 +135,19 @@ export const POST: APIRoute = async ({ request, locals }) => {
       }
       purchaseOrderNumber = purchaseOrder.order_number;
     }
+    const purchaseContentIds = purchaseOrder
+      ? String(purchaseOrder.variant_ids || "")
+          .split(",")
+          .map((id) => id.trim())
+          .filter((id) => /^[1-9]\d*$/.test(id))
+          .slice(0, 20)
+      : undefined;
+    if (purchaseOrder && purchaseContentIds?.length === 0) {
+      return json(
+        { success: false, error: 'Order Purchase tidak memiliki variant ID katalog.' },
+        409,
+      );
+    }
 
     const eventId = purchaseOrderNumber || payload.eventId;
     const purchaseExternalId = purchaseOrder
@@ -152,7 +172,8 @@ export const POST: APIRoute = async ({ request, locals }) => {
       },
       customData: {
         contentName: payload.contentName,
-        contentIds: payload.contentIds,
+        contentIds: purchaseContentIds ?? payload.contentIds,
+        contentType: payload.contentType,
         value: purchaseOrder?.total_amount ?? payload.value,
         currency: payload.currency,
         orderNumber: purchaseOrderNumber,

@@ -77,7 +77,7 @@ test("generateGoogleCatalogXml emits g:sale_price when comparePrice is greater t
   assert.ok(xml.includes("<g:google_product_category>6551</g:google_product_category>"));
 });
 
-test("generateMetaCatalogXml emits one product-level item matching Meta content_ids", () => {
+test("generateMetaCatalogXml emits one canonical item per variant", () => {
   const mockProducts: CatalogProduct[] = [
     {
       productId: 15005,
@@ -86,18 +86,21 @@ test("generateMetaCatalogXml emits one product-level item matching Meta content_
       category: "Alat Rumah Tangga",
       heroImage: "https://r2.example.com/pompa.jpg",
       variants: [
-        { id: 201, label: "Standard", price: 120000, sku: "variant_ABC123" },
-        { id: 202, label: "Paket 2", price: 220000, sku: "variant_DEF456" },
+        { id: 201, label: "Warna Black", price: 120000, stock: 4, sku: "variant_ABC123" },
+        { id: 202, label: "Paket 2", price: 220000, stock: 0, sku: "variant_DEF456" },
       ],
     },
   ];
 
   const xml = generateMetaCatalogXml(mockProducts, "https://permatamall.shop");
-  assert.equal(xml.match(/<item>/g)?.length, 1);
-  assert.ok(xml.includes("<g:id>15005</g:id>"));
-  assert.ok(!xml.includes("<g:id>201</g:id>"));
-  assert.ok(!xml.includes("<g:item_group_id>"));
-  assert.ok(xml.includes("<g:title>Pompa Air Portable</g:title>"));
+  assert.equal(xml.match(/<item>/g)?.length, 2);
+  assert.ok(xml.includes("<g:id>201</g:id>"));
+  assert.ok(xml.includes("<g:id>202</g:id>"));
+  assert.equal(xml.match(/<g:item_group_id>15005<\/g:item_group_id>/g)?.length, 2);
+  assert.ok(xml.includes("<g:title>Pompa Air Portable - Warna Black</g:title>"));
+  assert.ok(xml.includes("<g:custom_label_0>Warna Black</g:custom_label_0>"));
+  assert.ok(xml.includes("<g:color>Black</g:color>"));
+  assert.ok(xml.includes("<g:availability>out_of_stock</g:availability>"));
   assert.ok(xml.includes("<g:fb_product_category>"));
   assert.ok(xml.includes("<g:image_link>https://r2.example.com/pompa.jpg</g:image_link>"));
 });

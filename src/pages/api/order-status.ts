@@ -62,7 +62,13 @@ export const POST: APIRoute = async ({ request, locals }) => {
           pt.payment_code,
           pt.provider_payment_url,
           pt.expires_at,
-          pt.failed_reason
+          pt.failed_reason,
+          (
+            SELECT GROUP_CONCAT(DISTINCT oi.variant_id)
+            FROM order_items oi
+            WHERE oi.order_id = o.id
+              AND oi.variant_id IS NOT NULL
+          ) AS variant_ids
         FROM orders o
         LEFT JOIN payment_transactions pt
           ON pt.id = (
@@ -100,14 +106,21 @@ export const POST: APIRoute = async ({ request, locals }) => {
       provider_payment_url?: string | null;
       expires_at?: string | null;
       failed_reason?: string | null;
+      variant_ids?: string | null;
     } | null;
     if (!orderRow)
       return json({ success: false, error: "Order tidak ditemukan." }, 404);
+    const variantIds = String(orderRow.variant_ids || "")
+      .split(",")
+      .map((id) => id.trim())
+      .filter((id) => /^[1-9]\d*$/.test(id))
+      .slice(0, 20);
     const paymentStatus = (orderRow.payment_status || "unpaid").toLowerCase();
     return json({
       success: true,
       is_paid: ["paid", "settled", "success"].includes(paymentStatus),
       order_number: orderRow.order_number || orderPk,
+      variant_ids: variantIds,
       payment_method: orderRow.payment_method || "",
       payment_status: paymentStatus,
       status: orderRow.shipping_status || "pending",

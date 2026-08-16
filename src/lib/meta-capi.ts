@@ -27,7 +27,7 @@ export type MetaUserData = {
 export type MetaCustomData = {
   contentName?: string;
   contentIds?: string[];
-  contentType?: string;
+  contentType?: 'product';
   value?: number;
   currency?: string;
   /** Canonical order number. Required for Purchase event deduplication. */
@@ -182,7 +182,7 @@ export async function sendMetaCapiEvent(
         custom_data: {
           content_name: customData.contentName,
           content_ids: customData.contentIds,
-          content_type: customData.contentType || 'product',
+          content_type: customData.contentType,
           value: customData.value,
           currency: customData.currency || 'IDR',
           order_id: orderNumber,

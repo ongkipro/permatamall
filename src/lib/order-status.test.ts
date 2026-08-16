@@ -32,6 +32,7 @@ test('order status scopes the database lookup to order and status token', async 
         OMS_DB: {
           prepare(query: string) {
             assert.match(query, /o\.public_status_token = \?/);
+            assert.match(query, /GROUP_CONCAT\(DISTINCT oi\.variant_id\)/);
             return {
               bind(...values: unknown[]) {
                 boundValues = values;
@@ -42,6 +43,7 @@ test('order status scopes the database lookup to order and status token', async 
                       payment_status: 'pending',
                       fulfillment_status: 'unfulfilled',
                       grand_total: 149_000,
+                      variant_ids: '106,107',
                     };
                   },
                 };
@@ -55,7 +57,12 @@ test('order status scopes the database lookup to order and status token', async 
 
   assert.equal(response.status, 200);
   assert.deepEqual(boundValues, ['42', '42', 'public-secret']);
-  const payload = await response.json() as { success?: boolean; order_number?: string };
+  const payload = await response.json() as {
+    success?: boolean;
+    order_number?: string;
+    variant_ids?: string[];
+  };
   assert.equal(payload.success, true);
   assert.equal(payload.order_number, 'INV-42');
+  assert.deepEqual(payload.variant_ids, ['106', '107']);
 });

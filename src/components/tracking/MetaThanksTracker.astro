@@ -86,10 +86,6 @@ const { tenantName, tenantSlug } = Astro.props;
     // di dalam fire() supaya dua leg mengutip baris order yang sama.
     const orderId = pick('order_id', '');
     const productName = pick('product_name', tenantName);
-    // content_ids Meta harus product ID (match katalog + funnel ViewContent/AddToCart), bukan variant/lp.
-    // Without a catalog product id, omit content_ids rather than faking it with a
-    // name or variant key that can never match the Meta catalog.
-    const productId = pick('product_id', '');
     const phone = pick('phone', '');
     const name = pick('name', '');
     const province = pick('province', '');
@@ -101,13 +97,14 @@ const { tenantName, tenantSlug } = Astro.props;
     let conversionValue = productPrice * quantity;
     let verifiedPaymentStatus = pick('payment_status', '').toLowerCase();
     const eventName = 'Purchase';
+    let contentIds = [];
 
 
     const paymentMethod = pick('pm', pick('payment_method', 'cod')).toLowerCase();
 
     const data = {
       content_name: productName,
-      content_ids: productId ? [productId] : undefined,
+      content_ids: undefined,
       content_type: 'product',
       value: Number(conversionValue || 1),
       currency: 'IDR',
@@ -134,6 +131,14 @@ const { tenantName, tenantSlug } = Astro.props;
         // firing a browser-minted id here would be an undeduplicatable double count.
         finalEventId = String(statusData.order_number || '').trim();
         if (!finalEventId) return;
+        contentIds = Array.isArray(statusData.variant_ids)
+          ? statusData.variant_ids
+              .map((id) => String(id || '').trim())
+              .filter((id) => /^[1-9]\d*$/.test(id))
+              .slice(0, 20)
+          : [];
+        if (contentIds.length === 0) return;
+        data.content_ids = contentIds;
         verifiedPaymentStatus = String(statusData.payment_status || verifiedPaymentStatus).toLowerCase();
         if (paymentMethod !== 'cod' && !statusData.is_paid) return;
         // Report what the customer actually owes, taken from the order we just
@@ -186,9 +191,9 @@ const { tenantName, tenantSlug } = Astro.props;
         pushGtmEcomEvent('purchase', {
           currency: 'IDR',
           value: Number(conversionValue || 1),
-          item_id: productId,
+          item_id: contentIds[0],
           item_name: productName,
-          item_variant: pick('variant_unique_id', '') || undefined,
+          item_variant: contentIds[0],
           transaction_id: orderId || undefined,
           event_id: finalEventId,
         });
@@ -219,7 +224,7 @@ const { tenantName, tenantSlug } = Astro.props;
         order_number: finalEventId,
         status_token: statusToken,
         lp_name: pick('lp_name', ''),
-        product_id: productId || undefined,
+        content_ids: contentIds,
         content_name: productName,
         value: Number(conversionValue || 1),
         currency: 'IDR',

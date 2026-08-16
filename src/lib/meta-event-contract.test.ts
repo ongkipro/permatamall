@@ -15,7 +15,7 @@ const wirePayload = {
   event_id: 'purchase_INV-20260814-ABC123',
   event_source_url: 'https://permatamall.shop/thanks?order=1',
   lp_name: 'asahan-portable',
-  product_id: '434683',
+  content_ids: ['106'],
   content_name: 'Asahan Portable',
   content_type: 'product',
   value: 89_000,
@@ -40,15 +40,16 @@ test('the payload the storefront actually sends is accepted intact', () => {
   assert.equal(result.value.eventName, 'Purchase');
   assert.equal(result.value.value, 89_000);
   assert.equal(result.value.contentName, 'Asahan Portable');
-  assert.deepEqual(result.value.contentIds, ['434683']);
+  assert.deepEqual(result.value.contentIds, ['106']);
+  assert.equal(result.value.contentType, 'product');
   assert.equal(result.value.currency, 'IDR');
   assert.equal(result.value.eventSourceUrl, 'https://permatamall.shop/thanks');
 });
 
-test('live Permatamall D1 product ids reach Meta with the catalog feed identity', () => {
-  for (const id of ['1', '22', '434683']) {
-    const result = validateMetaEventPayload({ ...wirePayload, product_id: id }, requestUrl);
-    assert.equal(result.ok, true, `catalog id ${id} must reach Meta`);
+test('canonical D1 variant ids reach Meta unchanged', () => {
+  for (const id of ['106', '107', '110']) {
+    const result = validateMetaEventPayload({ ...wirePayload, content_ids: [id] }, requestUrl);
+    assert.equal(result.ok, true, `catalog variant id ${id} must reach Meta`);
     if (result.ok) assert.deepEqual(result.value.contentIds, [formatContentId(id)]);
   }
 });
@@ -66,7 +67,10 @@ test('PageView is accepted without a catalog product id', () => {
     requestUrl,
   );
   assert.equal(result.ok, true);
-  if (result.ok) assert.equal(result.value.contentIds, undefined);
+  if (result.ok) {
+    assert.equal(result.value.contentIds, undefined);
+    assert.equal(result.value.contentType, undefined);
+  }
 });
 
 test('match signals survive the contract instead of being dropped', () => {
@@ -92,12 +96,12 @@ test('the Meta-native nested shape is still accepted', () => {
       event_id: 'vc_asahan_1754400000',
       event_source_url: 'https://permatamall.shop/produk/asahan-portable',
       user_data: { phone: '6281234567890', name: 'Siti' },
-      custom_data: { content_name: 'Asahan Portable', content_ids: ['434683'], value: 89_000, currency: 'IDR' },
+      custom_data: { content_name: 'Asahan Portable - Warna Black', content_ids: ['106'], content_type: 'product', value: 89_000, currency: 'IDR' },
     },
     requestUrl,
   );
   assert.equal(result.ok, true);
-  if (result.ok) assert.deepEqual(result.value.contentIds, ['434683']);
+  if (result.ok) assert.deepEqual(result.value.contentIds, ['106']);
 });
 
 test('malformed browser cookies are dropped without failing the event', () => {
@@ -117,10 +121,19 @@ test('poisoning inputs are rejected before transport', () => {
     { ...wirePayload, event_id: '<script>' },
     { ...wirePayload, event_source_url: 'https://attacker.example/order' },
     // Spaces and HTML tags are rejected as catalog ids.
-    { ...wirePayload, product_id: 'Asahan Portable' },
-    { ...wirePayload, product_id: '<script>id</script>' },
+    { ...wirePayload, content_ids: ['Asahan Portable'] },
+    { ...wirePayload, content_ids: ['<script>id</script>'] },
     { ...wirePayload, value: -1 },
     { ...wirePayload, currency: 'USD' },
+    { ...wirePayload, content_type: 'product_group' },
+    { ...wirePayload, event_name: 'ViewContent', content_ids: undefined },
+    { ...wirePayload, event_name: 'AddToCart', content_type: undefined },
+    {
+      event_name: 'PageView',
+      event_id: 'pv_1786886653878_26osn2',
+      event_source_url: 'https://permatamall.shop/',
+      content_type: 'page',
+    },
     { ...wirePayload, user_data: { ...wirePayload.user_data, customer_name: 'x'.repeat(161) } },
   ];
 

@@ -2151,3 +2151,20 @@ Scope: Comprehensive UI/UX redesign and backend enhancement for `/admin/orders`,
 - **Delivery**: source commit `c0adc8f` pushed to `origin/docs/login-panel-ux-audit`; Worker version `37dc4293-4624-4245-9560-5c2f67222d1c` deployed to `permatamall.shop` and `www.permatamall.shop`. No remote D1 mutation was performed.
 - **Cache correction**: the feed routes no longer advertise a one-hour browser/shared cache lifetime. Both now return `Cache-Control: no-cache`, so scheduled consumers and operator browsers revalidate the canonical URL instead of retaining an obsolete XML representation after a catalog release.
 - **Cache verification and delivery**: focused tests remained **7/7**, `npm run check` remained **312 files / 0 errors**, and the production build completed. Source commit `c99f46d` was pushed to `origin/docs/login-panel-ux-audit`; Worker version `2beee1ea-e57b-477f-be4b-4ec5c247b019` was deployed. The bare production Google and Meta feed URLs returned 200, `Cache-Control: no-cache`, the expected platform-specific DAIRA identities, and no generated `_vN` IDs.
+
+## Canonical Variant Catalog Identity — 2026-08-16
+
+- **Identity decision**: `product_variants.id` is the single immutable external catalog identifier. `products.id` remains the internal grouping identity and is emitted only as `item_group_id` for multi-variant offers.
+- **Feed contract** (`src/lib/catalog-feed.ts`): Google and Meta now emit one item per variant with identical `g:id`, title, price, availability, product URL, image URL, and optional product grouping. The Meta product-level feed split was removed.
+- **Browser event contract** (`MetaLandingTracker.astro`, `MetaViewContentTracker.astro`, checkout scripts and route call sites): ViewContent, AddToCart, and InitiateCheckout now use the selected D1 variant ID and `content_type: product`. Human-readable variant labels remain in `content_name`, never in `content_ids`.
+- **Purchase contract** (`MetaThanksTracker.astro`, `/api/order-status`, `/api/meta-event`): order status resolves canonical variant IDs from `order_items`; Pixel and server CAPI use the same order-derived `event_id` and the same deduplicated variant-ID array. A Purchase without canonical variant IDs emits neither leg.
+- **Database lifecycle**: existing admin updates preserve variant primary keys and mutate values in place. Migration `0039_immutable_product_variant_ids.sql` adds a D1 trigger that rejects primary-key rewrites while allowing normal title, price, SKU, stock, and other attribute changes.
+- **Validation boundary**: PageView is explicitly non-catalog and carries neither `content_type` nor `content_ids`; all catalog events require `content_type: product`, and ViewContent/AddToCart/InitiateCheckout require canonical variant IDs.
+- **Verification**:
+  - `npm test`: **250/250 passed**.
+  - `npm run check`: **312 files, 0 errors, 0 warnings, 0 hints**.
+  - `npm run build` and `npm run deploy -- --dry-run`: complete.
+  - Local D1 migrated through `0039`; an attempted `product_variants.id` update failed with `SQLITE_CONSTRAINT_TRIGGER`.
+  - Local Worker `/feed/meta-catalog.xml` emitted the same variant IDs as the catalog rows. Browser verification on `/produk/produk-galeri-browser` emitted ViewContent `content_ids: ["90002"]`, selected form variant `90002`, `content_type: product`, and zero horizontal overflow; PageView emitted no catalog identity.
+  - Production release: migration `0039` applied successfully; the immutable-ID trigger exists and no migration remains pending. Worker `c72c7133-15af-4355-97ec-fdaa3ca41f3c` deployed from the current worktree based on `c99f46d`.
+  - Production catalog smoke: Google and Meta returned the same 110 unique variant IDs `1`–`110` (sum `6105`) with no generated `_vN` IDs, matching 110 active D1 variants. The ZIVIA product page at 390×844 selected variant `1`, emitted ViewContent `content_ids: ["1"]` with `content_type: product` and the variant label in `content_name`, emitted PageView without catalog identity, and had zero horizontal overflow.
