@@ -1,12 +1,12 @@
 # STATUS — AdsBookCMS
 
-> Verified against the current branch and production: 2026-08-16. Production
-> remains on source commit `93d86f0`; the performance and durable-throttling
-> follow-up on this branch is verified but not deployed.
+> Verified against the current branch and production: 2026-08-16. Source
+> commit `a9247a6` was manually deployed after the explicitly approved D1
+> migrations.
 >
-> Current source gates: `npm run check` 310 files / 0 errors / 0 warnings /
-> 0 hints · `npm test` 243 / 243 · `npm run build` complete · fresh local D1
-> migrations complete through `0037`. Production D1 remains through `0035`.
+> Current release gates: `npm run check` 310 files / 0 errors / 0 warnings /
+> 0 hints · `npm test` 244 / 244 · `npm run build` complete · local and
+> production D1 migrations complete through `0037`.
 
 Current state of the system. Implemented behaviour lives here; history lives in `BUILD-LOG.md`; remaining work lives in `UNIMPLEMENTED_SPECS.md`; structure lives in `ARCHITECTURE.md`.
 
@@ -20,17 +20,17 @@ The previous version of this file described a different repository — it opened
 | --- | --- |
 | Product | AdsBookCMS (single) |
 | Worker | `cmsads-permatamall` |
-| Worker version | `8e908287-4544-4876-a1e1-5dd0e8438628` |
+| Worker version | `6d7eb0cc-86f4-4e1e-9609-3290a7a509f1` |
 | Domains | `permatamall.shop`, `www.permatamall.shop` (both custom domains) |
 | D1 | `cmsads-permatamall-d1` |
 | R2 | `cmsads-permatamall-assets` |
 | KV | `SESSION` |
-| Version | `1.2.0` / `2026.08-hardened` (`src/lib/version.ts`) |
-| Schema | 38 migration files, `0000`–`0037`; production applied through `0035` |
+| Version | `1.2.1` / `2026.08-optimized` (`src/lib/version.ts`) |
+| Schema | 38 migration files, `0000`–`0037`; production applied through `0037` |
 | Environments | one — no staging, no `env.*` blocks |
 | CI | push to `main` → check → test → build → `wrangler deploy` |
 
-Live check on 2026-08-16: `/hello` and `/produk/daira-tas-selempang-bahu-kanvas` returned 200 after deployment with no browser console/page/request errors; `/` and `/produk` returned 200 in the preceding production smoke; `sitemap.xml` lists 8 pages + 22 products.
+Live check on 2026-08-16 after Worker version `6d7eb0cc-86f4-4e1e-9609-3290a7a509f1`: `/hello` and `/produk/daira-tas-selempang-bahu-kanvas` returned 200 at 390×844 with no horizontal overflow; the login submit target measured 44 px and the product page exposed the expected content and form controls. The anonymous product and home cache returned `cmsads; hit`; login, cookies, attribution, and preview requests returned `cmsads; fwd=request`.
 
 ---
 
@@ -38,10 +38,10 @@ Live check on 2026-08-16: `/hello` and `/produk/daira-tas-selempang-bahu-kanvas`
 
 | Gate | Result |
 | --- | --- |
-| `npm test` | **243 / 243 passing** |
+| `npm test` | **244 / 244 passing** |
 | `npm run check` | 310 files · 0 errors · 0 warnings · 0 hints |
 | `npm run build` | Cloudflare server bundle complete; `wrangler deploy --dry-run` complete |
-| Browser/runtime smoke | Production `/hello` passed at 390×844 and 1280×900 with no horizontal overflow, one H1, visible tenant identity, synchronized password toggle, and no console/page/request errors. The production product detail returned 200 with one `<main>` and the expected H1. Local Worker verification additionally covered 44 px mobile targets, secure cookie invariants, bootstrap login, logout recovery, private-route `no-store`, cache miss → hit behavior, and cookie-based cache bypass |
+| Browser/runtime smoke | Production `/hello` and product detail passed at 390×844 with `scrollWidth === clientWidth === 390`, expected accessible controls, visible tenant/product content, and a 44 px login submit target. Production cache boundaries returned hits only for anonymous public HTML; login, cookies, attribution, and preview requests remained `no-store` bypasses. Local Worker verification additionally covered secure cookie invariants, bootstrap login, logout recovery, private-route denial, and cache miss → hit behavior |
 
 ---
 
@@ -114,7 +114,8 @@ Storefront, D1, and login-throttling performance follow-up:
 - Product detail now reads exactly one active product and batches only its variants and published content; landing reads batch the page and ordered sections; analytics uses one raw UTC `created_at` range and one D1 batch instead of date-function predicates and sequential requests.
 - Public home, catalog, product detail, and published landing HTML use a 60-second `caches.default` entry only for anonymous `GET`/`HEAD` requests. Credentials, cookies, preview/token/auth query parameters, redirects, errors, private responses, and any `Set-Cookie` response bypass storage.
 - Login throttling moved from isolate-local/KV read-modify-write behavior to atomic D1 `INSERT ... ON CONFLICT ... RETURNING` counters keyed by source IP and username/IP. Migration `0036` adds the counter table; migration `0037` removes redundant indexes and aligns the landing-section index with its query order.
-- A 20-request production baseline before deployment measured product-detail TTFB at 344.51 ms median and 643.32 ms p95 with no cache headers. The final local Worker measured 20 cache misses at 18.67 ms median / 21.44 ms p95 and the corresponding 20 hits at 7.09 ms median / 7.99 ms p95. Local and production timings are not directly comparable; a production before/after remains pending deployment.
+- Before deployment, 20 production product-detail requests measured 344.51 ms median / 643.32 ms p95 TTFB with no cache headers. After deployment, 20 warm `cmsads; hit` requests measured 47.13 ms median / 65.19 ms p95: an 86.3% median and 89.9% p95 reduction. The production home route measured 47.61 ms median / 57.80 ms p95 after excluding neither samples nor the single 5.94 s network outlier; p95 remained representative across the 20-request set.
+- Production migrations `0036` and `0037` applied successfully, remote query plans use `idx_orders_created_id` and `idx_landing_sections_page`, and Worker version `6d7eb0cc-86f4-4e1e-9609-3290a7a509f1` serves both custom domains. The Free plan remains sufficient for this defect; reconsider Paid only from measured account-limit or observability pressure.
 
 ---
 

@@ -1,6 +1,6 @@
 # Release and Deployment — AdsBookCMS
 
-> Verified against disk: 2026-08-16 @ `0d2e56a`
+> Verified against disk and production: 2026-08-16 @ `a9247a6`
 
 This document is the single owner of how a change reaches production. It replaces the previous `VERSION.md` runbook and the deleted `AUTO_UPDATE_DEPLOY.md`, which between them described three mutually exclusive release models, none of which matched the one workflow that exists.
 
@@ -34,7 +34,7 @@ npm run check     # astro check && tsc --noEmit
 npm run build     # astro build
 ```
 
-Current baseline on `main`: **194 tests passing**, `tsc` clean, `astro check` 0 errors / 0 warnings / 38 hints.
+Current release baseline: **244 tests passing**, `tsc` clean, `astro check` 310 files / 0 errors / 0 warnings / 0 hints.
 
 A green build is not proof the storefront works. For any browser-visible change, open the affected page before merging. Neither `tsc` nor `astro check` catches a route that fails to compose — an unterminated `.astro` frontmatter block silently produced a 404 on `/disclaimer` while every static check stayed green.
 
@@ -52,7 +52,7 @@ npm run db:migrate:remote   # wrangler d1 migrations apply OMS_DB --remote  ← 
 `wrangler d1 migrations apply` reads the `src/db/migrations/` directory, not the Drizzle journal. Rules:
 
 - **Never edit an applied migration in place.** A database that already ran `0017` will never see your edit. Corrections ship as a new forward migration.
-- **Write migrations by hand.** The Drizzle journal stops at `0030` while 34 files exist, so `npm run db:generate` would emit a destructive diff. See `DECISIONS.md` ADR-005.
+- **Write migrations by hand.** The Drizzle journal stops at `0030` while 38 files exist, so `npm run db:generate` would emit a destructive diff. See `DECISIONS.md` ADR-005.
 - **Apply the migration before deploying code that depends on it.** Deploy and migration are independent operations against the same live store.
 - `src/db/migrations/` is the only migration directory. A duplicate previously sat at the repository root outside the configured `migrations_dir`; it was removed on 2026-08-16 and the test fixture that read it now points at the canonical copy.
 
@@ -64,14 +64,14 @@ Two registries currently disagree and both are shipped:
 
 | Source | Field | Value |
 | --- | --- | --- |
-| `src/lib/version.ts` | `version` | `1.2.0` |
-| `src/lib/version.ts` | `releaseTag` | `2026.08-hardened` |
-| `src/lib/version.ts` | `schemaVersion` | `34` |
-| `package.json` | `version` | `1.0.0` |
+| `src/lib/version.ts` | `version` | `1.2.1` |
+| `src/lib/version.ts` | `releaseTag` | `2026.08-optimized` |
+| `src/lib/version.ts` | `schemaVersion` | `38` |
+| `package.json` | `version` | `1.2.0` |
 
-`src/lib/version.ts` is what the admin sidebar renders and is the value users see. `package.json` has never been bumped. Until they are reconciled, treat `src/lib/version.ts` as the product version and `package.json` as meaningless.
+`src/lib/version.ts` is what the admin sidebar renders and is the user-visible product version. `package.json` is the build package version and is not displayed. Until they are reconciled, bump and report `src/lib/version.ts` for product releases.
 
-Note that `schemaVersion: 34` counts migration *files* (`0000`–`0033`); there is no migration file named `0034_*`.
+`schemaVersion: 38` counts migration files `0000`–`0037`.
 
 ### Bumping a release
 
