@@ -58,6 +58,7 @@ export function parseTrafficSource(rawClickIds?: string | null): TrafficSourceIn
   const isMeta = Boolean(
     fbclid ||
       fbc ||
+      fbp ||
       (utmSource && (utmSource.includes('meta') || utmSource.includes('facebook') || utmSource.includes('fb') || utmSource.includes('instagram') || utmSource.includes('ig'))),
   );
 

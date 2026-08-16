@@ -197,7 +197,6 @@ export const POST: APIRoute = async ({ request, locals }) => {
       customerPhone,
       locals,
     );
-    const paymentUrl = `/thanks?order_id=${encodeURIComponent(order.orderNumber)}&order_pk=${order.id}&status_token=${encodeURIComponent(order.publicStatusToken)}`;
     const data = {
       id: order.id,
       order_id: order.orderNumber,
@@ -219,7 +218,6 @@ export const POST: APIRoute = async ({ request, locals }) => {
       cod_service_fee_vat: order.codServiceFeeVat,
       cod_fee_bearer: order.codFeeBearer,
       total_payment: order.totalAmount,
-      payment_url: paymentUrl,
     };
     return json({
       success: true,

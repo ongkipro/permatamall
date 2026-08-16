@@ -28,11 +28,11 @@ export const prerender = false;
           <div>
             <h2 class="text-base font-black text-slate-950">Domain Allowlist Headless API</h2>
             <p class="mt-1 text-xs leading-5 text-slate-500">
-              Daftar domain & subdomain eksternal yang diizinkan mengakses REST API v1 tanpa API secret key.
+              Daftar domain & subdomain eksternal yang diizinkan mengakses REST API v1. Setiap request tetap wajib membawa API key aktif.
             </p>
           </div>
-          <span class="inline-flex items-center rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-bold text-emerald-700 ring-1 ring-inset ring-emerald-600/20">
-            Zero Secret Key Enabled
+          <span class="inline-flex items-center rounded-full bg-blue-50 px-2.5 py-1 text-xs font-bold text-blue-700 ring-1 ring-inset ring-blue-600/20">
+            API Key Required
           </span>
         </div>
 
@@ -73,7 +73,7 @@ export const prerender = false;
     <div class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm md:p-6">
       <h2 class="text-base font-black text-slate-950">Dokumentasi REST API v1</h2>
       <p class="mt-1 text-xs leading-5 text-slate-500">
-        Endpoint publik Headless API yang dapat dipanggil langsung dari JavaScript client-side di frontend kustom Anda.
+        Endpoint Headless API terautentikasi yang dapat dipanggil dari frontend kustom menggunakan API key aktif.
       </p>
 
       <div class="mt-5 grid gap-3 md:grid-cols-2">
@@ -163,7 +163,7 @@ export const prerender = false;
       })
       .then((data) => {
         if (origins) {
-          origins.value = Array.isArray(data.embed_allowed_origins) ? data.embed_allowed_origins.join('\n') : '';
+          origins.value = Array.isArray(data.headless_allowed_origins) ? data.headless_allowed_origins.join('\n') : '';
         }
         loading?.setAttribute('aria-busy', 'false');
         loading?.classList.add('hidden');
@@ -192,12 +192,12 @@ export const prerender = false;
         const response = await fetch('/api/admin/settings', {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action: 'save-embed-origins', embed_allowed_origins: list }),
+          body: JSON.stringify({ action: 'save-headless-origins', headless_allowed_origins: list }),
         });
         const payload = await response.json().catch(() => ({}));
         if (!response.ok || !payload.success) throw new Error(payload.error || 'Gagal menyimpan daftar allowlist.');
-        if (origins && Array.isArray(payload.data?.embed_allowed_origins)) {
-          origins.value = payload.data.embed_allowed_origins.join('\n');
+        if (origins && Array.isArray(payload.data?.headless_allowed_origins)) {
+          origins.value = payload.data.headless_allowed_origins.join('\n');
         }
         showStatus(payload.message || 'Daftar origin allowlist tersimpan.', 'success');
       } catch (error) {

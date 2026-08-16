@@ -5,9 +5,11 @@ import test from 'node:test';
 import { hashApiKeySecret } from './developer-api-keys.ts';
 import {
   parseDomainPattern,
+  parseHeadlessAllowedOrigins,
   matchOriginAgainstPattern,
   isOriginAllowed,
   validateHeadlessRequest,
+  resolveAllowedOrigins,
   buildCorsHeaders,
   headlessOk,
   headlessError,
@@ -22,6 +24,44 @@ test('parseDomainPattern parses wildcard and exact domain patterns', () => {
   assert.equal(parseDomainPattern('https://*.example.com')?.isWildcardSubdomain, true);
   assert.equal(parseDomainPattern('localhost')?.host, 'localhost');
 });
+test('parseHeadlessAllowedOrigins accepts scoped patterns and rejects broad or malformed input', () => {
+  assert.deepEqual(
+    parseHeadlessAllowedOrigins([
+      'https://store.example.com',
+      'https://*.example.com',
+      'http://localhost:4321',
+    ]),
+    {
+      valid: true,
+      patterns: [
+        'https://store.example.com',
+        'https://*.example.com',
+        'http://localhost:4321',
+      ],
+    },
+  );
+  for (const pattern of [
+    '*',
+    '*evil.example.com',
+    'https://example.com/path',
+    'https://user@example.com',
+  ]) {
+    assert.equal(parseHeadlessAllowedOrigins([pattern]).valid, false, pattern);
+  }
+});
+
+test('headless origins stay separate from iframe embed origins', () => {
+  const locals = {
+    runtimeEnv: {
+      PUBLIC_EMBED_ALLOWED_ORIGINS: 'https://embed-only.example',
+      PUBLIC_HEADLESS_ALLOWED_ORIGINS: 'https://api-client.example',
+    },
+  } as unknown as App.Locals;
+  const patterns = resolveAllowedOrigins(locals);
+  assert.equal(patterns.includes('https://api-client.example'), true);
+  assert.equal(patterns.includes('https://embed-only.example'), false);
+});
+
 
 test('matchOriginAgainstPattern correctly matches origins and subdomains', () => {
   // Wildcard open
@@ -111,6 +151,51 @@ test('validateHeadlessRequest returns 403 response for forbidden origin', async 
   assert.notEqual(res.errorResponse, undefined);
   assert.equal(res.errorResponse?.status, 403);
 });
+test('validateHeadlessRequest reads the persisted Headless API allowlist', async () => {
+  const secret = 'cmsads_live_persisted_origin_test_key';
+  const keyHash = await hashApiKeySecret(secret);
+  const request = new Request('https://api.permatamall.shop/api/v1/storefront', {
+    headers: {
+      origin: 'https://store.partner.example',
+      'x-app-key': secret,
+    },
+  });
+  const locals = {
+    runtimeEnv: {
+      OMS_DB: {
+        prepare(query: string) {
+          if (query.includes('SELECT headless_allowed_origins')) {
+            return {
+              async first() {
+                return { headless_allowed_origins: 'https://*.partner.example' };
+              },
+            };
+          }
+          return {
+            bind() {
+              if (query.includes('SELECT id, key_hash')) {
+                return {
+                  async first() {
+                    return { id: 9, key_hash: keyHash };
+                  },
+                };
+              }
+              return {
+                async run() {
+                  return { success: true };
+                },
+              };
+            },
+          };
+        },
+      },
+    },
+  } as unknown as App.Locals;
+
+  const result = await validateHeadlessRequest(request, locals);
+  assert.equal(result.allowed, true);
+});
+
 
 test('validateHeadlessRequest rejects missing API keys before origin-only access', async () => {
   const req = new Request('https://api.permatamall.shop/api/v1/storefront');

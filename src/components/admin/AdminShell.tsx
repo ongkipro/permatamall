@@ -35,6 +35,7 @@ import {
   ADMIN_ACCENT,
   getSearchableNavItems,
   getVisibleNavGroups,
+  isAdminNavHrefActive,
   profileNavItem,
   type AdminRole,
 } from "./admin-navigation";
@@ -78,11 +79,7 @@ export function AdminShell({
   const mobilePrimary = mobilePrimaryIds
     .map((id) => [...allItems, profileNavItem].find((item) => item.id === id))
     .filter((item): item is NonNullable<typeof item> => Boolean(item));
-  const menuIsActive = !mobilePrimary.some((item) =>
-    item.href === "/admin/dashboard"
-      ? currentPath === item.href
-      : currentPath.startsWith(item.href),
-  );
+  const menuIsActive = !mobilePrimary.some((item) => item.id === activeMenu);
 
   React.useEffect(() => {
     const media = window.matchMedia("(min-width: 768px)");
@@ -227,16 +224,16 @@ export function AdminShell({
             </div>
           </header>
 
-          <main id="admin-main" tabIndex={-1} className="admin-main min-h-0 flex-1 overflow-y-auto overscroll-y-contain px-2 pb-[calc(5.25rem+env(safe-area-inset-bottom))] pt-3 sm:px-3 md:px-6 md:pb-8 md:pt-6 xl:px-8">
+          <div id="admin-main" tabIndex={-1} className="admin-main min-h-0 flex-1 overflow-y-auto overscroll-y-contain px-2 pb-[calc(5.25rem+env(safe-area-inset-bottom))] pt-3 sm:px-3 md:px-6 md:pb-8 md:pt-6 xl:px-8">
             <div className="mx-auto w-full max-w-[1560px]">{children}</div>
-          </main>
+          </div>
 
           <nav aria-label="Navigasi utama mobile" className="admin-bottom-nav fixed inset-x-0 bottom-0 z-40 border-t border-slate-200/80 bg-white/95 shadow-[0_-8px_30px_rgba(15,23,42,0.06)] backdrop-blur-xl md:hidden" style={{ paddingBottom: "env(safe-area-inset-bottom)" }}>
             <div className="grid h-16 items-stretch" style={{ gridTemplateColumns: `repeat(${mobilePrimary.length + 1}, minmax(0, 1fr))` }}>
               {mobilePrimary.map((item) => {
-                const active = item.href === "/admin/dashboard" ? currentPath === item.href : currentPath.startsWith(item.href);
+                const active = activeMenu === item.id;
                 return (
-                  <a key={item.href} href={item.href} aria-current={active ? "page" : undefined} className={`group flex min-w-0 flex-col items-center justify-center gap-1 px-1 text-[10px] font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-slate-300 ${active ? "text-slate-950" : "text-slate-500"}`}>
+                  <a key={item.href} href={item.href} aria-current={isAdminNavHrefActive(currentPath, item.href) ? "page" : undefined} className={`group flex min-w-0 flex-col items-center justify-center gap-1 px-1 text-[10px] font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-slate-300 ${active ? "text-slate-950" : "text-slate-500"}`}>
                     <span className="relative grid size-8 place-items-center rounded-xl transition-colors" style={active ? { backgroundColor: `${ADMIN_ACCENT}14`, color: ADMIN_ACCENT } : undefined}>
                       <item.icon className="size-[19px]" aria-hidden="true" />
                       {active && <span className="absolute -bottom-1 h-0.5 w-3 rounded-full" style={{ backgroundColor: ADMIN_ACCENT }} aria-hidden="true" />}
@@ -269,17 +266,38 @@ export function AdminShell({
                   <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">
                     {group.items.map((item) => {
                       const active = activeMenu === item.id;
+                      const activeChild = item.children?.find((child) =>
+                        isAdminNavHrefActive(currentPath, child.href),
+                      );
                       return (
-                        <a key={item.href} href={item.href} aria-current={active ? "page" : undefined} className="flex min-h-13 items-center gap-3 border-b border-slate-100 px-3 py-2 last:border-b-0 active:bg-slate-50">
-                          <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-slate-100 text-slate-600" style={active ? { backgroundColor: `${ADMIN_ACCENT}14`, color: ADMIN_ACCENT } : undefined}>
-                            <item.icon className="size-4" aria-hidden="true" />
-                          </span>
-                          <span className="min-w-0 flex-1">
-                            <span className="block truncate text-sm font-bold text-slate-900">{item.label}</span>
-                            <span className="block truncate text-[11px] text-slate-500">{item.description}</span>
-                          </span>
-                          <ChevronRight className="size-4 shrink-0 text-slate-300" aria-hidden="true" />
-                        </a>
+                        <div key={item.id} className="border-b border-slate-100 last:border-b-0">
+                          <a href={item.href} aria-current={!activeChild && isAdminNavHrefActive(currentPath, item.href) ? "page" : undefined} className="flex min-h-13 items-center gap-3 px-3 py-2 active:bg-slate-50">
+                            <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-slate-100 text-slate-600" style={active ? { backgroundColor: `${ADMIN_ACCENT}14`, color: ADMIN_ACCENT } : undefined}>
+                              <item.icon className="size-4" aria-hidden="true" />
+                            </span>
+                            <span className="min-w-0 flex-1">
+                              <span className="block truncate text-sm font-bold text-slate-900">{item.label}</span>
+                              <span className="block truncate text-[11px] text-slate-500">{item.description}</span>
+                            </span>
+                            <ChevronRight className="size-4 shrink-0 text-slate-300" aria-hidden="true" />
+                          </a>
+                          {item.children && item.children.length > 0 && (
+                            <div className="bg-slate-50/50 pb-1.5 pl-14 pr-3 pt-0">
+                              {item.children.map((child) => {
+                                const childActive = isAdminNavHrefActive(
+                                  currentPath,
+                                  child.href,
+                                );
+                                return (
+                                  <a key={child.href} href={child.href} aria-current={childActive ? "page" : undefined} className={`flex min-h-10 items-center justify-between gap-3 border-t border-slate-100/60 py-1.5 text-sm font-semibold active:bg-slate-100/50 ${childActive ? "text-slate-950" : "text-slate-600"}`}>
+                                    <span className="truncate">{child.label}</span>
+                                    <ChevronRight className="size-3.5 shrink-0 text-slate-300" aria-hidden="true" />
+                                  </a>
+                                );
+                              })}
+                            </div>
+                          )}
+                        </div>
                       );
                     })}
                   </div>

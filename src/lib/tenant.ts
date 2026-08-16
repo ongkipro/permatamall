@@ -32,10 +32,9 @@ const defaults = {
   slug: "adsbook",
   name: "AdsBookCMS Store",
   siteUrl: "https://example.com",
-  description:
-    "Toko online dengan pengiriman ke seluruh Indonesia dan pembayaran di tempat (COD).",
+  description: "Storefront online yang belum dikonfigurasi.",
   logo: "/images/logo.webp",
-  tagline: "Belum Dikonfigurasi",
+  tagline: "",
   themeColor: "#111111",
   locale: "id-ID",
   storefrontTemplate: "compact-market",

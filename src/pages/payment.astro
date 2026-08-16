@@ -4,6 +4,10 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 import { tenantConfig } from '../lib/tenant';
 
 export const prerender = false;
+Astro.response.headers.set('Cache-Control', 'no-store');
+if (Array.from(Astro.url.searchParams.keys()).some((key) => key !== 'preview')) {
+  return Astro.redirect(Astro.url.searchParams.get('preview') === '1' ? '/payment?preview=1' : '/payment', 303);
+}
 ---
 
 <BaseLayout
@@ -13,6 +17,13 @@ export const prerender = false;
   hideFooter
   noindex
 >
+  <script is:inline slot="head">
+    const preview = new URLSearchParams(window.location.search).get('preview') === '1';
+    const cleanUrl = `${window.location.pathname}${preview ? '?preview=1' : ''}${window.location.hash}`;
+    if (`${window.location.pathname}${window.location.search}${window.location.hash}` !== cleanUrl) {
+      window.history.replaceState(null, '', cleanUrl);
+    }
+  </script>
   <main class="min-h-screen bg-[#F8F7F4] px-4 py-6 font-sans text-slate-800 sm:py-10">
     <div class="mx-auto w-full max-w-[480px] overflow-hidden rounded-none border border-slate-200 bg-white shadow-xs">
       <!-- Header Reassurance -->
@@ -200,6 +211,7 @@ export const prerender = false;
     };
 
     const params = new URLSearchParams(window.location.search);
+    const isPreview = params.get('preview') === '1';
     let stored: Record<string, unknown> = {};
     try {
       stored = JSON.parse(sessionStorage.getItem('thanks_state') || '{}') || {};
@@ -222,18 +234,18 @@ export const prerender = false;
     };
     const formatRp = (value: unknown) => formatIdr(numeric(value));
 
-    const orderPk = text(stored.order_pk || params.get('order_id'));
-    const statusToken = text(stored.status_token || params.get('status_token'));
-    let orderNumber = text(stored.order_id || params.get('order_id') || orderPk);
-    let currentStatus = text(stored.payment_status || params.get('payment_status') || 'pending').toLowerCase();
+    const orderPk = text(stored.order_pk);
+    const statusToken = text(stored.status_token);
+    let orderNumber = text(stored.order_id || orderPk);
+    let currentStatus = text(stored.payment_status || 'pending').toLowerCase();
     let payment: PaymentDetails = {
       channel_code: text(stored.payment_channel),
       fee_bearer: text(stored.payment_fee_bearer) === 'seller' ? 'seller' : 'buyer',
       amount: numeric(stored.payment_amount),
       admin_fee: numeric(stored.payment_admin_fee),
-      total_amount: numeric(stored.total_payment || params.get('total_payment')),
+      total_amount: numeric(stored.total_payment),
       virtual_account: text(stored.payment_virtual_account),
-      qr_payload: text(stored.payment_qr_payload || params.get('qr_payload')),
+      qr_payload: text(stored.payment_qr_payload),
       payment_code: text(stored.payment_code),
       payment_url: text(stored.payment_url),
       expires_at: text(stored.payment_expires_at),
@@ -367,8 +379,7 @@ export const prerender = false;
     const redirectToThanks = () => {
       const nextState = { ...stored, payment_status: 'paid' };
       sessionStorage.setItem('thanks_state', JSON.stringify(nextState));
-      params.set('payment_status', 'paid');
-      window.location.replace(`/thanks?${params.toString()}`);
+      window.location.replace('/thanks');
     };
 
     const startCountdown = (expiresAtStr: string) => {
@@ -628,17 +639,20 @@ export const prerender = false;
     });
 
     const refreshStatus = async () => {
-      if (!orderPk) {
-        if (params.get('preview') !== '1') {
+      if (!orderPk || !statusToken) {
+        if (!isPreview) {
           errorEl.hidden = false;
           errorEl.textContent = 'Data pembayaran tidak lengkap. Kembali ke halaman checkout dan buat pesanan kembali.';
         }
         return false;
       }
       try {
-        const queryParams = new URLSearchParams({ order_pk: orderPk });
-        if (statusToken) queryParams.set('status_token', statusToken);
-        const response = await fetch(`/api/order-status?${queryParams.toString()}`, { cache: 'no-store' });
+        const response = await fetch('/api/order-status', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ order_pk: orderPk, status_token: statusToken }),
+          cache: 'no-store',
+        });
         const data = await response.json() as StatusResponse;
         if (!response.ok || data.success === false) throw new Error(data.error || 'Status pembayaran tidak tersedia.');
         orderNumber = text(data.order_number || orderNumber);
@@ -658,7 +672,7 @@ export const prerender = false;
 
     render();
     refreshStatus().then((done) => {
-      if (done || params.get('preview') === '1') return;
+      if (done || isPreview) return;
       const interval = window.setInterval(async () => {
         if (document.visibilityState !== 'visible') return;
         if (await refreshStatus()) window.clearInterval(interval);

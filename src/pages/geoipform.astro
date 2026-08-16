@@ -15,7 +15,7 @@ const product = await getStorefrontProduct(Astro.locals, productKey);
 if (!product) return Astro.redirect('/produk');
 const formContext = await resolveFormModeContext(Astro.request);
 const title = `Form Pemesanan ${product.productName} - ${tenantConfig.name}`;
-const description = `Form pemesanan resmi ${product.productName} dengan alur ringkas, rapi, dan familiar agar proses checkout lebih lancar.`;
+const description = `Form pemesanan ${product.productName} di ${tenantConfig.name}.`;
 ---
 
 <BaseLayout

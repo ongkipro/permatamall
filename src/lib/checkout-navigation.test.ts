@@ -40,7 +40,7 @@ test('navigateAfterCheckout strips PII from completion URLs', () => {
 
   try {
     navigateAfterCheckout('/thanks?order_id=123&status_token=tok&phone=0812&address=jl-mawar&district=coblong');
-    assert.deepEqual(assigned, ['https://permatamall.shop/thanks?order_id=123&status_token=tok']);
+    assert.deepEqual(assigned, ['https://permatamall.shop/thanks']);
   } finally {
     if (originalWindow === undefined) {
       Object.defineProperty(globalThis, 'window', { value: undefined, configurable: true, writable: true });

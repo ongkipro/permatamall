@@ -27,11 +27,14 @@ test("widget keeps a usable iframe fallback and canonical form identity", () => 
 test("legacy snippets remain safe fallbacks", () => {
   assert.match(markup.plainIframe, /loading="lazy"/);
   assert.match(markup.plainIframe, /height="1000"/);
-  assert.match(markup.autoHeightIframe, /event\.origin!=="https:\/\/forms\.example"/);
+  assert.match(markup.autoHeightIframe, /var origin="https:\/\/forms\.example"/);
+  assert.match(markup.autoHeightIframe, /event\.origin!==origin/);
   assert.match(markup.autoHeightIframe, /event\.source!==frame\.contentWindow/);
   assert.match(markup.autoHeightIframe, /Math\.min\(12000,height\)/);
   assert.match(markup.autoHeightIframe, /adsbook:checkout-redirect/);
-  assert.match(markup.autoHeightIframe, /target\.origin==="https:\/\/forms\.example"/);
+  assert.match(markup.autoHeightIframe, /target\.origin===origin/);
   assert.match(markup.autoHeightIframe, /target\.pathname==="\/payment"/);
   assert.match(markup.autoHeightIframe, /target\.pathname==="\/thanks"/);
+  assert.doesNotMatch(markup.autoHeightIframe, /Purchase|adsbook:order-complete/);
+  assert.doesNotMatch(markup.autoHeightIframe, /target\.searchParams\.set/);
 });

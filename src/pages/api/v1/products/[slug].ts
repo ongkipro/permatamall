@@ -83,9 +83,9 @@ export const GET: APIRoute = async ({ params, request, locals }) => {
             rating: r.rating,
           })),
           forms: {
-            hybrid_url: `/form-hybrid?product_id=${product.catalogId}`,
-            middle_url: `/form-middle?product_id=${product.catalogId}`,
-            full_url: `/form-full?product_id=${product.catalogId}`,
+            hybrid_url: `/hybrid-form?product_id=${product.catalogId}`,
+            middle_url: `/middle-form?product_id=${product.catalogId}`,
+            full_url: `/full-form?product_id=${product.catalogId}`,
           },
         },
         related_products: relatedProducts,

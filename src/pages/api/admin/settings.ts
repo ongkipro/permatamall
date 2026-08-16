@@ -8,6 +8,7 @@ import {
   parseEmbedAllowedOrigins,
   resolveEmbedAllowedOrigins,
 } from "../../../lib/embed-security";
+import { parseHeadlessAllowedOrigins } from "../../../lib/headless-api";
 import { getEnvValue, getRuntimeEnv, maskSecretValue } from "../../../lib/env";
 import { AutoLarisClient } from "../../../lib/autolaris-client";
 import { MengantarClient } from "../../../lib/mengantar-client";
@@ -23,6 +24,7 @@ type SettingsPayload = {
   action?:
     | "save-store"
     | "save-embed-origins"
+    | "save-headless-origins"
     | "save-warehouse"
     | "save-crm"
     | "save-integrations"
@@ -38,6 +40,7 @@ type SettingsPayload = {
   store_name?: string;
   support_whatsapp?: string;
   embed_allowed_origins?: unknown;
+  headless_allowed_origins?: unknown;
   payment_fee_bearer?: "buyer" | "seller";
   cod_fee_bearer?: "buyer" | "seller";
   integrations?: {
@@ -81,6 +84,7 @@ type SettingsRow = {
   city: string | null;
   province: string | null;
   embed_allowed_origins?: string | null;
+  headless_allowed_origins?: string | null;
 };
 function clean(value: unknown, maxLength: number) {
   return typeof value === "string" ? value.trim().slice(0, maxLength) : "";
@@ -128,6 +132,7 @@ async function getSettingsRow(database: D1Database) {
         s.disabled_autolaris_channels,
         s.crm_templates,
         s.embed_allowed_origins,
+        s.headless_allowed_origins,
         w.id AS warehouse_id,
         w.name AS warehouse_name,
         w.contact_name,
@@ -239,6 +244,9 @@ export const GET: APIRoute = async ({ locals }) => {
           embed_allowed_origins: embedOriginPolicy.valid
             ? embedOriginPolicy.origins
             : [],
+          headless_allowed_origins: parseHeadlessAllowedOrigins(
+            row.headless_allowed_origins ?? [],
+          ).patterns,
         },
         warehouse: row.warehouse_id
           ? {
@@ -374,6 +382,26 @@ export const PUT: APIRoute = async ({ request, locals }) => {
         data: { embed_allowed_origins: policy.origins },
       });
     }
+    if (body.action === "save-headless-origins") {
+      const policy = parseHeadlessAllowedOrigins(body.headless_allowed_origins);
+      if (!policy.valid) {
+        return jsonError(
+          "Origin Headless API harus berupa domain, origin HTTP(S), atau wildcard subdomain yang valid. Wildcard global, path, query, fragment, dan kredensial tidak diizinkan. Maksimal 25 pola.",
+          400,
+        );
+      }
+      await db
+        .prepare(
+          "UPDATE stores SET headless_allowed_origins = ? WHERE id = ?",
+        )
+        .bind(policy.patterns.join(","), current.store_id)
+        .run();
+      return jsonOk({
+        message: "Allowlist origin Headless API berhasil disimpan.",
+        data: { headless_allowed_origins: policy.patterns },
+      });
+    }
+
 
     if (body.action === "save-payment-fee-policy") {
       if (

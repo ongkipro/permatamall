@@ -48,7 +48,7 @@ AdsBookCMS gives one merchant a complete direct-response storefront: catalog, la
 | REQ-6 | When the database has not been initialised, the system shall present a first-run install wizard that collects store identity, administrator credentials, and locale, writes them to D1, and refuses to run again once complete. | Planned — G2, ADR-004 |
 | REQ-7 | Store identity — name, canonical URL, description, logo, tagline, theme colour, locale, storefront template — shall resolve at runtime from D1 so that changing it requires no rebuild. | Planned — G1, ADR-003 |
 | REQ-8 | On boot, the system shall compare its applied schema version with the version the code expects and shall surface a mismatch rather than failing silently. | Planned — G3 |
-| REQ-9 | A fresh install shall contain no data belonging to any other merchant, and any sample record it ships shall be neutral, clearly labelled, and deletable. | Planned — G4, ADR-006 |
+| REQ-9 | A fresh install shall contain no data belonging to any other merchant, and any sample record it ships shall be neutral, clearly labelled, and deletable. | Implemented — migration `0034` removes the inherited row; the optional demo reset uses a neutral, editable catalog |
 
 ---
 
@@ -115,7 +115,7 @@ AdsBookCMS gives one merchant a complete direct-response storefront: catalog, la
 
 | ID | Requirement | Status |
 | --- | --- | --- |
-| REQ-50 | Browser and server Purchase events shall share one per-order event id and canonical product ids so the platform deduplicates them. | Implemented for the hosted storefront as of 2026-08-16 — both legs key on the `INV-` order number. Still violated by the embedded checkout snippet, which fires Purchase with no event id (gap **G10**) |
+| REQ-50 | Browser and server Purchase events shall share one per-order event id and canonical product ids so the platform deduplicates them. | Implemented for hosted and embedded checkout as of 2026-08-16 — both legs key on the verified `INV-` order number; embedded forms no longer emit Purchase during redirect |
 | REQ-51 | Server-side conversion delivery shall be durable, with retry and attempt accounting, and shall survive a failed outbound call. | Implemented |
 | REQ-52 | CAPI tokens shall remain server-side and shall never reach the browser. | Implemented |
 | REQ-53 | The system shall capture and preserve `gclid`, `gbraid`, `wbraid`, `fbclid`, and `ttclid` from landing through order persistence. | Implemented |

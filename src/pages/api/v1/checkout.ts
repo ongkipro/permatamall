@@ -111,7 +111,6 @@ export const POST: APIRoute = async ({ request, locals }) => {
           seller_account_holder: order.sellerAccountHolder,
           seller_account_number: order.sellerAccountNumber,
         },
-        redirect_url: `/thanks?order_id=${encodeURIComponent(order.id)}&order_sn=${encodeURIComponent(order.orderNumber)}`,
       },
       201,
       validation.corsHeaders

@@ -65,6 +65,7 @@ if (previewRequested) {
     }
   }
 }
+if (isPreview) Astro.response.headers.set('Cache-Control', 'no-store');
 if (!page.is_active && !isPreview) {
   return new Response('Not found', { status: 404 });
 }
@@ -81,7 +82,7 @@ const firstFormSectionId = formSections[0]?.id;
 // Clean title and description: focus strictly on product name without redundant "landing page" text
 const rawTitle = page.meta_title || page.title || product.seoTitle || product.productName;
 const metaTitle = rawTitle.replace(/\s*\(?\s*landing\s*page\s*\)?/gi, '').trim();
-const rawDesc = page.meta_description || product.seoDescription || `Pesan ${product.productName} original online. Garansi COD.`;
+const rawDesc = page.meta_description || product.seoDescription || `Lihat pilihan varian, harga, dan ketersediaan ${product.productName}.`;
 const metaDescription = rawDesc.replace(/\s*landing\s*page\s*/gi, ' ').trim();
 const canonical = `${tenantConfig.siteUrl}/${page.slug}`;
 

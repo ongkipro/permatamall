@@ -192,6 +192,54 @@ export function parseDomainPattern(pattern: string): {
     port,
   };
 }
+export const MAX_HEADLESS_ALLOWED_ORIGINS = 25;
+
+export function parseHeadlessAllowedOrigins(value: unknown): {
+  patterns: string[];
+  valid: boolean;
+} {
+  const candidates = Array.isArray(value)
+    ? value
+    : typeof value === 'string'
+      ? value.split(/[,\n]/)
+      : null;
+  if (!candidates || candidates.length > MAX_HEADLESS_ALLOWED_ORIGINS * 4) {
+    return { patterns: [], valid: false };
+  }
+
+  const patterns = new Set<string>();
+  for (const candidate of candidates) {
+    if (typeof candidate !== 'string') return { patterns: [], valid: false };
+    const pattern = candidate.trim().toLowerCase();
+    if (!pattern) continue;
+    const hostPart = pattern.replace(/^https?:\/\//, '');
+    const wildcardValid = !hostPart.startsWith('*') || hostPart.startsWith('*.');
+    const parsed = parseDomainPattern(pattern);
+    const hostValid =
+      parsed?.host === 'localhost' ||
+      parsed?.host === '127.0.0.1' ||
+      Boolean(parsed?.host.match(/^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}$/));
+    const portValid = !parsed?.port || /^\d{1,5}$/.test(parsed.port);
+    if (
+      pattern.length > 300 ||
+      pattern === '*' ||
+      /[/?#@]/.test(hostPart) ||
+      !wildcardValid ||
+      !parsed ||
+      !hostValid ||
+      !portValid
+    ) {
+      return { patterns: [], valid: false };
+    }
+    patterns.add(pattern);
+    if (patterns.size > MAX_HEADLESS_ALLOWED_ORIGINS) {
+      return { patterns: [], valid: false };
+    }
+  }
+
+  return { patterns: [...patterns], valid: true };
+}
+
 
 /**
  * Checks whether an incoming origin string matches a single domain pattern.
@@ -264,9 +312,11 @@ export function isOriginAllowed(requestOrigin: string | null, allowedPatterns: s
 /**
  * Resolves the full list of allowed domain/subdomain patterns for the headless system.
  */
+type AllowedOriginInput = string | AllowedOriginInput[] | null | undefined;
+
 export function resolveAllowedOrigins(
   locals?: App.Locals,
-  extraAllowed?: string | string[] | null
+  extraAllowed?: AllowedOriginInput
 ): string[] {
   const patterns: string[] = [];
 
@@ -290,7 +340,6 @@ export function resolveAllowedOrigins(
     const env = getRuntimeEnv(locals);
     if (env) {
       addPatterns(env.PUBLIC_HEADLESS_ALLOWED_ORIGINS);
-      addPatterns(env.PUBLIC_EMBED_ALLOWED_ORIGINS);
       addPatterns(env.PUBLIC_SITE_URL);
     }
   } catch {
@@ -301,6 +350,18 @@ export function resolveAllowedOrigins(
   patterns.push('localhost', '127.0.0.1');
 
   return [...new Set(patterns)];
+}
+async function loadStoredHeadlessAllowedOrigins(locals?: App.Locals) {
+  try {
+    const database = getRuntimeEnv(locals)?.OMS_DB as D1Database | undefined;
+    if (!database?.prepare) return null;
+    const row = await database
+      .prepare('SELECT headless_allowed_origins FROM stores ORDER BY id LIMIT 1')
+      .first<{ headless_allowed_origins: string | null }>();
+    return row?.headless_allowed_origins ?? null;
+  } catch {
+    return null;
+  }
 }
 
 /**
@@ -329,7 +390,10 @@ export async function validateHeadlessRequest(
   errorResponse?: Response;
 }> {
   const origin = getRequestOrigin(request);
-  const allowedPatterns = resolveAllowedOrigins(locals, extraAllowed);
+  const allowedPatterns = resolveAllowedOrigins(locals, [
+    extraAllowed,
+    await loadStoredHeadlessAllowedOrigins(locals),
+  ]);
   const corsHeaders = buildCorsHeaders(origin);
 
   const auth = await validateHeadlessApiKey(request, locals, corsHeaders);
@@ -435,7 +499,10 @@ export function headlessError(
 
 export const handleOptions: APIRoute = async ({ request, locals }) => {
   const origin = getRequestOrigin(request);
-  const allowedPatterns = resolveAllowedOrigins(locals);
+  const allowedPatterns = resolveAllowedOrigins(
+    locals,
+    await loadStoredHeadlessAllowedOrigins(locals),
+  );
   const corsHeaders = buildCorsHeaders(origin);
   if (!isOriginAllowed(origin, allowedPatterns) && origin) {
     return headlessJson(

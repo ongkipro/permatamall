@@ -227,7 +227,6 @@ test("checkout promotes one abandoned lead and queues one attributable Purchase"
   const d1 = asD1(database);
   const customerPhone = "6281234567890";
   let abandonedId = 0;
-  let abandonedOrderNumber = "";
   let clickIds: ClickIds = {};
   let order: PersistedOrder | undefined;
 
@@ -243,7 +242,6 @@ test("checkout promotes one abandoned lead and queues one attributable Purchase"
         variantId: 20001,
       });
       abandonedId = abandoned.id;
-      abandonedOrderNumber = abandoned.orderNumber;
 
       assert.equal(abandoned.action, "created");
       assert.match(abandoned.orderNumber, /^ABN-\d{5}$/);

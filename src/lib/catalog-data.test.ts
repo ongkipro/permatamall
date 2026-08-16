@@ -149,4 +149,14 @@ test("custom D1 products created manually without editorial match are synthesize
   assert.equal(products[0].slug, "pupuk-organik-super");
   assert.equal(products[0].price, 120000);
   assert.equal(products[0].variants[0].label, "1 Liter");
+  assert.equal(products[0].headline, "Pupuk Organik Super");
+  assert.equal(products[0].seoTitle, "Pupuk Organik Super");
+  assert.deepEqual(products[0].images, ["/uploads/pupuk.webp"]);
+  assert.deepEqual(products[0].benefits, []);
+  assert.deepEqual(products[0].keyPoints, []);
+  assert.deepEqual(products[0].idealFor, []);
+  assert.doesNotMatch(
+    JSON.stringify(products[0]),
+    /Korean|original|garansi|COD|gratis ongkir/i,
+  );
 });

@@ -2,11 +2,12 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { parseTrafficSource } from './traffic-source.ts';
 
-test('parseTrafficSource identifies Meta Ads from fbclid or _fbc', () => {
+test('parseTrafficSource identifies Meta Ads from fbclid, _fbc, or _fbp', () => {
   const sourceFbclid = parseTrafficSource(JSON.stringify({ fbclid: 'IwAR123456789' }));
   assert.equal(sourceFbclid.type, 'meta');
   assert.equal(sourceFbclid.label, 'Meta Ads');
   assert.ok(sourceFbclid.badgeClass.includes('blue'));
+  assert.equal(parseTrafficSource(JSON.stringify({ _fbp: 'fb.1.1700000000.123' })).type, 'meta');
 
   const sourceInstagram = parseTrafficSource(JSON.stringify({ utm_source: 'instagram', fbclid: 'xyz' }));
   assert.equal(sourceInstagram.type, 'meta');

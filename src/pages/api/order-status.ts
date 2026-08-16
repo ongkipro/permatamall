@@ -1,5 +1,5 @@
 import type { APIRoute } from "astro";
-import { getRuntimeEnv } from "../../lib/env";
+import { getRuntimeEnv } from "../../lib/env.ts";
 
 export const prerender = false;
 
@@ -12,20 +12,20 @@ function json(data: Record<string, unknown>, status = 200) {
   return new Response(JSON.stringify(data), { status, headers: JSON_HEADERS });
 }
 
-export const GET: APIRoute = async ({ url, locals }) => {
+export const POST: APIRoute = async ({ request, locals }) => {
   try {
-    const orderPk =
-      url.searchParams.get("order_pk") ||
-      url.searchParams.get("order_id") ||
-      url.searchParams.get("inv") ||
-      "";
-    const statusToken = url.searchParams.get("status_token")?.trim() || "";
-
-    if (!orderPk) {
+    const body = await request.json().catch(() => null) as {
+      order_pk?: unknown;
+      order_id?: unknown;
+      status_token?: unknown;
+    } | null;
+    const orderPk = String(body?.order_pk ?? body?.order_id ?? "").trim();
+    const statusToken = String(body?.status_token ?? "").trim();
+    if (!orderPk || !statusToken) {
       return json(
         {
           success: false,
-          error: "Parameter order_pk/order_id wajib diisi.",
+          error: "Parameter order_pk/order_id dan status_token wajib diisi.",
         },
         400,
       );
@@ -73,11 +73,11 @@ export const GET: APIRoute = async ({ url, locals }) => {
             LIMIT 1
           )
         WHERE (CAST(o.id AS TEXT) = ? OR o.order_number = ?)
-          ${statusToken ? "AND o.public_status_token = ?" : ""}
+          AND o.public_status_token = ?
         LIMIT 1
       `,
       )
-      .bind(...(statusToken ? [orderPk, orderPk, statusToken] : [orderPk, orderPk]))
+      .bind(orderPk, orderPk, statusToken)
       .first()) as {
       order_number?: string;
       total_amount?: number;

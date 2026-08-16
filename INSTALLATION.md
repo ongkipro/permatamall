@@ -93,8 +93,9 @@ Set these in `wrangler.jsonc` `vars` (and mirror them in `.env` for local develo
 | `PUBLIC_ADMIN_NAME` | admin shell display name |
 | `PUBLIC_COD_DISABLED_PROVINCES` | comma-separated province names excluded from COD |
 | `PUBLIC_EMBED_ALLOWED_ORIGINS` | fallback embed allowlist until one is saved in the database |
+| `PUBLIC_HEADLESS_ALLOWED_ORIGINS` | optional Headless API fallback until its separate allowlist is saved in the database |
 
-Keep `wrangler.jsonc` `vars` and `.env` in agreement. Both feed the build, precedence between them is undetermined, and a few keys (`PUBLIC_COD_DISABLED_PROVINCES`, `PUBLIC_EMBED_ALLOWED_ORIGINS`) are additionally read at runtime through `getRuntimeEnv()`, where only the Worker's own vars apply.
+Keep `wrangler.jsonc` `vars` and `.env` in agreement. Both feed the build, precedence between them is undetermined, and a few keys (`PUBLIC_COD_DISABLED_PROVINCES`, `PUBLIC_EMBED_ALLOWED_ORIGINS`, `PUBLIC_HEADLESS_ALLOWED_ORIGINS`) are additionally read at runtime through `getRuntimeEnv()`, where only the Worker's own vars apply.
 
 One identity field cannot be configured at all: `slug` is hardcoded to `"permatamall"` in `src/lib/tenant.ts`. It is used only for diagnostics, but it is wrong on every install that is not the reference one. This is gap **G1** — see `DECISIONS.md` ADR-003.
 
@@ -124,7 +125,7 @@ npm run db:migrate:remote    # then the real database
 
 Migration `0007` seeds a bootstrap `admin` credential with `must_change_password = 1`. The hash is identical in every copy of this repository, so **rotating it at first login is mandatory, not advisory** — until it is rotated, anyone with the source can attempt the default.
 
-Migration `0017` seeds a sample product carried over from a previous merchant that the admin API refuses to delete. This is gap **G4**; a neutral replacement is pending (`DECISIONS.md` ADR-006). Until then, expect one foreign product row in a fresh install.
+Migration `0034` removes the foreign sample row introduced by `0017` when it is still untouched and unreferenced. A fresh schema therefore contains no merchant product data. The optional `npm run db:reset:demo:local` path loads a neutral, fully editable demo catalog instead.
 
 ---
 
@@ -173,7 +174,6 @@ This procedure is a developer runbook, not a product install. The intended exper
 | **G1** identity is build-time | the wizard cannot set a store name without a rebuild |
 | **G2** no `/install` route | every install needs a terminal and Cloudflare credentials |
 | **G3** no schema auto-upgrade | upgrading an install is a manual migration run |
-| **G4** foreign sample product | a fresh install is not clean |
 | **G5** home content does not fail closed | a fresh install shows inherited copy |
 | **G7** no observability | a broken customer install cannot be diagnosed remotely |
 

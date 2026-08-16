@@ -1,6 +1,12 @@
 # STATUS — AdsBookCMS
 
-> Verified against disk: 2026-08-16 @ `0d2e56a` · branch `chore/adsbookcms-foundation`
+> Verified against disk: 2026-08-16 · uncommitted working tree atop `9eb6531` · branch `chore/adsbookcms-foundation`
+>
+> The baseline moved from `0d2e56a` through six commits that re-founded the repo
+> as AdsBookCMS (649 files, +4,117 / −17,546). Gates re-run on the current
+> uncommitted tree, not inherited from the previous baseline: `npm run check`
+> 304 files / 0 errors / 0 warnings / 0 hints · `npm test` 227 / 227 ·
+> `npm run build` Cloudflare server bundle complete.
 
 Current state of the system. Implemented behaviour lives here; history lives in `BUILD-LOG.md`; remaining work lives in `UNIMPLEMENTED_SPECS.md`; structure lives in `ARCHITECTURE.md`.
 
@@ -19,7 +25,7 @@ The previous version of this file described a different repository — it opened
 | R2 | `cmsads-permatamall-assets` |
 | KV | `SESSION` |
 | Version | `1.2.0` / `2026.08-hardened` (`src/lib/version.ts`) |
-| Schema | 35 migration files, `0000`–`0034` |
+| Schema | 36 migration files, `0000`–`0035` |
 | Environments | one — no staging, no `env.*` blocks |
 | CI | push to `main` → check → test → build → `wrangler deploy` |
 
@@ -31,10 +37,10 @@ Live check on 2026-08-16: `/` 200, `/produk` 200, `sitemap.xml` lists 8 pages + 
 
 | Gate | Result |
 | --- | --- |
-| `npm test` | **215 / 215 passing** |
-| `npx tsc --noEmit` | 0 errors |
-| `npx astro check` | 0 errors, 0 warnings, 37 hints |
-| `npm run build` | server built, ~4s |
+| `npm test` | **227 / 227 passing** |
+| `npm run check` | 304 files · 0 errors · 0 warnings · 0 hints |
+| `npm run build` | Cloudflare server bundle complete |
+| Browser smoke | Public 8/8 menu routes and current-role admin menu/profile 5/5 returned 200 at the expected path; public and admin skip links target the main content; no horizontal overflow at 390 px |
 
 ---
 
@@ -50,17 +56,17 @@ Live check on 2026-08-16: `/` 200, `/produk` 200, `sitemap.xml` lists 8 pages + 
 
 **Orders and shipping** — operator-controlled dispatch to Mengantar under a single-flight lease, sequential shipment creation with independent per-order results, pickup address and schedule synchronisation with the provider, receiver RTS scoring, and a shipping lifecycle view separate from pending intake.
 
-**Admin** — 27 pages: dashboard analytics, orders and order detail, product CRUD, landing pages, content workbench with Workers AI drafting, shipping, expeditions, RTS/rate checker, payments, balance reconciliation ledger, ads configuration for Meta and Google, store/warehouse/CRM settings, operator access management, and developer API keys.
+**Admin** — 27 pages: dashboard analytics, orders and order detail, product CRUD, landing pages, content workbench with Workers AI drafting, shipping, expeditions, RTS/rate checker, payments, balance reconciliation ledger, ads configuration for Meta and Google, store/warehouse/CRM settings, operator access management, and developer API keys. Navigation and route authorization share one deny-by-default role policy; scoped operators see only the complete workspace their role owns.
 
-**Headless API** — seven `/api/v1/*` routes (storefront descriptor, products list and detail, district lookup, shipping rates, checkout, tracking events) authenticated by API key against `developer_api_keys` with an origin allowlist.
+**Headless API** — seven `/api/v1/*` routes (storefront descriptor, products list and detail, district lookup, shipping rates, checkout, tracking events) authenticated by API key against `developer_api_keys`. The independently validated Headless origin allowlist is persisted on `stores.headless_allowed_origins` and editable in Developer settings.
 
-**Tracking** — Meta Pixel plus server-side CAPI through a durable outbox with retry and shared per-order `event_id`, Google Tag and Ads conversion configuration with region-scoped Consent Mode v2, TikTok event hooks, and click-id capture for `gclid`/`gbraid`/`wbraid`/`fbclid`/`ttclid`.
+**Tracking** — Meta Pixel plus server-side CAPI through a durable outbox with retry and a shared, order-derived `event_id`; Google Tag and Ads conversion configuration with region-scoped Consent Mode v2; TikTok event hooks; and click-id capture for `gclid`/`gbraid`/`wbraid`/`fbclid`/`ttclid`. Hosted and embedded checkout surfaces emit Purchase only after the order can be resolved and verified.
 
 ---
 
 ## 4. Data state
 
-17 tables. `stores` is a single row carrying provider keys, tracking ids, fee policy, payment toggles, CRM templates, embed origins, AI instructions, and COD province exclusions.
+17 tables. `stores` is a single row carrying provider keys, tracking ids, fee policy, payment toggles, CRM templates, independent embed and Headless origin policies, AI instructions, and COD province exclusions.
 
 Live catalog: 22 women's handbag products with 110 variants, seeded by `scripts/seed-catalog.sql`.
 
@@ -84,23 +90,32 @@ Content and identity cleanup, on branch `chore/adsbookcms-foundation`:
 - Deleted: five dead components carrying legacy campaign logic, the unreferenced `siteContact` block with a foreign email, WhatsApp, and address, and roughly 39 MB of another merchant's images and articles that were publicly fetchable on this domain (`public/` went from 67 MB to 28 MB).
 - Documentation re-founded: `ARCHITECTURE.md`, `DECISIONS.md`, `RELEASE.md`, and `OBSERVABILITY.md` created; `README.md`, `INSTALLATION.md`, `AGENTS.md`, and this file rewritten; `CLOUDFLARE_MULTI_TENANT.md`, `AUTO_UPDATE_DEPLOY.md`, `design-tokens.md`, and the `doc/` preview site deleted as upstream-engine material.
 
+System-wide security, correctness, documentation, navigation, and UX audit:
+
+- Hardened admin bootstrap, JWT verification, KV-backed session validation, password rotation invalidation, exact role routing, and deny-by-default API/page access. The built-in default password now fails closed unless a strong bootstrap secret is explicitly configured.
+- Converted public order status to token-scoped `POST` JSON; completion routes keep identifiers in same-origin `sessionStorage`, strip query strings before subresources load, and send `Cache-Control: no-store`. Checkout, payment, thanks, Meta browser tracking, and CAPI now share the same order-derived event identity.
+- Separated iframe embed origins from Headless API origins. Migration `0035` persists the Headless allowlist; Developer settings validates and saves it; all `/api/v1/*` routes still require an active API key.
+- Closed inactive-product exposure, landing-preview cache, custom-HTML preview injection, legacy embed redirect, catalog identity, and public cache-control defects. Removed dead completion-query builders after the safe navigation boundary made them redundant.
+- Centralised admin navigation contracts, aligned menu visibility with authorization, repaired nested `<main>` landmarks, and made public/admin skip links target the actual main content.
+- Reconciled repository specifications, architecture, installation notes, storefront integration guidance, remaining-gap register, and migration `0034` behaviour with the executable tree.
+- Independent final security review found no exploitable finding in the audited trust boundaries. Remaining work below is product/operations debt rather than a known open vulnerability.
+
 ---
 
 ## 6. Known issues
 
 | Severity | Issue |
 | --- | --- |
-| High | The embedded checkout snippet fires Meta Purchase with **no** event id, at redirect time before payment is verified. Any embedded install sharing the store's pixel double-counts, and counts unpaid online orders (gap **G10**) |
-| Note | Meta Purchase deduplication between the hosted storefront and CAPI was broken until 2026-08-16 and is now fixed. The correction is forward-only: Meta offers no retroactive merge, so historical Purchase counts remain roughly doubled and historical ROAS understated. Treat the deploy date as a reporting break |
-| High | The headless origin allowlist is not connected to the admin. `resolveAllowedOrigins` reads environment only, and the variable it expects is declared nowhere — authorising a new storefront domain requires a code change and a deploy |
-| Medium | `src/lib/auth.ts` — session signing, verification, and the entire admin role policy — has no test coverage |
-| Medium | `/hybrid-form` renders a different visual system from every other checkout surface — green float labels, green focus ring, and an orange gradient submit button against the boutique palette used everywhere else |
-| Medium | Authenticated `/api/v1/*` responses, including `/api/v1/storefront`, are served with `public` cache directives |
-| Medium | No observability: Workers Logs disabled, no error reporting, no alerting (`OBSERVABILITY.md`) |
-| Medium | Identity is build-time; renaming the store in `/admin` does not change storefront branding (gap **G1**) |
+| High | Runtime identity and the first-run install wizard remain unimplemented (**G1 → G2**); this deployment is still one configured store, not a self-installing product |
+| Medium | There is no automatic schema-upgrade path and the Drizzle journal/schema mirror remains incomplete (**G3**, **G8**) |
+| Medium | Fresh-install home content and compile-time theme selection remain coupled to repository defaults (**G5**, **G6**) |
+| Medium | Headless key scope/quota, authenticated order-status read, a published OpenAPI contract, and an executable adapter remain open (**H4**, **H6**, **H7**, **H8**) |
+| Medium | Workers observability, alerting, and an install-visible health surface remain absent (**G7**, `OBSERVABILITY.md`) |
+| Blocked | Unpaid-order recovery and several provider edge contracts require an explicitly approved live capture before implementation |
+| Data note | Local/remote D1 may still contain a previously provisioned warehouse address, phone, and provider ObjectIds; scrubbing it is a separate destructive/remote-data action |
 
 ---
 
 ## 7. Distance to the product goal
 
-AdsBookCMS is intended to install like WordPress: point a domain at it, open the site, fill in a form. What exists is the commerce engine running as one deployed store. The eight gaps between those two states are enumerated as **G1–G8** in `ARCHITECTURE.md` §10, with decisions recorded as ADR-003, ADR-004, ADR-006, and ADR-007 in `DECISIONS.md`.
+AdsBookCMS is intended to install like WordPress: point a domain at it, open the site, fill in a form. What exists is the commerce engine running as one deployed store. The seven open structural gaps are tracked under **G1–G8** in `ARCHITECTURE.md` §10 (**G4** is closed), with constraining decisions recorded in `DECISIONS.md`.

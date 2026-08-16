@@ -11,7 +11,7 @@ interface Props {
 
 const { title, activeMenu } = Astro.props;
 const currentPath = (Astro.url.pathname + Astro.url.search).replace(/\/$/, '') || '/';
-const adminRole = Astro.locals.admin?.role || 'owner';
+const adminRole = Astro.locals.admin?.role ?? 'customer_service';
 
 ---
 

@@ -15,7 +15,7 @@ export const prerender = false;
 const product = await getStorefrontProduct(Astro.locals, Astro.params.slug || '');
 const formContext = await resolveFormModeContext(Astro.request);
 if (!product) {
-  return Astro.redirect('/produk');
+  return Astro.rewrite('/404');
 }
 
 const cheapestVariant = [...product.variants].sort((a, b) => a.price - b.price)[0] ?? null;
@@ -85,7 +85,6 @@ const productSchema = {
             '@type': 'Person',
             name: review.name,
           },
-          datePublished: '2026-08-10',
           reviewRating: {
             '@type': 'Rating',
             ratingValue: String(review.rating),
@@ -138,7 +137,7 @@ const productSchemaJson = JSON.stringify(productSchema).replace(/</g, '\\u003c')
     contentName={product.productName}
     price={displayPrice}
   />
-  <script type="application/ld+json" set:html={productSchemaJson} />
+  <script is:inline type="application/ld+json" set:html={productSchemaJson} />
 
   <main class="mx-auto max-w-[480px] bg-white pb-20">
     <Breadcrumb
@@ -296,92 +295,95 @@ const productSchemaJson = JSON.stringify(productSchema).replace(/</g, '\\u003c')
           </div>
         </div>
 
-        <div class="grid gap-4 border-b border-[#E5E5E5] pb-4">
-          <div class="flex items-center gap-2">
-            <Icon name="lucide:check" class="h-[17px] w-[17px]" style={`color: ${productAccent}`} aria-hidden="true" />
-            <h3 class="text-[13px] font-semibold uppercase tracking-[0.08em] text-[#111111]">Manfaat Utama</h3>
+        {product.benefits && product.benefits.length > 0 && (
+          <div class="grid gap-4 border-b border-[#E5E5E5] pb-4">
+            <div class="flex items-center gap-2">
+              <Icon name="lucide:check" class="h-[17px] w-[17px]" style={`color: ${productAccent}`} aria-hidden="true" />
+              <h3 class="text-[13px] font-semibold uppercase tracking-[0.08em] text-[#111111]">Manfaat Utama</h3>
+            </div>
+            <div class="space-y-3">
+              {
+                product.benefits.map((b) => (
+                  <div class="grid grid-cols-[8px_1fr] gap-3">
+                    <span
+                      class="mt-3 h-px w-2 bg-[#C5A880]"
+                      aria-hidden="true"
+                    />
+                    <span class="min-w-0 leading-6">{b}</span>
+                  </div>
+                ))
+              }
+            </div>
           </div>
-          <div class="space-y-3">
-            {
-              product.benefits.map((b) => (
-                <div class="grid grid-cols-[8px_1fr] gap-3">
-                  <span
-                    class="mt-3 h-px w-2 bg-[#C5A880]"
-                    aria-hidden="true"
-                  />
-                  <span class="min-w-0 leading-6">{b}</span>
-                </div>
-              ))
-            }
-          </div>
-        </div>
+        )}
 
-        <div class="grid gap-4 border-b border-[#E5E5E5] pb-4">
-          <div class="flex items-center gap-2">
-            <Icon name="lucide:plus" class="h-[17px] w-[17px]" style={`color: ${productAccent}`} aria-hidden="true" />
-            <h3 class="text-[13px] font-semibold uppercase tracking-[0.08em] text-[#111111]">Poin Penting Produk</h3>
+        {product.keyPoints && product.keyPoints.length > 0 && (
+          <div class="grid gap-4 border-b border-[#E5E5E5] pb-4">
+            <div class="flex items-center gap-2">
+              <Icon name="lucide:plus" class="h-[17px] w-[17px]" style={`color: ${productAccent}`} aria-hidden="true" />
+              <h3 class="text-[13px] font-semibold uppercase tracking-[0.08em] text-[#111111]">Poin Penting Produk</h3>
+            </div>
+            <div class="space-y-3">
+              {
+                product.keyPoints.map((point) => (
+                  <div class="grid grid-cols-[8px_1fr] gap-3">
+                    <span
+                      class="mt-3 h-px w-2 bg-[#C5A880]"
+                      aria-hidden="true"
+                    />
+                    <span class="min-w-0 leading-6">{point}</span>
+                  </div>
+                ))
+              }
+            </div>
           </div>
-          <div class="space-y-3">
-            {
-              product.keyPoints.map((point) => (
-                <div class="grid grid-cols-[8px_1fr] gap-3">
-                  <span
-                    class="mt-3 h-px w-2 bg-[#C5A880]"
-                    aria-hidden="true"
-                  />
-                  <span class="min-w-0 leading-6">{point}</span>
-                </div>
-              ))
-            }
-          </div>
-        </div>
+        )}
 
-        <div>
-          <div class="mb-3 flex items-center gap-2">
-            <Icon
-              name="lucide:download"
-              class="h-[17px] w-[17px]"
-              style={`color: ${productAccent}`}
-              aria-hidden="true"
-            />
-            <h3 class="text-[13px] font-semibold uppercase tracking-[0.08em] text-[#111111]">Ideal Untuk</h3>
+        {product.idealFor && product.idealFor.length > 0 && (
+          <div>
+            <div class="mb-3 flex items-center gap-2">
+              <Icon
+                name="lucide:download"
+                class="h-[17px] w-[17px]"
+                style={`color: ${productAccent}`}
+                aria-hidden="true"
+              />
+              <h3 class="text-[13px] font-semibold uppercase tracking-[0.08em] text-[#111111]">Ideal Untuk</h3>
+            </div>
+            <div class="flex flex-wrap gap-x-3 gap-y-2">
+              {
+                product.idealFor.map((item) => (
+                  <span class="inline-flex items-center gap-2 text-[12px] font-medium text-[#555555]">
+                    <span
+                      class="h-px w-2 bg-[#C5A880]"
+                      aria-hidden="true"
+                    />
+                    <span>{item}</span>
+                  </span>
+                ))
+              }
+            </div>
           </div>
-          <div class="flex flex-wrap gap-x-3 gap-y-2">
-            {
-              product.idealFor.map((item) => (
-                <span class="inline-flex items-center gap-2 text-[12px] font-medium text-[#555555]">
-                  <span
-                    class="h-px w-2 bg-[#C5A880]"
-                    aria-hidden="true"
-                  />
-                  <span>{item}</span>
-                </span>
-              ))
-            }
-          </div>
-        </div>
+        )}
       </div>
     </section>
 
-    <!-- Verified Reviews -->
+    <!-- Product Reviews -->
     {
       (hasAggregateRating || product.reviews.length > 0) && (
         <section class="border-b border-[#E5E5E5] bg-[#F8F7F4] px-5 py-6">
           <div class="border-b border-[#E5E5E5] pb-3.5">
-            <div class="flex items-center justify-between">
-              <div class="flex items-center gap-2">
-                <RatingStars max={1} starClass="h-[17px] w-[17px]" label="Penilaian produk" />
-                <h2 class="text-[12px] font-semibold uppercase tracking-[0.12em] text-[#111111]">Penilaian Produk</h2>
-              </div>
-              <span class="text-[10px] font-semibold uppercase tracking-wider text-[#8A704F]">100% Real Buyer</span>
+            <div class="flex items-center gap-2">
+              <RatingStars max={1} starClass="h-[17px] w-[17px]" label="Penilaian produk" />
+              <h2 class="text-[12px] font-semibold uppercase tracking-[0.12em] text-[#111111]">Ulasan Produk</h2>
             </div>
-            
-            <div class="mt-2.5 flex items-center justify-between border-t border-[#E5E5E5] pt-2.5">
-              <div class="flex items-center gap-1.5 text-[12px] font-bold text-[#111111]">
-                <span class="text-[#C5A880]">★ {formattedRating || '4.9'} / 5.0</span>
-                <span class="text-[#555555]">• {reviewCount}+ Ulasan Pembeli Terverifikasi</span>
+
+            {hasAggregateRating && (
+              <div class="mt-2.5 flex items-center gap-1.5 border-t border-[#E5E5E5] pt-2.5 text-[12px] font-bold text-[#111111]">
+                <span class="text-[#C5A880]">★ {formattedRating} / 5.0</span>
+                <span class="text-[#555555]">• {reviewCount} ulasan</span>
               </div>
-            </div>
+            )}
           </div>
 
           {product.reviews.length > 0 && (
@@ -400,7 +402,7 @@ const productSchemaJson = JSON.stringify(productSchema).replace(/</g, '\\u003c')
                         <p class="text-[12px] font-bold text-[#111111]">{review.name}</p>
                         {review.verified && (
                           <span class="inline-flex items-center gap-0.5 border border-[#C5A880]/40 bg-white px-1.5 py-0.5 text-[8px] font-semibold uppercase tracking-wider text-[#8A704F]">
-                            Verified
+                            Terverifikasi
                           </span>
                         )}
                       </div>

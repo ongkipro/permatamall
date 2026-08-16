@@ -11,24 +11,22 @@ import {
 } from './admin-credentials.ts';
 import { canAccessAdminRoute, isAdminRole, verifyPasswordHash, type AdminRole } from './auth.ts';
 
-test('default admin password is valid and verifies directly', async () => {
-  assert.equal(await verifyPasswordHash('admin', DEFAULT_ADMIN_PASSWORD_HASH), true);
-  assert.equal(await verifyPasswordHash('wrong', DEFAULT_ADMIN_PASSWORD_HASH), false);
-  assert.equal(validateNewAdminPassword('abc', 'admin'), 'Password baru harus berisi 8–128 karakter.');
-});
-
-test('default admin login works with default password or configured bootstrap password', async () => {
+test('default admin credential fails closed without a configured bootstrap password', async () => {
   const defaultCredential = {
     username: 'admin',
     passwordHash: DEFAULT_ADMIN_PASSWORD_HASH,
   };
   assert.equal(isDefaultAdminCredential(defaultCredential), true);
-  assert.equal(await verifyAdminLoginPassword('admin', defaultCredential, ''), true);
+  assert.equal(await verifyAdminLoginPassword('admin', defaultCredential, ''), false);
+  assert.equal(await verifyAdminLoginPassword('admin', defaultCredential, 'short'), false);
   assert.equal(
     await verifyAdminLoginPassword('bootstrap-secret-1234', defaultCredential, 'bootstrap-secret-1234'),
     true,
   );
-  assert.equal(await verifyAdminLoginPassword('wrong-pass', defaultCredential, ''), false);
+  assert.equal(
+    await verifyAdminLoginPassword('admin', defaultCredential, 'bootstrap-secret-1234'),
+    false,
+  );
 });
 
 test('new password hashes use random salts and verify through the login contract', async () => {
@@ -44,6 +42,11 @@ test('admin usernames are normalized and restricted to URL-safe characters', () 
   assert.equal(validateAdminUsername('paduka.admin'), true);
   assert.equal(validateAdminUsername('paduka admin'), false);
   assert.equal(validateAdminUsername('ab'), false);
+});
+
+test('new admin passwords reject weak defaults', () => {
+  assert.equal(validateNewAdminPassword('abc', 'admin'), 'Password baru harus berisi 8–128 karakter.');
+  assert.equal(validateNewAdminPassword('admin', 'admin'), 'Password baru tidak boleh menggunakan username atau password default.');
 });
 
 test("operator roles use one deny-by-default route policy", () => {

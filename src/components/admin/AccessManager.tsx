@@ -6,7 +6,6 @@ import {
   Eye,
   EyeOff,
   KeyRound,
-  Lock,
   Minus,
   Pencil,
   RefreshCw,
@@ -23,7 +22,6 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
 import type { AdminRole } from "../../lib/auth";
 
 type AssignableRole = Exclude<AdminRole, "owner">;
@@ -38,12 +36,6 @@ type AccessUser = {
   updated_at: string;
 };
 
-const ROLE_LABELS: Record<AdminRole, string> = {
-  owner: "Owner (Pemilik Toko)",
-  admin: "Admin Ops",
-  advertiser: "Operator Ads",
-  customer_service: "Operator CS",
-};
 
 const ROLE_SHORT_LABELS: Record<AdminRole, string> = {
   owner: "Owner",
@@ -245,7 +237,7 @@ export function AccessManager() {
     };
   }, [users]);
 
-  const create = async (event: React.FormEvent) => {
+  const create = async (event: React.SubmitEvent<HTMLFormElement>) => {
     event.preventDefault();
     setSaving(true);
     try {
@@ -285,7 +277,7 @@ export function AccessManager() {
     });
   };
 
-  const saveUserEdit = async (event: React.FormEvent) => {
+  const saveUserEdit = async (event: React.SubmitEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!editingUser) return;
     setSaving(true);
@@ -323,7 +315,7 @@ export function AccessManager() {
     setNewPasswordValue(generateRandomPassword());
   };
 
-  const savePasswordReset = async (event: React.FormEvent) => {
+  const savePasswordReset = async (event: React.SubmitEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!resetUser || !newPasswordValue) return;
     setSaving(true);

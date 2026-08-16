@@ -16,20 +16,20 @@ test("formatContentId enforces minimum 5-digit pattern lock", () => {
   assert.equal(formatContentId("abc"), "00abc");
 });
 
-test("formatCatalogItemId returns product ID as itemId for single-variant products even if SKU exists", () => {
-  const result = formatCatalogItemId("434683", { id: 101, label: "Default", price: 50000, sku: "variant_NO8meDAONBXBZr4lawMCaFOp" }, 0, 1);
+test("formatCatalogItemId returns product ID as itemId for single-variant products", () => {
+  const result = formatCatalogItemId("434683", 0, 1);
   assert.equal(result.itemId, "434683");
   assert.equal(result.itemGroupId, undefined);
 });
 
 test("formatCatalogItemId returns product ID for first variant of multi-variant products", () => {
-  const result = formatCatalogItemId("14001", { id: 10, label: "Paket 1", price: 85000 }, 0, 2);
+  const result = formatCatalogItemId("14001", 0, 2);
   assert.equal(result.itemId, "14001");
   assert.equal(result.itemGroupId, undefined);
 });
 
 test("formatCatalogItemId returns indexed suffix and itemGroupId for secondary variants", () => {
-  const result = formatCatalogItemId("14001", { id: 11, label: "Paket 2", price: 150000 }, 1, 2);
+  const result = formatCatalogItemId("14001", 1, 2);
   assert.equal(result.itemId, "14001_v2");
   assert.equal(result.itemGroupId, "14001");
 });

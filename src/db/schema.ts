@@ -21,6 +21,7 @@ export const stores = sqliteTable("stores", {
     .default("PA,PB,PD,PT,PE,PS,MA,MU,NT,KU,SR,GO,KR,AC,BE"),
   crmTemplates: text("crm_templates"),
   embedAllowedOrigins: text("embed_allowed_origins"),
+  headlessAllowedOrigins: text("headless_allowed_origins"),
   aiContentInstructions: text("ai_content_instructions"),
   createdAt: text("created_at").notNull(),
 });

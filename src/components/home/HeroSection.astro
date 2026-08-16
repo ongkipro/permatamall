@@ -1,5 +1,4 @@
 ---
-import Icon from '../shared/Icon.astro';
 import { tenantConfig } from '../../lib/tenant';
 
 interface Slide {
@@ -25,14 +24,7 @@ interface Props {
   content: HeroContent;
 }
 
-const { slides, highlights, content } = Astro.props;
-
-const highlightIcons: Record<string, string> = {
-  check: 'lucide:circle-check',
-  focus: 'lucide:scan-line',
-  note: 'lucide:notebook-text',
-  time: 'lucide:clock-3',
-};
+const { slides } = Astro.props;
 ---
 
 <section class="border-b border-[#E5E5E5] bg-[#F8F7F4]">

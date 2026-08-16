@@ -129,7 +129,8 @@ export const onRequest = defineMiddleware(async (context, next) => {
     : undefined;
   const isLoginPage = url.pathname === '/hello';
   const isAdminPage = url.pathname.startsWith('/admin');
-  const isAdminApi = url.pathname.startsWith('/api/admin/');
+  const isAdminApi =
+    url.pathname === '/api/admin' || url.pathname.startsWith('/api/admin/');
   const isPrivate = isAdminPage || isAdminApi;
 
   if (isAdminApi && UNSAFE_METHODS.has(context.request.method)) {

@@ -49,17 +49,14 @@ const { tenantName, tenantSlug } = Astro.props;
         .join('');
     };
 
-    const params = new URLSearchParams(window.location.search);
-    if (params.get('preview') === '1') return;
+    if (new URLSearchParams(window.location.search).get('preview') === '1') return;
     let state = null;
     try {
       state = JSON.parse(sessionStorage.getItem('thanks_state') || 'null');
     } catch {}
 
-    const pick = (key, fallback = '') => String(state?.[key] ?? params.get(key) ?? fallback);
-    const pickNum = (key, fallback = 0) => Number(state?.[key] ?? params.get(key) ?? fallback);
-    const queryEventId = String(params.get('event_id') || '').trim();
-    const queryOrderId = String(params.get('order_id') || '').trim();
+    const pick = (key, fallback = '') => String(state?.[key] ?? fallback);
+    const pickNum = (key, fallback = 0) => Number(state?.[key] ?? fallback);
     const once = (key) => {
       const fullKey = `meta_once_${key}`;
       const prev = localStorage.getItem(fullKey);
@@ -87,10 +84,8 @@ const { tenantName, tenantSlug } = Astro.props;
     // order_number sebagai event_id (lihat resolveMetaEventId), jadi leg browser
     // wajib memakai order_number yang sama - dibaca ulang dari /api/order-status
     // di dalam fire() supaya dua leg mengutip baris order yang sama.
-    const eventId = pick('event_id', '');
     const orderId = pick('order_id', '');
     const productName = pick('product_name', tenantName);
-    const variantId = pick('variant_unique_id', pick('lp_name', tenantSlug));
     // content_ids Meta harus product ID (match katalog + funnel ViewContent/AddToCart), bukan variant/lp.
     // Without a catalog product id, omit content_ids rather than faking it with a
     // name or variant key that can never match the Meta catalog.
@@ -107,8 +102,6 @@ const { tenantName, tenantSlug } = Astro.props;
     let verifiedPaymentStatus = pick('payment_status', '').toLowerCase();
     const eventName = 'Purchase';
 
-    if (state && queryEventId && queryEventId !== String(state?.event_id || '')) return;
-    if (state && queryOrderId && queryOrderId !== String(state?.order_id || '')) return;
 
     const paymentMethod = pick('pm', pick('payment_method', 'cod')).toLowerCase();
 
@@ -128,10 +121,12 @@ const { tenantName, tenantSlug } = Astro.props;
       if (!orderPk || !statusToken) return;
       let finalEventId = '';
       try {
-        const resp = await fetch(
-          `/api/order-status?order_pk=${encodeURIComponent(orderPk)}&status_token=${encodeURIComponent(statusToken)}`,
-          { cache: 'no-store' },
-        );
+        const resp = await fetch('/api/order-status', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ order_pk: orderPk, status_token: statusToken }),
+          cache: 'no-store',
+        });
         const statusData = await resp.json().catch(() => ({}));
         if (!resp.ok || !statusData?.success) return;
         // The event_id for both legs. The server CAPI leg substitutes this exact

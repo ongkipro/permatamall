@@ -224,6 +224,13 @@ test('token lifetime and clock skew are enforced in both directions', async () =
 
   const withinSkew = await signAtClockOffset(30);
   assert.notEqual(await verifyJwt(withinSkew.token, AUTH_SECRET), null);
+
+  const now = Math.floor(Date.now() / 1000);
+  const overlong = await forgeSignedToken(
+    { alg: 'HS256', typ: 'JWT' },
+    validClaims({ iat: now, exp: now + 24 * 60 * 60 + 1 }),
+  );
+  assert.equal(await verifyJwt(overlong, AUTH_SECRET), null);
 });
 
 test('a malformed or corrupt token degrades to no session instead of throwing', async () => {
@@ -338,6 +345,7 @@ test('the admin gate refuses requests without a usable session token', async () 
 
   assert.equal((await runAdminRequest({ pathname: '/api/admin/products', token: null, stored, credential })).status, 401);
   assert.equal((await runAdminRequest({ pathname: '/api/admin/products', token: 'garbage', stored, credential })).status, 401);
+  assert.equal((await runAdminRequest({ pathname: '/api/admin', token: null, stored, credential })).status, 401);
 
   const foreign = await signJwt({ username: 'paduka.admin', role: 'advertiser' }, OTHER_SECRET);
   assert.equal((await runAdminRequest({ pathname: '/api/admin/products', token: foreign.token, stored, credential })).status, 401);
@@ -360,7 +368,7 @@ test('every admin role is confined to the routes it owns', () => {
   assert.equal(canAccessAdminRoute('owner', '/api/admin/access'), true);
   assert.equal(canAccessAdminRoute('owner', '/admin/anything/new'), true);
 
-  // admin: everything except operator management.
+  // admin: explicit operational allowlist, excluding operator management.
   assert.equal(canAccessAdminRoute('admin', '/admin/settings'), true);
   assert.equal(canAccessAdminRoute('admin', '/api/admin/orders'), true);
   assert.equal(canAccessAdminRoute('admin', '/admin/settings/access'), false);
@@ -370,8 +378,10 @@ test('every admin role is confined to the routes it owns', () => {
 
   // advertiser: catalogue, content, and ads only.
   assert.equal(canAccessAdminRoute('advertiser', '/admin/products'), true);
+  assert.equal(canAccessAdminRoute('advertiser', '/admin/landing-pages/new'), true);
   assert.equal(canAccessAdminRoute('advertiser', '/admin/ads/campaigns'), true);
   assert.equal(canAccessAdminRoute('advertiser', '/api/admin/products/12'), true);
+  assert.equal(canAccessAdminRoute('advertiser', '/api/admin/landing-pages/12'), true);
   assert.equal(canAccessAdminRoute('advertiser', '/admin/orders'), false);
   assert.equal(canAccessAdminRoute('advertiser', '/api/admin/orders'), false);
   assert.equal(canAccessAdminRoute('advertiser', '/admin/settings/access'), false);
@@ -399,11 +409,13 @@ test('route matching is deny-by-default for unknown routes, roles, and prefix lo
   assert.equal(canAccessAdminRoute('advertiser', '/admin/products-secret'), false);
   assert.equal(canAccessAdminRoute('advertiser', '/api/admin/productsx'), false);
   assert.equal(canAccessAdminRoute('customer_service', '/admin/ordersx'), false);
-  assert.equal(canAccessAdminRoute('admin', '/admin/settings/accessible'), true);
+  assert.equal(canAccessAdminRoute('admin', '/admin/settings/accessible'), false);
 
   // A route nobody has been granted stays closed for scoped roles.
   assert.equal(canAccessAdminRoute('advertiser', '/admin/does-not-exist'), false);
   assert.equal(canAccessAdminRoute('customer_service', '/api/admin/does-not-exist'), false);
+  assert.equal(canAccessAdminRoute('admin', '/admin/does-not-exist'), false);
+  assert.equal(canAccessAdminRoute('admin', '/api/admin/does-not-exist'), false);
 
   // A role outside ADMIN_ROLES must never be granted a route. `verifyJwt`
   // already refuses such a session, so this is the second line of defence.

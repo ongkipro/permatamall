@@ -17,6 +17,7 @@ interface SharedEnvVars {
   PUBLIC_STOREFRONT_TEMPLATE?: string;
   PUBLIC_ADMIN_NAME?: string;
   PUBLIC_EMBED_ALLOWED_ORIGINS?: string;
+  PUBLIC_HEADLESS_ALLOWED_ORIGINS?: string;
   MENGANTAR_API_KEY?: string;
   AUTH_SECRET?: string;
   BOOTSTRAP_ADMIN_PASSWORD?: string;

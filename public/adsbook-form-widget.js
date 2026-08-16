@@ -97,47 +97,10 @@
         return;
       }
 
-      if (
-        event.data.type === "adsbook:checkout-redirect" ||
-        event.data.type === "adsbook:order-complete"
-      ) {
+      if (event.data.type === "adsbook:checkout-redirect") {
         try {
-          const payload = event.data;
-          if (payload.total && Number(payload.total) > 0) {
-            if (typeof window.fbq === "function") {
-              window.fbq("track", "Purchase", {
-                value: Number(payload.total),
-                currency: "IDR",
-              });
-            }
-            if (typeof window.gtag === "function") {
-              window.gtag("event", "conversion", {
-                value: Number(payload.total),
-                currency: "IDR",
-                transaction_id: String(payload.orderId || ""),
-              });
-            }
-            if (
-              typeof window.ttq === "object" &&
-              typeof window.ttq.track === "function"
-            ) {
-              window.ttq.track("CompletePayment", {
-                value: Number(payload.total),
-                currency: "IDR",
-              });
-            }
-          }
-          if (payload.type === "adsbook:checkout-redirect" && payload.url) {
-            const target = this.#checkoutTarget(payload.url);
-            if (target) {
-              const targetUrl = new URL(target);
-              const params = getTrackingParams();
-              for (const [k, v] of Object.entries(params)) {
-                if (!targetUrl.searchParams.has(k)) targetUrl.searchParams.set(k, v);
-              }
-              window.location.assign(targetUrl.toString());
-            }
-          }
+          const target = this.#checkoutTarget(event.data.url);
+          if (target) window.location.assign(target);
         } catch {}
         return;
       }

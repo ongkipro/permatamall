@@ -149,7 +149,7 @@ export function validateMetaEventPayload(input: unknown, requestUrl: string): Va
     value: {
       eventName: payload.event_name as MetaEventName,
       eventId: payload.event_id,
-      eventSourceUrl: eventSourceUrl.href,
+      eventSourceUrl: `${eventSourceUrl.origin}${eventSourceUrl.pathname}`,
       phone,
       name,
       email,

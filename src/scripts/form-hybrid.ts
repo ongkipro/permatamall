@@ -53,7 +53,6 @@ type SubmitOrderResponse = {
     payment_method?: unknown;
     payment_status?: unknown;
     payment_url?: unknown;
-    public_order_url?: unknown;
     status?: unknown;
     total_payment?: unknown;
     cod_service_fee?: unknown;
@@ -1897,7 +1896,6 @@ function initHybridOrderFormInstance(formRoot: HTMLElement) {
     let statusToken = "";
     let paymentMethodFinal: string = state.paymentMethod;
     let paymentUrl = "";
-    let publicOrderUrl = "";
     let orderStatus = "pending";
     let paymentResult: SubmitOrderResponse["payment"];
     let billedTotal = totalPayment;
@@ -1995,7 +1993,6 @@ function initHybridOrderFormInstance(formRoot: HTMLElement) {
           order.payment_method || paymentMethodFinal || "cod",
         ).toLowerCase();
         paymentUrl = String(order.payment_url || "").trim();
-        publicOrderUrl = String(order.public_order_url || "").trim();
         orderStatus = String(
           order.status || orderStatus || "pending",
         ).toLowerCase();
@@ -2027,7 +2024,6 @@ function initHybridOrderFormInstance(formRoot: HTMLElement) {
       status_token: statusToken,
       payment_method: paymentMethodFinal,
       payment_url: paymentUrl,
-      public_order_url: publicOrderUrl,
       payment_channel: String(
         paymentResult?.channel_code || state.paymentChannel,
       ),
@@ -2073,16 +2069,11 @@ function initHybridOrderFormInstance(formRoot: HTMLElement) {
     };
     sessionStorage.setItem("thanks_state", JSON.stringify(thanksState));
 
-    const q = new URLSearchParams({
-      order_id: orderId,
-      status_token: statusToken,
-    });
     const destinationPath =
       paymentMethodFinal !== "cod" &&
       !["paid", "settled", "success"].includes(paymentStatus)
         ? "/payment"
         : "/thanks";
-    const destinationUrl = `${destinationPath}?${q.toString()}`;
 
     setSubmitting(
       true,
@@ -2090,11 +2081,7 @@ function initHybridOrderFormInstance(formRoot: HTMLElement) {
         ? "Membuka Instruksi Pembayaran..."
         : "Mengalihkan ke Halaman Terima Kasih...",
     );
-    navigateAfterCheckout(destinationUrl, {
-      orderId: String(orderId || ''),
-      total: Number(billedTotal),
-      currency: 'IDR',
-    });
+    navigateAfterCheckout(destinationPath);
   });
 }
 

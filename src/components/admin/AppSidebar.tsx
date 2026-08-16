@@ -23,6 +23,7 @@ import { ChevronRight, LogOut } from "lucide-react";
 import {
   ADMIN_ACCENT,
   getVisibleNavGroups,
+  isAdminNavHrefActive,
   type AdminRole,
 } from "./admin-navigation";
 import { CMS_VERSION } from "@/lib/version";
@@ -116,6 +117,11 @@ export function AppSidebar({
                   : undefined;
 
                 if (children.length > 0) {
+                  const hasActiveChild = children.some((child) =>
+                    isAdminNavHrefActive(currentPath, child.href),
+                  );
+                  const isOverviewActive =
+                    !hasActiveChild && isAdminNavHrefActive(currentPath, item.href);
                   return (
                     <Collapsible
                       key={item.id}
@@ -144,39 +150,31 @@ export function AppSidebar({
                         </CollapsibleTrigger>
                         <CollapsibleContent>
                           <SidebarMenuSub className="mr-0 border-slate-200 py-1">
-                            {(() => {
-                              const pageUrl = typeof window !== "undefined"
-                                ? (window.location.pathname + window.location.search)
-                                : currentPath;
-                              const hasActiveChild = children.some((child) => pageUrl === child.href);
-                              const isOverviewActive = !hasActiveChild && (
-                                typeof window !== "undefined"
-                                  ? window.location.pathname === item.href
-                                  : currentPath.split("?")[0] === item.href
+                            <SidebarMenuSubItem>
+                              <SidebarMenuSubButton asChild isActive={isOverviewActive}>
+                                <a href={item.href}>
+                                  {item.id === "orders" ? "Semua Order" : item.id === "products" ? "Semua Produk" : "Overview"}
+                                </a>
+                              </SidebarMenuSubButton>
+                            </SidebarMenuSubItem>
+                            {children.map((child) => {
+                              const isChildActive = isAdminNavHrefActive(
+                                currentPath,
+                                child.href,
                               );
-
                               return (
-                                <>
-                                  <SidebarMenuSubItem>
-                                    <SidebarMenuSubButton asChild isActive={isOverviewActive}>
-                                      <a href={item.href}>
-                                        {item.id === "orders" ? "Semua Order" : item.id === "products" ? "Semua Produk" : "Overview"}
-                                      </a>
-                                    </SidebarMenuSubButton>
-                                  </SidebarMenuSubItem>
-                                  {children.map((child) => {
-                                    const isChildActive = pageUrl === child.href;
-                                    return (
-                                      <SidebarMenuSubItem key={child.href}>
-                                        <SidebarMenuSubButton asChild isActive={isChildActive}>
-                                          <a href={child.href}>{child.label}</a>
-                                        </SidebarMenuSubButton>
-                                      </SidebarMenuSubItem>
-                                    );
-                                  })}
-                                </>
+                                <SidebarMenuSubItem key={child.href}>
+                                  <SidebarMenuSubButton asChild isActive={isChildActive}>
+                                    <a
+                                      href={child.href}
+                                      aria-current={isChildActive ? "page" : undefined}
+                                    >
+                                      {child.label}
+                                    </a>
+                                  </SidebarMenuSubButton>
+                                </SidebarMenuSubItem>
                               );
-                            })()}
+                            })}
                           </SidebarMenuSub>
                         </CollapsibleContent>
                       </SidebarMenuItem>

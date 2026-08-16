@@ -458,7 +458,6 @@ export function ProductCatalog({
       })
     : null;
   const iframeHtml = embedMarkup?.plainIframe || "";
-  const autoHeightHtml = embedMarkup?.autoHeightIframe || "";
   const widgetHtml = embedMarkup?.widget || "";
 
   const copyText = async (value: string, label: string) => {

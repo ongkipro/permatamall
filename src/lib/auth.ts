@@ -18,10 +18,51 @@ export type AdminSession = {
   exp: number;
 };
 
+const ADMIN_PAGE_ROUTES = [
+  '/admin/dashboard',
+  '/admin/orders',
+  '/admin/products',
+  '/admin/landing-pages',
+  '/admin/content',
+  '/admin/shipping',
+  '/admin/check',
+  '/admin/couriers',
+  '/admin/expeditions',
+  '/admin/payments',
+  '/admin/balance',
+  '/admin/ads',
+  '/admin/profile',
+  '/admin/settings/store',
+  '/admin/settings/developer',
+  '/admin/settings/warehouse',
+  '/admin/settings/crm',
+] as const;
+
+const ADMIN_API_ROUTES = [
+  '/api/admin/analytics',
+  '/api/admin/orders',
+  '/api/admin/products',
+  '/api/admin/landing-pages',
+  '/api/admin/content',
+  '/api/admin/shipping',
+  '/api/admin/check',
+  '/api/admin/ongkir',
+  '/api/admin/expeditions',
+  '/api/admin/rules',
+  '/api/admin/settings/developer',
+  '/api/admin/ads',
+  '/api/admin/media',
+  '/api/admin/upload-r2',
+  '/api/admin/seller-bank-accounts',
+  '/api/admin/profile',
+  '/api/admin/logout',
+] as const;
+
 const ROLE_PAGE_ROUTES: Record<Exclude<AdminRole, 'owner' | 'admin'>, readonly string[]> = {
   advertiser: [
     '/admin/dashboard',
     '/admin/products',
+    '/admin/landing-pages',
     '/admin/content',
     '/admin/ads',
     '/admin/profile',
@@ -39,6 +80,7 @@ const ROLE_API_ROUTES: Record<Exclude<AdminRole, 'owner' | 'admin'>, readonly st
   advertiser: [
     '/api/admin/analytics',
     '/api/admin/products',
+    '/api/admin/landing-pages',
     '/api/admin/content',
     '/api/admin/media',
     '/api/admin/ads',
@@ -70,11 +112,20 @@ export function getDefaultAdminRoute(_role: AdminRole) {
 }
 
 export function canAccessAdminRoute(role: AdminRole, pathname: string) {
+  if (!isAdminRole(role)) return false;
   if (pathname === '/admin') return true;
   if (role === 'owner') return true;
   if (role === 'admin') {
-    return !matchesRoute(pathname, '/admin/settings/access')
-      && !matchesRoute(pathname, '/api/admin/access');
+    if (
+      pathname === '/admin/settings' ||
+      pathname === '/admin/settings/' ||
+      pathname === '/api/admin/settings' ||
+      pathname === '/api/admin/settings/'
+    ) return true;
+    const routes = pathname.startsWith('/api/admin')
+      ? ADMIN_API_ROUTES
+      : ADMIN_PAGE_ROUTES;
+    return routes.some((route) => matchesRoute(pathname, route));
   }
   const routes = pathname.startsWith('/api/admin')
     ? ROLE_API_ROUTES[role]
@@ -119,7 +170,7 @@ export async function signJwt(payload: { username: string; role: AdminRole }, se
 export async function verifyJwt(rawToken: string, secret: string): Promise<AdminSession | null> {
   try {
     if (secret.length < 32) return null;
-    const parts = decodeURIComponent(rawToken).split('.');
+    const parts = rawToken.split('.');
     if (parts.length !== 3) return null;
 
     const [encodedHeader, encodedPayload, encodedSignature] = parts;
@@ -145,8 +196,12 @@ export async function verifyJwt(rawToken: string, secret: string): Promise<Admin
       !isAdminRole(payload.role) ||
       typeof payload.iat !== 'number' ||
       typeof payload.exp !== 'number' ||
+      !Number.isInteger(payload.iat) ||
+      !Number.isInteger(payload.exp) ||
       payload.iat > now + 60 ||
-      payload.exp <= now
+      payload.exp <= now ||
+      payload.exp <= payload.iat ||
+      payload.exp - payload.iat > 24 * 60 * 60
     ) return null;
 
     return payload as AdminSession;

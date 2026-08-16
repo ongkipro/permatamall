@@ -2058,3 +2058,19 @@ Scope: Comprehensive UI/UX redesign and backend enhancement for `/admin/orders`,
   - `npx astro check`: **0 errors, 272 warnings**.
   - `npm run build`: **Complete!** (Server built in 4.16s).
   - `npx wrangler deploy`: **Live 200 OK** (`https://permatamall.shop/`).
+
+### Entry 83: System-Wide Security, Correctness, Navigation, and UX Audit
+
+- **Admin authentication and authorization**: Removed the executable default credential path; bootstrap login now requires a strong configured password. Hardened JWT claim, lifetime, signature, credential-revision, and KV-session validation. Consolidated page/API access and role-visible navigation into one deny-by-default policy with coverage for owner, admin, advertiser, and customer-service workspaces.
+- **Checkout privacy and Purchase integrity**: Made `/api/order-status` POST-only and scoped every lookup to both order identity and `public_status_token`. Completion state now stays in same-origin `sessionStorage`; `/thanks` and `/payment` strip identifier, token, payment, customer, and address query parameters before subresources load. Browser Pixel and CAPI share one order-derived event id and no checkout/embed surface emits Purchase before the order is resolvable.
+- **Embed, preview, catalog, and cache boundaries**: Separated iframe origin policy from the Headless API allowlist, persisted the latter through migration `0035`, validated both write paths, and kept API-key authentication mandatory. Closed inactive-product reads, preview cache leaks, custom-HTML preview injection, unsafe embed redirects, and shared-cache directives on authenticated API responses.
+- **Headless contract cutover**: Removed unreachable token-bearing `payment_url` and `redirect_url` responses. Hosted checkout routes own their same-origin completion UI; Headless clients own theirs. Removed redundant completion-query builders so future callers cannot regress around `navigateAfterCheckout`.
+- **Navigation and responsive UX**: Centralised admin navigation contracts, aligned role menus with route authorization, removed duplicate/dead operational controls, repaired nested main landmarks, and made public/admin skip links target the actual content container. Browser checks covered the public footer/menu routes, current-role admin navigation, keyboard skip links, the 390 px viewport, clean completion redirects, and POST-only status requests.
+- **Documentation consistency**: Reconciled `AGENTS.md`, `ARCHITECTURE.md`, `INSTALLATION.md`, `PRD.md`, `STOREFRONT_INTEGRATION.md`, `TASKS.md`, `UNIMPLEMENTED_SPECS.md`, and `STATUS.md` with the executable tree. Migration `0034` now removes only the untouched, unreferenced foreign sample row; remaining structural and provider-blocked work stays explicit.
+- **Independent review**: Final security re-review found no exploitable finding in the audited trust boundaries. Remaining registered work is product, operations, provider-evidence, or installability debt.
+- **Verification**:
+  - `npm test`: **227/227 passed**.
+  - `npm run check`: **304 files, 0 errors, 0 warnings, 0 hints**.
+  - `npm run build`: **complete** (Cloudflare server bundle).
+  - Browser: **public menu 8/8**, **current-role admin menu/profile 5/5**, both skip links functional, no 390 px horizontal overflow, `/thanks` and `/payment` clean before downstream requests, and `/api/order-status` observed as POST JSON only.
+  - No deploy, remote database write, commit, or push was performed.

@@ -685,7 +685,6 @@ export function initMiddleOrderForm(
     const eventId = createId(`middle_${productSlug}`);
     const guardToken = sessionGuardToken;
     let order: any = null;
-    let paymentUrl = "";
     try {
       const response = await fetch("/api/submit-middle-order", {
         method: "POST",
@@ -744,12 +743,6 @@ export function initMiddleOrderForm(
         rawOrder?.data && typeof rawOrder.data === "object"
           ? rawOrder.data
           : rawOrder;
-      paymentUrl = String(
-        payload?.data?.payment_url ||
-          payload?.payment_url ||
-          order?.payment_url ||
-          "",
-      ).trim();
       const normalizedOrderId = String(
         payload?.data?.order_id || payload?.order_id || order?.order_id || "",
       ).trim();
@@ -814,20 +807,11 @@ export function initMiddleOrderForm(
       total_payment: totalPayment,
       variant_unique_id: String(checked.value || ""),
       variant_label: label,
-      payment_url: paymentUrl,
       guard_token: guardToken,
     };
     sessionStorage.setItem("thanks_state", JSON.stringify(state));
     setSubmitting(true, "Mengalihkan...");
 
-    const q = new URLSearchParams({
-      order_id: orderId,
-      status_token: statusToken,
-    });
-    navigateAfterCheckout(`/thanks?${q.toString()}`, {
-      orderId: String(orderId || ''),
-      total: Number(totalPayment),
-      currency: 'IDR',
-    });
+    navigateAfterCheckout("/thanks");
   });
 }

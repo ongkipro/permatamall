@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useState, type SubmitEvent } from "react";
 import { Check, Copy, KeyRound, ShieldCheck, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -82,7 +82,7 @@ export function HeadlessApiManagement() {
     return () => window.clearTimeout(timeout);
   }, [copied]);
 
-  const createKey = async (event: FormEvent<HTMLFormElement>) => {
+  const createKey = async (event: SubmitEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (creating) return;
     setCreating(true);

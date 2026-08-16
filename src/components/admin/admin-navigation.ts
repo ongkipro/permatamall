@@ -175,6 +175,17 @@ export const profileNavItem: AdminNavItem = {
   keywords: "profile akun password mengantar autolaris api domain",
 };
 
+export function isAdminNavHrefActive(currentPath: string, href: string) {
+  const base = "https://admin.local";
+  const current = new URL(currentPath, base);
+  const target = new URL(href, base);
+  if (current.pathname !== target.pathname) return false;
+  for (const [key, value] of target.searchParams) {
+    if (current.searchParams.get(key) !== value) return false;
+  }
+  return true;
+}
+
 export function getVisibleNavGroups(role: AdminRole) {
   if (role === "owner") return adminNavGroups;
   const visibleIds = role === "admin"

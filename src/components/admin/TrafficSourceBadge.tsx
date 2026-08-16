@@ -1,4 +1,3 @@
-import React from 'react';
 import { parseTrafficSource } from '../../lib/traffic-source';
 
 export function TrafficSourceBadge({

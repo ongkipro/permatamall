@@ -164,9 +164,6 @@ export function ExpeditionSettings() {
     setPolicyCodes((prev) => Array.from(new Set([...prev, ...regionCodes])));
   };
 
-  const handleUncheckRegion = (regionCodes: string[]) => {
-    setPolicyCodes((prev) => prev.filter((code) => !regionCodes.includes(code)));
-  };
 
   const handleCheckAllOutsideJava = () => {
     const javaCodes = PROVINCE_REGIONS.find((r) => r.name === 'Jawa')?.codes || [];

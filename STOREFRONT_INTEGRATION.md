@@ -100,14 +100,14 @@ A missing secret returns 401 `API_KEY_REQUIRED`. The secret is SHA-256 hashed to
 
 **Key issuance** is at `/admin/settings/developer` (page) backed by `/api/admin/settings/developer` (`POST` create, `DELETE` revoke, both admin-session-guarded). Secrets are generated as `cmsads_live_<43-char base64url>` from 32 random bytes, stored only as a SHA-256 hash plus a masked preview, and returned in **full exactly once** — on the creation response. Revocation is a soft delete (`revoked_at` + `revoked_by`); the key stops validating on the next request.
 
-**Where the allowlist actually comes from — read this before debugging a 403.** `resolveAllowedOrigins` builds the pattern list from the **Worker runtime env**, not from D1:
+**Where the allowlist comes from.** Headless API and iframe embedding have separate policies:
 
-- `PUBLIC_HEADLESS_ALLOWED_ORIGINS` — read by the code but declared nowhere: absent from `src/env.d.ts` and absent from `wrangler.jsonc` `vars`. It is effectively unset today.
-- `PUBLIC_EMBED_ALLOWED_ORIGINS` — `"https://permatamall.shop"` in `wrangler.jsonc`.
-- `PUBLIC_SITE_URL` — `"https://permatamall.shop"`.
-- `localhost` and `127.0.0.1`, always appended.
+- `stores.headless_allowed_origins` is the primary Headless API allowlist. Owners and admins manage it in the **Domain Allowlist Headless API** field at `/admin/settings/developer`; `/api/admin/settings/developer` persists it independently from iframe origins.
+- `PUBLIC_HEADLESS_ALLOWED_ORIGINS` is an optional runtime fallback, useful while provisioning a new install before the database value is saved.
+- `PUBLIC_SITE_URL`, `localhost`, and `127.0.0.1` are always accepted by the Headless API resolver.
+- `stores.embed_allowed_origins` controls only the `/embed/form` `frame-ancestors` CSP. `PUBLIC_EMBED_ALLOWED_ORIGINS` is its runtime fallback. Changing this policy does not authorize `/api/v1/*`.
 
-The origins textarea on `/admin/settings/developer` writes `stores.embed_allowed_origins` in D1, which `src/middleware.ts` uses to build the **embed `frame-ancestors` CSP** — it does *not* feed the headless allowlist. Adding an external storefront domain there will not stop a 403 from `/api/v1/*`. Until that is reconciled, an external storefront on a new domain needs `PUBLIC_HEADLESS_ALLOWED_ORIGINS` added to `wrangler.jsonc` `vars` **and** `src/env.d.ts`, followed by a deploy.
+Both admin fields accept one exact origin or wildcard subdomain pattern per line. Broad `*`, paths, query strings, fragments, and malformed patterns are rejected before persistence.
 
 ### 4.2 `GET /api/v1/storefront`
 
@@ -120,7 +120,7 @@ The bootstrap contract. Returns three groups:
 - `tracking` — `meta_pixel_id`, `google_ads_conversion_id`, `google_ads_conversion_label`, `google_tag_manager_id`, each `null` when unset. Read live from the `stores` row. **The Meta CAPI token is never included and must never be added here.**
 - `payment` — `cod_enabled` (hardcoded `true`), `cod_disabled_provinces` (live from `stores.cod_disabled_province_codes`), and `supported_methods: ["COD","BANK_TRANSFER","E_WALLET","QRIS"]` (a static list, not a live eligibility check — use `/api/payment-methods` for eligibility).
 
-Cache: inherits the envelope default, `Cache-Control: public, max-age=60, s-maxage=300`. Failure: 500 `STOREFRONT_LOAD_ERROR`.
+Cache: `Cache-Control: no-store`; storefront configuration changes take effect on the next authenticated request. Failure: 500 `STOREFRONT_LOAD_ERROR`.
 
 ### 4.3 `GET /api/v1/products`
 
@@ -130,7 +130,7 @@ Query: `limit` (1–100, default 20), `offset` (≥0, default 0), `q` or `search
 
 Returns `total`, `limit`, `offset`, `has_more`, and `products[]`. Each product carries `id` (the canonical numeric D1 catalog ID), `content_id` (the presentation key), `slug`, `name`, `category`, `headline`, `subheadline`, `price`, `compare_price`, `image`, `hero_image`, `rating_value`, `review_count`, `sold_count`, `variants[]` (`id`, `content_id`, `label`, `price`, `compare_price`), and a `urls` block.
 
-Cache: explicitly overridden to `Cache-Control: public, max-age=60, s-maxage=300, stale-while-revalidate=600`. Failure: 500 `PRODUCTS_LOAD_ERROR`.
+Cache: `Cache-Control: private, max-age=60, stale-while-revalidate=600`; browser clients may reuse a response, shared caches may not. Failure: 500 `PRODUCTS_LOAD_ERROR`.
 
 Source is `getStorefrontProducts`, which merges operational `products`/`product_variants` rows with **published** `storefront_content` presentation. Product presentation fails closed: a product with no published row is omitted. On a load error the function returns `[]`, so an empty catalog is ambiguous between "no products" and "D1 failed" — surface an honest empty state either way, never a fixture.
 
@@ -140,9 +140,9 @@ Source is `getStorefrontProducts`, which merges operational `products`/`product_
 
 The path segment resolves against slug, `content_id`, or numeric catalog ID (`getStorefrontProduct` matches all three). Returns the full product record — everything in the list payload plus `tag`, `seo_title`, `seo_description`, `description`, `benefits`, `key_points`, `ideal_for`, `offer_text`, `cta_text`, `reviews[]` — plus a `forms` block and up to four `related_products` from the same category.
 
-Cache: envelope default, `public, max-age=60, s-maxage=300`. Failures: 400 `SLUG_REQUIRED`, 404 `PRODUCT_NOT_FOUND`, 500 `PRODUCT_DETAIL_ERROR`.
+Cache: envelope default, `Cache-Control: private, max-age=60`. Failures: 400 `SLUG_REQUIRED`, 404 `PRODUCT_NOT_FOUND`, 500 `PRODUCT_DETAIL_ERROR`.
 
-> **Known defect — do not propagate.** The `urls`/`forms` blocks emitted by both product routes point at the **legacy redirect paths**: `/form-hybrid`, `/form-middle`, `/form-full`. Following them costs an extra 308 hop. A storefront should rewrite them to the canonical `/hybrid-form`, `/middle-form`, `/full-form`. `products/index.ts` also emits `checkout_hybrid: /api/v1/checkout?product_id=…`, which is misleading — that route is POST-only and takes no `product_id` query parameter.
+The `urls`/`forms` blocks use the canonical hosted checkout paths: `/hybrid-form`, `/middle-form`, and `/full-form`. `checkout_hybrid` is a browser navigation URL, not the POST-only `/api/v1/checkout` endpoint.
 
 ### 4.5 `GET /api/v1/geo/districts`
 
@@ -158,7 +158,7 @@ Inputs: `destination_id` or `location_id` (**required**), `payment_method` (defa
 
 Returns `destination_id`, `payment_method`, `origin_id`, `fallback_used`, and `rates[]` of `{ courier_code, courier_service, price, estimated_days, cod_available, cod_fee, total_shipping }`. `total_shipping` adds the COD fee only when `payment_method === 'cod'`.
 
-Cache: envelope default (200 responses are marked publicly cacheable — a quote is not a durable fact, so treat the freshness window as a ceiling and re-quote before submit). Failures: 400 `DESTINATION_ID_REQUIRED`, 503 `DATABASE_UNAVAILABLE`, or the `ShippingQuoteError` status/code passthrough, else 500 `SHIPPING_RATES_ERROR`.
+Cache: envelope default, `Cache-Control: private, max-age=60`; a quote is not a durable fact, so re-quote before submit. Failures: 400 `DESTINATION_ID_REQUIRED`, 503 `DATABASE_UNAVAILABLE`, or the `ShippingQuoteError` status/code passthrough, else 500 `SHIPPING_RATES_ERROR`.
 
 ### 4.7 `POST /api/v1/checkout`
 
@@ -166,7 +166,7 @@ Cache: envelope default (200 responses are marked publicly cacheable — a quote
 
 The full guard stack, in order: API key + origin, then a KV rate limit of **15 attempts per 60 s per client IP** (429 `RATE_LIMITED`), JSON parse (400 `INVALID_PAYLOAD`), honeypot on `website`/`honeypot` (400 `HONEYPOT_TRIGGERED`), `orderSubmitSchema` validation (422 `VALIDATION_ERROR` with a formatted `errors` tree), D1 availability (503 `DATABASE_UNAVAILABLE`), COD province policy (422 `COD_DISABLED_FOR_REGION`), then a **server-side re-quote** through `resolveTrustedHeadlessShipping` — the browser's shipping cost is never trusted — and finally `persistOrder`.
 
-On success returns **201** with `order` (`id`, `order_number`, `public_status_token`, `total_amount`, `unit_price`, `cod_service_fee`, `cod_service_fee_vat`, `cod_fee_bearer`, `seller_bank_name`, `seller_account_holder`, `seller_account_number`) and `redirect_url` pointing at `/thanks?order_id=…&order_sn=…`. Because the status is 201 and not 200, the envelope marks it `Cache-Control: no-store`.
+On success returns **201** with `order` (`id`, `order_number`, `public_status_token`, `total_amount`, `unit_price`, `cod_service_fee`, `cod_service_fee_vat`, `cod_fee_bearer`, `seller_bank_name`, `seller_account_holder`, `seller_account_number`). Because the status is 201 and not 200, the envelope marks it `Cache-Control: no-store`. The API does not return a hosted confirmation URL: a Headless client owns its confirmation UI and must not navigate to the system's same-origin `/thanks` page.
 
 Ad click IDs are read server-side from the click-ID cookie and persisted with the order; the storefront does not pass them in the body.
 
@@ -187,8 +187,6 @@ Client IP and user agent are taken **server-side** from request headers, not fro
 ### 4.9 Headless surface — known gaps
 
 - **No `/api/v1` write path for anything but checkout and tracking.** There is no headless order-status read; use the session-authenticated `/api/order-status`.
-- **Authenticated responses are marked publicly cacheable.** `headlessJson` applies `public, max-age=60, s-maxage=300` to every 200, including `/api/v1/storefront`, which contains install-specific tracking IDs. Any shared cache in front of the Worker could serve one key holder's response to another.
-- **Error responses carry no `Access-Control-Allow-Origin`.** `headlessError` passes only `cache-control: no-store` alongside the default CORS headers, which do not include the allow-origin. A browser client can see the status but generally cannot read the error body cross-origin. The 401/403 paths built directly by `validateHeadlessRequest` do include it.
 - **No per-key scoping, quota, or rate limit.** Any valid key reaches every `/api/v1` route. Only `/api/v1/checkout` is rate-limited, and by IP rather than by key.
 - **No published OpenAPI document or client SDK.**
 
@@ -389,11 +387,12 @@ DATA AND COMMERCE INTEGRATION
    /full-form before rendering a CTA.
 4. Resolve destinations with GET /api/v1/geo/districts and quote with
    GET|POST /api/v1/geo/shipping-rates. Re-quote before submit; never trust a cached price.
-5. Submit with POST /api/v1/checkout. Handle 401, 403, 422, 429, and 409 distinctly. On 201,
-   follow the returned redirect_url. Checkout is never courier dispatch.
-6. COD may continue to /thanks. Online payment continues to /payment, renders only the
-   returned provider instructions, polls with the returned identifiers, and reaches /thanks
-   only after paid reconciliation.
+5. Submit with `POST /api/v1/checkout`. Handle 401, 403, 422, 429, and 409 distinctly.
+   On 201, persist only the returned identifiers needed by the storefront and render its own
+   confirmation state. Checkout is never courier dispatch.
+6. Do not send a Headless customer to `/thanks` or `/payment`; both are same-origin hosted
+   checkout surfaces backed by session state. A dedicated authenticated Headless status read
+   does not exist yet, so do not invent polling against `/api/v1` (tracked as H6).
 7. Render honest loading, empty, unavailable, out-of-stock, error, and retry states. An empty
    catalog response may mean a backend failure — never present it as "no products" silently.
 

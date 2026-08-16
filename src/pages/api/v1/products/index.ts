@@ -72,8 +72,8 @@ export const GET: APIRoute = async ({ request, locals }) => {
           })),
           urls: {
             product: `/produk/${product.slug}`,
-            checkout_hybrid: `/api/v1/checkout?product_id=${product.catalogId}`,
-            form_render: `/form-hybrid?product_id=${product.catalogId}`,
+            checkout_hybrid: `/hybrid-form?product_id=${product.catalogId}`,
+            form_render: `/hybrid-form?product_id=${product.catalogId}`,
           },
         })),
       },

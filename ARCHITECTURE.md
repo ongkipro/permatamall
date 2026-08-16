@@ -186,7 +186,7 @@ These are the differences between the current single-store deployment and the in
 | G7 | No observability | No Workers logs, no error reporting, no way to diagnose a customer install | `wrangler.jsonc` (no `observability` block) |
 | G8 | Drizzle journal broken | Migration generation is unusable; the upgrade path depends on hand-authored SQL | `src/db/migrations/meta/` |
 | ~~G9~~ | ~~Meta Purchase deduplication is broken~~ | **Closed 2026-08-16.** Both legs now key on the `INV-` order number. Historical data stays inflated — Meta offers no retroactive merge | `src/components/tracking/MetaThanksTracker.astro` |
-| G10 | Embedded checkout fires Purchase with no event ID, at redirect time | An event without `event_id` cannot deduplicate against CAPI, and firing on redirect counts unpaid online orders | `src/lib/embed-markup.ts` |
+| ~~G10~~ | ~~Embedded checkout fired Purchase before verified confirmation~~ | **Closed 2026-08-16.** Embedded forms now send only a constrained completion-navigation message; the parent navigates to the same verified `/payment` or `/thanks` flow, whose browser and CAPI legs share the order number as `event_id` | `src/lib/embed-markup.ts`, `src/lib/checkout-navigation.ts` |
 
 ---
 

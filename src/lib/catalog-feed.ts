@@ -48,7 +48,6 @@ export function formatContentId(id: number | string): string {
 
 export function formatCatalogItemId(
   productId: number | string,
-  variant: CatalogProductVariant,
   variantIndex: number,
   totalVariants: number,
 ): { itemId: string; itemGroupId?: string } {
@@ -83,7 +82,7 @@ export function generateGoogleCatalogXml(
     const imageLink = product.heroImage.startsWith("http") ? product.heroImage : `${origin}${product.heroImage}`;
 
     product.variants.forEach((variant, index) => {
-      const { itemId, itemGroupId } = formatCatalogItemId(product.productId, variant, index, product.variants.length);
+      const { itemId, itemGroupId } = formatCatalogItemId(product.productId, index, product.variants.length);
       const titleText = product.variants.length > 1 ? `${product.productName} - ${variant.label}` : product.productName;
       const hasSale = typeof variant.comparePrice === "number" && variant.comparePrice > variant.price;
       const basePriceFormatted = `${hasSale ? variant.comparePrice : variant.price} IDR`;
@@ -146,7 +145,7 @@ export function generateMetaCatalogXml(
     const imageLink = product.heroImage.startsWith("http") ? product.heroImage : `${origin}${product.heroImage}`;
 
     product.variants.forEach((variant, index) => {
-      const { itemId, itemGroupId } = formatCatalogItemId(product.productId, variant, index, product.variants.length);
+      const { itemId, itemGroupId } = formatCatalogItemId(product.productId, index, product.variants.length);
       const titleText = product.variants.length > 1 ? `${product.productName} - ${variant.label}` : product.productName;
       const hasSale = typeof variant.comparePrice === "number" && variant.comparePrice > variant.price;
       const basePriceFormatted = `${hasSale ? variant.comparePrice : variant.price} IDR`;

@@ -76,8 +76,8 @@ async function runTracker(orderStatus: OrderStatus): Promise<TrackerRun> {
   const windowStub: Record<string, unknown> = {
     __META_PIXEL_ID__: "1234567890",
     location: {
-      search: "?order_id=INV-10042&status_token=status-token-42",
-      href: "https://permatamall.shop/thanks?order_id=INV-10042&status_token=status-token-42",
+      search: "",
+      href: "https://permatamall.shop/thanks",
     },
     fbq: (action: string, _eventName: string, _data: unknown, options?: { eventID?: string }) => {
       if (action === "track") run.pixelEventIds.push(String(options?.eventID || ""));
@@ -163,4 +163,19 @@ test("no checkout form mints a random Purchase event_id any more", () => {
       `${script} must not carry a browser-minted purchase_event_id into thanks state`,
     );
   }
+});
+
+test("embed parent surfaces never emit Purchase before verified thanks", () => {
+  const widgetSource = readFileSync(
+    new URL("../../public/adsbook-form-widget.js", import.meta.url),
+    "utf8",
+  );
+
+  const navigationSource = readFileSync(
+    new URL("./checkout-navigation.ts", import.meta.url),
+    "utf8",
+  );
+  assert.doesNotMatch(widgetSource, /["']Purchase["']/);
+  assert.doesNotMatch(widgetSource, /adsbook:order-complete/);
+  assert.doesNotMatch(navigationSource, /adsbook:order-complete/);
 });

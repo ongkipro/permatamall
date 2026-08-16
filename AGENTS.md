@@ -111,7 +111,6 @@ Do not "fix" these silently or treat them as bugs to be surprised by — they ar
 
 - Identity is build-time (`G1`, ADR-003). `stores.name` and the storefront name are different values.
 - There is no install wizard (`G2`, ADR-004).
-- Migration `0017` seeds a foreign sample product that admin refuses to delete (`G4`, ADR-006).
 - Home content falls back to compiled copy instead of failing closed (`G5`, ADR-007).
 - The Drizzle journal is broken (ADR-005).
 - The admin session cookie is `adsbook_session`, declared once as `SESSION_COOKIE_NAME` in `src/lib/auth.ts`. Never write the literal string; a writer and reader that disagree is a silent lockout.

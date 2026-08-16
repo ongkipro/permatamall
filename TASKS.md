@@ -923,8 +923,8 @@ Active backlog. Every task below references a requirement in the current `PRD.md
  -> REQ: REQ-50 · gap: G9 · The browser now derives the Purchase `eventID` from `order_number` in the `/api/order-status` response — the same D1 column the CAPI leg uses — instead of minting `purchase_<slug>_<random>`. If the order cannot be resolved the tracker fires nothing rather than a mismatched id. The server gate (`order_number` + `status_token`, 404 on mismatch) and the outbox idempotency key are untouched. Test `src/lib/meta-purchase-dedup.test.ts` executes the real inline tracker script against a stubbed browser and asserts the Pixel `eventID`, the posted `event_id`, and `resolveMetaEventId()` all produce one string; mutation-checked.
  · **Forward-only.** Meta dedups at ingestion within 48 hours with no retroactive merge, so historical Purchase counts stay roughly doubled and historical ROAS stays understated. Treat the deploy date as a reporting break.
 
-- [ ] **A-7** — Embedded checkout fires Purchase with no event ID (`src/lib/embed-markup.ts`). *(found while fixing A-6)*
- -> REQ: REQ-50, REQ-55 · Done when: the embed snippet no longer fires `fbq('track','Purchase')` without an `eventID`, and no longer fires it at redirect time before payment is verified. Two defects in one call: an event with no `event_id` can never deduplicate against the CAPI leg, so any embedded install sharing the store's pixel double-counts independently of A-6; and firing on `cmsads:checkout-redirect` counts unpaid online orders as purchases.
+- [x] **A-7** — Remove premature Meta Purchase from embedded checkout. **Done 2026-08-16.**
+ -> REQ: REQ-50, REQ-55 · Embedded forms now post only a constrained `cmsads:checkout-complete` navigation message. The parent strips all unapproved fields and enters the same verified `/payment` or `/thanks` flow as hosted checkout; only the verified thanks tracker emits Purchase with the order-number `eventID`.
 
 ## A2 — Installer foundation
 
@@ -947,7 +947,7 @@ Active backlog. Every task below references a requirement in the current `PRD.md
 - [x] **A-20** — Test coverage for `src/lib/auth.ts`. **Done 2026-08-16.**
  -> REQ: REQ-60, REQ-61 · 12 tests in `src/lib/auth.test.ts` covering round-trip, wrong secret, six tampering shapes, validly-signed-but-hostile claims, lifetime and clock skew, 15 malformed inputs, exact cookie-name matching, credential-rotation invalidation driven through the real `onRequest`, cross-user session records, and the full role matrix including denied routes. Mutation-verified: five deliberate breaks in `auth.ts` were each caught.
 
-- [ ] **A-25** — Harden the authorisation policy in `src/lib/auth.ts`. *(found while writing A-20)*
+- [x] **A-25** — Harden the authorisation policy in `src/lib/auth.ts`. **Done 2026-08-16.**
  -> REQ: REQ-61 · Done when each of these is resolved:
  · `canAccessAdminRoute` **throws** on a role outside `ADMIN_ROLES` (`ROLE_PAGE_ROUTES[role]` is undefined) instead of returning false. It fails closed today only because `verifyJwt` gates the role first, so an unhandled 500 stands in for a deny.
  · `canAccessAdminRoute(anything, '/admin')` returns `true` unconditionally, before any role check.
@@ -955,7 +955,7 @@ Active backlog. Every task below references a requirement in the current `PRD.md
  · `verifyJwt` enforces no maximum lifetime; it honours whatever `exp` a validly signed token carries. Only `signJwt` caps at 24h.
  · The token is URL-decoded twice (`getSessionCookie`, then `verifyJwt`). Harmless for base64url, but a latent double-decode.
  · Middleware gates `/api/admin/` **with** a trailing slash, so exactly `/api/admin` is ungated. Nothing is reachable there today; adding `src/pages/api/admin/index.ts` would ship an unauthenticated endpoint.
-- [ ] **A-21** — Connect the headless origin allowlist to the admin (`src/lib/headless-api.ts`).
+- [x] **A-21** — Connect the headless origin allowlist to the admin (`src/lib/headless-api.ts`). **Done 2026-08-16.**
  -> REQ: REQ-71 · Done when: authorising a new storefront origin is an admin action rather than a code change and deploy; the currently undeclared `PUBLIC_HEADLESS_ALLOWED_ORIGINS` is either implemented or removed; the embed allowlist and the API allowlist have documented, distinct scopes.
 - [x] **A-22** — Stop marking authenticated API responses publicly cacheable. **Done 2026-08-16.**
  -> REQ: REQ-71 · Done when: authenticated `/api/v1/*` 200s, including `/api/v1/storefront`, are not served with `public` cache directives that permit shared-cache storage.

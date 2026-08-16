@@ -1,6 +1,6 @@
 # AdsBookCMS — Remaining Work and Blockers
 
-> Verified against disk: 2026-08-16 @ 0d2e56a
+> Verified against disk: 2026-08-16 @ `9eb6531` plus an uncommitted working tree
 
 This is the single ledger of work that is **not** done. Implemented behaviour belongs in `STATUS.md`, history in `BUILD-LOG.md`, accepted product behaviour in `PRD.md`, real architecture in `ARCHITECTURE.md`, and constraining decisions in `DECISIONS.md`.
 
@@ -13,7 +13,7 @@ Two rules govern every entry, per ADR-010:
 
 ## 1. Product Gaps — owned by the gap register
 
-The eight structural gaps between "the store that runs today" and "an installable product" live in **`ARCHITECTURE.md` §10** and are not restated here. In summary: **G1** build-time identity · **G2** no install wizard · **G3** no schema auto-upgrade · **G4** foreign sample product · **G5** home content does not fail closed · **G6** compile-time theme set · **G7** no observability · **G8** broken Drizzle journal.
+The seven open structural gaps between "the store that runs today" and "an installable product" live in **`ARCHITECTURE.md` §10** and are not restated here. In summary: **G1** build-time identity · **G2** no install wizard · **G3** no schema auto-upgrade · **G5** home content does not fail closed · **G6** compile-time theme set · **G7** no observability · **G8** broken Drizzle journal. **G4** is closed: migration `0034` removes the inherited sample row from a fresh schema.
 
 Their governing decisions are ADR-003 (runtime identity), ADR-004 (install wizard), ADR-005 (raw SQL data layer), ADR-006 (neutral sample data), and ADR-007 (fail closed). G1 → G2 is the hard dependency: identity must resolve at runtime before a first-run wizard can write it.
 
@@ -80,11 +80,7 @@ Genuine remaining work on that surface:
 
 | # | Item | Why it matters |
 | --- | --- | --- |
-| H1 | Origin allowlist is not wired to any admin surface | `resolveAllowedOrigins` reads `PUBLIC_HEADLESS_ALLOWED_ORIGINS` (declared nowhere — absent from `src/env.d.ts` and from `wrangler.jsonc` `vars`), `PUBLIC_EMBED_ALLOWED_ORIGINS`, and `PUBLIC_SITE_URL`. The origins editor at `/admin/settings/developer` writes `stores.embed_allowed_origins`, which only feeds the embed `frame-ancestors` CSP. Authorizing a new external storefront domain therefore requires a code change and a deploy. |
-| H2 | Authenticated responses are marked publicly cacheable | `headlessJson` applies `Cache-Control: public, max-age=60, s-maxage=300` to every 200, including `/api/v1/storefront`, which carries install-specific tracking IDs. A shared cache in front of the Worker could cross-serve responses. |
-| H3 | Error responses omit `Access-Control-Allow-Origin` | `headlessError` sends only the default CORS headers, which do not include allow-origin, so browser clients generally cannot read error bodies cross-origin. Only the 401/403 paths built by `validateHeadlessRequest` include it. |
 | H4 | No per-key scoping, quota, or rate limit | Any valid key reaches every `/api/v1` route. Only `/api/v1/checkout` is rate-limited, and by client IP rather than by key. |
-| H5 | Product routes emit legacy form URLs | `/api/v1/products` and `/api/v1/products/[slug]` return `/form-hybrid`, `/form-middle`, `/form-full`, forcing a 308 hop and contradicting the canonical-URL rule. `products/index.ts` also emits `checkout_hybrid: /api/v1/checkout?product_id=…`, which is wrong — that route is POST-only and ignores query parameters. |
 | H6 | No headless order-status read | An external storefront cannot poll payment state through `/api/v1`; only the session-authenticated `/api/order-status` exists. |
 | H7 | No published API contract | No OpenAPI document, no client SDK, no versioning policy for `/api/v1`. |
 | H8 | Executable storefront adapter | `STOREFRONT_INTEGRATION.md` §10 is a documentation brief, not a shipped adapter. Nothing packaged proves bootstrap → catalog → form handoff → confirmation → error mapping → attribution → accessible focus return end to end. |
@@ -145,9 +141,9 @@ Product presentation already fails closed — an unpublished product is omitted 
 ## 8. Execution Order
 
 1. **G1 → G2** identity at runtime, then the install wizard. Everything else in the gap register depends on or is cheapened by these.
-2. **G5 + G4** fail-closed home content and a neutral, deletable sample product — a fresh install is incoherent without both (ADR-006, ADR-007).
+2. **G5** make home content fail closed; a fresh install must not silently inherit compiled marketing copy (ADR-007).
 3. **C1, C5, C6** delete the inert remnants. They are small, safe, and stop new code from being written against them.
-4. **H1** wire the headless origin allowlist to a real admin surface, then **H2**, **H3**, **H5** — correctness fixes on a shipping API.
+4. **H4, H6, H7, H8** complete the remaining Headless API product surface: key scope and quota, order-status read, a published contract, and an executable adapter.
 5. **G8** rebuild the Drizzle journal, or remove `drizzle-orm`/`drizzle-kit` and demote `schema.ts` to documentation (ADR-005).
 6. **G7** add an `observability` block; nothing above can be diagnosed on a customer install without it.
 7. **C2** the click-ID cookie migration, deliberately, with the dual-read fallback.

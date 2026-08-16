@@ -41,6 +41,7 @@ test('the payload the storefront actually sends is accepted intact', () => {
   assert.equal(result.value.contentName, 'Asahan Portable');
   assert.deepEqual(result.value.contentIds, ['434683']);
   assert.equal(result.value.currency, 'IDR');
+  assert.equal(result.value.eventSourceUrl, 'https://permatamall.shop/thanks');
 });
 
 test('live six-digit catalog ids reach Meta', () => {

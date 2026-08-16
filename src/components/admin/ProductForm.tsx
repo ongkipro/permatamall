@@ -68,7 +68,6 @@ export function ProductForm({ productId }: { productId?: string }) {
   const nextVariantKey = useRef(1);
   const [title, setTitle] = useState("");
   const [slug, setSlug] = useState("");
-  const [slugTouched, setSlugTouched] = useState(false);
   const category = "Umum";
   const [active, setActive] = useState(!editing);
   const [imageUrl, setImageUrl] = useState("");
@@ -348,7 +347,6 @@ export function ProductForm({ productId }: { productId?: string }) {
                 pattern="[a-z0-9]+(?:-[a-z0-9]+)*"
                 value={slug}
                 onChange={(event) => {
-                  setSlugTouched(true);
                   setSlug(slugify(event.target.value));
                 }}
                 className="admin-input-flat h-11 border-slate-300 bg-slate-50 font-mono text-base shadow-none focus-visible:border-emerald-700 focus-visible:ring-emerald-700/20 md:text-sm"

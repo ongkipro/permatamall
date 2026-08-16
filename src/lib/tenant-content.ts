@@ -4,7 +4,7 @@ import {
   loadPublishedHomeContent,
   type HomeContent,
 } from "./storefront-content";
-import { heroSlides, heroHighlights, solutions as baseSolutions, proofs } from "../data/home";
+import { heroSlides, heroHighlights, proofs } from "../data/home";
 import { solutionEntries } from "../data/content";
 import { listLandingPages } from "./landing-pages";
 
@@ -32,22 +32,22 @@ export const DEFAULT_HOME_CONTENT: HomeContent = {
     ratingLabel: "",
   },
   catalog: {
-    eyebrow: "Katalog Produk Pilihan",
-    title: "Produk Unggulan Siap Kirim",
+    eyebrow: "Katalog Produk",
+    title: "Produk yang Tersedia",
     description:
-      "Pilih produk pilihan Anda, nikmati promo potongan harga khusus dan fasilitas bayar di tempat (COD) ke seluruh Indonesia.",
+      "Lihat produk, pilihan varian, dan harga yang tersedia di katalog toko.",
   },
   solutionsHeading: {
-    eyebrow: "Kategori & Solusi Pilihan",
-    title: "Pilihan Produk Sesuai Kebutuhan",
+    eyebrow: "Informasi Produk",
+    title: "Pilihan dari Katalog",
     description:
-      "Pilih solusi yang paling relevan dengan kebutuhan dan permasalahan Anda saat ini.",
+      "Buka halaman produk untuk melihat informasi dan pilihan yang tersedia.",
   },
   proofsHeading: {
-    eyebrow: "Kisah Pelanggan",
-    title: "Pengalaman Nyata Pelanggan",
+    eyebrow: "Informasi Toko",
+    title: "Konten Tambahan",
     description:
-      "Simak ulasan dan cerita kepuasan pengguna dari berbagai wilayah di Indonesia.",
+      "Bagian ini hanya menampilkan konten yang telah diterbitkan oleh pengelola toko.",
   },
   heroHighlights,
   heroSlides,
@@ -69,7 +69,7 @@ export async function getTenantHomeContent(
         .filter((p) => Boolean(p.is_active))
         .map((p) => ({
           title: p.title,
-          excerpt: p.meta_description || `Panduan & penawaran khusus ${p.title}`,
+          excerpt: p.meta_description || `Informasi ${p.title}`,
           image: "/images/logo.webp",
           href: `/${p.slug}`,
           crop: "CMS Landing Page",

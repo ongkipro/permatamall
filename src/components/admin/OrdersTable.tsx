@@ -50,14 +50,12 @@ import {
 import {
   MoreHorizontal,
   ChevronDown,
-  ChevronUp,
   Eye,
   Truck,
   Trash2,
   AlertCircle,
   CheckCircle2,
   ShieldAlert,
-  RefreshCw,
 } from "lucide-react";
 
 type RiskLevel = "LOW" | "MEDIUM" | "HIGH" | "UNKNOWN";
@@ -211,15 +209,6 @@ const shippingStatusStyles: Record<string, string> = {
   cancelled: "bg-slate-500",
 };
 
-const shippingStatusContainerStyles: Record<string, string> = {
-  abandoned: "bg-rose-50/90 border-rose-200/80 text-rose-900 hover:bg-rose-100",
-  pending: "bg-amber-50/90 border-amber-200/80 text-amber-900 hover:bg-amber-100",
-  processing: "bg-sky-50/90 border-sky-200/80 text-sky-900 hover:bg-sky-100",
-  shipped: "bg-blue-50/90 border-blue-200/80 text-blue-900 hover:bg-blue-100",
-  delivered: "bg-emerald-50/90 border-emerald-200/80 text-emerald-900 hover:bg-emerald-100",
-  returned: "bg-rose-100/90 border-rose-300/80 text-rose-950 hover:bg-rose-200",
-  cancelled: "bg-slate-100 border-slate-200 text-slate-700 hover:bg-slate-200",
-};
 
 const quickStatusFilters = [
   { value: "all", label: "Semua" },
@@ -257,70 +246,6 @@ function HighlightSearchMatch({
   );
 }
 
-function ShippingStatusSelect({
-  order,
-  disabled,
-  mobile = false,
-  onValueChange,
-}: {
-  order: OrderItem;
-  disabled: boolean;
-  mobile?: boolean;
-  onValueChange: (value: string) => void;
-}) {
-  const label = shippingLabels[order.shippingStatus] || order.shippingStatus;
-  const containerStyle =
-    shippingStatusContainerStyles[order.shippingStatus] ||
-    "border-slate-200 bg-white text-slate-900 hover:bg-slate-50";
-
-  return (
-    <Select
-      value={order.shippingStatus}
-      disabled={disabled}
-      onValueChange={(val) => onValueChange(val ?? "")}
-    >
-      <SelectTrigger
-        aria-label={`Status pengiriman ${order.orderNumber}`}
-        size={mobile ? "default" : "sm"}
-        aria-busy={disabled}
-        title="Ubah status pengiriman"
-        className={`${mobile ? "w-full rounded-xl px-3 text-base data-[size=default]:h-11" : "min-w-[116px] rounded-lg px-2.5 text-[11px] data-[size=sm]:h-9"} border font-bold shadow-xs transition-colors ${containerStyle} focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-slate-300 disabled:cursor-wait`}
-      >
-        {disabled ? (
-          <span
-            className="size-3.5 shrink-0 animate-spin rounded-full border-2 border-emerald-200 border-t-emerald-600"
-            aria-hidden="true"
-          />
-        ) : (
-          <span
-            className={`size-2 shrink-0 rounded-full ${shippingStatusStyles[order.shippingStatus] || "bg-slate-400"}`}
-            aria-hidden="true"
-          />
-        )}
-        <SelectValue>{label}</SelectValue>
-      </SelectTrigger>
-      <SelectContent
-        align={mobile ? "start" : "end"}
-        sideOffset={6}
-        className="min-w-[172px] rounded-xl border border-slate-200 bg-white p-1.5 text-slate-900 shadow-xl ring-1 ring-slate-950/5"
-      >
-        {Object.entries(shippingLabels).map(([value, itemLabel]) => (
-          <SelectItem
-            key={value}
-            value={value}
-            className="min-h-9 cursor-pointer rounded-lg px-2.5 pr-8 text-xs font-bold focus:bg-emerald-50 focus:text-emerald-900"
-          >
-            <span
-              className={`size-2 shrink-0 rounded-full ${shippingStatusStyles[value]}`}
-              aria-hidden="true"
-            />
-            {itemLabel}
-          </SelectItem>
-        ))}
-      </SelectContent>
-    </Select>
-  );
-}
 function OrderActionMenu({
   order,
   updatingOrderId,
@@ -468,18 +393,6 @@ const formatDateTime = (value: string) => {
   }).format(date)} WIB`;
 };
 const crmSteps = ["welcome", "1", "2", "3", "4", "5", "6", "7", "8", "9"] as const;
-const crmStepActionList = [
-  { key: "welcome", label: "Welcome", title: "1. Welcome: Detail pesanan & alamat" },
-  { key: "1", label: "Detail", title: "2. Order Detail: Tanya kendala" },
-  { key: "2", label: "FU 1", title: "3. Follow-up 1: Ringkasan & payment link" },
-  { key: "3", label: "FU 2", title: "4. Follow-up 2: Stok terbatas" },
-  { key: "4", label: "FU 3", title: "5. Follow-up 3: Opsi transfer / link" },
-  { key: "5", label: "FU 4", title: "6. Follow-up 4: Pengingat terakhir" },
-  { key: "6", label: "FU 5", title: "7. Follow-up 5: Bantuan CS" },
-  { key: "7", label: "Proses", title: "8. Processing: Order diproses & dikemas" },
-  { key: "8", label: "Resi", title: "9. Completed: Paket dikirim & resi" },
-  { key: "9", label: "UpSell", title: "10. UpSelling: Promo khusus" },
-] as const;
 
 function RiskBadge({
   level,
