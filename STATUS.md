@@ -1,8 +1,8 @@
 # STATUS — AdsBookCMS
 
 > Verified against the current branch and production: 2026-08-16. Production
-> Worker `c72c7133-15af-4355-97ec-fdaa3ca41f3c` was deployed from the current
-> worktree based on source commit `c99f46d`.
+> Worker `c72c7133-15af-4355-97ec-fdaa3ca41f3c` is live; its deployed tree is
+> captured by source commit `6e7cfc3`.
 >
 > Current release gates: `npm run check` 312 files / 0 errors / 0 warnings / 0
 > hints · `npm test` 250 / 250 · `npm run build` complete.
