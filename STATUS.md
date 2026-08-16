@@ -1,8 +1,8 @@
 # STATUS — AdsBookCMS
 
 > Verified against the current branch and production: 2026-08-16. Source
-> commit `c0adc8f` was manually deployed after the explicitly approved catalog
-> identity release.
+> commit `c99f46d` was manually deployed after the catalog feed cache
+> correction.
 >
 > Current release gates: `npm run check` 312 files / 0 errors / 0 warnings /
 > 0 hints · `npm test` 249 / 249 · `npm run build` complete · local and
@@ -24,7 +24,7 @@ The previous version of this file described a different repository — it opened
 | --- | --- |
 | Product | AdsBookCMS (single) |
 | Worker | `cmsads-permatamall` |
-| Worker version | `37dc4293-4624-4245-9560-5c2f67222d1c` |
+| Worker version | `2beee1ea-e57b-477f-be4b-4ec5c247b019` |
 | Domains | `permatamall.shop`, `www.permatamall.shop` (both custom domains) |
 | D1 | `cmsads-permatamall-d1` |
 | R2 | `cmsads-permatamall-assets` |
@@ -36,7 +36,7 @@ The previous version of this file described a different repository — it opened
 
 Live check on 2026-08-16 after Worker version `a7fada59-ea16-4e63-b99a-3760b2562ff5`: redesigned `/hello` returned 200 at 390×844 and 1440×900 with no horizontal overflow, separate desktop authentication/visual regions, a mobile single-column flow, 44 px controls, autofocus on username, synchronized password visibility, and no browser console errors. The login response remained `Cache-Control: no-store` with `Cache-Status: cmsads; fwd=request`.
 
-Live catalog check on 2026-08-16 after Worker version `37dc4293-4624-4245-9560-5c2f67222d1c`: Google returned DAIRA variant IDs `106`–`110`, each grouped under product `22`; Meta returned one DAIRA item with ID `22`, matching the production page's product-level Meta identity. Both feeds returned 200 XML responses without generated `_vN` IDs.
+Live catalog check on 2026-08-16 after Worker version `2beee1ea-e57b-477f-be4b-4ec5c247b019`: the bare Google and Meta URLs returned 200 XML responses with `Cache-Control: no-cache`. Google returned DAIRA variant IDs `106`–`110`, each grouped under product `22`; Meta returned one DAIRA item with ID `22`, matching the production page's product-level Meta identity. Neither feed contained generated `_vN` IDs.
 
 ---
 
