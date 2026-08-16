@@ -909,9 +909,9 @@ Active backlog. Every task below references a requirement in the current `PRD.md
 
 ## A1 — Live integrity (production is currently wrong)
 
-- [ ] **A-1** — Remove fabricated social proof from product presentation (`src/lib/catalog-data.ts`).
+- [x] **A-1** — Remove fabricated social proof from product presentation (`src/lib/catalog-data.ts`). **Done 2026-08-16.**
  -> REQ: REQ-16 · Done when: the three hardcoded named reviews, `METRICS_TABLE` rating/review/sold values, and `getRealisticComparePrice()` no longer reach any public page; `aggregateRating` is emitted only from recorded data or omitted entirely; `npm test` green.
-- [ ] **A-2** — Replace vendor advertising artwork used as store brand (`public/images/logo.webp`, `public/favicon.*`, `public/admin-login.webp`, `public/og-admin.webp`).
+- [x] **A-2** — Replace vendor advertising artwork used as store brand (`public/images/logo.webp`, `public/favicon.*`, `public/admin-login.webp`, `public/og-admin.webp`). **Done 2026-08-16** — placeholders pending real brand assets.
  -> REQ: REQ-18 · Done when: no CMS Ads artwork remains reachable; `tenantConfig.logo`, the admin shell logo, the product-image fallback (`catalog-data.ts`), the landing-card image (`tenant-content.ts`), and the admin `og:image` all resolve to this store's own assets.
 - [ ] **A-3** — Neutralise the canonical sample product.
  -> REQ: REQ-9 · gap: G4 · ADR-006 · Done when: a new forward migration replaces product 10001 with a neutral, clearly labelled placeholder using an owned image; `src/lib/sample-product.ts` and the admin strings in `ProductForm.tsx` / `ProductCatalog.tsx` / `admin/products/edit.astro` agree with it; the record is deletable once a real product exists.
@@ -957,9 +957,9 @@ Active backlog. Every task below references a requirement in the current `PRD.md
  · Middleware gates `/api/admin/` **with** a trailing slash, so exactly `/api/admin` is ungated. Nothing is reachable there today; adding `src/pages/api/admin/index.ts` would ship an unauthenticated endpoint.
 - [ ] **A-21** — Connect the headless origin allowlist to the admin (`src/lib/headless-api.ts`).
  -> REQ: REQ-71 · Done when: authorising a new storefront origin is an admin action rather than a code change and deploy; the currently undeclared `PUBLIC_HEADLESS_ALLOWED_ORIGINS` is either implemented or removed; the embed allowlist and the API allowlist have documented, distinct scopes.
-- [ ] **A-22** — Stop marking authenticated API responses publicly cacheable.
+- [x] **A-22** — Stop marking authenticated API responses publicly cacheable. **Done 2026-08-16.**
  -> REQ: REQ-71 · Done when: authenticated `/api/v1/*` 200s, including `/api/v1/storefront`, are not served with `public` cache directives that permit shared-cache storage.
-- [ ] **A-23** — Add CORS headers to headless error responses.
+- [x] **A-23** — Add CORS headers to headless error responses. **Done 2026-08-16.**
  -> REQ: REQ-70 · Done when: `headlessError` includes `Access-Control-Allow-Origin` so cross-origin callers can read error bodies.
 - [ ] **A-24** — Repair or retire the Drizzle layer.
  -> ADR-005 · gap: G8 · Done when: either the journal and snapshots are rebuilt so `db:generate` is safe, or `schema.ts`, `src/db/index.ts`, `drizzle-orm`, and `drizzle-kit` are removed and migrations documented as hand-authored. `schema.ts` must not remain a plausible-looking but wrong schema.
