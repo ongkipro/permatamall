@@ -1,10 +1,11 @@
 ---
 import LegalPage from '../components/shared/LegalPage.astro';
 import BaseLayout from '../layouts/BaseLayout.astro';
-import { legalPages } from '../data/legal';
+import { getTenantLegalPage } from '../data/legal';
 import { tenantConfig } from '../lib/tenant';
 
-const page = legalPages.disclaimer;
+const page = getTenantLegalPage('disclaimer', tenantConfig.name);
+---
 
 <BaseLayout
   shell="storefront"

@@ -1,349 +1,421 @@
-# CMSAds Storefront, Form, and Meta Ads Integration Contract
+# AdsBookCMS — Storefront, Form, and Ads Integration Contract
 
-This document is the implementation handoff for an AI agent building a tenant-specific public storefront against CMSAds. The storefront may be completely custom. Commerce authority, checkout form behavior, tracking identity, order persistence, and operator lifecycle remain canonical.
+> Verified against disk: 2026-08-16 @ 0d2e56a
+
+This document is the implementation handoff for anyone — human or agent — building a public storefront experience against an **AdsBookCMS** install. Two integration shapes are supported and both are shipping today:
+
+1. **Built-in storefront** — the install renders its own public pages (`/`, `/produk`, `/produk/[slug]`, landing pages, checkout forms) from the same Worker. This is what `permatamall.shop` runs.
+2. **External storefront over the Headless API** — a separate site (any framework, any host) reads catalog, geo, and configuration from `/api/v1/*` and posts orders back to it, authenticated with a developer API key.
+
+Commerce authority never moves. Catalog identity, price, stock, weight, destination resolution, courier eligibility, order persistence, payment reconciliation, tracking identity, and the operator dispatch lifecycle stay inside the install.
+
+---
 
 ## 1. Status Legend
 
-- **Implemented:** present in the CMSAds repository and covered by current local evidence.
-- **Historical evidence:** behavior recorded in Git history or the chronological build log, but not an active deployment or reusable runtime dependency.
-- **Planned:** accepted target contract; implementation and executable proof still required.
-- **Blocked:** requires an external provider contract or merchant input.
+- **Implemented** — present in this repository, readable at the cited path.
+- **Gap** — not implemented; tracked in `ARCHITECTURE.md` §10 or `UNIMPLEMENTED_SPECS.md`.
+- **Blocked** — waits on an external provider contract or a merchant decision.
 
-Do not present a planned adapter as an active endpoint.
+Never present a gap as an active endpoint. Per ADR-010, anything in this document that disagrees with the tree is the document being wrong.
 
-## 2. Ownership Boundary
+---
 
-| Concern | Owner | Customizable per tenant |
+## 2. Install Model and Ownership Boundary
+
+Per ADR-001, **one install = one Worker = one store**. There is no tenant registry, no request-time store selection, no `services` block in `wrangler.jsonc`, and no service binding to a second Worker. An external storefront talks to the install over **ordinary public HTTPS** with an API key — not over a private binding.
+
+| Concern | Owner | Customizable per install |
 | --- | --- | --- |
-| Public layout, route hierarchy, components, motion, copy presentation | Storefront repository | Yes |
-| Brand assets and merchant claims | Merchant-owned inputs and storefront/R2 | Yes, after factual review |
-| Catalog identity, variant identity, price, stock, weight, active state | CMSAds tenant D1 | No browser override |
-| Address resolution, courier eligibility, shipping quote | CMSAds API and provider contract | Presentation only |
-| Checkout validation and order persistence | CMSAds API | Presentation only |
-| Middle/full/hybrid form behavior | CMSAds system contract | Placement and mode selection only |
-| Admin, order verification, shipping release, payment, provider state | CMSAds | No storefront fork |
-| Meta/Google identifiers and CAPI secret | CMSAds tenant configuration | Per tenant, server-controlled |
+| Public layout, route hierarchy, components, copy presentation | Storefront (built-in templates or external site) | Yes |
+| Brand assets and merchant claims | Merchant-owned inputs, uploaded to R2 | Yes, after factual review |
+| Catalog identity, variant identity, price, stock, weight, active state | Install D1 (`products`, `product_variants`) | No browser override |
+| Address resolution, courier eligibility, shipping quote | Install API + Mengantar contract | Presentation only |
+| Checkout validation and order persistence | Install API | Presentation only |
+| Middle/full/hybrid form behaviour | Install system contract | Placement and mode selection only |
+| Admin, order verification, dispatch, payment, provider state | Install `/admin/*` | No storefront fork |
+| Meta/Google identifiers and CAPI token | `stores` row, edited in `/admin/ads/*` | Server-controlled |
 | Browser event rendering | Storefront adapter | Yes, within the canonical event contract |
-| Server CAPI and Purchase qualification | CMSAds | No browser authority |
+| Server CAPI and Purchase qualification | Install (`capi_event_outbox`) | No browser authority |
 
-A frontend deployment cannot read or copy another tenant's D1, KV, R2, secrets, sessions, orders, or provider credentials. A CMSAds deployment cannot replace a separate storefront bundle when the backend uses `service-only` ingress.
+A second store is a second install — separate Worker, D1, KV, R2, and domain. Nothing in this document authorizes reading another install's data.
 
-### Repository decision
+---
 
-- An **integrated** tenant does not require a separate frontend repository. Its public renderer, forms, admin, and API are built from the canonical CMSAds repository into one tenant-specific `custom-domain` Worker.
-- A **headless/custom** tenant SHOULD use one separate storefront repository for that exact tenant. That repository owns public routes, framework, components, assets, domain, browser adapter, tests, and its own public release pipeline.
-- The headless storefront repository MUST NOT fork CMSAds commerce logic. Admin, API, schema, authentication, order, payment, shipping, tracking guards, migrations, and provider integration remain in the canonical CMSAds repository and are deployed as the tenant's `service-only` backend.
-- Storefront and backend repositories release independently. Their API and identifier contract remains a coordinated compatibility boundary.
+## 3. Public Route Surface
 
-## 3. Reference Headless Flow
+**Storefront-owned (built-in renderer):** `/`, `/produk`, `/produk/[slug]`, `/[slug]` landing catch-all, `/404`, content pages (`/tentang`, `/kontak`, `/testimoni`, `/sitemap`, `/disclaimer`, `/kebijakan-privasi`, `/kebijakan-cookie`, `/syarat-ketentuan`, `/pengiriman`), feeds (`/sitemap.xml`, `/feed/google-catalog.xml`, `/feed/meta-catalog.xml`, `/robots.txt`), and media (`/assets/[...key]`, `/media/[...key]`).
 
-```mermaid
-flowchart LR
-    U[Customer] --> F[Custom tenant storefront]
-    F -->|public pages and assets| U
-    F -->|private service binding| B[CMSAds tenant backend]
-    B --> D[(Tenant D1)]
-    B --> R[(Tenant R2)]
-    B --> K[(Tenant KV)]
-    B --> P[Mengantar / AutoLaris / Meta CAPI]
-    O[Operator] -->|same tenant origin /admin| B
-```
+**System-owned, never forked:** `/admin/*`, `/hello`, `/api/*`, `/payment`, `/thanks`, `/hybrid-form`, `/middle-form`, `/full-form`, `/geoipform`, `/embed/form`, `/api/webhooks/autolaris`.
 
-No active headless gateway is registered. A future gateway MUST own its public domain and delegate only reviewed operational routes to a tenant-specific, `service-only` CMSAds Worker through a private `CMSADS` binding. Historical deployment evidence is not proof that such a gateway currently exists.
+### Form route redirects — verified
 
-## 4. AI Storefront Build Workflow
+The canonical checkout routes are `/hybrid-form`, `/middle-form`, and `/full-form`. The legacy paths `/form-hybrid`, `/form-middle`, and `/form-full` exist as **308 permanent redirects that preserve the complete query string** (`src/pages/form-hybrid.astro` and siblings issue `Astro.redirect('/hybrid-form' + Astro.url.search, 308)`). New integrations must emit the canonical form, not the legacy alias.
 
-### Step 1: Establish verified merchant inputs
+### Session-authenticated public API (`/api/*`)
 
-Collect, without fabricating:
+These serve the built-in forms. They are same-origin and take no API key.
 
-- tenant name, canonical domain, locale, support identity, and legal owner;
-- product catalog and canonical CMSAds product/variant IDs;
-- merchant-owned photography and logo;
-- factual product claims, policies, guarantees, and testimonials with evidence;
-- payment methods, COD policy, warehouse, courier constraints, and excluded provinces;
-- Meta Pixel ID, CAPI readiness, GTM ID, Google Ads conversion pair, and consent requirements;
-- target journey for each traffic source.
-
-Missing merchant evidence remains empty or clearly marked as pending. Do not relabel Petani Sejahtera or another merchant's content.
-
-### Step 2: Select the journey, not a template copy
-
-| Journey | Use when | Recommended form |
+| Route | Methods | Role |
 | --- | --- | --- |
-| Catalog | Customer compares multiple products before purchase | Product detail leading to `hybrid` or `full` |
-| Direct-response COD | One offer, high mobile intent, eligible COD geography | `middle` or `hybrid` |
-| Considered or prepaid | Shipping and payment choices must be explicit before submit | `full` |
-| Mixed national traffic | Province changes COD or information requirements | `hybrid` |
+| `/api/form-config` | GET | Resolve one active product/variant plus canonical middle/full/hybrid render URLs. |
+| `/api/locations` | GET | Search district/city and provider location identities. |
+| `/api/geo-province` | GET | Resolve the trusted province for form-mode routing. |
+| `/api/shipping-rates` | POST | Server-authoritative eligible courier rates. |
+| `/api/shipping-options` | GET | Configured public shipping choices. |
+| `/api/payment-methods` | GET | Eligible payment methods and COD exclusions. |
+| `/api/submit-order` | POST | Persist the full/hybrid validated order. |
+| `/api/submit-middle-order` | POST | Persist the compact middle-order contract. |
+| `/api/order-status` | GET | Recorded payment state for a known order. |
+| `/api/record-abandoned-order` | POST | Record an abandoned checkout attempt. |
+| `/api/meta-event` | POST | Validate and forward supported server CAPI events when configured. |
 
-The visual direction may be unique. Do not fork price, shipping, payment, order, or tracking rules to match a design.
+---
 
-### Step 3: Build the public shell
+## 4. Headless API — `/api/v1/*` (Implemented)
 
-The storefront repository owns semantic HTML, responsive layout, navigation, product presentation, legal routes, performance, and accessibility. It must:
+Seven routes ship. They are the contract an external storefront builds against; there is no "planned bootstrap endpoint" and no reason to hard-code a catalog.
 
-- preserve canonical product identity in every CTA and tracking event;
-- keep critical content and form entry usable without animation;
-- use 16px or larger mobile form controls and 44px touch targets;
-- avoid horizontal overflow at supported mobile widths;
-- expose honest loading, unavailable, error, and retry states;
-- never imply order success before CMSAds returns a persisted order;
-- never send personal data to analytics destinations outside the approved tracking contract.
+All seven share the same envelope from `src/lib/headless-api.ts`:
 
-### Step 4: Wire the gateway
+- Success: `{ "success": true, "timestamp": "<ISO>", ...payload }`
+- Failure: `{ "success": false, "timestamp": "<ISO>", "error": { "message": "<Indonesian>", "code": "<CODE>", ... } }`
+- Every route exports `OPTIONS = handleOptions` for CORS preflight (204, or 403 `ORIGIN_FORBIDDEN`).
+- `Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS`; `Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With, X-Tenant-Slug, X-App-Key`; `Access-Control-Max-Age: 86400`.
+- Error messages are **Indonesian**; treat them as user-facing copy, and branch on `error.code`, never on the message string.
 
-**Canonical CMSAds route families:**
+### 4.1 Access control — the real surface
 
-- storefront-owned: `/`, product, category, campaign, legal, and static asset paths;
-- CMSAds-owned: `/admin/*`, `/api/*`, `/hello`, `/payment`, `/thanks`, `/hybrid-form`, `/middle-form`, and `/full-form`.
+Every `/api/v1/*` request passes `validateHeadlessRequest(request, locals)` before any work happens. Two independent checks, in this order:
 
-The canonical routes are `/hybrid-form`, `/middle-form`, and `/full-form`. Existing `/form-hybrid`, `/form-middle`, and `/form-full` links remain functional through permanent redirects to the corresponding canonical route with the complete query string preserved. New integrations should emit canonical URLs. A service-only tenant remains unreachable directly from the public Internet: its separately owned storefront gateway must delegate both canonical routes and any compatibility paths it promises through that tenant's private binding. Local CMSAds proof establishes the form routes, not deployment of a headless gateway.
+**a. Developer API key (401 on failure).** The secret is read from, in precedence order:
 
-### Step 5: Integrate data contracts
+1. `X-App-Key: <secret>`
+2. `X-API-Key: <secret>` (legacy header, still accepted)
+3. `Authorization: Bearer <secret>`
 
-Current public CMSAds routes include:
+A missing secret returns 401 `API_KEY_REQUIRED`. The secret is SHA-256 hashed to hex and looked up in the D1 table `developer_api_keys` with `revoked_at IS NULL`, then re-verified with a constant-time comparison (`verifyApiKeySecret`). No match, or a revoked key, returns 401 `API_KEY_INVALID`. A successful match writes `last_used_at`. If D1 is unavailable the request fails closed with 503 `API_KEY_STORE_UNAVAILABLE`.
 
-| Route | Current role |
-| --- | --- |
-| `GET /api/form-config` | Resolve one active product/variant and canonical middle/full/hybrid render URLs. |
-| `GET /api/locations` | Search district/city and provider location identities. |
-| `POST /api/shipping-rates` | Resolve server-authoritative eligible courier rates. |
-| `GET /api/shipping-options` | Return configured public shipping choices. |
-| `GET /api/payment-methods` | Return eligible payment methods and COD exclusions. |
-| `POST /api/submit-order` | Persist the full/hybrid validated order. |
-| `POST /api/submit-middle-order` | Persist the compact middle-order contract. |
-| `GET /api/order-status` | Return recorded payment state for a known order. |
-| `POST /api/meta-event` | Validate and forward supported server CAPI events when configured. |
+**b. Origin allowlist (403 on failure).** `getRequestOrigin` reads the `Origin` header, falling back to the origin of `Referer`. Patterns support `*`, bare hosts, `https://host`, `*.host` wildcards, and explicit scheme/port matching, plus `localhost`/`127.0.0.1`. A browser origin outside the allowlist returns 403 `ORIGIN_FORBIDDEN` with the allowed patterns echoed back. **A request with no `Origin` and no `Referer` — server-to-server, cURL, a native app — passes this check**; the API key is the only gate in that path.
 
-**Planned headless gaps:**
+**Key issuance** is at `/admin/settings/developer` (page) backed by `/api/admin/settings/developer` (`POST` create, `DELETE` revoke, both admin-session-guarded). Secrets are generated as `cmsads_live_<43-char base64url>` from 32 random bytes, stored only as a SHA-256 hash plus a masked preview, and returned in **full exactly once** — on the creation response. Revocation is a soft delete (`revoked_at` + `revoked_by`); the key stops validating on the next request.
 
-- a public, non-secret storefront bootstrap contract for tenant identity and browser tracking configuration;
-- a canonical public catalog/product read contract for dynamic external storefronts;
-- a framework-neutral executable adapter that preserves event and attribution identity.
+**Where the allowlist actually comes from — read this before debugging a 403.** `resolveAllowedOrigins` builds the pattern list from the **Worker runtime env**, not from D1:
 
-Until the public bootstrap and catalog contracts exist, a new external storefront implementation is blocked from presenting a dynamic catalog. It must stop and report the backend prerequisite rather than inventing products, copying fixtures, or treating a manually aligned static catalog as synchronized.
+- `PUBLIC_HEADLESS_ALLOWED_ORIGINS` — read by the code but declared nowhere: absent from `src/env.d.ts` and absent from `wrangler.jsonc` `vars`. It is effectively unset today.
+- `PUBLIC_EMBED_ALLOWED_ORIGINS` — `"https://permatamall.shop"` in `wrangler.jsonc`.
+- `PUBLIC_SITE_URL` — `"https://permatamall.shop"`.
+- `localhost` and `127.0.0.1`, always appended.
+
+The origins textarea on `/admin/settings/developer` writes `stores.embed_allowed_origins` in D1, which `src/middleware.ts` uses to build the **embed `frame-ancestors` CSP** — it does *not* feed the headless allowlist. Adding an external storefront domain there will not stop a 403 from `/api/v1/*`. Until that is reconciled, an external storefront on a new domain needs `PUBLIC_HEADLESS_ALLOWED_ORIGINS` added to `wrangler.jsonc` `vars` **and** `src/env.d.ts`, followed by a deploy.
+
+### 4.2 `GET /api/v1/storefront`
+
+`src/pages/api/v1/storefront.ts`. Methods: `GET`, `OPTIONS`.
+
+The bootstrap contract. Returns three groups:
+
+- `storefront` — `slug`, `name`, `tagline`, `description`, `site_url`, `logo`, `theme_color`, `locale`, `template`, `admin_name`. All of these come from `tenantConfig`, which is **frozen into the bundle at build time** (ARCHITECTURE §5, gap G1). They will not change until a rebuild and redeploy, and they are *not* the same values as the `stores` row edited in admin.
+- `content` — the published home content object from `getTenantHomeContent`. Note gap G5: with no published home row this silently returns `DEFAULT_HOME_CONTENT` compiled into the bundle rather than an honest empty state.
+- `tracking` — `meta_pixel_id`, `google_ads_conversion_id`, `google_ads_conversion_label`, `google_tag_manager_id`, each `null` when unset. Read live from the `stores` row. **The Meta CAPI token is never included and must never be added here.**
+- `payment` — `cod_enabled` (hardcoded `true`), `cod_disabled_provinces` (live from `stores.cod_disabled_province_codes`), and `supported_methods: ["COD","BANK_TRANSFER","E_WALLET","QRIS"]` (a static list, not a live eligibility check — use `/api/payment-methods` for eligibility).
+
+Cache: inherits the envelope default, `Cache-Control: public, max-age=60, s-maxage=300`. Failure: 500 `STOREFRONT_LOAD_ERROR`.
+
+### 4.3 `GET /api/v1/products`
+
+`src/pages/api/v1/products/index.ts`. Methods: `GET`, `OPTIONS`.
+
+Query: `limit` (1–100, default 20), `offset` (≥0, default 0), `q` or `search`, `category`. Filtering by search and category happens **in memory after loading the full catalog**, so `total` reflects the filtered set.
+
+Returns `total`, `limit`, `offset`, `has_more`, and `products[]`. Each product carries `id` (the canonical numeric D1 catalog ID), `content_id` (the presentation key), `slug`, `name`, `category`, `headline`, `subheadline`, `price`, `compare_price`, `image`, `hero_image`, `rating_value`, `review_count`, `sold_count`, `variants[]` (`id`, `content_id`, `label`, `price`, `compare_price`), and a `urls` block.
+
+Cache: explicitly overridden to `Cache-Control: public, max-age=60, s-maxage=300, stale-while-revalidate=600`. Failure: 500 `PRODUCTS_LOAD_ERROR`.
+
+Source is `getStorefrontProducts`, which merges operational `products`/`product_variants` rows with **published** `storefront_content` presentation. Product presentation fails closed: a product with no published row is omitted. On a load error the function returns `[]`, so an empty catalog is ambiguous between "no products" and "D1 failed" — surface an honest empty state either way, never a fixture.
+
+### 4.4 `GET /api/v1/products/[slug]`
+
+`src/pages/api/v1/products/[slug].ts`. Methods: `GET`, `OPTIONS`.
+
+The path segment resolves against slug, `content_id`, or numeric catalog ID (`getStorefrontProduct` matches all three). Returns the full product record — everything in the list payload plus `tag`, `seo_title`, `seo_description`, `description`, `benefits`, `key_points`, `ideal_for`, `offer_text`, `cta_text`, `reviews[]` — plus a `forms` block and up to four `related_products` from the same category.
+
+Cache: envelope default, `public, max-age=60, s-maxage=300`. Failures: 400 `SLUG_REQUIRED`, 404 `PRODUCT_NOT_FOUND`, 500 `PRODUCT_DETAIL_ERROR`.
+
+> **Known defect — do not propagate.** The `urls`/`forms` blocks emitted by both product routes point at the **legacy redirect paths**: `/form-hybrid`, `/form-middle`, `/form-full`. Following them costs an extra 308 hop. A storefront should rewrite them to the canonical `/hybrid-form`, `/middle-form`, `/full-form`. `products/index.ts` also emits `checkout_hybrid: /api/v1/checkout?product_id=…`, which is misleading — that route is POST-only and takes no `product_id` query parameter.
+
+### 4.5 `GET /api/v1/geo/districts`
+
+`src/pages/api/v1/geo/districts.ts`. Methods: `GET`, `OPTIONS`.
+
+Query: `q` or `search`, `limit` (1–100, default 30). A query shorter than 2 characters returns `{ query, districts: [] }` with **no `count` field** — handle that shape. Otherwise returns `query`, `count`, and `districts[]` of `{ district, city, province, label }` from the compiled district catalog. Cache: envelope default. Failure: 500 `DISTRICT_SEARCH_ERROR`.
+
+### 4.6 `GET | POST /api/v1/geo/shipping-rates`
+
+`src/pages/api/v1/geo/shipping-rates.ts`. Methods: `GET`, `POST`, `OPTIONS` — both verbs run the same handler; POST reads a JSON body, GET reads query parameters, and body wins where both are present.
+
+Inputs: `destination_id` or `location_id` (**required**), `payment_method` (default `cod`), `variant_id`, `quantity` (default 1), `weight` (default 1; values above 100 are treated as grams and divided by 1000).
+
+Returns `destination_id`, `payment_method`, `origin_id`, `fallback_used`, and `rates[]` of `{ courier_code, courier_service, price, estimated_days, cod_available, cod_fee, total_shipping }`. `total_shipping` adds the COD fee only when `payment_method === 'cod'`.
+
+Cache: envelope default (200 responses are marked publicly cacheable — a quote is not a durable fact, so treat the freshness window as a ceiling and re-quote before submit). Failures: 400 `DESTINATION_ID_REQUIRED`, 503 `DATABASE_UNAVAILABLE`, or the `ShippingQuoteError` status/code passthrough, else 500 `SHIPPING_RATES_ERROR`.
+
+### 4.7 `POST /api/v1/checkout`
+
+`src/pages/api/v1/checkout.ts`. Methods: `POST`, `OPTIONS` only.
+
+The full guard stack, in order: API key + origin, then a KV rate limit of **15 attempts per 60 s per client IP** (429 `RATE_LIMITED`), JSON parse (400 `INVALID_PAYLOAD`), honeypot on `website`/`honeypot` (400 `HONEYPOT_TRIGGERED`), `orderSubmitSchema` validation (422 `VALIDATION_ERROR` with a formatted `errors` tree), D1 availability (503 `DATABASE_UNAVAILABLE`), COD province policy (422 `COD_DISABLED_FOR_REGION`), then a **server-side re-quote** through `resolveTrustedHeadlessShipping` — the browser's shipping cost is never trusted — and finally `persistOrder`.
+
+On success returns **201** with `order` (`id`, `order_number`, `public_status_token`, `total_amount`, `unit_price`, `cod_service_fee`, `cod_service_fee_vat`, `cod_fee_bearer`, `seller_bank_name`, `seller_account_holder`, `seller_account_number`) and `redirect_url` pointing at `/thanks?order_id=…&order_sn=…`. Because the status is 201 and not 200, the envelope marks it `Cache-Control: no-store`.
+
+Ad click IDs are read server-side from the click-ID cookie and persisted with the order; the storefront does not pass them in the body.
+
+Other failures: 409 `DUPLICATE_ORDER` (idempotent `submit_token` replay), the shipping-quote status/code passthrough, 422 `ORDER_INPUT_ERROR`, 500 `CHECKOUT_PROCESSING_ERROR`.
+
+**This route never dispatches to a courier.** It persists an order; an operator dispatches it later.
+
+### 4.8 `POST /api/v1/tracking/events`
+
+`src/pages/api/v1/tracking/events.ts`. Methods: `POST`, `OPTIONS` only.
+
+Payload is validated by `validateMetaEventPayload` (400 `INVALID_TRACKING_PAYLOAD`). If the store has no Pixel ID or no CAPI token the route returns **200** with `{ skipped: true, reason }` rather than an error — check `skipped`, not the status code. With D1 unavailable it returns 503 `DATABASE_UNAVAILABLE`.
+
+Accepted events are written to the `capi_event_outbox` through `enqueueCapiEvent`. A repeated `event_id` returns 200 `{ deduplicated: true, event_id }` without re-sending. Otherwise the event is delivered immediately, the rest of the outbox is drained in the background via `waitUntil`, and the response reports `{ event_id, event_name, delivered, queued }`.
+
+Client IP and user agent are taken **server-side** from request headers, not from the payload. Failure: 500 `TRACKING_SIGNAL_ERROR`.
+
+### 4.9 Headless surface — known gaps
+
+- **No `/api/v1` write path for anything but checkout and tracking.** There is no headless order-status read; use the session-authenticated `/api/order-status`.
+- **Authenticated responses are marked publicly cacheable.** `headlessJson` applies `public, max-age=60, s-maxage=300` to every 200, including `/api/v1/storefront`, which contains install-specific tracking IDs. Any shared cache in front of the Worker could serve one key holder's response to another.
+- **Error responses carry no `Access-Control-Allow-Origin`.** `headlessError` passes only `cache-control: no-store` alongside the default CORS headers, which do not include the allow-origin. A browser client can see the status but generally cannot read the error body cross-origin. The 401/403 paths built directly by `validateHeadlessRequest` do include it.
+- **No per-key scoping, quota, or rate limit.** Any valid key reaches every `/api/v1` route. Only `/api/v1/checkout` is rate-limited, and by IP rather than by key.
+- **No published OpenAPI document or client SDK.**
+
+---
 
 ## 5. Locked Form System
 
-The long-term boundary is: tenant AI customizes the pages around checkout, while CMSAds owns the actual form state machine and mutation contract.
+The install owns the form state machine and the mutation contract. A storefront chooses:
 
-The storefront may choose:
-
-- CTA position and surrounding section;
+- CTA position and the surrounding section;
 - form mode;
 - canonical product and optional variant;
-- brand-safe wrapper and transition into the system form;
-- confirmation presentation based on the CMSAds response.
+- a brand-safe wrapper and transition into the system form;
+- confirmation presentation based on the returned order.
 
-The storefront must not fork:
-
-- field meaning or validation;
-- product/variant identity;
-- price, stock, weight, shipping cost, or COD rules;
-- destination resolution;
-- submit-token idempotency and bot boundary;
-- payment qualification;
-- order persistence;
-- Meta event identity;
-- success, invoice, provider, shipping, or waybill state.
+A storefront must not fork field meaning or validation, product/variant identity, price, stock, weight, shipping cost, COD rules, destination resolution, submit-token idempotency, the bot boundary, payment qualification, order persistence, Meta event identity, or any success/invoice/provider/shipping/waybill state.
 
 ### Middle form
 
-**Implemented behavior:** compact variant selection plus customer name, WhatsApp number, full address, COD method, summary, and dedicated middle-order persistence. It is optimized for minimal direct-response friction.
-
-**Boundary:** it still resolves the active D1 product/variant and cannot bypass server validation. It does not authorize automatic Mengantar dispatch.
+Compact variant selection plus customer name, WhatsApp number, full address, COD method, and summary, persisted through the middle-order contract. Optimized for minimum direct-response friction. It still resolves the active D1 product/variant, cannot bypass server validation, and does not authorize courier dispatch.
 
 ### Full form
 
-**Implemented behavior:** variant, name, WhatsApp, address, district/city search, selected location identity, eligible shipping/payment options, summary, and full order persistence.
-
-**Use when:** geography, shipping, COD eligibility, or online payment must be resolved before submit.
+Variant, name, WhatsApp, address, district/city search, selected location identity, eligible shipping and payment options, summary, and full order persistence. Use when geography, shipping, COD eligibility, or online payment must be resolved before submit.
 
 ### Hybrid form
 
-**Implemented behavior:** CMSAds resolves trusted geo context from Cloudflare `request.cf.regionCode`, then verified province-name/header fallbacks. A known province that is eligible under the tenant policy resolves to middle mode. A province listed in the store-level `cod_disabled_province_codes`, or an unknown/unresolved province, resolves to full mode. Query parameters and routes cannot override canonical commerce validation.
+`src/lib/form-mode.ts` resolves trusted geo from Cloudflare `request.cf.regionCode`, then verified province-name and header fallbacks. A known province eligible under store policy renders **middle** mode. A province listed in `cod_disabled_province_codes`, or an unknown/unresolved province, renders **full** mode. Query parameters and route choice cannot override canonical commerce validation.
 
-**Policy boundary:** `cod_disabled_province_codes` is the merchant's store-level form-routing and COD policy. It is distinct from courier/provider service exclusions, which remain provider and shipping concerns. The admin currently presents all 38 Indonesian provinces and local proof observed 15 selected exclusions.
+`cod_disabled_province_codes` is the merchant's store-level form-routing and COD policy, distinct from courier service exclusions. Admin presents all 38 Indonesian provinces. The default in `src/lib/province.ts` (`DEFAULT_COD_DISABLED_PROVINCE_CODES`) is **15 excluded provinces** — `PA`, `PB`, `PD`, `PT`, `PE`, `PS`, `MA`, `MU`, `NT`, `KU`, `SR`, `GO`, `KR`, `AC`, `BE` — mirrored by the `PUBLIC_COD_DISABLED_PROVINCES` var in `wrangler.jsonc`. A saved `stores` row overrides the default.
 
-**Use when:** one landing page serves both fast eligible-COD traffic and traffic that requires explicit destination, shipping, and payment resolution.
+---
 
-### Required future hardening
-
-- implement the public bootstrap and catalog contracts before a new external storefront renders commerce data;
-- implement and prove a framework-neutral adapter without duplicating form markup or state;
-- preserve source page, campaign, product, variant, event, click, and consent context across the handoff;
-- return focus and errors accessibly;
-- add contract tests for every declared supported frontend adapter;
-- prove the selected tenant gateway and complete mobile/desktop customer journey before deployment.
-
-## 6. Meta Ads Public Storefront Contract
+## 6. Ads, Attribution, and Consent
 
 ### Configuration owner
 
-The tenant's Ads & Tracking admin owns:
-
-- Meta Pixel ID;
-- masked Meta CAPI token;
-- Meta Test Event Code used only for an explicit admin test;
-- GTM container ID;
-- Google Ads conversion ID and label pair.
-
-The CAPI token is server-only and must never be returned to or embedded in the storefront. A blank admin token submission preserves the existing secret value.
-
-CMSAds-rendered routes currently load Pixel and GTM configuration server-side from D1 with environment fallback. A standalone storefront does not yet have a committed public bootstrap endpoint; this is a planned adapter gap, not permission to expose the CAPI token.
+The `stores` row, edited under `/admin/ads/*`, owns the Meta Pixel ID, the masked Meta CAPI token, the Meta Test Event Code, the GTM container ID, and the Google Ads conversion ID/label pair. The CAPI token is server-only and must never reach a browser or a `/api/v1` response. Submitting a blank token in admin preserves the existing secret.
 
 ### Canonical Meta event map
 
 | Event | Browser trigger | Server rule | Required identity |
 | --- | --- | --- | --- |
-| `PageView` | Eligible page load after the tenant's consent rule allows it | Optional CAPI mirror through validated endpoint | Unique event ID when mirrored |
+| `PageView` | Eligible page load once the consent rule allows it | Optional CAPI mirror through the validated endpoint | Unique event ID when mirrored |
 | `ViewContent` | Canonical product becomes the viewed product | Validate supported event and product payload | D1 product ID in `content_ids` |
-| `AddToCart` | Current DR forms use qualified customer intent, not arbitrary scroll/click | Validate supported event | Product ID, value, currency, event ID |
+| `AddToCart` | Qualified customer intent, never arbitrary scroll or click | Validate supported event | Product ID, value, currency, event ID |
 | `InitiateCheckout` | Valid form submission begins | Validate supported event | Product ID, value, currency, event ID |
-| `Purchase` | Only after CMSAds confirms the qualifying order state | CAPI uses the same Purchase event ID; unsupported or unqualified requests fail closed | Persisted order identity and canonical product ID |
+| `Purchase` | Only after the install confirms the qualifying order state | CAPI reuses the same Purchase event ID; unsupported or unqualified requests fail closed | Persisted order identity and canonical product ID |
 
 Do not map page scroll, CTA impression, menu click, or form focus to `Lead` or `Purchase`.
 
 ### Deduplication
 
-- Generate a dedicated Purchase event ID per order attempt.
-- Browser Pixel and server CAPI must use the identical Purchase event ID.
-- Do not reuse the funnel event ID for Purchase.
-- Current `/thanks` logic guards both `Purchase_<purchase_event_id>` and `Purchase_order_<order_id>` in the browser.
+- Generate a dedicated Purchase event ID per order attempt; never reuse a funnel event ID.
+- Browser Pixel and server CAPI must send the identical Purchase event ID.
+- `/thanks` guards both `Purchase_<purchase_event_id>` and `Purchase_order_<order_id>` in the browser.
 - COD Purchase requires a successfully persisted order. Online Purchase waits for authenticated paid reconciliation.
 - Refreshing or revisiting confirmation must not emit another Purchase for the same order.
+- Server-side, `capi_event_outbox` deduplicates on `event_id` and retries delivery.
 
 ### Product identity
 
-`content_ids` is the canonical numeric D1 product ID represented as a string. A slug, SKU, frontend array index, provider ID, or campaign alias is not a valid substitute. The same ID must be used by storefront events, CAPI, and any connected Meta Commerce Catalog.
+`content_ids` is the canonical numeric D1 product ID rendered as a string — the `id` field from `/api/v1/products`, not `content_id`, not the slug, not a SKU, not an array index, not a provider ID. Storefront events, CAPI, and any connected Meta Commerce Catalog must agree.
 
 ### Attribution and matching
 
 - Preserve `_fbp` and `_fbc` as raw Meta browser identifiers; never SHA-256 hash them.
-- Normalize phone to the accepted Indonesian international form before SHA-256 hashing.
-- Trim and normalize names before hashing fields sent for Advanced Matching.
-- Keep client IP and user agent server-derived where the API contract supports them.
-- Preserve `gclid`, `gbraid`, and `wbraid` through the order handoff for Google attribution when the order schema supports those fields.
-- Never place raw customer data, CAPI tokens, or payment data in URLs, logs, localStorage, dataLayer, or public configuration responses.
+- Normalize phone to the accepted Indonesian international form before hashing.
+- Trim and normalize names before hashing Advanced Matching fields.
+- Keep client IP and user agent server-derived.
+- Preserve `gclid`, `gbraid`, and `wbraid` through the order handoff.
+- Never place raw customer data, CAPI tokens, or payment data in URLs, logs, `localStorage`, `dataLayer`, or public configuration responses.
 
 ### Consent boundary
 
-A tenant storefront must define the applicable consent behavior before loading optional browser tags. Tracking must not block checkout. Consent state, tag load, browser event, CMSAds acceptance, Meta API acceptance, attribution, and ad-platform reporting are separate facts.
-
-The current repository has tracking validation and tag components but no completed cross-storefront consent/bootstrap adapter. Treat that as planned work and verify it before a new external storefront release.
+Define the applicable consent behaviour before loading optional browser tags. Tracking must never block checkout. Consent state, tag load, browser event, install acceptance, Meta API acceptance, attribution, and ad-platform reporting are seven separate facts — prove each one separately. A completed cross-storefront consent adapter does not exist; see `UNIMPLEMENTED_SPECS.md`.
 
 ### Verification checklist
 
-1. Confirm Pixel ID is the intended tenant's ID; never inspect or expose the CAPI token in browser output.
-2. Inspect browser network/dataLayer for the exact route and event.
+1. Confirm the Pixel ID belongs to this install; never inspect or expose the CAPI token in browser output.
+2. Inspect the browser network tab and `dataLayer` for the exact route and event.
 3. Confirm `content_ids`, `value`, `currency`, and event name match D1 facts.
 4. Confirm browser and CAPI Purchase share one event ID.
 5. Confirm `_fbp`/`_fbc` are preserved un-hashed when present.
-6. Confirm refresh/revisit does not duplicate Purchase.
-7. Confirm COD and online Purchase gates differ correctly.
+6. Confirm refresh and revisit do not duplicate Purchase.
+7. Confirm the COD and online Purchase gates differ correctly.
 8. Use Meta Test Events only with an operator-provided test code and explicit outbound-call approval.
 9. Record local validation separately from live Meta acceptance and attribution.
 
-## 7. Order and Fulfillment Handoff
+---
 
-Every frontend ends at the same lifecycle:
+## 7. Brand Contamination Guardrail
 
-1. CMSAds validates and persists the order with `shipping_status = pending`.
+This repository was re-founded from a prior deployment and still carries a previous merchant's identity, **Zanoby**, in live code paths. These are load-bearing strings, not comments — renaming any of them changes runtime behaviour and will silently break attribution for in-flight sessions:
+
+| Path | What it is | Consequence of a careless rename |
+| --- | --- | --- |
+| `src/lib/click-ids.ts` | `CLICK_ID_COOKIE = "zanoby_click_ids"` | Renaming orphans every existing click-ID cookie; `gclid`/`gbraid`/`wbraid` stop reaching new orders |
+| `src/pages/embed/form.astro` | Writes the same name to `sessionStorage` and `document.cookie` | Must change in the same commit as the constant or the embed form and the reader disagree |
+| `src/lib/checkout-navigation.ts` | Reads `sessionStorage.getItem("zanoby_click_ids")` | Same — three call sites, one name |
+| `src/pages/admin/ads/google.astro` | Documents the Google Ads conversion name `Zanoby Purchase` | Operator-facing copy that references a conversion action **configured in a Google Ads account**; changing the docs does not rename the conversion action |
+
+Do not relabel these opportunistically while doing unrelated work. Renaming the cookie is a deliberate migration: change the constant, both embed writers, and the reader together, and accept that click IDs captured under the old name are lost unless a dual-read fallback ships first.
+
+Two further contaminations, non-blocking but worth knowing: `src/lib/meta-capi.test.ts` asserts against a `petanisejahtera.com` URL, and `src/lib/meta-event-contract.test.ts` documents Zanoby catalog IDs. Those are test fixtures — no runtime effect.
+
+---
+
+## 8. Order and Fulfillment Handoff
+
+Every storefront ends at the same lifecycle:
+
+1. The install validates and persists the order with `shipping_status = pending`.
 2. Order Management owns customer, destination, payment, warehouse, courier, and rate verification.
-3. Explicit confirmation moves the order to Shipping as `processing` without calling Mengantar.
-4. Shipping owns explicit single or checklist bulk Push.
-5. Mengantar order creation is sequential and returns per-order outcomes.
+3. Explicit operator confirmation moves the order to `processing` **without** calling Mengantar.
+4. Dispatch is an explicit single or checklist bulk Push from `/admin/orders`.
+5. Mengantar order creation runs sequentially under a `provider_dispatch_locks` lease and returns per-order outcomes.
 6. Provider identity and `cnote_no` are stored only from accepted responses.
 
 No storefront may dispatch Mengantar during checkout, infer a waybill, or skip operator confirmation.
 
-## 8. Acceptance Criteria for a New Storefront
+---
 
-A storefront integration is complete only when:
+## 9. Acceptance Criteria for a Storefront Integration
 
-- its repository and CMSAds tenant are named explicitly;
-- its public routes remain owned by the storefront Worker;
-- reviewed operational routes and `/hybrid-form`, `/middle-form`, and `/full-form` reach the correct service-only CMSAds tenant without changing browser origin;
-- legacy `/form-*` paths are not exposed as aliases;
-- no Petani Sejahtera or sibling-tenant content/data appears;
-- product and variant data comes from the committed public bootstrap/catalog contracts; their absence blocks catalog implementation;
-- location, rate, payment, submit, and confirmation failure states are exercised;
-- known eligible, COD-disabled, and unknown province outcomes match CMSAds server policy;
+An integration is complete only when:
+
+- the storefront and its target install are named explicitly;
+- public storefront routes stay owned by the storefront; system routes are never forked;
+- checkout entry points emit the canonical `/hybrid-form`, `/middle-form`, `/full-form` — legacy `/form-*` aliases are not exposed to users, and the legacy URLs returned by `/api/v1/products*` are rewritten;
+- no Zanoby, Petani Sejahtera, or other prior-merchant content, cookie name, or conversion label is introduced into new code;
+- product and variant data comes from `/api/v1/products` and `/api/v1/products/[slug]` (external) or `src/lib/catalog.ts` (built-in) — never from a fixture, a copied JSON blob, or a manually maintained parallel catalog;
+- the developer API key is stored as a server-side secret in the storefront and never shipped to the browser;
+- location, rate, payment, submit, and confirmation failure states are all exercised, including 401, 403, 429, and 422 from the headless API;
+- known-eligible, COD-disabled, and unknown-province outcomes match server policy;
 - the chosen middle/full/hybrid form preserves canonical validation;
-- Meta browser events use the correct tenant config, IDs, values, event IDs, and Purchase gate;
-- mobile and desktop journeys have no page-level overflow, inaccessible controls, or silent errors;
-- the target repository's checks, dry-run, and browser proof pass;
-- remote migration, deployment, provider calls, test events, and data imports are reported separately.
+- Meta browser events use the correct config, IDs, values, event IDs, and Purchase gate;
+- mobile and desktop journeys have no page-level horizontal overflow, no inaccessible controls, and no silent errors;
+- the repository's own checks pass;
+- remote migration, deployment, provider calls, test events, and data imports are reported separately and never performed without explicit approval.
 
-## 9. Reusable AI Prompt: Build a CMSAds-Integrated Storefront
+### Verification commands
+
+There is no dry-run script. The real gates, in the order CI runs them (`.github/workflows/deploy.yml`):
+
+```bash
+npm test          # node --test over src/lib/*.test.ts
+npm run check     # astro check && tsc --noEmit
+npm run build     # astro build
+```
+
+A green build is not proof the customer journey works. For any browser-visible change, open the page and exercise the path. **Pushing to `main` deploys production** — see ADR-008.
+
+---
+
+## 10. Reusable Brief: Build an AdsBookCMS-Integrated Storefront
 
 ```text
-You are implementing a production storefront that uses CMSAds as the tenant-isolated commerce and operations backend. The storefront may use any framework, repository, Cloudflare account, Worker name, or custom domain. Adapt to the target repository's installed stack and conventions; never assume Astro, React, Next.js, or a specific hostname.
+You are implementing a production storefront against an AdsBookCMS install — a single-Worker
+direct-response commerce CMS that owns catalog, checkout, payment, logistics, and tracking.
+The storefront may use any framework, repository, host, or domain. Adapt to the target
+repository's installed stack; never assume Astro, React, or Next.js.
 
 INPUTS
 - TARGET_REPOSITORY: <path or URL>
-- CMSADS_TENANT: <tenant environment name>
-- STOREFRONT_DOMAIN: <exact custom domain>
-- STOREFRONT_WORKER: <exact Worker name>
-- CMSADS_BINDING: <service-binding name, default CMSADS only when the target repo already uses it>
+- ADSBOOKCMS_ORIGIN: <https origin of the install, e.g. https://permatamall.shop>
+- ADSBOOKCMS_API_KEY: <developer API key, server-side secret only>
+- STOREFRONT_DOMAIN: <exact domain — must be on the install's headless origin allowlist>
 - MERCHANT_NAME / LOCALE / CURRENCY: <verified values>
 - JOURNEY: catalog | direct-response | mixed
 - APPROVED_BRAND_ASSETS_AND_COPY: <paths or source>
 
 NON-NEGOTIABLE BOUNDARIES
-1. Inspect the target repository, package scripts, routing, deployment config, CMSAds contract, and current working tree before editing. Reuse its framework and components. Do not add a framework or dependency when native code suffices.
-2. The storefront owns public presentation, navigation, product merchandising, accessibility, legal pages, and responsive layout. CMSAds owns product and variant identity, price, stock, weight, location resolution, courier eligibility, shipping quote, payment eligibility, order persistence, tracking identity, and the Order Management -> Shipping -> Mengantar lifecycle.
-3. Keep every tenant isolated. Never select a database from an untrusted Host header, share D1/KV/R2 data across tenants, expose provider credentials, or call another tenant's Worker. Use the target tenant's reviewed private service binding or same-origin gateway.
-4. Never deploy, migrate remote D1, write production data, configure DNS, rotate secrets, send Meta test events, or call Mengantar without exact single-tenant operator approval.
-5. Do not invent products, testimonials, claims, discounts, stock, shipping rates, payment availability, Pixel IDs, or API fields. Missing contracts are blockers, not permission to ship static or fake data.
-6. Use no decorative or scroll animation. The complete purchase path must work with JavaScript-reduced conditions where the installed stack permits, keyboard navigation, visible focus, 44px touch targets, 16px mobile inputs, reduced motion, and no horizontal overflow.
-
-REQUIRED ARCHITECTURE
-- Keep storefront routes and assets in the storefront Worker.
-- Delegate CMSAds-owned routes to the exact tenant backend through the reviewed gateway/service binding: /admin/*, /api/*, /hello, /payment, /thanks, /hybrid-form, /middle-form, and /full-form.
-- Do not recreate CMSAds checkout markup or validation in the storefront. Product CTAs pass canonical product_id and optional variant_id to the CMSAds form URL.
-- /hybrid-form is the default mixed-traffic entry. CMSAds resolves Cloudflare request.cf.regionCode first, then verified province-name/header fallbacks. A known eligible province renders middle mode; a COD-disabled or unknown province renders full mode.
-- /middle-form is the compact eligible-COD flow. /full-form requires destination search, server-authoritative shipping options, and eligible payment selection.
-- COD-disabled province policy comes from tenant CMSAds admin configuration. The storefront may explain the outcome but may not override it. COD must be hidden in UI and rejected by the server when ineligible.
+1. Inspect the target repository, its package scripts, routing, and deployment config before
+   editing. Reuse its framework and components. Do not add a dependency for what native code
+   or an installed package already does.
+2. The storefront owns presentation, navigation, merchandising, accessibility, legal pages,
+   and responsive layout. The install owns product and variant identity, price, stock, weight,
+   location resolution, courier eligibility, shipping quotes, payment eligibility, order
+   persistence, tracking identity, and the Order Management -> dispatch lifecycle.
+3. The API key is a server-side secret. Proxy /api/v1 calls through the storefront's own
+   server. Never put the key in client JavaScript, a public env var, or a URL.
+4. Never deploy, migrate remote D1, write production data, change DNS, rotate secrets, send
+   Meta test events, or call Mengantar without explicit operator approval.
+5. Do not invent products, testimonials, claims, discounts, stock, shipping rates, payment
+   availability, Pixel IDs, or API fields. A failing endpoint is a blocker, not permission to
+   ship a fixture.
+6. No decorative or scroll-dependent animation. The purchase path must work with keyboard
+   navigation, visible focus, 44px touch targets, 16px mobile inputs, reduced motion, and no
+   horizontal overflow.
 
 DATA AND COMMERCE INTEGRATION
-1. Fetch tenant-owned catalog data from the committed public catalog/bootstrap contract. Use canonical D1 product IDs and variant IDs everywhere. If that endpoint is absent, stop and report the backend prerequisite; do not fall back to hard-coded products.
-2. Render loading, empty, unavailable, out-of-stock, error, and retry states. Never show a stale price as authoritative.
-3. Resolve a selected product/variant through GET /api/form-config and use only returned canonical form URLs.
-4. Full checkout uses GET /api/locations, POST /api/shipping-rates, GET /api/shipping-options, GET /api/payment-methods, and POST /api/submit-order according to the checked-in CMSAds request/response schemas.
-5. Middle checkout uses POST /api/submit-middle-order. Neither checkout may call Mengantar.
-6. After CMSAds confirms order persistence, COD may continue to `/thanks`. Online payment must continue to `/payment`, render only the returned provider instructions, poll with the returned order/status identifiers, and reach `/thanks` only after paid reconciliation.
-7. Operator fulfillment remains explicit: a persisted order enters Order Management as pending; operator confirmation changes it to processing and makes it visible in Shipping; only Shipping can perform selected single/bulk sequential Push to Mengantar; waybill/provider IDs are stored only from accepted provider responses.
+1. Bootstrap identity and tracking config from GET /api/v1/storefront. Treat every field as
+   build-time-frozen on the install side; it will not change without a redeploy there.
+2. Render the catalog from GET /api/v1/products and GET /api/v1/products/[slug]. Use the
+   numeric `id` as the canonical product identity everywhere, including content_ids.
+3. Rewrite the returned form URLs from /form-* to the canonical /hybrid-form, /middle-form,
+   /full-form before rendering a CTA.
+4. Resolve destinations with GET /api/v1/geo/districts and quote with
+   GET|POST /api/v1/geo/shipping-rates. Re-quote before submit; never trust a cached price.
+5. Submit with POST /api/v1/checkout. Handle 401, 403, 422, 429, and 409 distinctly. On 201,
+   follow the returned redirect_url. Checkout is never courier dispatch.
+6. COD may continue to /thanks. Online payment continues to /payment, renders only the
+   returned provider instructions, polls with the returned identifiers, and reaches /thanks
+   only after paid reconciliation.
+7. Render honest loading, empty, unavailable, out-of-stock, error, and retry states. An empty
+   catalog response may mean a backend failure — never present it as "no products" silently.
 
-PAYMENT AND SHIPPING
-- Render only payment methods and courier services returned as eligible by CMSAds.
-- Never trust browser-calculated totals, shipping costs, discounts, COD fees, stock, or weights.
-- Online Purchase tracking waits for authenticated paid reconciliation. COD Purchase tracking requires a successfully persisted qualifying order. Checkout is never provider dispatch.
-- Preserve explicit error messages for unavailable destination, no courier, COD exclusion, quote expiry, payment rejection, duplicate submit token, and backend unavailability.
-
-META ADS, GOOGLE ADS, ATTRIBUTION, AND CONSENT
-- Read only public, non-secret browser configuration from the committed CMSAds bootstrap/tracking contract. Meta CAPI tokens and provider credentials remain server-only.
-- Preserve canonical product ID in content_ids. Use one unique event_id per event and the identical Purchase event_id for browser Pixel and server CAPI deduplication.
-- Emit PageView, ViewContent, AddToCart/qualified intent, InitiateCheckout, and Purchase only at their documented lifecycle points. A click, scroll, form focus, or page impression is not Purchase.
-- Preserve _fbp and _fbc without hashing. Normalize and hash supported customer fields only server-side per the checked-in tracking spec. Preserve gclid, gbraid, and wbraid through the order handoff when the schema supports them.
-- Implement the merchant's applicable consent behavior before optional tags load. Tracking failures must not block checkout. Never place personal data, tokens, or payment data in URLs, logs, localStorage, dataLayer, or public config.
-
-IMPLEMENTATION SEQUENCE
-A. Audit and report the exact current route/data/tracking contracts and gaps.
-B. Define a route ownership table and request/response adapter before visual work.
-C. Implement responsive public catalog/product pages using dynamic canonical data.
-D. Wire product/variant CTAs to the three canonical CMSAds forms without duplicating form state.
-E. Wire payment, courier, order confirmation, thanks, ads tracking, attribution, and consent.
-F. Add behavior tests only for new observable contracts and reuse existing test conventions.
-G. Run the target repository's smallest checks, build/dry-run, and browser smoke at desktop and 390x844 mobile. Exercise keyboard navigation, one eligible province, one COD-disabled province, unknown geo, failed API, successful persisted order, and refresh deduplication. Verify no console errors, failed first-party requests, or horizontal overflow.
-H. Report exact files changed, commands/results, unverified external-provider states, blockers, and remote actions not performed.
+TRACKING
+- Emit PageView, ViewContent, AddToCart, InitiateCheckout, and Purchase only at their
+  documented lifecycle points. A click, scroll, focus, or impression is not a Purchase.
+- Mirror server-side events through POST /api/v1/tracking/events. A 200 with skipped:true
+  means tracking is unconfigured, not that the event succeeded.
+- Use one unique event_id per event and the identical Purchase event_id on browser and server.
+- Preserve _fbp and _fbc unhashed. Preserve gclid, gbraid, and wbraid through the handoff.
+- Implement the merchant's consent behaviour before optional tags load. Tracking failures must
+  never block checkout.
 
 DONE WHEN
-- Public catalog and products are dynamic and tenant-canonical, not duplicated fixtures.
-- /hybrid-form, /middle-form, and /full-form reach the correct CMSAds tenant on the storefront domain.
-- Eligible, excluded, and unknown province behavior matches CMSAds server policy.
-- Payment, courier, totals, order persistence, confirmation, and fulfillment handoff preserve backend authority.
-- Meta/Google identity, consent, and Purchase deduplication match the repository tracking specification without exposing secrets.
-- Desktop and mobile browser evidence covers the complete customer path with no animation dependency or horizontal overflow.
+- Catalog and product pages are dynamic and canonical, with no duplicated fixtures.
+- Canonical form routes are reached directly, with no legacy /form-* hop.
+- Eligible, COD-disabled, and unknown-province behaviour matches server policy.
+- Payment, courier, totals, order persistence, confirmation, and fulfillment handoff preserve
+  backend authority.
+- Meta/Google identity, consent, and Purchase deduplication match this document without
+  exposing secrets.
+- Desktop and mobile browser evidence covers the complete customer path.
+- npm test, npm run check, and npm run build pass in the storefront repository's equivalent.
 - No remote mutation or deployment was performed without explicit approval.
 ```

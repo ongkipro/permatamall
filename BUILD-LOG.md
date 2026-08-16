@@ -1,7 +1,19 @@
-# BUILD LOG: CMSAds Engine Development & Refinement
+# BUILD LOG: AdsBookCMS
 
-Author & Curator: **[ongki.pro](https://ongki.pro)**  
-Date: **2026-08-07**
+Author & Curator: **[ongki.pro](https://ongki.pro)**
+
+---
+
+## Provenance — read before citing any entry
+
+This log has two distinct halves, and only the second one describes this repository.
+
+- **Entries before the AdsBookCMS fork** were inherited from the upstream CMSAds engine (`ongkipro/cmsads`) when this repository was created on **2026-08-15**. They describe that repository's tenants, environments, and tooling — including `scripts/install.sh`, `scripts/tenant.ts`, and the `tenant:*` npm command family, **none of which exist here**. Commit SHAs cited in that half do not resolve against this repository's history, which begins at `641751c`.
+- **Entries from the fork onward** describe this repository and are verifiable against the tree.
+
+Known structural defects in the inherited half, left in place because this log is append-only history rather than a contract: the entry counter resets from 174 back to 68, producing 16 duplicated entry numbers; entry 77 is missing; several entries duplicate their heading; and a failed find-and-replace left placeholder strings such as `a retired tenant` in the prose.
+
+Treat this file as history, not as a specification. Current system state is owned by `STATUS.md`, structure by `ARCHITECTURE.md`, and decisions by `DECISIONS.md`.
 
 ---
 

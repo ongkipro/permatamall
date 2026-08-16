@@ -1,9 +1,9 @@
 export const legalPages = {
   privacy: {
     badge: 'Kebijakan Privasi',
-    title: 'Kebijakan Privasi Permata Mall',
+    title: 'Kebijakan Privasi {{store}}',
     description:
-      'Penjelasan mengenai pengumpulan, penggunaan, perlindungan data pribadi, cookie, serta integrasi sinyal iklan (Google Ads & Meta Ads) di toko Permata Mall.',
+      'Penjelasan mengenai pengumpulan, penggunaan, perlindungan data pribadi, cookie, serta integrasi sinyal iklan (Google Ads & Meta Ads) di toko {{store}}.',
     sections: [
       {
         title: 'Pengumpulan Data Pribadi',
@@ -22,7 +22,7 @@ export const legalPages = {
       {
         title: 'Teknologi Analitik & Iklan (Google Ads & Meta Ads)',
         paragraphs: [
-          'Toko Permata Mall memanfaatkan teknologi pelacakan standar industri seperti Google Analytics, Google Tag/gtag.js (Consent Mode v2), dan Meta Pixel / Conversions API untuk mengukur efektivitas kampanye iklan.',
+          'Toko {{store}} memanfaatkan teknologi pelacakan standar industri seperti Google Analytics, Google Tag/gtag.js (Consent Mode v2), dan Meta Pixel / Conversions API untuk mengukur efektivitas kampanye iklan.',
           'Data konversi yang dikirimkan dienkripsi (hashed) secara aman sesuai dengan standar privasi platform terkait. Anda dapat mengatur atau menonaktifkan cookie melalui pengaturan browser Anda kapan saja.',
         ],
       },
@@ -42,9 +42,9 @@ export const legalPages = {
   },
   shipping: {
     badge: 'Pengiriman & Retur',
-    title: 'Informasi Pengiriman & Retur Permata Mall',
+    title: 'Informasi Pengiriman & Retur {{store}}',
     description:
-      'Informasi lengkap mengenai alur pengiriman, estimasi waktu sampai di seluruh wilayah Indonesia, metode COD, serta syarat dan tata cara garansi retur barang di Permata Mall.',
+      'Informasi lengkap mengenai alur pengiriman, estimasi waktu sampai di seluruh wilayah Indonesia, metode COD, serta syarat dan tata cara garansi retur barang di {{store}}.',
     sections: [
       {
         title: 'Waktu Diproses & Pengiriman Paket',
@@ -79,14 +79,14 @@ export const legalPages = {
   },
   tos: {
     badge: 'Syarat & Ketentuan',
-    title: 'Syarat dan Ketentuan Layanan Petani Sejahtera',
+    title: 'Syarat dan Ketentuan Layanan {{store}}',
     description:
-      'Aturan dan ketentuan penggunaan layanan toko online Petani Sejahtera, proses transaksi, penetapan harga, dan ketentuan garansi.',
+      'Aturan dan ketentuan penggunaan layanan toko online {{store}}, proses transaksi, penetapan harga, dan ketentuan garansi.',
     sections: [
       {
         title: 'Ketentuan Penggunaan Toko',
         paragraphs: [
-          'Dengan mengakses dan melakukan pemesanan di toko online Petani Sejahtera, Anda dianggap telah membaca, memahami, dan menyetujui seluruh Syarat & Ketentuan yang berlaku.',
+          'Dengan mengakses dan melakukan pemesanan di toko online {{store}}, Anda dianggap telah membaca, memahami, dan menyetujui seluruh Syarat & Ketentuan yang berlaku.',
           'Pengunjung dilarang keras memberikan data palsu, melakukan transaksi fiktif, atau menyalahgunakan formulir pemesanan.',
         ],
       },
@@ -113,7 +113,7 @@ export const legalPages = {
   },
   disclaimer: {
     badge: 'Disclaimer',
-    title: 'Disclaimer Petani Sejahtera',
+    title: 'Disclaimer {{store}}',
     description: 'Penegasan mengenai fungsi informasi di website, iklan, estimasi, dan batasan penggunaan konten oleh pengunjung.',
     sections: [
       {
@@ -127,32 +127,55 @@ export const legalPages = {
   },
   contact: {
     badge: 'Kontak',
-    title: 'Kontak Resmi Petani Sejahtera',
+    title: 'Kontak Resmi {{store}}',
     description:
-      'Gunakan kontak resmi Petani Sejahtera untuk bantuan pemesanan, konsultasi produk, atau pengajuan garansi & retur paket.',
+      'Gunakan kontak resmi {{store}} untuk bantuan pemesanan, konsultasi produk, atau pengajuan garansi & retur paket.',
     sections: [
       {
-        title: 'Layanan Bantuan WhatsApp & Email',
+        title: 'Layanan Bantuan WhatsApp',
         paragraphs: [
-          'Tim Customer Service Petani Sejahtera siap melayani Anda untuk pertanyaan produk, kendala pengiriman, atau konfirmasi pesanan:',
-          'WhatsApp CS: +62 823-4101-6595 (Senin - Sabtu, 08.00 - 20.00 WIB)',
-          'Email Resmi: halo@petanisejahtera.id',
-        ],
-      },
-      {
-        title: 'Alamat Operasional & Gudang',
-        paragraphs: [
-          'Pusat Operasional & Gudang Pengiriman:',
-          'Jl. Raya Darmo Permai No. 88, Surabaya Barat, Kota Surabaya, Jawa Timur 60226, Indonesia.',
+          'Tim Customer Service {{store}} siap melayani Anda untuk pertanyaan produk, kendala pengiriman, atau konfirmasi pesanan.',
+          'WhatsApp CS: {{whatsapp}}',
         ],
       },
     ],
   },
 };
 
+export interface LegalPageContext {
+  storeName?: string;
+  supportWhatsapp?: string;
+}
+
+/**
+ * Legal copy is shipped as a template so a fresh install renders its own
+ * identity instead of the name it was cloned from. Any paragraph whose
+ * placeholder cannot be resolved is dropped rather than shown half-filled.
+ */
 export function getTenantLegalPage(
   key: keyof typeof legalPages,
-  _storeName?: string,
+  storeName?: string,
+  context: LegalPageContext = {},
 ) {
-  return legalPages[key];
+  const page = legalPages[key];
+  const store = storeName || context.storeName || 'Toko Kami';
+  const whatsapp = context.supportWhatsapp?.trim() || '';
+
+  const fill = (value: string) =>
+    value.replaceAll('{{store}}', store).replaceAll('{{whatsapp}}', whatsapp);
+
+  return {
+    ...page,
+    title: fill(page.title),
+    description: fill(page.description),
+    sections: page.sections
+      .map((section) => ({
+        ...section,
+        title: fill(section.title),
+        paragraphs: section.paragraphs
+          .filter((paragraph) => whatsapp || !paragraph.includes('{{whatsapp}}'))
+          .map(fill),
+      }))
+      .filter((section) => section.paragraphs.length > 0),
+  };
 }

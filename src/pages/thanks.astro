@@ -506,7 +506,7 @@ const productCatalog = products.map((item) => ({
     const city = pick('city', '');
     const province = pick('province', '');
     const postalCode = pick('postal_code', '');
-    const rawProductName = pick('product_name', 'Aussie');
+    const rawProductName = pick('product_name', '');
     const rawVariantLabel = pick('variant_label', rawProductName);
     const variantUniqueId = pick('variant_unique_id', '');
     const catalogProduct = productCatalog.find(

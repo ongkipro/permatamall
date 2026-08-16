@@ -19,9 +19,9 @@ const staticSolutions = solutionEntries.map((entry) => ({
 
 export const DEFAULT_HOME_CONTENT: HomeContent = {
   hero: {
-    title: "Pusat Solusi Praktis & Pilihan Produk Berkualitas",
+    title: "Belanja Praktis, Kirim ke Seluruh Indonesia",
     description:
-      "Temukan produk pilihan sesuai kebutuhan Anda. Mulai dari nutrisi tanaman, perkakas dapur, rumah tangga, hingga produk kesehatan herbal dengan harga terbaik.",
+      "Pilih produk sesuai kebutuhan Anda, checkout dalam hitungan detik, dan nikmati fasilitas bayar di tempat (COD) ke seluruh Indonesia.",
     ratingLabel: "Kepuasan Pelanggan Terjamin",
   },
   catalog: {

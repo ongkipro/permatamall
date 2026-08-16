@@ -1,4 +1,20 @@
-# Tasks: CMSAds Engine — Full-System Implementation
+# Tasks: AdsBookCMS
+
+> Verified against disk: 2026-08-16 @ `0d2e56a`
+
+## Provenance — read before citing any task
+
+Phases 1–80 (T1–T295) were inherited from the upstream CMSAds engine when this repository was forked on 2026-08-15. They are lineage, not an active backlog, and they carry known structural damage:
+
+- **Phase numbers 71–80 appear twice** with different subjects.
+- **T243 and T244 do not exist**; numbering jumps from T242 to T245.
+- **Traceability is broken from T266 onward** — those tasks reference `SEC-*`, `PAY-*`, `ORD-*`, `TRK-*`, `TYP-*`, `DOC-*`, `CAT-*`, and `UI-*` identifiers that exist in no version of `PRD.md`.
+- Several completed tasks assert behaviour that is false in this repository, most importantly T71 (`./scripts/install.sh` — the file does not exist) and T100/T107 (pushing to `main` does not deploy — it does).
+- T174 and T175 remain unchecked although the contracts they describe now ship.
+
+Historical rows are left exactly as they landed. Do not retro-fit them and do not treat an inherited `[x]` as evidence. Active work starts at **Phase A** at the end of this file and references the requirement IDs in the current `PRD.md`.
+
+---
 
 ## Rules for AI Agent
 
@@ -884,3 +900,78 @@ Implementation, contract tests, static checks, build, and focused authenticated 
  -> REQ: TRK-4 · deps: [T293] · Done when: `PRODUCT_ID_PATTERN` enforces `/^[A-Za-z0-9_./-]{5,128}$/` minimum 5-character/digit product content IDs for Meta and Google tracking outbox validation.
 - [x] **T295** — Automated Product Content ID Normalization & Feed Synchronization (`src/lib/catalog-feed.ts`, `src/lib/catalog-feed.test.ts`).
  -> REQ: TRK-5 · deps: [T294] · Done when: `formatContentId(id)` normalizes numeric product IDs < 10000 to 5-digit strings (`10001`+), XML feeds (`google-catalog.xml`, `meta-catalog.xml`) emit 5-digit `<g:id>` and `<g:item_group_id>`, unit tests pass 194/194, 0 TypeScript/Astro check errors, git committed and deployed live to `https://permatamall.shop/` (commit `bd98145`).
+
+---
+
+# Phase A — AdsBookCMS Foundation
+
+Active backlog. Every task below references a requirement in the current `PRD.md` and, where relevant, a gap from `ARCHITECTURE.md` §10. Ordered by severity, not by dependency.
+
+## A1 — Live integrity (production is currently wrong)
+
+- [ ] **A-1** — Remove fabricated social proof from product presentation (`src/lib/catalog-data.ts`).
+ -> REQ: REQ-16 · Done when: the three hardcoded named reviews, `METRICS_TABLE` rating/review/sold values, and `getRealisticComparePrice()` no longer reach any public page; `aggregateRating` is emitted only from recorded data or omitted entirely; `npm test` green.
+- [ ] **A-2** — Replace vendor advertising artwork used as store brand (`public/images/logo.webp`, `public/favicon.*`, `public/admin-login.webp`, `public/og-admin.webp`).
+ -> REQ: REQ-18 · Done when: no CMS Ads artwork remains reachable; `tenantConfig.logo`, the admin shell logo, the product-image fallback (`catalog-data.ts`), the landing-card image (`tenant-content.ts`), and the admin `og:image` all resolve to this store's own assets.
+- [ ] **A-3** — Neutralise the canonical sample product.
+ -> REQ: REQ-9 · gap: G4 · ADR-006 · Done when: a new forward migration replaces product 10001 with a neutral, clearly labelled placeholder using an owned image; `src/lib/sample-product.ts` and the admin strings in `ProductForm.tsx` / `ProductCatalog.tsx` / `admin/products/edit.astro` agree with it; the record is deletable once a real product exists.
+- [ ] **A-4** — Scrub or delete `src/db/seed.sql`.
+ -> REQ: REQ-9 · Done when: the file no longer contains another merchant's catalog, the two genuine-looking Mengantar ObjectIds, the Surabaya warehouse address, or the contact phone number; either replaced by a neutral install seed or removed with its image trees.
+- [ ] **A-5** — Make ad taxonomy matching deterministic (`src/lib/ad-taxonomy.ts`).
+ -> REQ: REQ-56 · Done when: category resolution no longer relies on an unweighted keyword count across title and description with no minimum score; a handbag whose description mentions unrelated terms cannot be shipped to Merchant Center under a fertilizer, skincare, or cutlery category. Note: the handbag rule (`6551`) is already both the first rule and the default — the defect is the scoring, not the mapping.
+- [ ] **A-6** — Align Meta Purchase `event_id` across browser and server.
+ -> REQ: REQ-50 · Done when: the browser leg and `/api/meta-event` emit the same identifier for one order, so Meta deduplicates them. The server currently discards the posted `event_id` and substitutes `order_number`, which makes the server leg idempotent per order — align the browser onto the order-number key rather than weakening the server gate. Verify with Meta Events Manager showing one deduplicated Purchase, not two.
+
+## A2 — Installer foundation
+
+- [ ] **A-10** — Make store identity resolve at runtime (`src/lib/tenant.ts`, `src/lib/env.ts`).
+ -> REQ: REQ-7 · gap: G1 · ADR-003 · Done when: identity reads from the `stores` row with a KV cache and env only as first-boot fallback; changing the store name in `/admin` changes storefront `<title>`, header, footer, JSON-LD, and OG tags without a rebuild; the hardcoded `slug` is gone.
+- [ ] **A-11** — First-run `/install` wizard.
+ -> REQ: REQ-6 · gap: G2 · ADR-004 · deps: [A-10] · Done when: an uninitialised database routes every request to `/install`; the wizard writes store identity, administrator credentials, and locale to D1; completing it locks the route permanently; re-running against an initialised database is refused.
+- [ ] **A-12** — Fail closed on missing home content (`src/lib/tenant-content.ts`).
+ -> REQ: REQ-13 · gap: G5 · ADR-007 · Done when: no published home row renders an explicit setup state; `DEFAULT_HOME_CONTENT` is deleted; a D1 error is logged rather than silently degrading to compiled copy.
+- [ ] **A-13** — Schema version check at boot.
+ -> REQ: REQ-8 · gap: G3 · Done when: the applied migration count is compared with `CMS_VERSION.schemaVersion` and a mismatch is surfaced to the operator instead of failing at the first broken query.
+- [ ] **A-14** — Remove inert tenant machinery.
+ -> REQ: REQ-1 · ADR-002 · Done when: `CONTENT_PACK_IDS`, `isTenantContentPackId`, `PUBLIC_TENANT_SLUG`, `PUBLIC_CONTENT_PACK`, and the unused `CMSADS_TENANT_CONFIG` hook in `astro.config.mjs` are deleted; `astro check` hints drop accordingly.
+
+## A3 — Correctness and security
+
+- [ ] **A-20** — Test coverage for `src/lib/auth.ts`.
+ -> REQ: REQ-60, REQ-61 · Done when: JWT signing and verification, expiry, tampering rejection, credential-rotation invalidation, and `canAccessAdminRoute` per role each have a runnable test.
+- [ ] **A-21** — Connect the headless origin allowlist to the admin (`src/lib/headless-api.ts`).
+ -> REQ: REQ-71 · Done when: authorising a new storefront origin is an admin action rather than a code change and deploy; the currently undeclared `PUBLIC_HEADLESS_ALLOWED_ORIGINS` is either implemented or removed; the embed allowlist and the API allowlist have documented, distinct scopes.
+- [ ] **A-22** — Stop marking authenticated API responses publicly cacheable.
+ -> REQ: REQ-71 · Done when: authenticated `/api/v1/*` 200s, including `/api/v1/storefront`, are not served with `public` cache directives that permit shared-cache storage.
+- [ ] **A-23** — Add CORS headers to headless error responses.
+ -> REQ: REQ-70 · Done when: `headlessError` includes `Access-Control-Allow-Origin` so cross-origin callers can read error bodies.
+- [ ] **A-24** — Repair or retire the Drizzle layer.
+ -> ADR-005 · gap: G8 · Done when: either the journal and snapshots are rebuilt so `db:generate` is safe, or `schema.ts`, `src/db/index.ts`, `drizzle-orm`, and `drizzle-kit` are removed and migrations documented as hand-authored. `schema.ts` must not remain a plausible-looking but wrong schema.
+
+## A4 — Consistency and hygiene
+
+- [ ] **A-30** — Unify checkout presentation.
+ -> REQ: REQ-20 · Done when: `/hybrid-form` renders the same palette as every other checkout surface; the green float labels, green focus ring, and orange gradient submit button no longer appear on a customer-facing route.
+- [ ] **A-31** — Stop shipping checkout CSS to the admin (`src/styles/global.css`).
+ -> Done when: `form-hybrid.css` is imported only by the routes that need it; the five redundant page-level imports are removed.
+- [ ] **A-32** — Remove unused font payload.
+ -> Done when: Plus Jakarta Sans weight files are no longer downloaded, since no rule references the family; imported Inter and Cinzel weights match the weights actually used, eliminating synthetic bold.
+- [ ] **A-33** — Align `themeColor` with the shipped palette.
+ -> REQ: REQ-7 · Done when: browser chrome colour matches the storefront rather than `#0F172A`, which belongs to neither template.
+- [ ] **A-34** — Delete orphan components and stale artifacts.
+ -> Done when: the eight zero-importer components, the root `migrations/` duplicate of `0027`, `pnpm-lock.yaml`, and `pnpm-workspace.yaml` are removed. ADR-009.
+- [ ] **A-35** — Fix `/solusi-terbaru` and the HTML sitemap.
+ -> Done when: `/solusi-terbaru` no longer redirects to a slug with no route, and `/sitemap` lists products from D1 rather than from now-empty compiled arrays.
+- [ ] **A-36** — Decide the fate of the `zanoby_*` cookie namespace.
+ -> Done when: either the legacy name is documented as permanent with its reason, or the cookie constant and its two embed writers and one reader are renamed in a single commit with the attribution consequence accepted.
+
+## A5 — Operability
+
+- [ ] **A-40** — Enable Workers Logs.
+ -> REQ: REQ-82 · gap: G7 · Done when: `wrangler.jsonc` declares an `observability` block and the existing labelled `console.error` calls are queryable.
+- [ ] **A-41** — Log degradation paths.
+ -> REQ: REQ-82 · Done when: every silent fallback listed in `OBSERVABILITY.md` §3 emits a labelled warning distinguishing degraded operation from success.
+- [ ] **A-42** — Surface outbox and provider health in `/admin`.
+ -> REQ: REQ-82 · Done when: undelivered `capi_event_outbox` depth, last successful Mengantar call, last AutoLaris callback, and last CAPI delivery are visible to the operator.
+- [ ] **A-43** — Reconcile the version registries.
+ -> REQ: REQ-83 · Done when: `package.json` and `src/lib/version.ts` agree, or `package.json` is documented as not being a version source.

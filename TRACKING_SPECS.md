@@ -1,48 +1,69 @@
-# CMSAds Meta Pixel, CAPI, GTM, and Google Ads Specification
+# AdsBookCMS Meta Pixel, CAPI, GTM, TikTok, and Google Ads Specification
 
-This document owns the technical tracking contract for CMSAds-rendered and standalone tenant storefronts. It covers event semantics, identity, browser/server boundaries, deduplication, tenant configuration, and verification. It does not claim attribution certainty, legal compliance, consent applicability, or live provider acceptance.
+> Verified against disk: 2026-08-16 @ 0d2e56a
+
+This document owns the technical tracking contract for AdsBookCMS-rendered and headless storefronts. It covers event semantics, identity, browser/server boundaries, deduplication, durable delivery, store configuration, and verification. It does not claim attribution certainty, legal compliance, consent applicability, or live provider acceptance.
+
+AdsBookCMS installs as **one Worker = one store** ([`ARCHITECTURE.md`](./ARCHITECTURE.md), [`DECISIONS.md`](./DECISIONS.md) ADR-001/ADR-002), so "store configuration" below always means the single `stores` row of this install, resolved at request time from D1 with environment fallback.
 
 ## 1. Architecture
 
 ```mermaid
 flowchart LR
-    U[Customer browser] --> F[Tenant storefront]
+    U[Customer browser] --> F[Storefront]
     F --> PX[Meta Pixel]
     F --> GTM[GTM dataLayer]
-    F --> API[CMSAds public API]
-    API --> D1[(Tenant D1)]
-    API --> CAPI[Meta CAPI]
+    F --> GA[Google gtag]
+    F --> TT[TikTok ttq]
+    F --> API[AdsBookCMS API]
+    API --> OB[(capi_event_outbox)]
+    OB --> CAPI[Meta CAPI]
+    API --> D1[(D1 OMS_DB)]
     D1 --> O[Persisted order and payment state]
-    O --> CAPI
+    O --> API
 ```
 
-The storefront owns browser tag loading and event presentation. CMSAds owns tenant tracking configuration, public payload validation, canonical catalog/order identity, Purchase qualification, and server CAPI credentials.
+The storefront owns browser tag loading and event presentation. AdsBookCMS owns tracking configuration, public payload validation, canonical catalog/order identity, Purchase qualification, durable CAPI delivery, and server CAPI credentials.
 
-A standalone storefront may use a different framework and design, but it must not fork event meaning, product identity, or Purchase qualification.
+A headless storefront may use a different framework and design, but it must not fork event meaning, product identity, or Purchase qualification.
 
 ## 2. Current Implementation Boundary
 
-### Implemented in CMSAds-rendered routes
+### Implemented in AdsBookCMS-rendered routes
 
-- `MetaPixelBase.astro` resolves a valid tenant Pixel ID from D1 with environment fallback.
-- `GtmBase.astro` resolves and validates the tenant GTM container ID.
-- `GoogleAdsBase.astro` resolves a complete Google Ads conversion ID/label pair.
-- page, product, landing, and thanks trackers emit the supported browser events.
-- `/api/meta-event` accepts only supported event names and validates event ID, same-origin source URL, product/value payload, and bounded customer data before CAPI dispatch.
+- `MetaPixelBase.astro` resolves a valid Pixel ID from D1 with environment fallback.
+- `GtmBase.astro` resolves and validates the GTM container ID.
+- `GoogleAdsBase.astro` resolves a complete Google Ads conversion ID/label pair, emits the region-scoped Consent Mode v2 defaults (§8), and exposes `window.__PS_PUSH_GOOGLE_CONVERSION__`.
+- Page, product, landing, and thanks trackers emit the supported browser events.
+- `/api/meta-event` accepts only supported event names and validates event ID, same-origin source URL, product/value payload, and bounded customer data before enqueueing to the CAPI outbox.
+- `/api/v1/tracking/events` provides the same contract for headless storefronts behind developer-API-key auth (§9).
+- `src/lib/capi-outbox.ts` records every CAPI event in D1 before transmission and retries failures (§10).
+- Click identifiers are captured in middleware into a first-party cookie and persisted on the order (§7).
 - `/admin/ads/meta` manages Pixel ID plus masked CAPI readiness and supports an explicit Test Events request.
 - `/admin/ads/google` manages GTM independently and validates the Google Ads conversion pair.
 - `/thanks` gates Purchase from recorded order/payment state and uses browser duplicate guards.
 
-### Not yet implemented for arbitrary standalone storefronts
+### Headless storefront bootstrap — what ships and what does not
 
-- a public non-secret storefront bootstrap endpoint for Pixel/GTM/Google browser configuration;
+`src/pages/api/v1/storefront.ts` **ships** a storefront bootstrap endpoint. `GET /api/v1/storefront` returns store identity, home content, payment capability (COD flag, COD-disabled province codes, supported methods), and a `tracking` block containing exactly four non-secret identifiers:
+
+- `meta_pixel_id`
+- `google_ads_conversion_id`
+- `google_ads_conversion_label`
+- `google_tag_manager_id`
+
+`meta_capi_token` is never in the response. It is not a keyless public endpoint: `validateHeadlessRequest()` requires a developer API key via `X-App-Key`, `X-Api-Key`, or `Authorization: Bearer`, verifies it against `developer_api_keys` (SHA-256 lookup plus secret verification, revoked keys rejected), and then enforces the origin allowlist.
+
+Genuinely not yet implemented:
+
+- a **keyless** public bootstrap for storefronts that cannot hold a server-side key;
 - a framework-neutral tracking adapter package;
 - a completed cross-storefront consent adapter;
 - automated verification across every external storefront repository.
 
-Do not expose `meta_capi_token` to solve the bootstrap gap. See [`STOREFRONT_INTEGRATION.md`](./STOREFRONT_INTEGRATION.md) for the planned adapter boundary.
+Do not expose `meta_capi_token` to solve the keyless-bootstrap gap. See [`STOREFRONT_INTEGRATION.md`](./STOREFRONT_INTEGRATION.md) for the planned adapter boundary.
 
-## 3. Tenant Configuration
+## 3. Store Configuration
 
 `getStoreAdsConfig(locals)` resolves:
 
@@ -50,15 +71,15 @@ Do not expose `meta_capi_token` to solve the bootstrap gap. See [`STOREFRONT_INT
 - `google_tag_manager_id`;
 - `google_ads_conversion_id` and `google_ads_conversion_label`.
 
-D1 values take precedence over environment fallback. Changes in Ads & Tracking apply to subsequent CMSAds requests without rebuilding the Worker.
+D1 values take precedence over environment fallback. Changes in Ads & Tracking apply to subsequent requests without rebuilding the Worker.
 
 Security rules:
 
 - CAPI tokens and webhook secrets are never returned by read APIs;
 - blank token submissions preserve the active secret;
 - Google Ads conversion ID and label are both present or both absent;
-- tenant A configuration cannot be read through tenant B bindings;
-- browser configuration may contain only non-secret identifiers.
+- browser configuration may contain only non-secret identifiers;
+- isolation between stores is the deployment boundary — a second store is a second install with its own D1 and its own credentials, not a scope column.
 
 ## 4. Canonical Event Semantics
 
@@ -68,9 +89,9 @@ Security rules:
 | `ViewContent` | `view_item` | One canonical product is viewed | Canonical D1 product ID and current D1 value. |
 | `AddToCart` | `add_to_cart` | Current direct-response form reaches qualified customer intent | Never a scroll, impression, or arbitrary CTA click. |
 | `InitiateCheckout` | `begin_checkout` | A valid checkout submit attempt begins | Product, variant, value, and customer boundary have passed browser validation; server still revalidates. |
-| `Purchase` | `purchase` | CMSAds confirms the qualifying persisted order state | COD requires persisted order success; online payment requires authenticated paid reconciliation. |
+| `Purchase` | `purchase` | The qualifying persisted order state is confirmed | COD requires persisted order success; online payment requires authenticated paid reconciliation. |
 
-The repository does not map every interaction to `Lead` or `Purchase`. Analytics UI events must remain separate from optimization events.
+`src/lib/meta-event-contract.ts` accepts exactly these five names. The repository does not map every interaction to `Lead` or `Purchase`. Analytics UI events must remain separate from optimization events.
 
 ## 5. Product Catalog Identity
 
@@ -86,6 +107,8 @@ Every product event uses the canonical numeric D1 `products.id`, encoded as a st
 
 ## 6. Event ID and Purchase Deduplication
 
+### Intended contract
+
 A funnel event and a Purchase event must not reuse one ID.
 
 1. Create a dedicated Purchase event ID for the order attempt.
@@ -97,9 +120,24 @@ A funnel event and a Purchase event must not reuse one ID.
 5. Refresh, revisit, duplicate callback, or repeated polling must not create another Purchase for the same qualifying order.
 6. A new valid order receives a new Purchase event ID.
 
-A local duplicate guard proves only the browser path. CAPI acceptance and Meta deduplication require a separately observed provider response.
+### What ships today
 
-## 7. Customer Matching and Attribution
+Guards 1, 2, 4, 5, and 6 hold. **Rule 3 does not.** The two legs currently send different strings for the same Purchase:
+
+| Leg | Value sent | Source |
+| --- | --- | --- |
+| Browser `fbq('track', 'Purchase', …, { eventID })` | `purchase_<productSlug>_<random>` | `createId()` in `src/scripts/form-hybrid.ts` / `form-middle.ts`, forwarded as `purchase_event_id` and read by `MetaThanksTracker.astro` |
+| Server CAPI | the `INV-` order number | `src/pages/api/meta-event.ts` overwrites `eventId` with `purchaseOrder.order_number` for every `Purchase` |
+
+The browser posts its own `event_id` to `/api/meta-event`, but the route discards it for Purchase and substitutes the order number. Meta therefore has no matching key between the two legs and will count the browser Purchase and the server Purchase as separate events. Treat cross-leg deduplication as **unverified and probably broken** until this is either reconciled or confirmed against Meta's own deduplication report. Track it in `ARCHITECTURE.md` §10 before relying on browser-plus-server Purchase counts.
+
+The override is not accidental — using the order number makes the server leg naturally idempotent per order, and `/api/meta-event` additionally requires `order_number` plus a valid `status_token` before it will emit any Purchase (unknown or mismatched tokens return `404`). The correct fix is to make the browser adopt the same order-number key, not to remove the server gate.
+
+Server-side, `capi_event_outbox.event_id` carries a `UNIQUE` constraint and `enqueueCapiEvent()` uses `INSERT OR IGNORE`, so a replayed request returns `{ deduplicated: true }` instead of producing a second outbound conversion. Combined with the order-number key, that means one CAPI Purchase per order for all time — a durable dedupe layer above Meta's own `event_id` handling.
+
+A local duplicate guard proves only the browser and database paths. CAPI acceptance and Meta deduplication require a separately observed provider response.
+
+## 7. Customer Matching and Click-ID Attribution
 
 ### Hash before CAPI
 
@@ -115,73 +153,200 @@ Preserve `_fbp` and `_fbc` exactly as issued when present. They are attribution 
 
 ### Request-derived context
 
-Client IP and user agent should be derived at the server boundary where supported rather than trusted from arbitrary browser fields.
+Client IP and user agent are derived at the server boundary (`getClientIp(request.headers)` and the `user-agent` header) rather than trusted from arbitrary browser fields.
 
-### Google Click Identifiers & Attribution Preservation
+### Click identifier capture and persistence
 
-Preserve `gclid`, `gbraid`, and `wbraid` through the checkout/order handoff when the active order schema supports them (`src/lib/order-schema.ts`). Do not invent storage or claim end-to-end attribution until the selected frontend and backend fields are verified.
+Click-ID preservation is owned by `src/lib/click-ids.ts`, `src/middleware.ts`, and the `orders.ad_click_ids` column — **not** by `src/lib/order-schema.ts`, which carries no click-ID fields.
 
-## 8. Google Ads Conversion Signal Engine Protocol
+`CLICK_ID_KEYS` in `src/lib/click-ids.ts` is a single list covering all four families:
 
-### Architecture & Tag Integration
+| Family | Keys |
+| --- | --- |
+| Google | `gclid`, `gbraid`, `wbraid` |
+| Meta | `_fbp`, `_fbc`, `fbclid` |
+| TikTok | `ttclid` |
+| UTM | `utm_source`, `utm_medium`, `utm_campaign`, `utm_content`, `utm_term` |
 
-1. **Google Tag (`gtag.js`)**: Loaded dynamically by `GoogleAdsBase.astro` in the `<head>` of all storefront pages when valid `google_ads_conversion_id` (e.g. `AW-XXXXXXXXX`) and `google_ads_conversion_label` are configured for the active tenant.
-2. **Google Tag Manager (GTM)**: Loaded by `GtmBase.astro` when `google_tag_manager_id` (`GTM-XXXXXXX`) is defined. Pushes ecommerce events (`page_view`, `view_item`, `add_to_cart`, `begin_checkout`, `purchase`) to `window.dataLayer` using GA4 / GTM standard schema.
-3. **Global Execution Helper**: Exposes `window.__PS_PUSH_GOOGLE_CONVERSION__(value, transactionId, userData)` on client side to trigger Google Ads conversions safely.
+Flow:
+
+1. **Capture.** `src/middleware.ts` runs `parseClickIdsFromUrl(url)` on every non-private request. Values must match `/^[A-Za-z0-9._-]{1,256}$/` or they are dropped. When `fbclid` arrives without `_fbc`, the library synthesizes `_fbc` as `fb.1.<timestamp>.<fbclid>`.
+2. **Store.** Matching values are JSON-serialized into the cookie named by `CLICK_ID_COOKIE` — currently the literal string `zanoby_click_ids` — with `Max-Age` of 90 days, `Path=/`, and `SameSite=None; Secure` on HTTPS (`SameSite=Lax` otherwise). `_fbp` and `_fbc` are additionally re-issued as their own first-party cookies so Meta's own readers find them.
+3. **Read back.** `readClickIdCookie(request)` is called by `src/pages/api/submit-order.ts`, `src/pages/api/submit-middle-order.ts`, and `src/pages/api/v1/checkout.ts`. Cookies ride along with the submit request, so no hidden form fields are needed. Malformed or hand-edited cookie values parse to `{}` rather than throwing inside the order path.
+4. **Persist.** The serialized value is written to `orders.ad_click_ids` (`src/db/schema.ts`, migration `0024_daily_typhoid_mary.sql`).
+5. **Classify.** `src/lib/traffic-source.ts` reads that stored JSON and derives a `TrafficSourceType` of `meta`, `google`, `tiktok`, `organic`, or `custom`, precedence Meta → Google → TikTok → UTM heuristics. The admin surfaces it through `TrafficSourceBadge` in `OrdersTable.tsx` and `OrderDetail.tsx`.
+
+The cookie name `zanoby_click_ids` is a legacy brand string that is still live in shipped code, in `src/lib/checkout-navigation.ts` (`sessionStorage` key), and in every browser that already holds one. Renaming it is a breaking change for in-flight attribution, not a cosmetic rename. See `docs/GOOGLE_ADS_SETUP.md` §4.
+
+Why this matters for COD: the real conversion happens days after the click, when the courier collects cash. Without the click ID captured at landing and stored on the order, delivered revenue can never be uploaded back as an offline conversion, and Smart Bidding only ever learns from unconfirmed form submissions.
+
+### Cross-frame and cross-page preservation
+
+- `src/lib/checkout-navigation.ts` re-attaches all twelve tracking keys to intermediate checkout navigation URLs, reading from the current query string first and the `zanoby_click_ids` `sessionStorage` entry second. Checkout **completion** URLs are deliberately restricted to opaque order lookup values so no PII or attribution string leaks into a shareable confirmation link.
+- `src/lib/embed-markup.ts` emits the parent-page script for embedded storefronts. It syncs the same twelve keys into the iframe `src`, recovers `_fbp`/`_fbc` from parent cookies when absent from the URL, and listens for origin-checked `postMessage` events.
+
+## 8. TikTok Signal Boundary
+
+TikTok support is narrower than Meta or Google and should not be described as a full integration.
+
+What exists:
+
+- `ttclid` is a first-class member of `CLICK_ID_KEYS`, so it is captured in middleware, stored in the cookie for 90 days, persisted to `orders.ad_click_ids`, and forwarded through checkout navigation and embed frames exactly like `gclid` and `fbclid`.
+- `src/lib/traffic-source.ts` classifies an order as `tiktok` when `ttclid` is present, or when `utm_source` contains `tiktok` or `tt`.
+- `src/lib/embed-markup.ts` fires `window.ttq.track("CompletePayment", { value, currency: "IDR" })` on the parent page when an embedded checkout reports `cmsads:checkout-redirect` or `cmsads:order-complete` with a positive total, guarded by `typeof window.ttq === "object" && typeof window.ttq.track === "function"`.
+
+What does **not** exist:
+
+- no TikTok pixel base component — AdsBookCMS never loads `ttq` itself, so the `CompletePayment` call only fires when the **host page** already has the TikTok pixel installed;
+- no TikTok pixel ID field in store configuration;
+- no TikTok Events API (server-side) delivery, and no outbox rows for TikTok;
+- no `event_id` deduplication between the browser `ttq` call and any server event;
+- the embed `CompletePayment` call carries no `content_id` and no TikTok-specific `event_id`.
+
+The `cmsads:` prefix on the embed `postMessage` types is a legacy wire-protocol string. Renaming it breaks every already-published embed on a customer's site.
+
+## 9. Google Ads Conversion Signal Protocol
+
+### Tag integration
+
+1. **Google Tag (`gtag.js`)**: loaded by `GoogleAdsBase.astro` when a valid `google_ads_conversion_id` (`AW-XXXXXXXXX`) and `google_ads_conversion_label` are configured. Both must be present; the component renders nothing otherwise.
+2. **Google Tag Manager**: loaded by `GtmBase.astro` when `google_tag_manager_id` (`GTM-XXXXXXX`) is defined. Pushes `page_view`, `view_item`, `add_to_cart`, `begin_checkout`, and `purchase` to `window.dataLayer` using the GA4/GTM ecommerce schema.
+3. **Global execution helper**: `window.__PS_PUSH_GOOGLE_CONVERSION__(value, transactionId, userData)` builds `{ send_to: id + '/' + label, value, currency: 'IDR' }`, appends `transaction_id` **only when truthy** (an empty string would make every order collide instead of dedupe), attaches `user_data` when supplied, and calls `gtag('event', 'conversion', payload)`.
 
 ### Enhanced Conversions for Web
 
-Enhanced Conversions send SHA-256 hashed customer identifiers to Google Ads alongside the purchase event to improve conversion measurement accuracy when cookies are restricted:
+Executed inside `MetaThanksTracker.astro` after order verification. The same raw phone is normalized once, then hashed **twice, differently**, because Meta and Google specify different formats:
 
-- **Hashed Parameters**:
-  - `sha256_phone_number`: Phone number normalized to E.164 without non-digits (`6281...`) hashed with SHA-256.
-  - `sha256_first_name`: Customer first name normalized to lowercase hashed with SHA-256.
-  - `sha256_last_name`: Customer last name normalized to lowercase hashed with SHA-256.
-- **Frontend Boundary**: Executed inside `MetaThanksTracker.astro` upon order verification. The hashed `googleUserData` payload is passed to `window.__PS_PUSH_GOOGLE_CONVERSION__` which appends `user_data` to `gtag('event', 'conversion', payload)`.
+| Consumer | Value hashed | Example input to SHA-256 |
+| --- | --- | --- |
+| Meta `ph` / `external_id` | E.164 **digits only** | `6281234567890` |
+| Google `sha256_phone_number` | E.164 **including the leading `+`** | `+6281234567890` |
 
-### Consent Mode v2 Matrix
+Never share one hash between the two. Normalization: strip all non-digits, then replace a leading `0` with `62`.
 
-Google Consent Mode v2 signals default consent states before tags execute:
+Google `user_data` fields sent:
 
-- Default Consent Flags:
-  - `ad_storage`: `'granted'` (for direct advertising measurement)
-  - `ad_user_data`: `'granted'` (for user data transmission to Google Ads)
-  - `ad_personalization`: `'granted'` (for personalized remarketing)
-  - `analytics_storage`: `'granted'` (for performance measurement)
-- Merchant Policy: Storefronts can update consent state dynamically via `gtag('consent', 'update', { ... })` when a merchant cookie/consent banner is present.
+- `sha256_phone_number` — SHA-256 of `` `+${normalizedPhone}` ``;
+- `sha256_first_name` — SHA-256 of the first whitespace-delimited token of the name;
+- `sha256_last_name` — SHA-256 of the remaining tokens joined by a space.
 
-### Transaction ID Deduplication
+Names are trimmed and split but are **not** lowercased in the current implementation. Email is not part of the browser Enhanced Conversions payload today.
 
-1. Every conversion payload sent to Google Ads includes `transaction_id: orderId` (using the canonical D1 order string ID, e.g. `ORD-XXXXXX`).
-2. Deduplication applies across GTM ecommerce `purchase` events, direct `gtag` conversion events, and future Google Ads API Offline Conversion uploads.
-3. Refreshing `/thanks` or revisiting the confirmation URL does not re-trigger Google Ads conversions due to `once('Purchase_order_' + orderId)` local guards.
+### Consent Mode v2 — region-scoped, two calls
 
-### Smart Bidding & Target CPA / Target ROAS Signals
+`GoogleAdsBase.astro` issues **two** `gtag('consent', 'default', …)` calls, in this order. Documenting only the second one misstates the legally load-bearing half.
 
-1. Conversion values are calculated using actual item prices multiplied by quantity (`productPrice * quantity`) in IDR currency.
-2. COD orders qualify upon successful server order creation; Prepaid online orders qualify only after authenticated `is_paid: true` reconciliation.
-3. Clear conversion signals feed Google Ads Smart Bidding algorithms (Target CPA, Target ROAS) without skewing reported ROAS with unverified checkout attempts.
-## 9. Browser and Server Payload Boundary
+**Call 1 — region-scoped denial (fires first):**
 
-Supported CAPI events are:
+```js
+gtag('consent', 'default', {
+  ad_storage: 'denied',
+  ad_user_data: 'denied',
+  ad_personalization: 'denied',
+  analytics_storage: 'denied',
+  region: [ /* 32 ISO codes */ ],
+  wait_for_update: 500,
+});
+```
 
-- `PageView`;
-- `ViewContent`;
-- `AddToCart`;
-- `InitiateCheckout`;
-- `Purchase`.
+The `region` array holds **32** codes: the 27 EU member states plus `IS`, `LI`, `NO` (EEA), `GB`, and `CH` — `AT, BE, BG, HR, CY, CZ, DK, EE, FI, FR, DE, GR, HU, IS, IE, IT, LV, LI, LT, LU, MT, NL, NO, PL, PT, RO, SK, SI, ES, SE, GB, CH`. `wait_for_update: 500` holds tags for 500 ms so a consent management platform can answer before anything fires.
 
-`/api/meta-event` rejects unsupported event names, malformed event IDs, cross-origin source URLs, invalid product IDs, invalid values/currency, and oversized customer payloads before any outbound call.
+**Call 2 — unscoped grant (fires second):**
+
+```js
+gtag('consent', 'default', {
+  ad_storage: 'granted',
+  ad_user_data: 'granted',
+  ad_personalization: 'granted',
+  analytics_storage: 'granted',
+});
+```
+
+Because Google applies the most specific matching region rule, a visitor from any of the 32 listed regions gets `denied`; everyone else gets `granted`. The deliberate rationale in the source comment: the consent requirement is EEA/UK law, this storefront sells to Indonesia and ships no consent management platform, so a global `denied` default would destroy the store's own conversion signal to satisfy a rule that does not govern its traffic.
+
+Consequences to keep in mind:
+
+- there is **no CMP in the repository**, so nothing ever calls `gtag('consent', 'update', …)`. The 500 ms `wait_for_update` window expires with no answer, and EEA/UK visitors stay denied for the whole session.
+- if this store ever advertises into the EEA or UK, a real CMP and an `update` call become mandatory before that traffic can be measured at all.
+- a storefront that needs different behavior must change `GoogleAdsBase.astro`; the region list is compiled into the component, not configurable per store.
+
+### Transaction ID deduplication
+
+1. Every conversion payload includes `transaction_id` set to the persisted **order number**, not a numeric row ID.
+2. Order numbers come from `src/lib/order-persistence.ts` and use `` `INV-${10000 + id}` `` for completed orders — e.g. order row `1` is `INV-10001`. Abandoned/partial leads use `` `ABN-${10000 + id}` `` and are converted to the `INV-` form when the order completes. There is no `ORD-` prefix anywhere in the codebase.
+3. Deduplication applies across GTM ecommerce `purchase` events, direct `gtag` conversion events, and any future Google Ads API offline conversion upload — all three must send the identical `INV-` string.
+4. Refreshing `/thanks` or revisiting the confirmation URL does not re-trigger the conversion, thanks to the `once('Purchase_order_' + orderId)` local guard.
+
+### Smart Bidding signals
+
+1. Conversion values use actual item price multiplied by quantity, in IDR.
+2. COD orders qualify on successful server order creation; prepaid online orders qualify only after authenticated `is_paid: true` reconciliation.
+3. Keeping unverified checkout attempts out of the conversion feed is what prevents Target CPA / Target ROAS from optimizing toward non-revenue.
+
+## 10. CAPI Event Outbox
+
+`src/lib/capi-outbox.ts` is the durable delivery layer for Meta CAPI. Its purpose: a conversion event is recorded in D1 **before** it is transmitted, so a network blip, a Meta rate limit, or an expired token cannot silently discard revenue signal.
+
+### Storage
+
+Table `capi_event_outbox` (`src/db/schema.ts`): `id`, `event_id` (UNIQUE), `event_name`, `payload` (JSON), `status` (default `pending`), `attempts` (default 0), `max_attempts` (default 5), `last_error`, `next_retry_at`, `created_at`, `updated_at`, with index `capi_event_outbox_due_idx` on `(status, next_retry_at)`.
+
+### Public functions
+
+| Function | Behavior |
+| --- | --- |
+| `enqueueCapiEvent(db, event)` | `INSERT OR IGNORE` as `pending`. Returns `false` when `event_id` is already known, making a replayed browser request a no-op instead of a duplicate conversion. |
+| `deliverCapiEvent(db, eventId, pixelId, token)` | Sends one already-enqueued `pending` event immediately. Returns `false` if no matching pending row exists. |
+| `drainCapiOutbox(db, pixelId, token)` | Retries events whose `next_retry_at` has elapsed and whose `attempts < max_attempts`, oldest first, **bounded to 10 rows per call**, so a burst of failures cannot turn one storefront request into a long-running drain. Returns the number sent. |
+| `decideRetry(outcome, attempts, maxAttempts)` | Pure function holding the backoff ladder, testable without a database or a live Meta. |
+
+### Retry decision rules
+
+- success → `sent`, no further attempts;
+- Meta error code `190` (dead token) → `failed` immediately; retrying only burns quota;
+- `attempts + 1 >= max_attempts` → `failed`;
+- Meta error codes `4`, `17`, `613` (rate limits) → `pending` with a flat **15-minute** delay;
+- any other failure → `pending` with `min(2^nextAttempt, 60)` **minutes**, i.e. doubling from 2 minutes and capping at 1 hour;
+- an unparseable stored payload is marked `failed` without transmission, since it can never succeed.
+
+On a successful send the `attempts` counter is not incremented and `last_error` is cleared.
+
+### Why no cron
+
+Draining is opportunistic, triggered by later storefront traffic and scheduled through `waitUntil()`. There is no cron trigger and no queue binding, because the Astro Cloudflare adapter owns the Worker entrypoint. A store with no traffic therefore does not drain; a failed event waits for the next visitor.
+
+## 11. Browser and Server Payload Boundary
+
+### `/api/meta-event` (first-party, same-origin)
+
+Validates through `validateMetaEventPayload()`, then:
+
+1. resolves store ads config; returns a non-error `skipped` response when Pixel ID or CAPI token is unconfigured;
+2. applies the extra Purchase gate against persisted order/payment state;
+3. `enqueueCapiEvent()` → returns `{ deduplicated: true }` if already known;
+4. `deliverCapiEvent()` for immediate delivery;
+5. schedules `drainCapiOutbox()` through `locals.cfContext.waitUntil()`.
+
+Rejected before any outbound call: unsupported event names, malformed event IDs, cross-origin source URLs, invalid product IDs, invalid values/currency, oversized customer payloads.
+
+### `/api/v1/tracking/events` (headless)
+
+`src/pages/api/v1/tracking/events.ts` accepts `POST` with `OPTIONS` preflight and applies the **same** `validateMetaEventPayload()` contract, so a headless storefront cannot widen event semantics. Differences from the first-party route:
+
+- authentication is `validateHeadlessRequest()` — developer API key plus origin allowlist — instead of same-origin;
+- `user_data` accepts the fuller headless set: `phone`, `name`, `email`, `city`, `province`, `postalCode`, `country`, `externalId`, `fbp`, `fbc`, with `clientIp` and `userAgent` always derived server-side from request headers;
+- returns `503 DATABASE_UNAVAILABLE` when the D1 binding is missing, `400 INVALID_TRACKING_PAYLOAD` on a contract violation, `200 { skipped: true }` when tracking is unconfigured, and `200 { event_id, event_name, delivered, queued }` on success;
+- the same enqueue → deliver → `waitUntil(drain)` sequence runs.
 
 Conceptual Purchase data:
 
 ```json
 {
   "event_name": "Purchase",
-  "event_id": "purchase_<tenant-product>_<unique-order-attempt>",
+  "event_id": "purchase_<product>_<unique-order-attempt>",
   "event_source_url": "https://shop.example.com/thanks",
   "user_data": {
-    "ph": ["<sha256-normalized-phone>"],
+    "ph": ["<sha256-e164-digits-only>"],
     "fn": ["<sha256-normalized-first-name>"],
     "fbp": "<raw-_fbp-if-present>",
     "fbc": "<raw-_fbc-if-present>"
@@ -197,11 +362,11 @@ Conceptual Purchase data:
 
 This example describes field meaning; it is not merchant data or a live credential.
 
-## 10. Payment and Purchase Qualification
+## 12. Payment and Purchase Qualification
 
 ### COD
 
-A successfully persisted COD order may qualify as Purchase because CMSAds has accepted the commercial order. Checkout persistence must succeed first. Shipping confirmation and Mengantar dispatch remain later operational states and do not create a second Purchase.
+A successfully persisted COD order may qualify as Purchase because the commercial order has been accepted. Checkout persistence must succeed first. Shipping confirmation and Mengantar dispatch remain later operational states and do not create a second Purchase. See [`MENGANTAR_INTEGRATION_SPEC.md`](./MENGANTAR_INTEGRATION_SPEC.md).
 
 ### Online payment
 
@@ -209,9 +374,9 @@ Order creation alone is not Purchase. `/api/order-status` reads the existing D1 
 
 Payment success, provider acceptance, ad-platform acceptance, attribution, and reported revenue are separate observable facts.
 
-## 11. Consent and Privacy Boundary
+## 13. Consent and Privacy Boundary
 
-Each tenant storefront must define applicable consent behavior before loading optional browser tags. The implementation must:
+The implementation must:
 
 - avoid blocking checkout when analytics is unavailable;
 - avoid raw personal or payment data in URLs, dataLayer, localStorage, logs, screenshots, or public config;
@@ -219,44 +384,50 @@ Each tenant storefront must define applicable consent behavior before loading op
 - record consent state separately from event delivery;
 - avoid claiming jurisdiction-specific compliance without a reviewed legal basis.
 
-CMSAds currently has tracking components and payload validation but no complete framework-neutral consent/bootstrap adapter for external storefronts. This remains planned work.
+Current state: Consent Mode v2 defaults ship as described in §9, but there is **no consent management platform and no `gtag('consent', 'update', …)` call anywhere in the repository**, and no framework-neutral consent adapter for headless storefronts. Both remain planned work.
 
-## 12. Standalone Storefront Implementation Checklist
+## 14. Headless Storefront Implementation Checklist
 
-An AI agent implementing a new frontend must:
+An agent implementing a new frontend must:
 
-1. identify the exact CMSAds tenant and storefront repository;
-2. obtain non-secret browser identifiers through an approved server-rendered or future public bootstrap contract;
-3. keep the CAPI token inside CMSAds;
+1. obtain a developer API key and confirm the storefront origin is on the allowlist;
+2. read non-secret browser identifiers from `GET /api/v1/storefront` (`tracking` block);
+3. keep the CAPI token server-side — it is never returned by any read API;
 4. use canonical D1 product IDs for all supported events;
 5. generate stable per-event IDs and a dedicated per-order Purchase event ID;
 6. preserve `_fbp` and `_fbc` un-hashed when present;
-7. normalize and hash Advanced Matching fields before CAPI;
-8. preserve supported click identifiers through submit-order fields;
-9. gate COD and online Purchase according to recorded backend state;
-10. apply consent behavior without blocking the commerce journey;
-11. inspect browser Pixel, dataLayer, and CMSAds API requests on the exact tenant origin;
-12. record local browser evidence separately from Meta Test Events, live API acceptance, attribution, and campaign results.
+7. normalize and hash Advanced Matching fields before CAPI, remembering Meta wants digits-only and Google wants a leading `+`;
+8. preserve click identifiers — including `ttclid` — through the submit path, or rely on the first-party cookie riding along with the request;
+9. send `transaction_id` as the `INV-` order number, never a numeric row ID;
+10. post server events to `POST /api/v1/tracking/events` rather than calling Meta directly, so the outbox owns retries and dedupe;
+11. gate COD and online Purchase according to recorded backend state;
+12. apply consent behavior without blocking the commerce journey;
+13. inspect browser Pixel, dataLayer, gtag, and API requests on the exact store origin;
+14. record local browser evidence separately from Meta Test Events, live API acceptance, attribution, and campaign results.
 
-## 13. Verification Contract
+## 15. Verification Contract
 
-Run current repository commands rather than preserving historical counts:
+Run the repository's own commands:
 
 ```bash
 npm test
 npm run check
-npm run tenant:build -- <tenant>
-npm run tenant:dry-run -- <tenant>
+npm run build
 ```
+
+`npm test` runs `node --experimental-strip-types --test src/lib/*.test.ts`, which covers `capi-outbox.test.ts`, `click-ids.test.ts`, `traffic-source.test.ts`, `checkout-navigation.test.ts`, `embed-markup.test.ts`, `order-persistence.test.ts`, and `e2e-full-funnel.test.ts`.
 
 For the selected storefront:
 
 - inspect `PageView`, `ViewContent`, qualified `AddToCart`, `InitiateCheckout`, and Purchase triggers;
 - verify `content_ids`, `value`, `currency`, event ID, source URL, and customer-data boundaries;
-- verify browser and server Purchase use one event ID;
+- compare the browser `eventID` against the server CAPI `event_id` for the same order — today they differ (§6); record the observed pair rather than assuming they match;
+- verify `transaction_id` matches the persisted `INV-` order number;
 - verify refresh/revisit guards;
 - verify COD and online gates;
+- verify both Consent Mode default calls appear in `dataLayer` in the right order;
+- verify `capi_event_outbox` rows reach `sent`, and inspect `last_error` and `attempts` when they do not;
 - verify no CAPI token appears in HTML, JavaScript, network response, or logs;
 - use Meta Test Events only with an operator-provided test code and explicit outbound-call approval.
 
-A passing local test or build does not prove live Meta/Google acceptance, Event Match Quality, attribution, catalog health, or campaign performance. Record exact observed results and non-actions in `STATUS.md` and `BUILD-LOG.md`.
+A passing local test or build does not prove live Meta/Google/TikTok acceptance, Event Match Quality, attribution, catalog health, or campaign performance. Record exact observed results and non-actions in `STATUS.md` and `BUILD-LOG.md`.

@@ -1,136 +1,207 @@
-# Google Ads Conversion Signal Engine & Merchant Center Setup Guide
+# Google Ads Conversion Signal & Merchant Center Setup Guide
 
-> **Official Operating System Documentation for Permata Mall**  
-> Engine Stack: **Astro SSR + Cloudflare Workers + Google Tag (gtag.js) + GTM + Enhanced Conversions + Consent Mode v2 + Merchant Center XML Feed**  
-> Target Domain: `https://permatamall.shop`
+> Verified against disk: 2026-08-16 @ 0d2e56a
+
+> **Product:** AdsBookCMS (single) — one installer, one Worker, one store.
+> **Reference instance:** `permatamall.shop` (Worker `cmsads-permatamall`).
+> **Engine stack:** Astro SSR + Cloudflare Workers + Google Tag (`gtag.js`) + GTM + Enhanced Conversions + Consent Mode v2 + Merchant Center XML feed.
+
+Deeper technical contract: [`../TRACKING_SPECS.md`](../TRACKING_SPECS.md). System architecture and gap register: [`../ARCHITECTURE.md`](../ARCHITECTURE.md). Decisions: [`../DECISIONS.md`](../DECISIONS.md).
+
+**Convention used below:** text in **bold** that you must literally find in the Google Ads or Merchant Center interface is marked as a *UI label* and left exactly as Google renders it. Everything else is English instructional prose.
 
 ---
 
-## 1. System Architecture Overview
+## 1. Signal Architecture Overview
 
-Permata Mall implements a 4-layer Google Ads Conversion Signal architecture designed for maximum attribution accuracy, Target CPA / Target ROAS Smart Bidding efficiency, and zero duplicate conversion counting:
+The conversion signal path, in order:
 
-$$\text{Ad Click (gclid, gbraid, wbraid)} \longrightarrow \text{Consent Mode v2 + Conversion Linker} \longrightarrow \text{Enhanced Conversions} \longrightarrow \text{Google Ads API / Merchant Center Feed}$$
+$$\text{Ad click (gclid, gbraid, wbraid)} \longrightarrow \text{Consent Mode v2 + Conversion Linker} \longrightarrow \text{Enhanced Conversions} \longrightarrow \text{Google Ads / Merchant Center feed}$$
 
 ```text
-┌───────────────────────────────────────────────────────────────────────────────────┐
-│                           GOOGLE ADS SIGNAL ARCHITECTURE                           │
-└───────────────────────────────────────────────────────────────────────────────────┘
- ┌──────────────────────┐    ┌──────────────────────┐    ┌──────────────────────────┐
- │  Landing Page Click  │───>│  Click-ID Storage    │───>│  Consent Mode v2 Matrix  │
- │ (gclid/gbraid/wbraid)│    │ (zanoby_click_ids)   │    │ (ID/MY: Granted | EEA: Denied)│
- └──────────────────────┘    └──────────────────────┘    └──────────────────────────┘
+┌──────────────────────┐    ┌──────────────────────┐    ┌────────────────────────────┐
+│  Landing Page Click  │───>│  Click-ID Storage    │───>│  Consent Mode v2 Matrix    │
+│ (gclid/gbraid/wbraid)│    │ (zanoby_click_ids)   │    │ (32 EEA/UK/CH: denied      │
+│                      │    │  90-day cookie       │    │  everywhere else: granted) │
+└──────────────────────┘    └──────────────────────┘    └────────────────────────────┘
                                                                        │
                                                                        ▼
- ┌──────────────────────┐    ┌──────────────────────┐    ┌──────────────────────────┐
- │  Merchant Center Feed│    │ Enhanced Conversions │    │  Conversion Deduplication│
- │ (/feed/google-catalog│    │ (SHA-256 Phone/Name) │    │  (transaction_id: ORD-N) │
- └──────────────────────┘    └──────────────────────┘    └──────────────────────────┘
+┌──────────────────────┐    ┌──────────────────────┐    ┌────────────────────────────┐
+│ Merchant Center Feed │    │ Enhanced Conversions │    │  Conversion Deduplication  │
+│ /feed/google-catalog │    │ (SHA-256 phone/name) │    │ (transaction_id: INV-N)    │
+└──────────────────────┘    └──────────────────────┘    └────────────────────────────┘
 ```
 
 ---
 
-## 2. Step-by-Step Setup Guide
+## 2. Step-by-Step Setup
 
-### Step 1: Create Purchase Conversion Action in Google Ads
+### Step 1 — Create the purchase conversion action
 
-1. Open **Google Ads Manager** (`https://ads.google.com`).
-2. Go to **Goals** $\rightarrow$ **Conversions** $\rightarrow$ **Summary**.
-3. Click **+ New conversion action** $\rightarrow$ Select **Website**.
-4. Enter website domain: `https://permatamall.shop` and click **Scan**.
-5. Scroll down to **Add a conversion action manually** and configure:
-   - **Goal category**: `Purchase` (Pembelian).
-   - **Conversion name**: `Zanoby Purchase - Website`.
-   - **Value**: Select *Use different values for each conversion*. Default value: `149000`, Default currency: `IDR`.
-   - **Count**: Select *Every* (Setiap konversi dihitung, cocok untuk transaksi e-commerce).
-   - **Click-through conversion window**: `30 days`.
-   - **Attribution model**: `Data-driven` (Rekomendasi resmi Google).
-6. Click **Done** $\rightarrow$ **Save and Continue**.
-7. Note down your **Conversion ID** (e.g. `AW-123456789`) and **Conversion Label** (e.g. `AbCd_EFGHIJKlm`).
+1. Open Google Ads (`https://ads.google.com`).
+2. Go to *UI label* **Goals** → **Conversions** → **Summary**.
+3. Click *UI label* **+ New conversion action**, then select *UI label* **Website**.
+4. Enter your store domain (for the reference instance, `https://permatamall.shop`) and click *UI label* **Scan**.
+5. Scroll to *UI label* **Add a conversion action manually** and configure:
+   - **Goal category** — select *UI label* **Purchase**.
+   - **Conversion name** — use a name that identifies your own store and the surface, for example `<Your Store> Purchase - Website`. Do not copy a name from another merchant's account; it becomes the reporting label you will read for the life of the account.
+   - **Value** — select *UI label* **Use different values for each conversion**. Set a default value matching a typical order and default currency `IDR`.
+   - **Count** — select *UI label* **Every**. Every purchase is counted, which is the correct setting for ecommerce transactions.
+   - **Click-through conversion window** — `30 days`.
+   - **Attribution model** — `Data-driven`. This is Google's own recommended default.
+6. Click *UI label* **Done**, then *UI label* **Save and continue**.
+7. Record the **conversion ID** (format `AW-123456789`) and **conversion label** (format `AbCd_EFGHIJKlm`).
+8. Enter both in the store admin under Ads & Tracking → Google. They are stored in D1 and take effect on the next request without a rebuild. The Google tag renders **only when both are present**; either one alone renders nothing.
 
----
+### Step 2 — Enable Enhanced Conversions for Web
 
-### Step 2: Enable Enhanced Conversions for Web
+1. On the conversion action detail page, expand *UI label* **Enhanced conversions**.
+2. Check *UI label* **Turn on enhanced conversions**.
+3. Select *UI label* **Google tag** or *UI label* **Google Tag Manager** as the implementation method.
+4. The storefront hashes first-party data client-side before dispatch, in `MetaThanksTracker.astro`:
+   - `sha256_phone_number` — the phone normalized to E.164 **including the leading `+`** (for example `+6281234567890`), then SHA-256 hashed. Note that the Meta leg hashes the same number **without** the `+`; the two hashes are deliberately different and must not be shared.
+   - `sha256_first_name` — first whitespace-delimited token of the name, trimmed, SHA-256 hashed.
+   - `sha256_last_name` — remaining name tokens joined by a space, SHA-256 hashed.
+   - Email is **not** currently included in the browser Enhanced Conversions payload.
+5. Click *UI label* **Save**.
 
-1. On the Conversion Action details page, expand the **Enhanced conversions** section.
-2. Check **Turn on enhanced conversions**.
-3. Select **Google Tag** or **Google Tag Manager** as your implementation method.
-4. Permata Mall automatically hashes customer first-party data client-side before dispatch:
-   - `phone_number`: Normalized to E.164 format (e.g., `+6281234567890`) and SHA-256 hashed.
-   - `first_name` & `last_name`: Trimmed and SHA-256 hashed.
-   - `email`: Normalized and SHA-256 hashed if provided.
-5. Click **Save**.
+### Step 3 — Configure the GTM container (optional, recommended)
 
----
+If using Google Tag Manager (`GTM-XXXXXXX`), configure it in the store admin under Ads & Tracking → Google. GTM is validated and loaded independently of the Google Ads conversion pair, so one can be configured without the other.
 
-### Step 3: Configure GTM Container (Optional / Recommended)
+In the GTM workspace:
 
-If using Google Tag Manager (`GTM-XXXXXXX`):
-
-#### 1. Add Tags in GTM Workspace
-- **Tag 1: Conversion Linker**
-  - Tag Type: `Conversion Linker`
-  - Trigger: `All Pages`
-- **Tag 2: Google Tag**
-  - Tag Type: `Google Tag`
-  - Tag ID: `AW-123456789`
-  - Trigger: `All Pages`
-- **Tag 3: Google Ads Conversion Tracking**
-  - Tag Type: `Google Ads Conversion Tracking`
-  - Conversion ID: `AW-123456789` (atau variable `{{Google Ads ID}}`)
-  - Conversion Label: `AbCd_EFGHIJKlm` (atau variable `{{Google Ads Label}}`)
+- **Tag 1 — Conversion Linker**
+  - Tag type: *UI label* **Conversion Linker**
+  - Trigger: *UI label* **All Pages**
+- **Tag 2 — Google Tag**
+  - Tag type: *UI label* **Google Tag**
+  - Tag ID: your `AW-` conversion ID
+  - Trigger: *UI label* **All Pages**
+- **Tag 3 — Google Ads Conversion Tracking**
+  - Tag type: *UI label* **Google Ads Conversion Tracking**
+  - Conversion ID: your `AW-` ID, or a variable such as `{{Google Ads ID}}`
+  - Conversion label: your label, or a variable such as `{{Google Ads Label}}`
   - Value: `{{dlv - total_price}}`
-  - Currency Code: `IDR`
+  - Currency code: `IDR`
   - Transaction ID: `{{dlv - order_id}}`
-  - Enable Enhanced Conversions: Checked $\rightarrow$ User Data Variable: `{{dlv - user_data}}`
-  - Trigger: Custom Event `purchase`
+  - Enable enhanced conversions: checked, with user-data variable `{{dlv - user_data}}`
+  - Trigger: custom event `purchase`
 
----
+The storefront pushes `page_view`, `view_item`, `add_to_cart`, `begin_checkout`, and `purchase` to `window.dataLayer` using the GA4/GTM ecommerce schema.
 
-### Step 4: Submit Merchant Center Catalog XML Feed (PMax & Shopping Ads)
+### Step 4 — Submit the Merchant Center catalog feed
 
-1. Open **Google Merchant Center** (`https://merchants.google.com`).
-2. Go to **Products** $\rightarrow$ **Feeds** $\rightarrow$ Click **+ Primary Feed**.
-3. Target Country: **Indonesia**, Language: **Indonesian**.
-4. Select **Scheduled Fetch** (Pengambilan Terjadwal).
-5. Name: `Permata Mall Catalog Feed`.
-6. Feed URL: `https://permatamall.shop/feed/google-catalog.xml`
-7. Fetch frequency: **Daily** (Setiap Hari).
-8. Automatic Taxonomy Engine:
-   - Permata Mall automatically maps internal product categories to Google Product Category (GPC) IDs:
-     - Pertanian / Pupuk: `2863` (`Business & Industrial > Agriculture`)
-     - Kecantikan / Skincare: `2547` (`Health & Beauty > Personal Care > Skincare`)
-     - Herbal / Stamina: `642` (`Health & Beauty > Health Care > Fitness & Nutrition`)
-     - Perkakasan / Asahan: `645` (`Home & Garden > Kitchen & Dining > Kitchen Knives`)
+1. Open Google Merchant Center (`https://merchants.google.com`).
+2. Go to *UI label* **Products** → **Feeds**, then click *UI label* **+ Primary feed**.
+3. Target country: **Indonesia**. Language: **Indonesian**.
+4. Select *UI label* **Scheduled fetch**.
+5. Name the feed after your own store.
+6. Feed URL: `https://<your-domain>/feed/google-catalog.xml` (served by `src/pages/feed/google-catalog.xml.ts`). A Meta catalog feed is served in parallel at `/feed/meta-catalog.xml`.
+7. Fetch frequency: **Daily**.
 
----
+#### Automatic taxonomy engine
 
-### Step 5: Verify & Audit Live Signals
+`src/lib/ad-taxonomy.ts` derives the Google Product Category (GPC) ID, the GPC path, the Meta commerce category path, and an internal product-type path from the product's category, title, and description — no manual mapping by the merchant.
 
-1. Install the **Google Tag Assistant Companion** browser extension.
-2. Open `https://permatamall.shop` in Tag Assistant debug mode.
-3. Perform a test purchase on a product page or checkout form.
-4. Verify the `conversion` event payload:
+Matching is a **keyword-count** scan: for each rule, count how many of its keywords appear in the combined lowercased `category + title + description`, and take the rule with the highest count. Ties resolve to the earliest rule in the list. Empty text, or no keyword match at all, falls back to the default.
+
+The nine rules as they ship, in source order:
+
+| GPC ID | Google / Meta category path | Internal product type | Sample keywords |
+| --- | --- | --- | --- |
+| `6551` | `Apparel & Accessories > Handbags, Wallets & Cases > Handbags` | `Fashion Wanita > Tas & Aksesori` | tas, tote, bag, dompet, selempang, handbag, clutch, ransel, sling |
+| `2863` | `Home & Garden > Lawn & Garden > Gardening > Fertilizer` | `Pertanian > Pupuk & Nutrisi` | pupuk, fertilizer, sawit, padi, cabai, jagung, ganoderma |
+| `2849` | `Home & Garden > Lawn & Garden > Gardening` | `Pertanian > Perkebunan & Benih` | benih, biji, bibit, kebun, media tanam, pot |
+| `2547` | `Health & Beauty > Personal Care > Cosmetics > Skin Care` | `Kecantikan & Perawatan > Skincare` | skincare, serum, lotion, krim, toner, sunscreen |
+| `567` | `Health & Beauty > Personal Care > Soap` | `Kecantikan & Perawatan > Sabun & Mandi` | sabun, soap, body wash, cleanser |
+| `642` | `Health & Beauty > Health Care > Biotherapy & Alternative Medicine > Herbal Supplements` | `Kesehatan > Suplemen Herbal` | herbal, madu, stamina, jamu, suplemen, kapsul |
+| `1604` | `Apparel & Accessories > Clothing` | `Fashion & Pakaian > Pakaian` | baju, kaos, celana, jaket, dress, gamis |
+| `1630` | `Home & Garden > Kitchen & Dining > Kitchen Tools & Utensils` | `Perkakas & Rumah Tangga > Alat Dapur` | pisau, asahan, alat dapur, pengasah, perkakas |
+| `222` | `Electronics` | `Elektronik & Gadget` | elektronik, gadget, charger, kabel, headset, lampu |
+
+Default when nothing matches: GPC `6551`, the handbags path. When a category name is present but no rule matched, the product type becomes `Umum > <category>`.
+
+#### Known gap — the taxonomy carries rules for merchants this install does not serve
+
+The live catalog for the reference instance is women's handbags (`Tote Bag`, `Tas Selempang` — see `scripts/seed-catalog.sql`), and rule `6551` covers exactly that, both as the first rule and as the fallback default. The handbag path is correct.
+
+What is stale is the **rest** of the table. Rules `2863`, `2849`, `2547`, `567`, `642`, and `1630` were calibrated for earlier merchants selling agricultural inputs, skincare, herbal supplements, and knives/sharpeners. They are dead weight for a handbag catalog, and worse, they are live misclassification risk: because matching is a raw keyword count over title **and description**, a handbag listing whose description happens to mention `kulit`, `organik`, `buah`, or `potong` can outscore the handbag rule and be submitted to Merchant Center under a fertilizer or skincare category. There is no minimum score, no category whitelist, and no per-store configuration.
+
+Treat this as a known gap, not as a finished taxonomy engine:
+
+- audit the GPC ID actually emitted for each live SKU in the feed before submitting it to Merchant Center;
+- when adding a product, avoid description wording that collides with the legacy keyword sets;
+- the durable fix is to make the rule set store-configurable rather than compiled in. It is not implemented.
+
+### Step 5 — Verify live signals
+
+1. Install the *UI label* **Google Tag Assistant Companion** browser extension.
+2. Open the storefront in Tag Assistant debug mode.
+3. Confirm **both** Consent Mode default calls appear, in this order: the region-scoped `denied` default, then the unscoped `granted` default (see §3).
+4. Perform a test purchase.
+5. Verify the `conversion` event payload. Note the `transaction_id` format — `INV-` plus the order sequence, never `ORD-`:
+
    ```json
    {
      "send_to": "AW-123456789/AbCd_EFGHIJKlm",
      "value": 249000,
      "currency": "IDR",
-     "transaction_id": "ORD-2026-88192",
+     "transaction_id": "INV-10042",
      "user_data": {
-       "sha256_phone_number": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-       "sha256_first_name": "a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3"
+       "sha256_phone_number": "<sha256 of +62… including the plus>",
+       "sha256_first_name": "<sha256 of first name>",
+       "sha256_last_name": "<sha256 of last name>"
      }
    }
    ```
+
+6. Reload `/thanks` and confirm no second conversion fires.
 
 ---
 
 ## 3. Core Contract & Consent Rules
 
-| Parameter | Value / Behavior |
+| Parameter | Value / behavior |
 | --- | --- |
-| **Consent Default (ID/MY)** | `ad_storage: granted`, `ad_user_data: granted`, `ad_personalization: granted` |
-| **Consent Default (EEA/UK)** | `ad_storage: denied`, `ad_user_data: denied`, `ad_personalization: denied` |
-| **Deduplication Key** | Backend order number (`transaction_id`). Prevents reloaded thank-you page count spikes. |
-| **Click-ID Storage** | Captured on landing page (`gclid`, `gbraid`, `wbraid`) stored in `zanoby_click_ids` cookie for 90 days. |
+| **Consent default — 32 listed regions** | `ad_storage: denied`, `ad_user_data: denied`, `ad_personalization: denied`, `analytics_storage: denied`, with `wait_for_update: 500` |
+| **Consent default — everywhere else** | `ad_storage: granted`, `ad_user_data: granted`, `ad_personalization: granted`, `analytics_storage: granted` |
+| **Deduplication key** | `transaction_id`, set to the backend order number (`INV-<10000 + id>`). Prevents count spikes from a reloaded thank-you page. Omitted entirely when no order number exists, because an empty string would make every order collide instead of dedupe. |
+| **Click-ID storage** | `gclid`, `gbraid`, `wbraid` captured in middleware from the landing URL into the `zanoby_click_ids` first-party cookie, `Max-Age` 90 days, `SameSite=None; Secure` on HTTPS. Persisted to `orders.ad_click_ids` at checkout. |
+| **Conversion value** | Item price × quantity, in IDR. COD qualifies on persisted order success; prepaid qualifies only after authenticated `is_paid: true` reconciliation. |
+
+### The Consent Mode region list
+
+`src/components/tracking/GoogleAdsBase.astro` issues the region-scoped `denied` default **first**, then the unscoped `granted` default. Google applies the most specific matching rule, so visitors in the listed regions are denied and everyone else is granted.
+
+The list holds **32** ISO codes — the 27 EU member states plus Iceland, Liechtenstein, and Norway (completing the EEA), plus the United Kingdom and Switzerland:
+
+`AT, BE, BG, HR, CY, CZ, DK, EE, FI, FR, DE, GR, HU, IS, IE, IT, LV, LI, LT, LU, MT, NL, NO, PL, PT, RO, SK, SI, ES, SE, GB, CH`
+
+The rationale recorded in the source: the consent requirement is EEA/UK law, this storefront sells to Indonesia and ships no consent management platform, and a global `denied` default would destroy the store's own conversion signal to satisfy a rule that does not govern its traffic.
+
+**Two consequences you must accept before advertising into those regions.** No consent management platform exists in this repository, so nothing ever calls `gtag('consent', 'update', …)`; the 500 ms `wait_for_update` window expires unanswered and visitors from the 32 listed regions stay denied for the entire session. If the store ever targets the EEA or UK, install a real CMP and wire the `update` call first — otherwise that traffic cannot be measured at all. The region list is compiled into the component and is not configurable per store.
+
+### The `zanoby_click_ids` cookie name is legacy — renaming it is a breaking change
+
+The cookie name is the literal string `zanoby_click_ids`, defined as `CLICK_ID_COOKIE` in `src/lib/click-ids.ts`. It carries a brand from an earlier deployment and does not match the AdsBookCMS product name or this store's brand.
+
+The name is nonetheless **correct as documented**, because it is what ships and what every browser already holds. Renaming it is not cosmetic:
+
+- every visitor who clicked an ad in the last 90 days holds a cookie under the old name; a rename silently drops their attribution mid-funnel;
+- `src/lib/checkout-navigation.ts` uses the same string as a `sessionStorage` key, and `src/lib/embed-markup.ts` ships a parent-page script already embedded on customers' own sites;
+- a rename therefore requires a dual-read migration window, not a find-and-replace.
+
+The same applies to the `cmsads:` prefix on embed `postMessage` types. Both are recorded here so the legacy naming is a known, deliberate carry-over rather than an undocumented surprise.
+
+---
+
+## 4. Verification Commands
+
+```bash
+npm test
+npm run check
+npm run build
+```
+
+A green build proves neither Google acceptance, Merchant Center feed health, attribution, nor campaign performance. Record observed browser evidence and any live-platform results separately, in `STATUS.md` and `BUILD-LOG.md`.

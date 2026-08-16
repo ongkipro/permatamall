@@ -3,6 +3,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 import PageIntro from '../components/shared/PageIntro.astro';
 import RatingStars from '../components/shared/RatingStars.astro';
 import { formatRp, products } from '../data/products';
+import { tenantConfig } from '../lib/tenant';
 
 const reviewGroups = products
   .filter((product) => product.reviews.length > 0)
@@ -11,8 +12,8 @@ const reviewGroups = products
 
 <BaseLayout
   shell="storefront"
-  title="Ulasan Pembeli - Pesantren.shop"
-  description="Ulasan pembeli produk Pesantren.shop: asahan portable, alat anti ngorok, kunci lipat, dan kunci shock universal. Semua pesanan bisa COD."
+  title={`Ulasan Pembeli - ${tenantConfig.name}`}
+  description={`Ulasan pembeli produk ${tenantConfig.name}. Semua pesanan bisa bayar di tempat (COD) ke seluruh Indonesia.`}
   breadcrumbs={[
     { name: 'Beranda', url: '/' },
     { name: 'Ulasan Pembeli', url: '/testimoni' },

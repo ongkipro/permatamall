@@ -1,0 +1,117 @@
+# Architecture Decision Record — AdsBookCMS
+
+Append-only. One decision per entry. A decision is recorded here only when it constrains future work; implementation detail belongs in `ARCHITECTURE.md`, remaining work in `UNIMPLEMENTED_SPECS.md`.
+
+Status values: **Accepted** · **Superseded by ADR-nnn** · **Proposed** (decided in principle, not yet implemented).
+
+---
+
+## ADR-001 — One install per Worker
+
+**Date:** 2026-08-16 · **Status:** Accepted
+
+**Context.** The codebase was forked from a multi-tenant engine whose documentation described request-time tenant selection, a tenant registry, and a fleet deployment model. None of that machinery exists in this repository, and the data layer assumes a single logical merchant (`SELECT ... FROM stores ORDER BY id LIMIT 1`).
+
+**Decision.** AdsBookCMS is a **single-install product**: one installer run produces one Worker, one D1, one KV namespace, one R2 bucket, one domain, one store. Isolation is a property of the deployment boundary.
+
+**Consequences.** No `store_id` scoping work is required. Two stores mean two installs and two upgrade cycles. A fleet-management surface, if ever needed, is a separate product that drives installs from outside — not a mode inside this Worker.
+
+**Rejected alternative.** Shared Worker with `Host`-based routing. Cloudflare does not permit selecting a D1 binding from request input, so this collapses into either one shared database (blast radius: every store) or Workers for Platforms (cost and operational weight far beyond the product).
+
+---
+
+## ADR-002 — The platform is the isolation boundary, so no tenant abstraction in code
+
+**Date:** 2026-08-16 · **Status:** Accepted
+
+**Decision.** Do not reintroduce tenant slugs, content packs, tenant registries, or per-tenant branches in application code. Inert remnants (`CONTENT_PACK_IDS`, `PUBLIC_TENANT_SLUG`, `CMSADS_TENANT_CONFIG`) are to be removed, not revived.
+
+**Consequences.** Any behavioural difference between installs must be expressed as data in D1 or as configuration, never as a code branch keyed on identity.
+
+---
+
+## ADR-003 — Store identity must resolve at runtime, not at build time
+
+**Date:** 2026-08-16 · **Status:** Proposed
+
+**Context.** `tenantConfig` resolves from `import.meta.env`, which Astro freezes into the bundle at build time. Site name, URL, logo, tagline, theme colour, locale, and template therefore require a rebuild to change, and `stores.name` in D1 is a second, divergent value that does not affect storefront branding.
+
+**Decision.** Identity becomes D1-owned. `tenantConfig` is replaced by a resolver that reads the `stores` row (cached in KV), falling back to environment values only during first boot, before the install wizard has run.
+
+**Consequences.** Every current `tenantConfig` consumer (34 files, including all layouts and feeds) must accept an async or request-scoped config. This is the precondition for ADR-004 and cannot be deferred past it.
+
+---
+
+## ADR-004 — Installation is a first-run wizard, not a terminal procedure
+
+**Date:** 2026-08-16 · **Status:** Proposed
+
+**Context.** Onboarding currently requires an operator with Wrangler credentials, a `.env` file, and a manual seed. The product target is WordPress-like: point a domain at the Worker, open it, fill in a form.
+
+**Decision.** A first-run `/install` route detects an uninitialised database, collects store identity, admin credentials, and locale/currency, writes them to D1, and marks the install complete. Once complete the route refuses to run again.
+
+**Consequences.** Depends on ADR-003. Requires a neutral, deletable sample dataset (ADR-006) and a fail-closed empty state (ADR-007), because a fresh install has no content by definition.
+
+---
+
+## ADR-005 — Raw SQL is the data layer; Drizzle stays only as a migration DSL
+
+**Date:** 2026-08-16 · **Status:** Accepted
+
+**Context.** All 43 data-touching modules use `D1Database.prepare()`. `getDb()` has zero importers. The Drizzle journal has diverged from the migration directory, so `drizzle-kit generate` would emit a destructive diff.
+
+**Decision.** Raw prepared statements remain the data access pattern. `schema.ts` is not a source of truth; migrations are. New migrations are written by hand.
+
+**Consequences.** `schema.ts` must either be repaired and demoted to documentation, or removed with `drizzle-orm`/`drizzle-kit`. Until then, treat any disagreement between `schema.ts` and `src/db/migrations/` as `schema.ts` being wrong.
+
+---
+
+## ADR-006 — Sample data must be neutral, ours, and deletable
+
+**Date:** 2026-08-16 · **Status:** Proposed
+
+**Context.** Migration `0017` seeds a product belonging to a previous merchant, and `product-mutation.ts` blocks deleting it through the admin API. Three sources disagree on what the "canonical sample" even is.
+
+**Decision.** A fresh install seeds exactly one clearly-labelled placeholder product using our own asset. It is deletable once the merchant has created a real product. No prior merchant's data ships in the installer.
+
+**Consequences.** Requires a forward migration; editing `0017` in place does nothing to databases that already applied it.
+
+---
+
+## ADR-007 — A fresh install fails closed, never inherits copy
+
+**Date:** 2026-08-16 · **Status:** Proposed
+
+**Context.** Product presentation already fails closed. Home content does not: with no published row, the bundle's `DEFAULT_HOME_CONTENT` is served, which is how another merchant's marketing copy reached a live storefront.
+
+**Decision.** Missing published content renders an explicit setup state. Compiled copy is never a fallback for merchant-facing content.
+
+---
+
+## ADR-008 — `main` is the release branch and deploying is automatic
+
+**Date:** 2026-08-16 · **Status:** Accepted
+
+**Context.** Four documents claimed that pushing to `main` does not deploy. `.github/workflows/deploy.yml` runs `npx wrangler deploy` on every push to `main`.
+
+**Decision.** Keep the behaviour, document it honestly, and treat `main` as production. Feature work happens on branches; merging is the release action and requires the same approval as a deploy.
+
+**Consequences.** No staging environment exists. Introducing one is a separate decision, not an assumed safety net.
+
+---
+
+## ADR-009 — npm is the package manager
+
+**Date:** 2026-08-16 · **Status:** Accepted
+
+**Decision.** `package-lock.json` + `npm ci` are authoritative, matching CI. This is a single-package repository. `pnpm-lock.yaml` and the `pnpm-workspace.yaml` stub are to be deleted.
+
+---
+
+## ADR-010 — Documentation is verified against disk or it is deleted
+
+**Date:** 2026-08-16 · **Status:** Accepted
+
+**Context.** An audit found ~100 references to npm scripts that do not exist, four documents inverting the deploy contract, and one instructing agents to remove an HTTP header that a passing test asserts. The docs were inherited wholesale from the upstream engine and never reconciled.
+
+**Decision.** Every document in this repository states only what can be verified against the current tree, and carries the date it was verified. A document describing another repository's machinery is deleted, not annotated. Aspirational work belongs in the gap register (`ARCHITECTURE.md` §10) or `UNIMPLEMENTED_SPECS.md`, never in the present tense.

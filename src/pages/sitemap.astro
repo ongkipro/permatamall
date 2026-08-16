@@ -4,14 +4,15 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 import { solutionEntries } from '../data/content';
 import { products } from '../data/products';
 import { footerLegal, footerNavigation } from '../data/site';
+import { tenantConfig } from '../lib/tenant';
 
 const mainLinks = [{ label: 'Beranda (Halaman Depan)', href: '/' }, ...footerNavigation];
 ---
 
 <BaseLayout
   shell="storefront"
-  title="Sitemap Halaman - Pesantren"
-  description="Daftar lengkap halaman penting website Pesantren untuk memudahkan penelusuran navigasi."
+  title={`Sitemap Halaman - ${tenantConfig.name}`}
+  description={`Daftar lengkap halaman penting website ${tenantConfig.name} untuk memudahkan penelusuran navigasi.`}
   noindex={true}
   breadcrumbs={[
     { name: 'Beranda', url: '/' },
@@ -22,7 +23,7 @@ const mainLinks = [{ label: 'Beranda (Halaman Depan)', href: '/' }, ...footerNav
     <PageIntro
       badge="Peta Situs"
       title="Sitemap Halaman"
-      description="Daftar lengkap halaman penting website Pesantren dalam satu tempat agar mudah ditelusuri."
+      description={`Daftar lengkap halaman penting website ${tenantConfig.name} dalam satu tempat agar mudah ditelusuri.`}
       breadcrumbs={[{ label: 'Beranda', href: '/' }, { label: 'Sitemap' }]}
     />
 
