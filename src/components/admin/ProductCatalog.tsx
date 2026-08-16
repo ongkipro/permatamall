@@ -747,8 +747,13 @@ export function ProductCatalog({
             </Button>
           </div>
         ) : !isDesktop ? (
-          /* Mobile Product Card List */
-          <div className="grid gap-3 p-4 lg:hidden" aria-label="Daftar produk mobile">
+          /* Mobile Product Card List.
+             grid-cols-1 is load-bearing: it expands to minmax(0, 1fr). Without it the
+             implicit column is sized `auto`, so a card's min-content width — driven by
+             the `truncate` (white-space: nowrap) title and slug — widens the column past
+             the viewport. The wrapper clips that overflow, which put the status switch
+             and the Aksi menu off-screen and unreachable on mobile. */
+          <div className="grid grid-cols-1 gap-3 p-4 lg:hidden" aria-label="Daftar produk mobile">
             {paginated.map((product) => {
               const priceRange = getProductPriceRange(product.variants);
 

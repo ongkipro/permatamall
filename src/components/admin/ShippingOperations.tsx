@@ -929,8 +929,11 @@ export function ShippingOperations() {
                 )}
               </section>
             )}
+            {/* grid-cols-1 expands to minmax(0, 1fr); without it a card's min-content
+                width widens the implicit column past the viewport and the wrapper clips
+                the right-hand controls out of reach on mobile. */}
             <div
-              className="grid gap-3 py-3 lg:hidden"
+              className="grid grid-cols-1 gap-3 py-3 lg:hidden"
               aria-label="Daftar pengiriman mobile"
             >
             {filteredShipments.map((shipment) => {

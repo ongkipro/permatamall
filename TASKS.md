@@ -966,6 +966,10 @@ Active backlog. Every task below references a requirement in the current `PRD.md
 
 ## A4 — Consistency and hygiene
 
+- [x] **A-37** — Fix unreachable controls in admin mobile card lists. **Done 2026-08-16.**
+ -> REQ: REQ-62 · Reported symptom: on mobile, some menus and the row action ("Aksi") could not be tapped. Root cause was not pointer handling — the mobile card lists used `display: grid` with **no** `grid-template-columns`, so the implicit column was sized `auto`. A card's min-content width (set by the `truncate`/`white-space: nowrap` title and slug) then widened the column to 491px inside a 390px viewport, and the `overflow-hidden` wrapper clipped it, putting the status switch and the Aksi trigger off-screen with no way to scroll to them. Adding `grid-cols-1` (`minmax(0, 1fr)`) caps the column at the container width and lets `truncate` do its job. Applied to `ProductCatalog.tsx`, `OrdersTable.tsx`, `ShippingOperations.tsx`.
+ · Verified in Chrome at 390x844 with touch emulation against the built Worker: overflowing elements on `/admin/products` went 400 -> 5, card width 491px -> 335px, and the Aksi menu opens with all five items hit-testing to themselves. On `/admin/orders` every remaining overflow sits inside a horizontally scrollable filter row, so nothing is clipped. `/admin/shipping` carries the identical change but was **not** exercised end to end — the local database has no shipments, so its mobile grid never rendered.
+
 - [ ] **A-30** — Unify checkout presentation.
  -> REQ: REQ-20 · Done when: `/hybrid-form` renders the same palette as every other checkout surface; the green float labels, green focus ring, and orange gradient submit button no longer appear on a customer-facing route.
 - [ ] **A-31** — Stop shipping checkout CSS to the admin (`src/styles/global.css`).
