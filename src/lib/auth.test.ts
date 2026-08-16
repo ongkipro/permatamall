@@ -277,6 +277,8 @@ test('the session cookie is read only under its exact name', async () => {
   assert.equal(read(`adsbook_session=${encodeURIComponent(token)}`), token);
   assert.equal(read(), null);
   assert.equal(read('theme=dark'), null);
+  assert.equal(read('adsbook_session=%'), '%');
+  assert.equal(read('adsbook_session=%ZZ'), '%ZZ');
   // A cookie whose name merely ends with the session name must not be accepted.
   assert.equal(read('xadsbook_session=forged'), null);
   assert.equal(read('evil_adsbook_session=forged'), null);
@@ -349,6 +351,15 @@ test('the admin gate refuses requests without a usable session token', async () 
 
   const foreign = await signJwt({ username: 'paduka.admin', role: 'advertiser' }, OTHER_SECRET);
   assert.equal((await runAdminRequest({ pathname: '/api/admin/products', token: foreign.token, stored, credential })).status, 401);
+
+  // Logout is idempotent: even a dead token must reach the handler so the
+  // browser cookie can be cleared.
+  assert.equal((await runAdminRequest({
+    pathname: '/api/admin/logout',
+    token: 'garbage',
+    stored: null,
+    credential,
+  })).status, 200);
 
   const pageResponse = await runAdminRequest({ pathname: '/admin/products', token: null, stored, credential });
   assert.equal(pageResponse.headers.get('location'), '/hello');

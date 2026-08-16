@@ -6,7 +6,7 @@ import {
 } from '../../../lib/admin-credentials';
 import { jsonError, jsonOk } from '../../../lib/api';
 import { SESSION_COOKIE_NAME } from '../../../lib/auth';
-import { getRuntimeEnv } from '../../../lib/env';
+import { getEnvValue, getRuntimeEnv } from '../../../lib/env';
 
 export const prerender = false;
 
@@ -21,7 +21,7 @@ function runtime(locals: App.Locals) {
   const env = getRuntimeEnv(locals);
   const database = env?.OMS_DB as D1Database | undefined;
   const sessions = env?.SESSION as KVNamespace | undefined;
-  return { database, sessions };
+  return { database, sessions, env };
 }
 
 export const GET: APIRoute = async ({ locals }) => {
@@ -48,7 +48,7 @@ export const GET: APIRoute = async ({ locals }) => {
 };
 
 export const PUT: APIRoute = async ({ request, locals, cookies }) => {
-  const { database, sessions } = runtime(locals);
+  const { database, sessions, env } = runtime(locals);
   if (!database || !sessions) return jsonError('Penyimpanan profil admin belum tersedia.', 503);
 
   const body = await request.json().catch(() => null) as ProfilePayload | null;
@@ -71,6 +71,7 @@ export const PUT: APIRoute = async ({ request, locals, cookies }) => {
       currentPassword,
       username,
       newPassword,
+      getEnvValue('BOOTSTRAP_ADMIN_PASSWORD', env),
     );
     if (!result.ok) return jsonError(result.error, 400);
 

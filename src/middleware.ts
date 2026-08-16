@@ -144,6 +144,12 @@ export const onRequest = defineMiddleware(async (context, next) => {
     }
   }
 
+  // Logout remains reachable for stale or revoked sessions so it can always
+  // clear the browser cookie; the unsafe-method origin guard above still applies.
+  if (url.pathname === '/api/admin/logout') {
+    return applySecurityHeaders(await next(), true);
+  }
+
   if (isPrivate) {
     const env = getRuntimeEnv(context.locals);
     const secret = getEnvValue('AUTH_SECRET', env);

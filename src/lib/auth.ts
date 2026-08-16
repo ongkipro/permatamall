@@ -249,5 +249,5 @@ export function getSessionCookie(request: Request): string | null {
   const cookieHeader = request.headers.get('cookie');
   if (!cookieHeader) return null;
   const match = cookieHeader.match(new RegExp(`(?:^|;\\s*)${SESSION_COOKIE_NAME}=([^;]+)`));
-  return match ? decodeURIComponent(match[1]) : null;
+  return match ? match[1] : null;
 }

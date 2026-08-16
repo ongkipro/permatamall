@@ -1,6 +1,6 @@
 import type { APIRoute } from 'astro';
 import { handleOptions, headlessError, headlessOk, validateHeadlessRequest } from '../../../../lib/headless-api';
-import { getStorefrontProduct, getStorefrontProducts } from '../../../../lib/catalog';
+import { getStorefrontProducts } from '../../../../lib/catalog';
 
 export const prerender = false;
 
@@ -20,14 +20,18 @@ export const GET: APIRoute = async ({ params, request, locals }) => {
       }, validation.corsHeaders);
     }
 
-    const product = await getStorefrontProduct(locals, slug);
+    const allProducts = await getStorefrontProducts(locals);
+    const product = allProducts.find((candidate) =>
+      candidate.slug === slug ||
+      candidate.productId === slug ||
+      String(candidate.catalogId) === slug
+    );
     if (!product) {
       return headlessError(`Produk "${slug}" tidak ditemukan.`, 404, {
         code: 'PRODUCT_NOT_FOUND',
       }, validation.corsHeaders);
     }
 
-    const allProducts = await getStorefrontProducts(locals);
     const relatedProducts = allProducts
       .filter((p) => p.slug !== product.slug && p.category === product.category)
       .slice(0, 4)

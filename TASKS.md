@@ -1001,3 +1001,22 @@ Active backlog. Every task below references a requirement in the current `PRD.md
  -> REQ: REQ-82 · Done when: undelivered `capi_event_outbox` depth, last successful Mengantar call, last AutoLaris callback, and last CAPI delivery are visible to the operator.
 - [x] **A-43** — Reconcile the version registries. **Done 2026-08-16.**
  -> REQ: REQ-83 · `package.json` is now `adsbookcms@1.2.0`, matching `src/lib/version.ts`.
+
+## A6 — Login reliability and verified identity
+
+- [x] **A-44** — Align tracking and catalog product identity. **Done 2026-08-16.**
+  -> REQ: REQ-57 · Done when: IDs `1`, `22`, and `434683` pass unchanged through the Google/Meta catalog feed and the Meta event contract; the focused Node tests pass.
+- [x] **A-45** — Scope public product-detail D1 reads. **Done 2026-08-16.**
+  -> REQ: REQ-19 · Done when: `getStorefrontProduct` selects one active product, batches only that product's variants and published content, and the headless detail API performs at most one full-catalog load for related products; the query-contract tests pass.
+- [x] **A-46** — Repair bootstrap credential rotation. **Done 2026-08-16.**
+  -> REQ: REQ-68 · Done when: the configured bootstrap password is accepted as the seeded administrator's current password, the replacement hash is persisted with `must_change_password = 0`, rotated credentials reject the bootstrap secret, and the focused credential tests pass.
+- [x] **A-47** — Eliminate login enumeration and widen throttling. **Done 2026-08-16.**
+  -> REQ: REQ-66 · Done when: nonexistent-user and wrong-password attempts return the same 401 UI/focus state and perform password verification; five failures are charged to both IP and normalized-username counters before later attempts return 429.
+- [x] **A-48** — Make the login panel mobile and assistive-technology safe. **Done 2026-08-16.**
+  -> REQ: REQ-67 · Done when: browser evidence at 390×844 and a keyboard-reduced 390×500 viewport shows the complete form remains operable without horizontal overflow, exactly one level-one heading names the page, tenant identity is visible, submit state is announced, and the password toggle keeps `type`, `aria-label`, and `aria-pressed` synchronized.
+- [x] **A-49** — Make session exit recoverable. **Done 2026-08-16.**
+  -> REQ: REQ-69 · Done when: malformed session-cookie values do not throw, private routes fail closed, and a logout request with a missing or revoked session still reaches the handler and clears the cookie; focused auth tests pass.
+- [x] **A-50** — Bind session-cookie security to the request. **Done 2026-08-16.**
+  -> REQ: REQ-70 · Done when: successful login issues the exact session cookie with `HttpOnly`, `SameSite=Lax`, path `/`, and `Secure` derived from the request protocol rather than the build mode; auth tests and a local browser login pass.
+- [x] **A-51** — Make the migration chain tenant-empty safe. **Done 2026-08-16.**
+  -> REQ: REQ-2 · Done when: migration `0017` does not insert orphan variants when no store exists, every migration applies to a fresh foreign-key-enforced SQLite database, `PRAGMA foreign_key_check` is empty, and `npm run db:migrate:local` completes.

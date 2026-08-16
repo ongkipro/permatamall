@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { validateMetaEventPayload } from './meta-event-contract.ts';
+import { formatContentId } from './catalog-feed.ts';
 
 const requestUrl = 'https://permatamall.shop/api/meta-event';
 
@@ -44,11 +45,11 @@ test('the payload the storefront actually sends is accepted intact', () => {
   assert.equal(result.value.eventSourceUrl, 'https://permatamall.shop/thanks');
 });
 
-test('live Permatamall D1 product ids reach Meta', () => {
+test('live Permatamall D1 product ids reach Meta with the catalog feed identity', () => {
   for (const id of ['1', '22', '434683']) {
     const result = validateMetaEventPayload({ ...wirePayload, product_id: id }, requestUrl);
     assert.equal(result.ok, true, `catalog id ${id} must reach Meta`);
-    if (result.ok) assert.deepEqual(result.value.contentIds, [id]);
+    if (result.ok) assert.deepEqual(result.value.contentIds, [formatContentId(id)]);
   }
 });
 

@@ -8,12 +8,12 @@ import {
   type CatalogProduct,
 } from "./catalog-feed.ts";
 
-test("formatContentId enforces minimum 5-digit pattern lock", () => {
-  assert.equal(formatContentId(1), "10001");
-  assert.equal(formatContentId("10001"), "10001");
-  assert.equal(formatContentId(4001), "14001");
+test("formatContentId preserves the canonical D1 product ID", () => {
+  assert.equal(formatContentId(1), "1");
+  assert.equal(formatContentId("22"), "22");
   assert.equal(formatContentId(434683), "434683");
-  assert.equal(formatContentId("abc"), "00abc");
+  assert.throws(() => formatContentId("abc"), /positive D1 integer/);
+  assert.throws(() => formatContentId(""), /positive D1 integer/);
 });
 
 test("formatCatalogItemId returns product ID as itemId for single-variant products", () => {
@@ -34,10 +34,10 @@ test("formatCatalogItemId returns indexed suffix and itemGroupId for secondary v
   assert.equal(result.itemGroupId, "14001");
 });
 
-test("generateGoogleCatalogXml emits valid g:id matching content_id and g:item_group_id", () => {
+test("generateGoogleCatalogXml keeps feed IDs aligned with tracking content_ids", () => {
   const mockProducts: CatalogProduct[] = [
     {
-      productId: 14001,
+      productId: 22,
       slug: "bibit-sirsak",
       productName: "Bibit Sirsak Juara",
       category: "Pertanian",
@@ -50,9 +50,9 @@ test("generateGoogleCatalogXml emits valid g:id matching content_id and g:item_g
   ];
 
   const xml = generateGoogleCatalogXml(mockProducts, "https://permatamall.shop");
-  assert.ok(xml.includes("<g:id>14001</g:id>"));
-  assert.ok(xml.includes("<g:id>14001_v2</g:id>"));
-  assert.ok(xml.includes("<g:item_group_id>14001</g:item_group_id>"));
+  assert.ok(xml.includes("<g:id>22</g:id>"));
+  assert.ok(xml.includes("<g:id>22_v2</g:id>"));
+  assert.ok(xml.includes("<g:item_group_id>22</g:item_group_id>"));
   assert.ok(xml.includes("<g:link>https://permatamall.shop/produk/bibit-sirsak</g:link>"));
   assert.ok(xml.includes("<g:price>85000 IDR</g:price>"));
 });

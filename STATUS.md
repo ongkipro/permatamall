@@ -1,12 +1,10 @@
 # STATUS — AdsBookCMS
 
-> Verified against disk: 2026-08-16 · uncommitted working tree atop `9eb6531` · branch `chore/adsbookcms-foundation`
+> Verified against disk: 2026-08-16 · uncommitted worktree atop `7593664` · branch `docs/login-panel-ux-audit`
 >
-> The baseline moved from `0d2e56a` through six commits that re-founded the repo
-> as AdsBookCMS (649 files, +4,117 / −17,546). Gates re-run on the current
-> uncommitted tree, not inherited from the previous baseline: `npm run check`
-> 304 files / 0 errors / 0 warnings / 0 hints · `npm test` 227 / 227 ·
-> `npm run build` Cloudflare server bundle complete.
+> Gates were run on this exact tree: `npm run check` 306 files / 0 errors /
+> 0 warnings / 0 hints · `npm test` 232 / 232 · `npm run build` Cloudflare
+> server bundle complete · fresh local D1 migrations complete through `0035`.
 
 Current state of the system. Implemented behaviour lives here; history lives in `BUILD-LOG.md`; remaining work lives in `UNIMPLEMENTED_SPECS.md`; structure lives in `ARCHITECTURE.md`.
 
@@ -37,10 +35,10 @@ Live check on 2026-08-16: `/` 200, `/produk` 200, `sitemap.xml` lists 8 pages + 
 
 | Gate | Result |
 | --- | --- |
-| `npm test` | **227 / 227 passing** |
-| `npm run check` | 304 files · 0 errors · 0 warnings · 0 hints |
+| `npm test` | **232 / 232 passing** |
+| `npm run check` | 306 files · 0 errors · 0 warnings · 0 hints |
 | `npm run build` | Cloudflare server bundle complete |
-| Browser smoke | Public 8/8 menu routes and current-role admin menu/profile 5/5 returned 200 at the expected path; public and admin skip links target the main content; no horizontal overflow at 390 px |
+| Browser smoke | Login at 390×844 and keyboard-reduced 390×500 has no horizontal overflow, one H1, correct keyboard/toggle/live-submit semantics, working bootstrap rotation, dual-counter 429 behaviour, and corrupt-session logout recovery; public 8/8 menu routes and current-role admin menu/profile 5/5 remain the prior production baseline |
 
 ---
 
@@ -56,11 +54,11 @@ Live check on 2026-08-16: `/` 200, `/produk` 200, `sitemap.xml` lists 8 pages + 
 
 **Orders and shipping** — operator-controlled dispatch to Mengantar under a single-flight lease, sequential shipment creation with independent per-order results, pickup address and schedule synchronisation with the provider, receiver RTS scoring, and a shipping lifecycle view separate from pending intake.
 
-**Admin** — 27 pages: dashboard analytics, orders and order detail, product CRUD, landing pages, content workbench with Workers AI drafting, shipping, expeditions, RTS/rate checker, payments, balance reconciliation ledger, ads configuration for Meta and Google, store/warehouse/CRM settings, operator access management, and developer API keys. Navigation and route authorization share one deny-by-default role policy; scoped operators see only the complete workspace their role owns.
+**Admin** — 27 pages: dashboard analytics, orders and order detail, product CRUD, landing pages, content workbench with Workers AI drafting, shipping, expeditions, RTS/rate checker, payments, balance reconciliation ledger, ads configuration for Meta and Google, store/warehouse/CRM settings, operator access management, and developer API keys. Navigation and route authorization share one deny-by-default role policy; scoped operators see only the complete workspace their role owns. Bootstrap rotation, JWT/KV/D1 revision validation, dual IP/username login damping, idempotent logout, and malformed-cookie recovery are verified.
 
 **Headless API** — seven `/api/v1/*` routes (storefront descriptor, products list and detail, district lookup, shipping rates, checkout, tracking events) authenticated by API key against `developer_api_keys`. The independently validated Headless origin allowlist is persisted on `stores.headless_allowed_origins` and editable in Developer settings.
 
-**Tracking** — Meta Pixel plus server-side CAPI through a durable outbox with retry and a shared, order-derived `event_id`; Google Tag and Ads conversion configuration with region-scoped Consent Mode v2; TikTok event hooks; and click-id capture for `gclid`/`gbraid`/`wbraid`/`fbclid`/`ttclid`. Hosted and embedded checkout surfaces emit Purchase only after the order can be resolved and verified.
+**Tracking** — Meta Pixel plus server-side CAPI through a durable outbox with retry and a shared, order-derived `event_id`; Google Tag and Ads conversion configuration with region-scoped Consent Mode v2; TikTok event hooks; and click-id capture for `gclid`/`gbraid`/`wbraid`/`fbclid`/`ttclid`. Hosted and embedded checkout surfaces emit Purchase only after the order can be resolved and verified. Meta events and Google/Meta feeds use the same unpadded positive D1 product IDs.
 
 ---
 
@@ -72,7 +70,7 @@ Live catalog: 22 women's handbag products with 110 variants, seeded by `scripts/
 
 Known data issues, all tracked:
 
-- The local development D1 still holds the previously provisioned warehouse row — a real address, phone number, and Mengantar ObjectIds. The repository is clean, but that data lives in local state and presumably in the remote database; scrubbing it needs a remote write and is a separate decision.
+- The previously provisioned warehouse contact, address, provider-origin, and pickup-address values were scrubbed from local and remote D1 on 2026-08-16. The required warehouse shell and relational structure were retained; both databases returned an empty `PRAGMA foreign_key_check`.
 - The demo seed is `scripts/seed-catalog.sql`, run with `npm run db:reset:demo:local`. It is **destructive to the catalog** by design — a demo seed's job is a known state — but its deletes are guarded so they never touch order history. The former `src/db/seed.sql`, which held two previous merchants' catalogs plus genuine-looking provider ids, a real address and a real phone number, was deleted on 2026-08-16.
 - `schema.ts` is missing two tables and three columns that exist in migrations; the Drizzle journal stops at `0030`.
 
@@ -100,6 +98,14 @@ System-wide security, correctness, documentation, navigation, and UX audit:
 - Reconciled repository specifications, architecture, installation notes, storefront integration guidance, remaining-gap register, and migration `0034` behaviour with the executable tree.
 - Independent final security review found no exploitable finding in the audited trust boundaries. Remaining work below is product/operations debt rather than a known open vulnerability.
 
+Login, product identity, and fresh-install follow-up:
+
+- Scoped product-detail D1 reads to one active product plus only its variants and published content; the headless detail endpoint now reuses one catalog load for related products.
+- Aligned live product event and feed identity on raw positive D1 product IDs, removing the former five-digit padding mismatch.
+- Repaired the bootstrap rotation contract, moved login damping ahead of lookup, added normalized-username damping beside IP damping, equalised unknown-user and wrong-password failures, made logout recover stale sessions, and made malformed cookies fail closed.
+- Refined `/hello` for mobile keyboards, assistive technology, password managers, accurate password-toggle semantics, and announced submitting state.
+- Fixed migration `0017` so an empty tenant database does not create orphan variants; a fresh foreign-key-enforced migration smoke and Wrangler local migration both complete through `0035`.
+
 ---
 
 ## 6. Known issues
@@ -110,7 +116,7 @@ System-wide security, correctness, documentation, navigation, and UX audit:
 | Medium | There is no automatic schema-upgrade path and the Drizzle journal/schema mirror remains incomplete (**G3**, **G8**) |
 | Medium | Fresh-install home content and compile-time theme selection remain coupled to repository defaults (**G5**, **G6**) |
 | Medium | Headless key scope/quota, authenticated order-status read, a published OpenAPI contract, and an executable adapter remain open (**H4**, **H6**, **H7**, **H8**) |
-| Medium | Workers observability, alerting, and an install-visible health surface remain absent (**G7**, `OBSERVABILITY.md`) |
+| Medium | Workers log emission is enabled, but durable retention, alerting, and an install-visible health surface remain absent (**G7**, `OBSERVABILITY.md`) |
 | Blocked | Unpaid-order recovery and several provider edge contracts require an explicitly approved live capture before implementation |
 | Data note | The previously provisioned warehouse contact, address, provider-origin, and pickup-address values were scrubbed from local and remote D1 on 2026-08-16. The required warehouse shell and all relational integrity were retained; post-write `PRAGMA foreign_key_check` returned no rows |
 

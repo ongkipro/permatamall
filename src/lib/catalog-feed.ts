@@ -31,19 +31,11 @@ export function escapeXml(value: string): string {
 }
 
 export function formatContentId(id: number | string): string {
-  const str = String(id || "").trim();
-  if (!str) return "10001";
-  if (/^\d+$/.test(str)) {
-    const num = Number(str);
-    if (num < 10000) {
-      return String(10000 + num);
-    }
-    return str;
+  const contentId = String(id).trim();
+  if (!/^[1-9]\d*$/.test(contentId)) {
+    throw new TypeError("Catalog product ID must be a positive D1 integer.");
   }
-  if (str.length < 5) {
-    return str.padStart(5, "0");
-  }
-  return str;
+  return contentId;
 }
 
 export function formatCatalogItemId(

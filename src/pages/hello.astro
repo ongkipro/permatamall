@@ -1,6 +1,7 @@
 ---
 import '../styles/global.css';
 import {
+  DEFAULT_ADMIN_PASSWORD_HASH,
   getAdminCredential,
   normalizeAdminUsername,
   verifyAdminLoginPassword,
@@ -33,7 +34,7 @@ if (Astro.request.method === 'POST' && crossSiteLogin) {
   const database = env?.OMS_DB as D1Database | undefined;
   const authSecret = getEnvValue('AUTH_SECRET', env);
   const clientIp = Astro.request.headers.get('cf-connecting-ip')?.trim() || 'local';
-  const attemptKey = `admin-login-attempts:${clientIp}`;
+  const ipAttemptKey = `admin-login-attempts:ip:${clientIp}`;
 
   try {
     if (!sessions || !database || authSecret.length < 32) {
@@ -43,52 +44,63 @@ if (Astro.request.method === 'POST' && crossSiteLogin) {
       const data = await Astro.request.formData();
       const username = normalizeAdminUsername(data.get('username'));
       submittedUsername = username;
+      focusPassword = true;
       const password = String(data.get('password') || '').slice(0, 1024);
       const bootstrapAdminPassword = getEnvValue('BOOTSTRAP_ADMIN_PASSWORD', env);
-      const credential = await getAdminCredential(database, username);
-      if (!credential) {
+      const userAttemptKey = `admin-login-attempts:user:${username || 'invalid'}`;
+      const [ipAttemptsRaw, userAttemptsRaw] = await Promise.all([
+        sessions.get(ipAttemptKey),
+        sessions.get(userAttemptKey),
+      ]);
+      const ipAttempts = Number(ipAttemptsRaw) || 0;
+      const userAttempts = Number(userAttemptsRaw) || 0;
+
+      if (ipAttempts >= 5 || userAttempts >= 5) {
+        Astro.response.status = 429;
+        errorMessage = 'Terlalu banyak percobaan. Coba kembali dalam 15 menit.';
+      } else {
+        const credential = await getAdminCredential(database, username);
+        const verificationCredential = credential ?? {
+          username: '__invalid__',
+          passwordHash: DEFAULT_ADMIN_PASSWORD_HASH,
+        };
+        const [usernameMatches, passwordMatches] = await Promise.all([
+          secureEqual(username, credential?.username ?? '__invalid__'),
+          verifyAdminLoginPassword(password, verificationCredential, bootstrapAdminPassword),
+        ]);
+
+        if (credential && usernameMatches && passwordMatches) {
+          const { token, session } = await signJwt({ username: credential.username, role: credential.role }, authSecret);
+          await Promise.all([
+            sessions.put(
+              `admin-session:${session.jti}`,
+              JSON.stringify({
+                username: session.username,
+                role: session.role,
+                must_change_password: credential.mustChangePassword,
+                credential_updated_at: credential.updatedAt,
+              }),
+              { expirationTtl: 60 * 60 * 24 },
+            ),
+            sessions.delete(ipAttemptKey),
+            sessions.delete(userAttemptKey),
+          ]);
+          Astro.cookies.set(SESSION_COOKIE_NAME, token, {
+            path: '/',
+            httpOnly: true,
+            secure: Astro.url.protocol === 'https:',
+            sameSite: 'lax',
+            maxAge: 60 * 60 * 24,
+          });
+          return Astro.redirect(credential.mustChangePassword ? '/admin/profile' : '/admin/dashboard');
+        }
+
+        await Promise.all([
+          sessions.put(ipAttemptKey, String(ipAttempts + 1), { expirationTtl: 15 * 60 }),
+          sessions.put(userAttemptKey, String(userAttempts + 1), { expirationTtl: 15 * 60 }),
+        ]);
         Astro.response.status = 401;
         errorMessage = 'Username atau password salah.';
-      } else {
-        const attempts = Number(await sessions.get(attemptKey)) || 0;
-        if (attempts >= 5) {
-          Astro.response.status = 429;
-          errorMessage = 'Terlalu banyak percobaan. Coba kembali dalam 15 menit.';
-        } else {
-          const [usernameMatches, passwordMatches] = await Promise.all([
-            secureEqual(username, credential.username),
-            verifyAdminLoginPassword(password, credential, bootstrapAdminPassword),
-          ]);
-
-          if (usernameMatches && passwordMatches) {
-            const { token, session } = await signJwt({ username: credential.username, role: credential.role }, authSecret);
-            await Promise.all([
-              sessions.put(
-                `admin-session:${session.jti}`,
-                JSON.stringify({
-                  username: session.username,
-                  role: session.role,
-                  must_change_password: credential.mustChangePassword,
-                  credential_updated_at: credential.updatedAt,
-                }),
-                { expirationTtl: 60 * 60 * 24 },
-              ),
-              sessions.delete(attemptKey),
-            ]);
-            Astro.cookies.set(SESSION_COOKIE_NAME, token, {
-              path: '/',
-              httpOnly: true,
-              secure: import.meta.env.PROD,
-              sameSite: 'lax',
-              maxAge: 60 * 60 * 24,
-            });
-            return Astro.redirect(credential.mustChangePassword ? '/admin/profile' : '/admin/dashboard');
-          }
-
-          await sessions.put(attemptKey, String(attempts + 1), { expirationTtl: 15 * 60 });
-          focusPassword = true;
-          errorMessage = 'Username atau password salah.';
-        }
       }
     }
   } catch (error) {
@@ -123,7 +135,9 @@ if (Astro.request.method === 'POST' && crossSiteLogin) {
     <div class="admin-login-card w-full max-w-sm rounded-2xl border border-white/70 bg-white/95 text-slate-950 shadow-2xl backdrop-blur-md">
       <!-- Header -->
       <div class="admin-login-header flex flex-col items-center px-6 pt-7 pb-3 text-center">
+        <h1 class="sr-only">Login AdsBookCMS - {tenantConfig.adminName}</h1>
         <img src="/images/logo.webp" alt="AdsBookCMS Logo" width="180" height="188" class="mx-auto mb-3 h-36 w-auto max-w-[220px] object-contain drop-shadow-md" />
+        <p class="text-sm font-semibold text-slate-600">{tenantConfig.adminName}</p>
       </div>
 
       <div class="p-6 pt-0">

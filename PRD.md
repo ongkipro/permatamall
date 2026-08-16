@@ -65,6 +65,7 @@ AdsBookCMS gives one merchant a complete direct-response storefront: catalog, la
 | REQ-16 | The system shall not emit aggregate ratings, review counts, or sold counts that are not derived from real recorded data. | **Violated** — fabricated values ship today; see `STATUS.md` §6 |
 | REQ-17 | Landing pages shall be composed from ordered sections stored in D1, editable in the admin, and reachable at the site root by slug. | Implemented |
 | REQ-18 | Legal and contact pages shall render the installed store's own identity and contact details, never another merchant's. | Implemented |
+| REQ-19 | A public product-detail lookup shall query only the matched product, its variants, and its published presentation content; an endpoint that also returns related products shall load the catalog at most once. | Implemented |
 
 ---
 
@@ -122,6 +123,7 @@ AdsBookCMS gives one merchant a complete direct-response storefront: catalog, la
 | REQ-54 | Google Consent Mode shall default to denied in regulated regions before the granted default is applied. | Implemented |
 | REQ-55 | A page interaction or an unqualified order shall never be reported as a Purchase. | Implemented |
 | REQ-56 | Product category taxonomy in the catalog feeds shall resolve to the correct Google product category for each item. | Partial — the handbag rule is both the first rule and the default, but matching is an unweighted keyword count over title *and* description with no minimum score, so a description mentioning unrelated keywords can outscore it |
+| REQ-57 | Browser/server product event `content_ids` and Google/Meta catalog item IDs shall use the same canonical positive D1 `products.id` value without padding or remapping. | Implemented |
 
 ---
 
@@ -135,6 +137,11 @@ AdsBookCMS gives one merchant a complete direct-response storefront: catalog, la
 | REQ-63 | The content workbench shall support manual drafting and AI-assisted generation from live catalog facts, with publication always explicit. | Implemented |
 | REQ-64 | Generated content shall never overwrite operational truth — price, stock, identifiers, activation, logistics, payment, credentials, or orders. | Implemented |
 | REQ-65 | The admin shell shall be identical across installs; only merchant identity, data, and provider configuration vary. | Implemented |
+| REQ-66 | Login failures shall be throttled by both source IP and normalized username before credential lookup, and unknown-user and wrong-password attempts shall expose the same response, focus, and password-verification work. | Implemented |
+| REQ-67 | The admin login panel shall expose one page heading, tenant identity, password-manager hints, accurate password-visibility state, a live submitting state, and keep the form operable in a 390px mobile viewport when the virtual keyboard reduces the visual viewport. | Implemented |
+| REQ-68 | A bootstrap administrator authenticated with `BOOTSTRAP_ADMIN_PASSWORD` shall be able to rotate that credential using the same current-password contract, clear `must_change_password`, and invalidate existing sessions. | Implemented |
+| REQ-69 | Logout shall remain idempotent for missing, malformed, expired, or revoked sessions: invalid cookie input shall degrade to an unauthenticated state and the logout endpoint shall still clear the browser cookie. | Implemented |
+| REQ-70 | The admin session cookie shall use its exact name, `HttpOnly`, `SameSite=Lax`, root path scope, and `Secure` whenever the login request uses HTTPS. | Implemented |
 
 ---
 

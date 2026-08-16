@@ -514,8 +514,8 @@ input[type="number"] {
   }
 
   .admin-login-stage {
-    align-items: flex-end;
-    padding: 1rem max(0.75rem, env(safe-area-inset-right)) max(1rem, env(safe-area-inset-bottom)) max(0.75rem, env(safe-area-inset-left));
+    align-items: flex-start;
+    padding: max(1rem, env(safe-area-inset-top)) max(0.75rem, env(safe-area-inset-right)) max(1rem, env(safe-area-inset-bottom)) max(0.75rem, env(safe-area-inset-left));
   }
 
   .admin-login-card {

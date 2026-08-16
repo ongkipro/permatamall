@@ -116,9 +116,10 @@ export async function updateAdminCredential(
   currentPassword: string,
   username: string,
   newPassword: string,
+  bootstrapPassword: string,
 ) {
   const current = await getAdminCredential(database, actorUsername);
-  if (!current || !(await verifyPasswordHash(currentPassword, current.passwordHash))) {
+  if (!current || !(await verifyAdminLoginPassword(currentPassword, current, bootstrapPassword))) {
     return { ok: false as const, error: 'Password saat ini salah.' };
   }
 

@@ -7,6 +7,7 @@ import {
   normalizeAdminUsername,
   validateAdminUsername,
   validateNewAdminPassword,
+  updateAdminCredential,
   verifyAdminLoginPassword,
 } from './admin-credentials.ts';
 import { canAccessAdminRoute, isAdminRole, verifyPasswordHash, type AdminRole } from './auth.ts';
@@ -29,12 +30,65 @@ test('default admin credential fails closed without a configured bootstrap passw
   );
 });
 
-test('new password hashes use random salts and verify through the login contract', async () => {
+test('default admin rotates with the configured bootstrap password', async () => {
+  const row = {
+    id: 1,
+    username: 'admin',
+    display_name: 'Admin',
+    email: null,
+    role: 'owner',
+    password_hash: DEFAULT_ADMIN_PASSWORD_HASH,
+    must_change_password: 1,
+    updated_at: '2026-08-16T00:00:00.000Z',
+  };
+  let updateValues: unknown[] | null = null;
+  const database = {
+    prepare(sql: string) {
+      return {
+        bind(...values: unknown[]) {
+          return {
+            async first() {
+              return sql.includes('SELECT') ? row : null;
+            },
+            async run() {
+              updateValues = values;
+              return { meta: { changes: 1 } };
+            },
+          };
+        },
+      };
+    },
+  } as unknown as D1Database;
+
+  const result = await updateAdminCredential(
+    database,
+    'admin',
+    'bootstrap-secret-1234',
+    'paduka.admin',
+    'safe-password-123',
+    'bootstrap-secret-1234',
+  );
+
+  assert.equal(result.ok, true);
+  assert.equal(updateValues?.[0], 'paduka.admin');
+  assert.equal(updateValues?.[3], 1);
+  assert.equal(updateValues?.[4], DEFAULT_ADMIN_PASSWORD_HASH);
+});
+
+test('new password hashes use random salts and the bootstrap secret stops working after rotation', async () => {
   const first = await hashAdminPassword('safe-password-123');
   const second = await hashAdminPassword('safe-password-123');
   assert.notEqual(first, second);
   assert.equal(await verifyPasswordHash('safe-password-123', first), true);
   assert.equal(await verifyPasswordHash('safe-password-124', first), false);
+  assert.equal(
+    await verifyAdminLoginPassword(
+      'bootstrap-secret-1234',
+      { username: 'admin', passwordHash: first },
+      'bootstrap-secret-1234',
+    ),
+    false,
+  );
 });
 
 test('admin usernames are normalized and restricted to URL-safe characters', () => {
