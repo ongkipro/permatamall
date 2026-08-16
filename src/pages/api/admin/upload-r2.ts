@@ -1,40 +1,15 @@
 import type { APIRoute } from "astro";
 import { jsonError, jsonOk } from "../../../lib/api";
 import { getRuntimeEnv } from "../../../lib/env";
+import {
+  hasWebpSignature,
+  MAX_PRODUCT_IMAGE_SIZE,
+} from "../../../lib/product-image";
 
 export const prerender = false;
 
-const MAX_FILE_SIZE = 2 * 1024 * 1024;
-const MAX_REQUEST_SIZE = MAX_FILE_SIZE + 64 * 1024;
+const MAX_REQUEST_SIZE = MAX_PRODUCT_IMAGE_SIZE + 64 * 1024;
 const MAX_UPLOADS_PER_HOUR = 20;
-const EXTENSION_BY_TYPE: Record<string, string> = {
-  "image/jpeg": "jpg",
-  "image/png": "png",
-  "image/webp": "webp",
-  "image/gif": "gif",
-  "image/avif": "avif",
-};
-
-function matchesSignature(type: string, bytes: Uint8Array) {
-  const ascii = (start: number, length: number) =>
-    String.fromCharCode(...bytes.slice(start, start + length));
-  if (type === "image/jpeg")
-    return bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff;
-  if (type === "image/png")
-    return (
-      bytes.length >= 8 &&
-      [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a].every(
-        (value, index) => bytes[index] === value,
-      )
-    );
-  if (type === "image/gif")
-    return ascii(0, 6) === "GIF87a" || ascii(0, 6) === "GIF89a";
-  if (type === "image/webp")
-    return ascii(0, 4) === "RIFF" && ascii(8, 4) === "WEBP";
-  if (type === "image/avif")
-    return ascii(4, 4) === "ftyp" && ["avif", "avis"].includes(ascii(8, 4));
-  return false;
-}
 
 export const POST: APIRoute = async ({ request, locals }) => {
   try {
@@ -64,32 +39,28 @@ export const POST: APIRoute = async ({ request, locals }) => {
     if (!file) {
       return jsonError("File upload is required", 400);
     }
-    if (!(file.type in EXTENSION_BY_TYPE)) {
-      return jsonError(
-        "Tipe file tidak didukung. Gunakan JPG, PNG, WEBP, GIF, atau AVIF.",
-        415,
-      );
+    if (file.type !== "image/webp") {
+      return jsonError("File upload harus berformat WEBP.", 415);
     }
     if (file.size <= 0) {
       return jsonError("File upload tidak boleh kosong.", 400);
     }
-    if (file.size > MAX_FILE_SIZE) {
+    if (file.size > MAX_PRODUCT_IMAGE_SIZE) {
       return jsonError("Ukuran file maksimal 2 MB.", 413);
     }
 
     const bytes = new Uint8Array(await file.arrayBuffer());
-    if (!matchesSignature(file.type, bytes)) {
+    if (!hasWebpSignature(bytes)) {
       return jsonError(
         "Isi file tidak sesuai dengan tipe gambar yang dipilih.",
         415,
       );
     }
 
-    const extension = EXTENSION_BY_TYPE[file.type];
-    const fileName = `uploads/${new Date().toISOString().slice(0, 10)}/${crypto.randomUUID()}.${extension}`;
+    const fileName = `uploads/${new Date().toISOString().slice(0, 10)}/${crypto.randomUUID()}.webp`;
     await bucket.put(fileName, bytes, {
       httpMetadata: {
-        contentType: file.type,
+        contentType: "image/webp",
         cacheControl: "public, max-age=31536000, immutable",
         contentDisposition: "inline",
       },

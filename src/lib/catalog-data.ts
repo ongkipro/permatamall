@@ -20,6 +20,11 @@ export interface CatalogVariantRow {
   stock?: number | null;
 }
 
+export interface CatalogImageRow {
+  product_id: number;
+  url: string;
+}
+
 function variantLabel(productTitle: string, variantTitle: string): string {
   const cleanVariant = variantTitle.trim();
   return cleanVariant || productTitle.trim();
@@ -39,7 +44,8 @@ function getCatalogProductDetails(title: string, category: string) {
 export function mergeStorefrontCatalog(
   editorialProducts: Product[],
   productRows: CatalogProductRow[],
-  variantRows: CatalogVariantRow[]
+  variantRows: CatalogVariantRow[],
+  imageRows: CatalogImageRow[] = [],
 ) {
   const variantsByProduct = new Map<number, CatalogVariantRow[]>();
   for (const variant of variantRows) {
@@ -47,6 +53,13 @@ export function mergeStorefrontCatalog(
     const existing = variantsByProduct.get(variant.product_id) ?? [];
     existing.push(variant);
     variantsByProduct.set(variant.product_id, existing);
+  }
+
+  const imagesByProduct = new Map<number, string[]>();
+  for (const image of imageRows) {
+    const existing = imagesByProduct.get(image.product_id) ?? [];
+    existing.push(image.url);
+    imagesByProduct.set(image.product_id, existing);
   }
 
   const matchedProductIds = new Set<string>();
@@ -108,10 +121,10 @@ export function mergeStorefrontCatalog(
     const firstVariant = variants[0];
     const image = matchedRow?.image_url || editorialProduct.image || editorialProduct.heroImage;
 
-    const baseDir = image.endsWith("/1.webp") ? image.slice(0, -7) : null;
-    const galleryImages = baseDir
-      ? [1, 2, 3, 4, 5, 6, 7].map((num) => `${baseDir}/${num}.webp`)
-      : editorialProduct.images || [image];
+    const galleryImages =
+      (matchedRow ? imagesByProduct.get(matchedRow.id) : undefined) ??
+      editorialProduct.images ??
+      [image];
 
     return [
       {
@@ -157,6 +170,7 @@ export function mergeStorefrontCatalog(
 
     const firstVariant = variants[0];
     const image = product.image_url || "/images/logo.webp";
+    const images = imagesByProduct.get(product.id) ?? (product.image_url ? [product.image_url] : []);
 
     const categoryLabel = product.category?.trim() || "Produk";
     const details = getCatalogProductDetails(productName, categoryLabel);
@@ -175,7 +189,7 @@ export function mergeStorefrontCatalog(
       ...(firstVariant.comparePrice ? { comparePrice: firstVariant.comparePrice } : {}),
       image,
       heroImage: image,
-      images: [image],
+      images,
       tag: categoryLabel,
       category: categoryLabel,
       relatedCategories: [categoryLabel],

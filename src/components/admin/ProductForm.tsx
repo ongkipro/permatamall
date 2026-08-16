@@ -16,7 +16,7 @@ type ProductPayload = {
   title: string;
   slug: string;
   category: string;
-  image_url: string;
+  image_urls: string[];
   is_active: boolean;
   variants: Array<{
     id?: number | string;
@@ -43,6 +43,7 @@ type ProductResponse = {
   slug: string;
   category: string | null;
   image_url: string | null;
+  image_urls: string[];
   is_active: number | boolean;
   variants: ProductVariantResponse[];
 };
@@ -70,7 +71,7 @@ export function ProductForm({ productId }: { productId?: string }) {
   const [slug, setSlug] = useState("");
   const category = "Umum";
   const [active, setActive] = useState(!editing);
-  const [imageUrl, setImageUrl] = useState("");
+  const [imageUrls, setImageUrls] = useState<string[]>([]);
   const [uploading, setUploading] = useState(false);
   const [variants, setVariants] = useState<Variant[]>(() => [
     emptyVariant("new-0"),
@@ -99,7 +100,13 @@ export function ProductForm({ productId }: { productId?: string }) {
       .then((product) => {
         setTitle(product.title || "");
         setSlug(product.slug || "");
-        setImageUrl(product.image_url || "");
+        setImageUrls(
+          product.image_urls?.length
+            ? product.image_urls
+            : product.image_url
+              ? [product.image_url]
+              : [],
+        );
         setActive(product.is_active !== undefined ? Boolean(product.is_active) : true);
         setVariants(
           Array.isArray(product.variants) && product.variants.length
@@ -148,6 +155,7 @@ export function ProductForm({ productId }: { productId?: string }) {
   };
 
   const MAX_IMAGE_SIZE = 2 * 1024 * 1024;
+  const MAX_IMAGES = 12;
 
   const convertImageToWebP = (file: File): Promise<File> => {
     return new Promise((resolve, reject) => {
@@ -190,29 +198,47 @@ export function ProductForm({ productId }: { productId?: string }) {
   };
 
   const uploadImage = async (file: File) => {
-    if (file.size > MAX_IMAGE_SIZE) {
+    const webpFile = await convertImageToWebP(file);
+    const formData = new FormData();
+    formData.set("file", webpFile);
+    const response = await fetch("/api/admin/upload-r2", {
+      method: "POST",
+      body: formData,
+    });
+    const result = await response.json().catch(() => ({}));
+    if (!response.ok || !result.success || !result.url) {
+      throw new Error(result.error || "Gambar gagal diunggah.");
+    }
+    return String(result.url);
+  };
+
+  const uploadImages = async (files: File[]) => {
+    if (files.length === 0) return;
+    if (imageUrls.length + files.length > MAX_IMAGES) {
       setStatusTone("error");
-      setStatus("Ukuran file maksimal 2 MB.");
+      setStatus(`Produk maksimal memiliki ${MAX_IMAGES} gambar.`);
       return;
     }
+    if (files.some((file) => file.size > MAX_IMAGE_SIZE)) {
+      setStatusTone("error");
+      setStatus("Ukuran setiap file maksimal 2 MB.");
+      return;
+    }
+
     setUploading(true);
     setStatusTone("idle");
-    setStatus("Mengonversi & mengunggah gambar WebP…");
+    setStatus(`Mengunggah ${files.length} gambar WebP…`);
+    let uploaded = 0;
     try {
-      const webpFile = await convertImageToWebP(file);
-      const formData = new FormData();
-      formData.set("file", webpFile);
-      const response = await fetch("/api/admin/upload-r2", {
-        method: "POST",
-        body: formData,
-      });
-      const result = await response.json().catch(() => ({}));
-      if (!response.ok || !result.success || !result.url) {
-        throw new Error(result.error || "Gambar gagal diunggah.");
+      for (const file of files) {
+        const url = await uploadImage(file);
+        setImageUrls((current) => [...current, url]);
+        uploaded += 1;
       }
-      setImageUrl(String(result.url));
       setStatusTone("success");
-      setStatus("Gambar berhasil diunggah dalam format WebP.");
+      setStatus(
+        `${uploaded} gambar berhasil diunggah dalam format WebP.`,
+      );
     } catch (reason) {
       setStatusTone("error");
       setStatus(
@@ -221,6 +247,16 @@ export function ProductForm({ productId }: { productId?: string }) {
     } finally {
       setUploading(false);
     }
+  };
+
+  const moveImage = (index: number, offset: -1 | 1) => {
+    setImageUrls((current) => {
+      const target = index + offset;
+      if (target < 0 || target >= current.length) return current;
+      const next = [...current];
+      [next[index], next[target]] = [next[target]!, next[index]!];
+      return next;
+    });
   };
   const submit = async (
     event: SyntheticEvent<HTMLFormElement, SubmitEvent>,
@@ -256,7 +292,7 @@ export function ProductForm({ productId }: { productId?: string }) {
       title: title.trim(),
       slug: slug.trim(),
       category: category.trim(),
-      image_url: imageUrl,
+      image_urls: imageUrls,
       is_active: active,
       variants: payloadVariants,
     };
@@ -356,55 +392,104 @@ export function ProductForm({ productId }: { productId?: string }) {
               </span>
             </label>
             <div className="md:col-span-2">
-              <label
-                htmlFor="product-image"
-                className="mb-1.5 block text-xs font-black text-slate-700"
-              >
-                Foto produk
-              </label>
-              <div className="grid gap-3 rounded-xl border border-slate-200 p-4 sm:grid-cols-[112px_1fr] sm:items-center">
-                <div className="flex aspect-square items-center justify-center overflow-hidden bg-slate-50">
-                  {imageUrl ? (
-                    <img
-                      src={imageUrl}
-                      alt={`Pratinjau ${title || "produk"}`}
-                      className="h-full w-full object-contain"
-                    />
-                  ) : (
-                    <span className="px-2 text-center text-[11px] font-bold text-slate-400">
-                      Belum ada foto
-                    </span>
-                  )}
-                </div>
-                <div>
+              <div className="mb-1.5 flex items-center justify-between gap-3">
+                <label
+                  htmlFor="product-images"
+                  className="text-xs font-black text-slate-700"
+                >
+                  Foto produk
+                </label>
+                <span className="text-[11px] font-bold text-slate-500">
+                  {imageUrls.length}/{MAX_IMAGES}
+                </span>
+              </div>
+              <div className="rounded-xl border border-slate-200 p-4">
+                {imageUrls.length > 0 ? (
+                  <ul
+                    className="grid grid-cols-2 gap-3 sm:grid-cols-3"
+                    aria-label="Urutan foto produk"
+                  >
+                    {imageUrls.map((url, index) => (
+                      <li
+                        key={`${url}-${index}`}
+                        className="overflow-hidden rounded-lg border border-slate-200 bg-slate-50"
+                      >
+                        <div className="relative aspect-square">
+                          <img
+                            src={url}
+                            alt={`Foto ${index + 1} ${title || "produk"}`}
+                            className="h-full w-full object-contain"
+                          />
+                          {index === 0 && (
+                            <span className="absolute left-2 top-2 rounded bg-slate-950 px-2 py-1 text-[10px] font-black text-white">
+                              Utama
+                            </span>
+                          )}
+                        </div>
+                        <div className="grid grid-cols-3 border-t border-slate-200 bg-white">
+                          <button
+                            type="button"
+                            disabled={index === 0 || uploading}
+                            onClick={() => moveImage(index, -1)}
+                            aria-label={`Geser foto ${index + 1} ke kiri`}
+                            className="min-h-11 border-r border-slate-200 text-sm font-black text-slate-700 disabled:text-slate-300"
+                          >
+                            ←
+                          </button>
+                          <button
+                            type="button"
+                            disabled={index === imageUrls.length - 1 || uploading}
+                            onClick={() => moveImage(index, 1)}
+                            aria-label={`Geser foto ${index + 1} ke kanan`}
+                            className="min-h-11 border-r border-slate-200 text-sm font-black text-slate-700 disabled:text-slate-300"
+                          >
+                            →
+                          </button>
+                          <button
+                            type="button"
+                            disabled={uploading}
+                            onClick={() =>
+                              setImageUrls((current) =>
+                                current.filter((_, itemIndex) => itemIndex !== index),
+                              )
+                            }
+                            aria-label={`Hapus foto ${index + 1}`}
+                            className="min-h-11 text-xs font-black text-rose-700 disabled:text-slate-300"
+                          >
+                            Hapus
+                          </button>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <div className="flex min-h-28 items-center justify-center rounded-lg bg-slate-50 px-4 text-center text-xs font-bold text-slate-400">
+                    Belum ada foto produk
+                  </div>
+                )}
+
+                <div className="mt-4">
                   <Input
-                    id="product-image"
-                    aria-describedby="product-image-hint"
+                    id="product-images"
+                    aria-describedby="product-images-hint"
                     type="file"
                     accept="image/jpeg,image/png,image/webp,image/gif,image/avif"
-                    disabled={uploading}
+                    multiple
+                    disabled={uploading || imageUrls.length >= MAX_IMAGES}
                     onChange={(event) => {
-                      const file = event.target.files?.[0];
-                      if (file) void uploadImage(file);
+                      const files = Array.from(event.target.files ?? []);
+                      if (files.length) void uploadImages(files);
                       event.target.value = "";
                     }}
                     className="block min-h-11 w-full border-slate-300 bg-slate-50 text-base text-slate-700 focus-visible:border-emerald-700 focus-visible:ring-emerald-700/20 file:mr-3 file:min-h-11 file:rounded-lg file:border-0 file:bg-emerald-700 file:px-4 file:text-xs file:font-bold file:text-white file:hover:bg-emerald-800 md:text-sm"
                   />
                   <p
-                    id="product-image-hint"
+                    id="product-images-hint"
                     className="mt-2 text-[11px] leading-5 text-slate-500"
                   >
-                    Format WebP (ototmatis dikonversi & dibuang file originalnya). Maksimal 2 MB.
+                    Pilih hingga {MAX_IMAGES} gambar. Setiap file maksimal 2 MB,
+                    dikonversi ke WebP, dan gambar pertama menjadi foto utama.
                   </p>
-                  {imageUrl && (
-                    <button
-                      type="button"
-                      onClick={() => setImageUrl("")}
-                      className="mt-2 min-h-11 text-xs font-black text-rose-700 hover:underline"
-                    >
-                      Hapus foto dari produk
-                    </button>
-                  )}
                 </div>
               </div>
             </div>
@@ -566,10 +651,10 @@ export function ProductForm({ productId }: { productId?: string }) {
       </div>
       <aside className="xl:sticky xl:top-6 xl:self-start">
         <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
-          {imageUrl && (
+          {imageUrls[0] && (
             <div className="flex aspect-[16/9] items-center justify-center border-b border-slate-100 bg-slate-50 p-4">
               <img
-                src={imageUrl}
+                src={imageUrls[0]}
                 alt=""
                 className="h-full w-full object-contain"
               />
@@ -619,7 +704,7 @@ export function ProductForm({ productId }: { productId?: string }) {
               <div className="rounded-lg bg-slate-50 p-3">
                 <dt className="text-slate-500">Foto</dt>
                 <dd className="mt-1 font-black text-slate-900">
-                  {imageUrl ? "Tersimpan" : "Belum ada"}
+                  {imageUrls.length > 0 ? `${imageUrls.length} tersimpan` : "Belum ada"}
                 </dd>
               </div>
             </dl>

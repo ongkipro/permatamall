@@ -2,6 +2,7 @@ import type { Product } from "../data/products.ts";
 import { getRuntimeEnv } from "./env.ts";
 import { mergeStorefrontCatalog } from "./catalog-data.ts";
 import type {
+  CatalogImageRow,
   CatalogProductRow,
   CatalogVariantRow,
 } from "./catalog-data.ts";
@@ -13,7 +14,7 @@ import {
 import type { ProductContent } from "./storefront-content.ts";
 
 async function loadCatalogRows(database: D1Database) {
-  const [products, variants] = await database.batch([
+  const [products, variants, images] = await database.batch([
     database.prepare(`
       SELECT id, title, slug, category, image_url, is_active, created_at
       FROM products
@@ -24,11 +25,17 @@ async function loadCatalogRows(database: D1Database) {
       FROM product_variants
       ORDER BY product_id ASC, id ASC
     `),
+    database.prepare(`
+      SELECT product_id, url
+      FROM product_images
+      ORDER BY product_id ASC, sort_order ASC, id ASC
+    `),
   ]);
 
   return {
     products: (products.results ?? []) as CatalogProductRow[],
     variants: (variants.results ?? []) as CatalogVariantRow[],
+    images: (images.results ?? []) as CatalogImageRow[],
   };
 }
 
@@ -39,7 +46,7 @@ async function loadLocalDevCatalogRows(key?: string) {
     const { globSync } = await import("fs");
     const files = globSync(".wrangler/state/v3/d1/miniflare-D1DatabaseObject/*.sqlite");
     const dbPath = files.find((f) => !f.endsWith("-shm") && !f.endsWith("-wal") && !f.includes("metadata"));
-    if (!dbPath) return { products: [], variants: [] };
+    if (!dbPath) return { products: [], variants: [], images: [] };
     const db = new DatabaseSync(dbPath);
 
     if (key !== undefined) {
@@ -50,7 +57,7 @@ async function loadLocalDevCatalogRows(key?: string) {
         WHERE ${queryById ? "id" : "slug"} = ? AND is_active = 1
         LIMIT 1
       `).get(key) as unknown as CatalogProductRow | undefined;
-      if (!product) return { products: [], variants: [] };
+      if (!product) return { products: [], variants: [], images: [] };
 
       const variants = db.prepare(`
         SELECT id, product_id, sku, title, price, compare_price, stock
@@ -58,7 +65,13 @@ async function loadLocalDevCatalogRows(key?: string) {
         WHERE product_id = ?
         ORDER BY id ASC
       `).all(product.id) as unknown as CatalogVariantRow[];
-      return { products: [product], variants };
+      const images = db.prepare(`
+        SELECT product_id, url
+        FROM product_images
+        WHERE product_id = ?
+        ORDER BY sort_order ASC, id ASC
+      `).all(product.id) as unknown as CatalogImageRow[];
+      return { products: [product], variants, images };
     }
 
     const products = db.prepare(`
@@ -71,9 +84,14 @@ async function loadLocalDevCatalogRows(key?: string) {
       FROM product_variants
       ORDER BY product_id ASC, id ASC
     `).all() as unknown as CatalogVariantRow[];
-    return { products, variants };
+    const images = db.prepare(`
+      SELECT product_id, url
+      FROM product_images
+      ORDER BY product_id ASC, sort_order ASC, id ASC
+    `).all() as unknown as CatalogImageRow[];
+    return { products, variants, images };
   } catch {
-    return { products: [], variants: [] };
+    return { products: [], variants: [], images: [] };
   }
 }
 
@@ -81,6 +99,7 @@ function mergeCatalogRows(
   rows: {
     products: CatalogProductRow[];
     variants: CatalogVariantRow[];
+    images: CatalogImageRow[];
   },
   runtimeContent: Map<string, ProductContent>,
 ) {
@@ -88,7 +107,12 @@ function mergeCatalogRows(
     rows.products,
     runtimeContent,
   );
-  return mergeStorefrontCatalog(presentations, rows.products, rows.variants);
+  return mergeStorefrontCatalog(
+    presentations,
+    rows.products,
+    rows.variants,
+    rows.images,
+  );
 }
 
 async function loadCatalogProductRows(database: D1Database, key: string) {
@@ -112,6 +136,14 @@ async function loadCatalogProductRows(database: D1Database, key: string) {
       ORDER BY id ASC
     `)
     .bind(product.id);
+  const imageStatement = database
+    .prepare(`
+      SELECT product_id, url
+      FROM product_images
+      WHERE product_id = ?
+      ORDER BY sort_order ASC, id ASC
+    `)
+    .bind(product.id);
   const contentStatement = database
     .prepare(`
       SELECT content_key, published_json
@@ -123,13 +155,16 @@ async function loadCatalogProductRows(database: D1Database, key: string) {
     .bind(`product:${product.id}`);
 
   let variants: CatalogVariantRow[];
+  let images: CatalogImageRow[];
   const runtimeContent = new Map<string, ProductContent>();
   try {
-    const [variantResult, contentResult] = await database.batch([
+    const [variantResult, imageResult, contentResult] = await database.batch([
       variantStatement,
+      imageStatement,
       contentStatement,
     ]);
     variants = (variantResult.results ?? []) as CatalogVariantRow[];
+    images = (imageResult.results ?? []) as CatalogImageRow[];
 
     const contentRow = (contentResult.results ?? [])[0] as
       | { content_key: string; published_json: string }
@@ -145,12 +180,14 @@ async function loadCatalogProductRows(database: D1Database, key: string) {
     console.error("storefront-product-content-load", error);
     const variantResult = await variantStatement.all<CatalogVariantRow>();
     variants = variantResult.results ?? [];
+    images = [];
   }
 
   return {
     rows: {
       products: [product],
       variants,
+      images,
     },
     runtimeContent,
   };

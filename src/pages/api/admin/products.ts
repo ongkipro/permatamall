@@ -36,6 +36,11 @@ type DbVariantRow = {
   stock: number | null;
 };
 
+type DbImageRow = {
+  product_id: number;
+  url: string;
+};
+
 async function loadProducts(
   database: D1Database,
   productId?: number,
@@ -70,17 +75,28 @@ async function loadProducts(
 
   const productIds = products.map((product) => product.id);
   const placeholders = productIds.map(() => "?").join(", ");
-  const variantResult = await database
-    .prepare(
-      `
-    SELECT id, product_id, sku, title, price, compare_price, weight_grams, stock
-    FROM product_variants
-    WHERE product_id IN (${placeholders})
-    ORDER BY product_id ASC, id ASC
-  `,
-    )
-    .bind(...productIds)
-    .all();
+  const [variantResult, imageResult] = await database.batch([
+    database
+      .prepare(
+        `
+      SELECT id, product_id, sku, title, price, compare_price, weight_grams, stock
+      FROM product_variants
+      WHERE product_id IN (${placeholders})
+      ORDER BY product_id ASC, id ASC
+    `,
+      )
+      .bind(...productIds),
+    database
+      .prepare(
+        `
+      SELECT product_id, url
+      FROM product_images
+      WHERE product_id IN (${placeholders})
+      ORDER BY product_id ASC, sort_order ASC, id ASC
+    `,
+      )
+      .bind(...productIds),
+  ]);
 
   const variantsByProduct = new Map<number, DbVariantRow[]>();
   for (const row of (variantResult.results ?? []) as DbVariantRow[]) {
@@ -92,12 +108,23 @@ async function loadProducts(
     }
   }
 
+  const imagesByProduct = new Map<number, string[]>();
+  for (const row of (imageResult.results ?? []) as DbImageRow[]) {
+    const images = imagesByProduct.get(row.product_id);
+    if (images) {
+      images.push(row.url);
+    } else {
+      imagesByProduct.set(row.product_id, [row.url]);
+    }
+  }
+
   return products.map((product) => ({
     id: product.id,
     title: product.title,
     slug: product.slug,
     category: product.category ?? "Umum",
     image_url: product.image_url,
+    image_urls: imagesByProduct.get(product.id) ?? [],
     is_active: Boolean(product.is_active),
     created_at: product.created_at,
     variants: (variantsByProduct.get(product.id) ?? []).map((variant) => ({
@@ -215,7 +242,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
           parsed.value.slug,
           parsed.value.category,
           parsed.value.is_active ? 1 : 0,
-          parsed.value.image_url,
+          parsed.value.image_urls[0] ?? null,
           createdAt,
         ),
       ...parsed.value.variants.map((variant) =>
@@ -237,6 +264,16 @@ export const POST: APIRoute = async ({ request, locals }) => {
             variant.weight_grams,
             variant.stock,
           ),
+      ),
+      ...parsed.value.image_urls.map((url, sortOrder) =>
+        db
+          .prepare(
+            `
+        INSERT INTO product_images (product_id, url, sort_order)
+        VALUES (?, ?, ?)
+      `,
+          )
+          .bind(productId, url, sortOrder),
       ),
     ];
 
@@ -383,9 +420,12 @@ export const PATCH: APIRoute = async ({ request, locals }) => {
           parsed.value.slug,
           parsed.value.category,
           parsed.value.is_active ? 1 : 0,
-          parsed.value.image_url,
+          parsed.value.image_urls[0] ?? null,
           parsed.value.id,
         ),
+      db
+        .prepare("DELETE FROM product_images WHERE product_id = ?")
+        .bind(parsed.value.id),
       ...parsed.value.variants.map((variant) => {
         if (variant.id !== undefined) {
           return db
@@ -434,6 +474,16 @@ export const PATCH: APIRoute = async ({ request, locals }) => {
           )
           .bind(variantId, parsed.value.id),
       ),
+      ...parsed.value.image_urls.map((url, sortOrder) =>
+        db
+          .prepare(
+            `
+          INSERT INTO product_images (product_id, url, sort_order)
+          VALUES (?, ?, ?)
+        `,
+          )
+          .bind(parsed.value.id, url, sortOrder),
+      ),
     ];
 
     await db.batch(statements);
@@ -447,9 +497,6 @@ export const PATCH: APIRoute = async ({ request, locals }) => {
     return jsonError("Gagal memperbarui produk.", 500);
   }
 };
-export const PUT = PATCH;
-
-
 export const DELETE: APIRoute = async ({ locals, url }) => {
   const database = getRuntimeEnv(locals)?.OMS_DB;
   if (!database || typeof database !== "object") {

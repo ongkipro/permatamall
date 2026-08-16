@@ -1,6 +1,9 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { deleteCatalogProduct } from "./product-mutation.ts";
+import {
+  deleteCatalogProduct,
+  parseProductMutationPayload,
+} from "./product-mutation.ts";
 
 type MockStatement = {
   sql: string;
@@ -43,6 +46,80 @@ function createDatabase(options: { exists: boolean; referenceCount: number }) {
   } as unknown as D1Database;
   return { database, batches };
 }
+
+const validProductPayload = {
+  title: "Tas Kanvas",
+  slug: "tas-kanvas",
+  category: "Tas",
+  image_urls: [
+    "/assets/uploads/tas-front.webp",
+    "/assets/uploads/tas-side.webp",
+  ],
+  is_active: true,
+  variants: [
+    {
+      sku: "TAS-HITAM",
+      title: "Hitam",
+      price: 125_000,
+      compare_price: 150_000,
+      weight_grams: 500,
+      stock: 10,
+    },
+  ],
+};
+
+test("product mutation preserves ordered image URLs", () => {
+  const result = parseProductMutationPayload(validProductPayload, false);
+  assert.ok("value" in result);
+  assert.deepEqual(result.value.image_urls, validProductPayload.image_urls);
+});
+
+test("product mutation rejects excessive and duplicate image lists", () => {
+  const excessive = parseProductMutationPayload(
+    {
+      ...validProductPayload,
+      image_urls: Array.from(
+        { length: 13 },
+        (_, index) => `/assets/uploads/tas-${index}.webp`,
+      ),
+    },
+    false,
+  );
+  assert.deepEqual(excessive, {
+    error: "Produk maksimal memiliki 12 gambar.",
+  });
+
+  const duplicate = parseProductMutationPayload(
+    {
+      ...validProductPayload,
+      image_urls: [
+        "/assets/uploads/tas.webp",
+        "/assets/uploads/tas.webp",
+      ],
+    },
+    false,
+  );
+  assert.deepEqual(duplicate, {
+    error: "Gambar produk tidak boleh duplikat.",
+  });
+});
+
+test("product mutation rejects image paths outside managed assets", () => {
+  for (const imageUrl of [
+    "https://example.com/image.webp",
+    "/assets/uploads/../../private.webp",
+    "/assets/uploads/image.webp?variant=1",
+    "/assets\\uploads\\image.webp",
+  ]) {
+    assert.deepEqual(
+      parseProductMutationPayload(
+        { ...validProductPayload, image_urls: [imageUrl] },
+        false,
+      ),
+      { error: "URL gambar produk tidak valid." },
+    );
+  }
+});
 
 test("no product id is exempt from deletion", async () => {
   // 10001 used to be an un-deletable "canonical sample". It is an ordinary

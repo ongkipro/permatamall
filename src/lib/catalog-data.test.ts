@@ -142,7 +142,15 @@ test("custom D1 products created manually without editorial match are synthesize
     },
   ];
 
-  const products = mergeStorefrontCatalog([], [customProductRow], customVariantRows);
+  const products = mergeStorefrontCatalog(
+    [],
+    [customProductRow],
+    customVariantRows,
+    [
+      { product_id: 50001, url: "/uploads/pupuk-front.webp" },
+      { product_id: 50001, url: "/uploads/pupuk-side.webp" },
+    ],
+  );
   assert.equal(products.length, 1);
   assert.equal(products[0].productId, "50001");
   assert.equal(products[0].productName, "Pupuk Organik Super");
@@ -151,7 +159,10 @@ test("custom D1 products created manually without editorial match are synthesize
   assert.equal(products[0].variants[0].label, "1 Liter");
   assert.equal(products[0].headline, "Pupuk Organik Super");
   assert.equal(products[0].seoTitle, "Pupuk Organik Super");
-  assert.deepEqual(products[0].images, ["/uploads/pupuk.webp"]);
+  assert.deepEqual(products[0].images, [
+    "/uploads/pupuk-front.webp",
+    "/uploads/pupuk-side.webp",
+  ]);
   assert.deepEqual(products[0].benefits, []);
   assert.deepEqual(products[0].keyPoints, []);
   assert.deepEqual(products[0].idealFor, []);

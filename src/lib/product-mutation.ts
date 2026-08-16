@@ -1,4 +1,4 @@
-
+const MAX_IMAGES = 12;
 const MAX_VARIANTS = 200;
 export function createCatalogProductId() {
   const values = new Uint32Array(1);
@@ -12,7 +12,7 @@ export type ProductMutationPayload = {
   slug?: unknown;
   category?: unknown;
   is_active?: unknown;
-  image_url?: unknown;
+  image_urls?: unknown;
   variants?: unknown;
 };
 
@@ -84,7 +84,7 @@ type ParsedProduct = {
   title: string;
   slug: string;
   category: string;
-  image_url: string | null;
+  image_urls: string[];
   is_active: boolean;
   variants: ParsedVariant[];
 };
@@ -93,6 +93,21 @@ type ParseResult<T> = { value: T } | { error: string };
 
 function clean(value: unknown, maxLength: number) {
   return typeof value === "string" ? value.trim().slice(0, maxLength) : "";
+}
+
+function isAllowedProductImageUrl(value: string) {
+  if (
+    !value.startsWith("/assets/uploads/") &&
+    !value.startsWith("/images/")
+  ) {
+    return false;
+  }
+  if (value.includes("\\")) return false;
+  try {
+    return new URL(value, "https://local.invalid").pathname === value;
+  } catch {
+    return false;
+  }
 }
 
 export function capitalizeTitle(text: string): string {
@@ -139,13 +154,24 @@ export function parseProductMutationPayload(
   const title = capitalizeTitle(rawTitle);
   const slug = normalizeSlug(clean(body.slug, 200)) || normalizeSlug(title);
   const category = clean(body.category, 120) || "Umum";
-  const imageUrl = clean(body.image_url, 500);
-  if (
-    imageUrl &&
-    !imageUrl.startsWith("/assets/uploads/") &&
-    !imageUrl.startsWith("/images/")
-  ) {
-    return { error: "URL gambar produk tidak valid." };
+  if (!Array.isArray(body.image_urls)) {
+    return { error: "Daftar gambar produk tidak valid." };
+  }
+  if (body.image_urls.length > MAX_IMAGES) {
+    return { error: `Produk maksimal memiliki ${MAX_IMAGES} gambar.` };
+  }
+  const imageUrls: string[] = [];
+  const seenImageUrls = new Set<string>();
+  for (const rawImageUrl of body.image_urls) {
+    const imageUrl = clean(rawImageUrl, 500);
+    if (!imageUrl || !isAllowedProductImageUrl(imageUrl)) {
+      return { error: "URL gambar produk tidak valid." };
+    }
+    if (seenImageUrls.has(imageUrl)) {
+      return { error: "Gambar produk tidak boleh duplikat." };
+    }
+    seenImageUrls.add(imageUrl);
+    imageUrls.push(imageUrl);
   }
   const isActive = typeof body.is_active === "boolean" ? body.is_active : true;
   const parsedProductId =
@@ -254,7 +280,7 @@ export function parseProductMutationPayload(
       title,
       slug,
       category,
-      image_url: imageUrl || null,
+      image_urls: imageUrls,
       is_active: isActive,
       variants,
     },

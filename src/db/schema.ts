@@ -88,6 +88,25 @@ export const products = sqliteTable("products", {
   imageUrl: text("image_url"),
   createdAt: text("created_at").notNull(),
 });
+
+export const productImages = sqliteTable(
+  "product_images",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    productId: integer("product_id")
+      .notNull()
+      .references(() => products.id, { onDelete: "cascade" }),
+    url: text("url").notNull(),
+    sortOrder: integer("sort_order").notNull(),
+  },
+  (table) => [
+    index("idx_product_images_product_order").on(
+      table.productId,
+      table.sortOrder,
+      table.id,
+    ),
+  ],
+);
 export const storefrontContent = sqliteTable("storefront_content", {
   id: integer("id").primaryKey({ autoIncrement: true }),
   storeId: integer("store_id")

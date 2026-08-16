@@ -51,6 +51,16 @@ class MockD1Database {
       stock: 8,
     },
   ];
+  readonly images = [
+    {
+      product_id: this.product.id,
+      url: "/products/tas-terpilih-front.webp",
+    },
+    {
+      product_id: this.product.id,
+      url: "/products/tas-terpilih-side.webp",
+    },
+  ];
   readonly firstStatements: MockStatement[] = [];
   readonly allStatements: MockStatement[] = [];
   readonly batches: MockStatement[][] = [];
@@ -64,7 +74,9 @@ class MockD1Database {
     return statements.map((statement) => ({
       results: /FROM\s+product_variants/i.test(statement.sql)
         ? this.variants
-        : [],
+        : /FROM\s+product_images/i.test(statement.sql)
+          ? this.images
+          : [],
     }));
   }
 }
@@ -84,6 +96,10 @@ test("getStorefrontProduct scopes product, variant, and content reads", async ()
   assert.equal(product?.productId, String(database.product.id));
   assert.equal(product?.slug, database.product.slug);
   assert.deepEqual(product?.variants.map((variant) => variant.id), ["91901"]);
+  assert.deepEqual(product?.images, [
+    "/products/tas-terpilih-front.webp",
+    "/products/tas-terpilih-side.webp",
+  ]);
 
   assert.equal(database.firstStatements.length, 1);
   assert.match(
@@ -93,11 +109,14 @@ test("getStorefrontProduct scopes product, variant, and content reads", async ()
   assert.deepEqual(database.firstStatements[0]!.values, ["tas-terpilih"]);
 
   assert.equal(database.batches.length, 1);
-  assert.equal(database.batches[0]!.length, 2);
+  assert.equal(database.batches[0]!.length, 3);
   const variantStatement = database.batches[0]![0]!;
-  const contentStatement = database.batches[0]![1]!;
+  const imageStatement = database.batches[0]![1]!;
+  const contentStatement = database.batches[0]![2]!;
   assert.match(compactSql(variantStatement.sql), /WHERE product_id = \?/);
   assert.deepEqual(variantStatement.values, [database.product.id]);
+  assert.match(compactSql(imageStatement.sql), /WHERE product_id = \?/);
+  assert.deepEqual(imageStatement.values, [database.product.id]);
   assert.match(
     compactSql(contentStatement.sql),
     /WHERE content_key = \? AND content_type = 'product'/,
