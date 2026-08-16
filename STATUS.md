@@ -1,8 +1,8 @@
 # STATUS — AdsBookCMS
 
 > Verified against the current branch and production: 2026-08-16. Source
-> commit `a9247a6` was manually deployed after the explicitly approved D1
-> migrations.
+> commit `f649fc5` was manually deployed after the explicitly approved login
+> release.
 >
 > Current release gates: `npm run check` 312 files / 0 errors / 0 warnings /
 > 0 hints · `npm test` 249 / 249 · `npm run build` complete · local and
@@ -20,7 +20,7 @@ The previous version of this file described a different repository — it opened
 | --- | --- |
 | Product | AdsBookCMS (single) |
 | Worker | `cmsads-permatamall` |
-| Worker version | `6d7eb0cc-86f4-4e1e-9609-3290a7a509f1` |
+| Worker version | `a7fada59-ea16-4e63-b99a-3760b2562ff5` |
 | Domains | `permatamall.shop`, `www.permatamall.shop` (both custom domains) |
 | D1 | `cmsads-permatamall-d1` |
 | R2 | `cmsads-permatamall-assets` |
@@ -30,7 +30,7 @@ The previous version of this file described a different repository — it opened
 | Environments | one — no staging, no `env.*` blocks |
 | CI | push to `main` → check → test → build → `wrangler deploy` |
 
-Live check on 2026-08-16 after Worker version `6d7eb0cc-86f4-4e1e-9609-3290a7a509f1`: `/hello` and `/produk/daira-tas-selempang-bahu-kanvas` returned 200 at 390×844 with no horizontal overflow; the login submit target measured 44 px and the product page exposed the expected content and form controls. The anonymous product and home cache returned `cmsads; hit`; login, cookies, attribution, and preview requests returned `cmsads; fwd=request`.
+Live check on 2026-08-16 after Worker version `a7fada59-ea16-4e63-b99a-3760b2562ff5`: redesigned `/hello` returned 200 at 390×844 and 1440×900 with no horizontal overflow, separate desktop authentication/visual regions, a mobile single-column flow, 44 px controls, autofocus on username, synchronized password visibility, and no browser console errors. The login response remained `Cache-Control: no-store` with `Cache-Status: cmsads; fwd=request`.
 
 ---
 
