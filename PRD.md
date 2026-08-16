@@ -123,7 +123,7 @@ AdsBookCMS gives one merchant a complete direct-response storefront: catalog, la
 | REQ-54 | Google Consent Mode shall default to denied in regulated regions before the granted default is applied. | Implemented |
 | REQ-55 | A page interaction or an unqualified order shall never be reported as a Purchase. | Implemented |
 | REQ-56 | Product category taxonomy in the catalog feeds shall resolve to the correct Google product category for each item. | Partial — the handbag rule is both the first rule and the default, but matching is an unweighted keyword count over title *and* description with no minimum score, so a description mentioning unrelated keywords can outscore it |
-| REQ-57 | Browser/server product event `content_ids` and Google/Meta catalog item IDs shall use the same canonical positive D1 `products.id` value without padding or remapping. | Implemented |
+| REQ-57 | Meta browser/server `content_ids` and Meta catalog item IDs shall use the canonical positive D1 `products.id`; Google catalog item IDs shall use canonical positive D1 `product_variants.id` values grouped by `products.id`, without padding, generated suffixes, or remapping. | Implemented |
 
 ---
 

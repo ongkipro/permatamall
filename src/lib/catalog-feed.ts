@@ -33,24 +33,24 @@ export function escapeXml(value: string): string {
 export function formatContentId(id: number | string): string {
   const contentId = String(id).trim();
   if (!/^[1-9]\d*$/.test(contentId)) {
-    throw new TypeError("Catalog product ID must be a positive D1 integer.");
+    throw new TypeError("Catalog ID must be a positive D1 integer.");
   }
   return contentId;
 }
 
 export function formatCatalogItemId(
   productId: number | string,
-  variantIndex: number,
+  variantId: number | string,
   totalVariants: number,
 ): { itemId: string; itemGroupId?: string } {
-  const pId = formatContentId(productId);
-  if (totalVariants === 1 || variantIndex === 0) {
-    return { itemId: pId };
+  const itemId = formatContentId(variantId);
+  if (totalVariants === 1) {
+    return { itemId };
   }
 
   return {
-    itemId: `${pId}_v${variantIndex + 1}`,
-    itemGroupId: pId,
+    itemId,
+    itemGroupId: formatContentId(productId),
   };
 }
 
@@ -73,8 +73,8 @@ export function generateGoogleCatalogXml(
     const productLink = `${origin}/produk/${product.slug}`;
     const imageLink = product.heroImage.startsWith("http") ? product.heroImage : `${origin}${product.heroImage}`;
 
-    product.variants.forEach((variant, index) => {
-      const { itemId, itemGroupId } = formatCatalogItemId(product.productId, index, product.variants.length);
+    product.variants.forEach((variant) => {
+      const { itemId, itemGroupId } = formatCatalogItemId(product.productId, variant.id, product.variants.length);
       const titleText = product.variants.length > 1 ? `${product.productName} - ${variant.label}` : product.productName;
       const hasSale = typeof variant.comparePrice === "number" && variant.comparePrice > variant.price;
       const basePriceFormatted = `${hasSale ? variant.comparePrice : variant.price} IDR`;
@@ -136,25 +136,19 @@ export function generateMetaCatalogXml(
     const productLink = `${origin}/produk/${product.slug}`;
     const imageLink = product.heroImage.startsWith("http") ? product.heroImage : `${origin}${product.heroImage}`;
 
-    product.variants.forEach((variant, index) => {
-      const { itemId, itemGroupId } = formatCatalogItemId(product.productId, index, product.variants.length);
-      const titleText = product.variants.length > 1 ? `${product.productName} - ${variant.label}` : product.productName;
-      const hasSale = typeof variant.comparePrice === "number" && variant.comparePrice > variant.price;
-      const basePriceFormatted = `${hasSale ? variant.comparePrice : variant.price} IDR`;
-      const salePriceXml = hasSale
-        ? `\n      <g:sale_price>${escapeXml(`${variant.price} IDR`)}</g:sale_price>`
-        : "";
-      const itemDescription = product.seoDescription || product.headline || product.description || siteDescription;
+    const variant = product.variants[0];
+    const itemId = formatContentId(product.productId);
+    const hasSale = typeof variant.comparePrice === "number" && variant.comparePrice > variant.price;
+    const basePriceFormatted = `${hasSale ? variant.comparePrice : variant.price} IDR`;
+    const salePriceXml = hasSale
+      ? `\n      <g:sale_price>${escapeXml(`${variant.price} IDR`)}</g:sale_price>`
+      : "";
+    const itemDescription = product.seoDescription || product.headline || product.description || siteDescription;
 
-      let groupXml = "";
-      if (itemGroupId) {
-        groupXml = `\n      <g:item_group_id>${escapeXml(itemGroupId)}</g:item_group_id>`;
-      }
-
-      itemsXml += `
+    itemsXml += `
     <item>
-      <g:id>${escapeXml(itemId)}</g:id>${groupXml}
-      <g:title>${escapeXml(titleText)}</g:title>
+      <g:id>${escapeXml(itemId)}</g:id>
+      <g:title>${escapeXml(product.productName)}</g:title>
       <g:description>${escapeXml(itemDescription)}</g:description>
       <g:link>${escapeXml(productLink)}</g:link>
       <g:image_link>${escapeXml(imageLink)}</g:image_link>
@@ -166,7 +160,6 @@ export function generateMetaCatalogXml(
       <g:brand>${escapeXml(siteTitle)}</g:brand>
       <g:condition>new</g:condition>
     </item>`;
-    });
   }
 
   return `<?xml version="1.0" encoding="UTF-8"?>

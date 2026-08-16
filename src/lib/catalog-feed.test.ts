@@ -16,25 +16,25 @@ test("formatContentId preserves the canonical D1 product ID", () => {
   assert.throws(() => formatContentId(""), /positive D1 integer/);
 });
 
-test("formatCatalogItemId returns product ID as itemId for single-variant products", () => {
-  const result = formatCatalogItemId("434683", 0, 1);
-  assert.equal(result.itemId, "434683");
+test("formatCatalogItemId returns variant ID for single-variant products", () => {
+  const result = formatCatalogItemId("434683", "9001", 1);
+  assert.equal(result.itemId, "9001");
   assert.equal(result.itemGroupId, undefined);
 });
 
-test("formatCatalogItemId returns product ID for first variant of multi-variant products", () => {
-  const result = formatCatalogItemId("14001", 0, 2);
-  assert.equal(result.itemId, "14001");
-  assert.equal(result.itemGroupId, undefined);
+test("formatCatalogItemId groups the first variant under its product ID", () => {
+  const result = formatCatalogItemId("22", "106", 2);
+  assert.equal(result.itemId, "106");
+  assert.equal(result.itemGroupId, "22");
 });
 
-test("formatCatalogItemId returns indexed suffix and itemGroupId for secondary variants", () => {
-  const result = formatCatalogItemId("14001", 1, 2);
-  assert.equal(result.itemId, "14001_v2");
-  assert.equal(result.itemGroupId, "14001");
+test("formatCatalogItemId keeps every variant's canonical D1 ID", () => {
+  const result = formatCatalogItemId("22", "107", 2);
+  assert.equal(result.itemId, "107");
+  assert.equal(result.itemGroupId, "22");
 });
 
-test("generateGoogleCatalogXml keeps feed IDs aligned with tracking content_ids", () => {
+test("generateGoogleCatalogXml uses variant IDs grouped by product ID", () => {
   const mockProducts: CatalogProduct[] = [
     {
       productId: 22,
@@ -50,9 +50,9 @@ test("generateGoogleCatalogXml keeps feed IDs aligned with tracking content_ids"
   ];
 
   const xml = generateGoogleCatalogXml(mockProducts, "https://permatamall.shop");
-  assert.ok(xml.includes("<g:id>22</g:id>"));
-  assert.ok(xml.includes("<g:id>22_v2</g:id>"));
-  assert.ok(xml.includes("<g:item_group_id>22</g:item_group_id>"));
+  assert.ok(xml.includes("<g:id>10</g:id>"));
+  assert.ok(xml.includes("<g:id>11</g:id>"));
+  assert.equal(xml.match(/<g:item_group_id>22<\/g:item_group_id>/g)?.length, 2);
   assert.ok(xml.includes("<g:link>https://permatamall.shop/produk/bibit-sirsak</g:link>"));
   assert.ok(xml.includes("<g:price>85000 IDR</g:price>"));
 });
@@ -77,7 +77,7 @@ test("generateGoogleCatalogXml emits g:sale_price when comparePrice is greater t
   assert.ok(xml.includes("<g:google_product_category>6551</g:google_product_category>"));
 });
 
-test("generateMetaCatalogXml emits valid fb_product_category and matching content_id g:id", () => {
+test("generateMetaCatalogXml emits one product-level item matching Meta content_ids", () => {
   const mockProducts: CatalogProduct[] = [
     {
       productId: 15005,
@@ -85,13 +85,19 @@ test("generateMetaCatalogXml emits valid fb_product_category and matching conten
       productName: "Pompa Air Portable",
       category: "Alat Rumah Tangga",
       heroImage: "https://r2.example.com/pompa.jpg",
-      variants: [{ id: 1, label: "Standard", price: 120000, sku: "variant_ABC123" }],
+      variants: [
+        { id: 201, label: "Standard", price: 120000, sku: "variant_ABC123" },
+        { id: 202, label: "Paket 2", price: 220000, sku: "variant_DEF456" },
+      ],
     },
   ];
 
   const xml = generateMetaCatalogXml(mockProducts, "https://permatamall.shop");
+  assert.equal(xml.match(/<item>/g)?.length, 1);
   assert.ok(xml.includes("<g:id>15005</g:id>"));
+  assert.ok(!xml.includes("<g:id>201</g:id>"));
   assert.ok(!xml.includes("<g:item_group_id>"));
+  assert.ok(xml.includes("<g:title>Pompa Air Portable</g:title>"));
   assert.ok(xml.includes("<g:fb_product_category>"));
   assert.ok(xml.includes("<g:image_link>https://r2.example.com/pompa.jpg</g:image_link>"));
 });

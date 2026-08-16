@@ -1004,7 +1004,7 @@ Active backlog. Every task below references a requirement in the current `PRD.md
 
 ## A6 — Login reliability and verified identity
 
-- [x] **A-44** — Align tracking and catalog product identity. **Done 2026-08-16.**
+- [x] **A-44** — Align tracking and catalog product identity. **Done 2026-08-16; superseded by A-53.**
   -> REQ: REQ-57 · Done when: IDs `1`, `22`, and `434683` pass unchanged through the Google/Meta catalog feed and the Meta event contract; the focused Node tests pass.
 - [x] **A-45** — Scope public product-detail D1 reads. **Done 2026-08-16.**
   -> REQ: REQ-19 · Done when: `getStorefrontProduct` selects one active product, batches only that product's variants and published content, and the headless detail API performs at most one full-catalog load for related products; the query-contract tests pass.
@@ -1022,3 +1022,5 @@ Active backlog. Every task below references a requirement in the current `PRD.md
   -> REQ: REQ-2 · Done when: migration `0017` does not insert orphan variants when no store exists, every migration applies to a fresh foreign-key-enforced SQLite database, `PRAGMA foreign_key_check` is empty, and `npm run db:migrate:local` completes.
 - [x] **A-52** — Redesign the responsive `/hello` operator login. **Done 2026-08-16.**
   -> REQ: REQ-85 · constraints: REQ-60, REQ-66, REQ-67, REQ-70 · deps: [] · Done when: browser evidence at 1440×900, 390×844, and keyboard-reduced 390×500 shows a visible page heading, tenant identity, logical keyboard order, 44px controls, no horizontal overflow, reachable content, synchronized password visibility and pending states, and preserved invalid-credential behavior; focused authentication tests, `npm run check`, and `npm run build` pass.
+- [x] **A-53** — Separate Google variant identity from Meta product identity. **Done 2026-08-16.**
+  -> REQ: REQ-57 · Done when: Google catalog items use canonical D1 variant IDs with their D1 product ID as `item_group_id`, Meta emits exactly one catalog item per product whose ID matches browser/server `content_ids`, generated `_vN` IDs are absent, focused and full tests pass, and both feeds are exercised locally against remote D1 data.

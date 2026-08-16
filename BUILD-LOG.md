@@ -2136,3 +2136,15 @@ Scope: Comprehensive UI/UX redesign and backend enhancement for `/admin/orders`,
   - Browser: 1440×900 renders separate authentication and branded visual regions; 390×844 hides the decorative visual and keeps all controls at 44 px with `scrollWidth === clientWidth === 390`; keyboard-reduced 390×500 keeps the submit action in the initial viewport and the remaining note reachable by scrolling.
   - Interaction: keyboard order, password reveal semantics, announced disabled `Memverifikasi...` state, and invalid-credential 401 behavior passed. Under `prefers-reduced-motion: reduce`, all login control transitions resolve to an effectively zero duration; under forced colors, the submit control retains a visible 1 px system-colored border.
   - Delivery: source commit `f649fc5` pushed to `origin/docs/login-panel-ux-audit`; Worker version `a7fada59-ea16-4e63-b99a-3760b2562ff5` deployed to `permatamall.shop` and `www.permatamall.shop`. Production browser verification passed at 390×844 and 1440×900 with zero horizontal overflow, 44 px controls, autofocus on username, synchronized password visibility, `Cache-Control: no-store`, `Cache-Status: cmsads; fwd=request`, and no console errors. No remote D1 migration or data mutation was performed.
+
+## Catalog Identity Split — 2026-08-16
+
+- **Google Merchant**: every offer now uses its canonical D1 `product_variants.id`; multi-variant offers carry the canonical D1 `products.id` as `item_group_id`. Index-derived IDs such as `22_v2` were removed.
+- **Meta Commerce**: the feed now emits exactly one item per product with `g:id = products.id`, preserving the product-level identity used by browser Pixel and server CAPI `content_ids`.
+- **Verification**:
+  - Focused catalog-feed tests: **7/7 passed**.
+  - `npm test`: **249/249 passed**.
+  - `npm run check`: **312 files, 0 errors, 0 warnings, 0 hints**.
+  - `npm run build`: **complete**; `git diff --check` returned no errors.
+  - Local Worker using remote production D1 data emitted DAIRA Google IDs `106`–`110`, each grouped under product `22`; the Meta feed emitted one DAIRA item with ID `22`.
+- **Delivery**: source-only; no commit, push, deploy, or remote D1 mutation was performed.

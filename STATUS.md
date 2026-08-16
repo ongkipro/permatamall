@@ -7,6 +7,10 @@
 > Current release gates: `npm run check` 312 files / 0 errors / 0 warnings /
 > 0 hints · `npm test` 249 / 249 · `npm run build` complete · local and
 > production D1 migrations complete through `0037`.
+>
+> The current branch also contains a locally verified, not-yet-deployed catalog
+> identity split: Google items use D1 variant IDs grouped by product ID, while
+> Meta catalog and Pixel/CAPI continue to use D1 product IDs.
 
 Current state of the system. Implemented behaviour lives here; history lives in `BUILD-LOG.md`; remaining work lives in `UNIMPLEMENTED_SPECS.md`; structure lives in `ARCHITECTURE.md`.
 
