@@ -83,30 +83,20 @@ export function shouldForceNoStore(request: Request) {
   return isCacheablePath(url.pathname) && hasCredentials(request);
 }
 
-function bytesToHex(bytes: ArrayBuffer) {
-  return [...new Uint8Array(bytes)]
-    .map((byte) => byte.toString(16).padStart(2, "0"))
-    .join("");
-}
 
-export async function buildPublicStorefrontCacheKey(
+export function buildPublicStorefrontCacheKey(
   request: Request,
   tenantSlug: string,
 ) {
   const sourceUrl = new URL(request.url);
-  const query = new URLSearchParams(sourceUrl.search);
-  query.sort();
-  const queryDigest = await crypto.subtle.digest(
-    "SHA-256",
-    new TextEncoder().encode(query.toString()),
-  );
-
   const keyUrl = new URL(sourceUrl.origin);
   keyUrl.pathname = sourceUrl.pathname;
   keyUrl.searchParams.set("__cmsads_cache", "storefront-v1");
   keyUrl.searchParams.set("tenant", tenantSlug || sourceUrl.hostname);
-  keyUrl.searchParams.set("query", bytesToHex(queryDigest));
 
+  // No cacheable route currently varies its HTML by query. Sensitive or
+  // stateful query keys bypass caching before this point; ignoring the rest
+  // prevents arbitrary query noise from fragmenting the edge cache.
   return new Request(keyUrl, { method: "GET" });
 }
 

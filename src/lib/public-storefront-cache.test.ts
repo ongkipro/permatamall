@@ -65,31 +65,31 @@ test("marks sensitive and personalized request families no-store", () => {
   assert.equal(shouldForceNoStore(request("/produk")), false);
 });
 
-test("builds deterministic tenant, host, path, and query-aware GET keys without raw query values", async () => {
-  const first = await buildPublicStorefrontCacheKey(
+test("builds tenant, host, and path GET keys without query fragmentation", () => {
+  const first = buildPublicStorefrontCacheKey(
     request("/produk?sort=price&page=2"),
     "tenant-a",
   );
-  const reordered = await buildPublicStorefrontCacheKey(
+  const reordered = buildPublicStorefrontCacheKey(
     request("/produk?page=2&sort=price"),
     "tenant-a",
   );
-  const otherQuery = await buildPublicStorefrontCacheKey(
+  const otherQuery = buildPublicStorefrontCacheKey(
     request("/produk?page=3&sort=price"),
     "tenant-a",
   );
-  const otherTenant = await buildPublicStorefrontCacheKey(
+  const otherTenant = buildPublicStorefrontCacheKey(
     request("/produk?sort=price&page=2"),
     "tenant-b",
   );
-  const otherHost = await buildPublicStorefrontCacheKey(
+  const otherHost = buildPublicStorefrontCacheKey(
     new Request("https://other.example/produk?sort=price&page=2"),
     "tenant-a",
   );
 
   assert.equal(first.method, "GET");
   assert.equal(first.url, reordered.url);
-  assert.notEqual(first.url, otherQuery.url);
+  assert.equal(first.url, otherQuery.url);
   assert.notEqual(first.url, otherTenant.url);
   assert.notEqual(first.url, otherHost.url);
   assert.equal(first.url.includes("sort=price"), false);

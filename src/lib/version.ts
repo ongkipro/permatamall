@@ -8,10 +8,10 @@ export type CmsVersionInfo = {
 };
 
 export const CMS_VERSION: CmsVersionInfo = {
-  version: "1.2.0",
+  version: "1.2.1",
   channel: "production",
-  releaseTag: "2026.08-hardened",
+  releaseTag: "2026.08-optimized",
   coreEngine: "Astro 7 SSR + Cloudflare Workers",
-  schemaVersion: 34,
-  lastUpdated: "2026-08-15",
+  schemaVersion: 38,
+  lastUpdated: "2026-08-16",
 };

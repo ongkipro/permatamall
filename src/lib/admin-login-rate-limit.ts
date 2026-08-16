@@ -104,7 +104,7 @@ export async function consumeAdminLoginAttempt(
     ),
     resetAt:
       blocked.length > 0
-        ? Math.min(...blocked.map((counter) => counter.resetAt))
+        ? Math.max(...blocked.map((counter) => counter.resetAt))
         : Math.max(...counters.map((counter) => counter.resetAt)),
     scopeKeys,
   };

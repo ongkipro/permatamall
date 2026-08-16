@@ -146,7 +146,7 @@ export const onRequest = defineMiddleware(async (context, next) => {
   const isPublicCacheRequest = isAnonymousPublicCacheRequest(context.request);
   const edgeCache = isPublicCacheRequest ? getDefaultCache() : undefined;
   const publicCacheKey = edgeCache
-    ? await buildPublicStorefrontCacheKey(
+    ? buildPublicStorefrontCacheKey(
         context.request,
         getEnvValue('PUBLIC_TENANT_SLUG', runtime) || url.hostname,
       )

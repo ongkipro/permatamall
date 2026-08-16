@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs";
 import { DatabaseSync, type StatementSync } from "node:sqlite";
 import test from "node:test";
 import {
+  type AdminLoginRateLimitResult,
   clearAdminLoginAttempts,
   consumeAdminLoginAttempt,
 } from "./admin-login-rate-limit.ts";
@@ -120,6 +121,32 @@ test("atomically blocks the sixth attempt for an IP and username-IP pair", async
   assert.equal(blocked.allowed, false);
   assert.equal(blocked.remaining, 0);
   assert.equal(blocked.resetAt, Date.parse("2026-08-16T00:15:00.000Z"));
+});
+
+test("reports the latest reset when both blocking scopes have different windows", async () => {
+  const database = createDatabase();
+  for (let attempt = 0; attempt < 5; attempt += 1) {
+    await consumeAdminLoginAttempt(
+      database,
+      `candidate-${attempt}`,
+      "203.0.113.14",
+      windowStart,
+    );
+  }
+
+  const laterWindow = new Date("2026-08-16T00:05:00.000Z");
+  let blocked: AdminLoginRateLimitResult | undefined;
+  for (let attempt = 0; attempt < 6; attempt += 1) {
+    blocked = await consumeAdminLoginAttempt(
+      database,
+      "admin",
+      "203.0.113.14",
+      laterWindow,
+    );
+  }
+
+  assert.equal(blocked?.allowed, false);
+  assert.equal(blocked?.resetAt, Date.parse("2026-08-16T00:20:00.000Z"));
 });
 
 test("does not let one source lock the username for other source addresses", async () => {
