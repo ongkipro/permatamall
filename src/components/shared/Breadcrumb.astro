@@ -27,9 +27,9 @@ const { items } = Astro.props;
 
         return (
           <>
-            {index > 0 && <span class="shrink-0 text-[#A3A09A]">/</span>}
+            {index > 0 && <span class="shrink-0 text-[#A3A09A]" aria-hidden="true">/</span>}
             {item.href ? (
-              <a href={item.href} class="shrink-0 transition-colors hover:text-[#C5A880]">
+              <a href={item.href} class="inline-flex min-h-6 shrink-0 items-center transition-colors hover:text-[#6F593F] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#6F593F]">
                 {item.label}
               </a>
             ) : (

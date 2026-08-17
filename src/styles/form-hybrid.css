@@ -127,8 +127,17 @@
   display: block;
   cursor: pointer;
 }
-.variant-option input {
-  display: none;
+.variant-option input,
+.payment-option input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 .variant-copy {
   display: flex;
@@ -168,6 +177,10 @@
   border-color: #0f172a;
   background: #f8fafc;
   box-shadow: none;
+}
+.variant-option input:focus-visible + .variant-copy {
+  outline: 2px solid #6f593f;
+  outline-offset: 2px;
 }
 .variant-option input:checked + .variant-copy .variant-radio {
   border-color: #0f172a;
@@ -242,7 +255,7 @@
 }
 .variant-compare {
   font-size: 0.72rem;
-  color: #94a3b8;
+  color: #64748b;
   text-decoration: line-through;
 }
 .simple-variant-price-row {
@@ -642,9 +655,6 @@
   display: block;
   cursor: pointer;
 }
-.payment-option input {
-  display: none;
-}
 .payment-option-copy {
   display: flex;
   align-items: center;
@@ -901,7 +911,7 @@
   margin-top: 0.1rem;
   font-size: 0.68rem;
   line-height: 1.2;
-  color: #64748b;
+  color: #55657a;
   font-weight: 600;
 }
 .total-box-side {

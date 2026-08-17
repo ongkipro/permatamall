@@ -15,6 +15,7 @@ interface Props {
   selectedVariantId?: string;
   province?: string;
   embedded?: boolean;
+  showVariantSelector?: boolean;
 }
 
 const {
@@ -22,6 +23,7 @@ const {
   province = '',
   productSlug = 'asahan-portable',
   embedded = false,
+  showVariantSelector = true,
   selectedVariantId,
   bannerImage,
 } = Astro.props;
@@ -47,6 +49,7 @@ const resolvedProvince = province || formContext.province;
         productSlug={productSlug}
         selectedVariantId={selectedVariantId}
         embedded={embedded}
+        showVariantSelector={showVariantSelector}
         bannerImage={bannerImage}
         codDisabledProvinceCodes={codDisabledProvinceCodes}
       />
@@ -56,6 +59,7 @@ const resolvedProvince = province || formContext.province;
         selectedVariantId={selectedVariantId}
         province={resolvedProvince}
         embedded={embedded}
+        showVariantSelector={showVariantSelector}
         bannerImage={bannerImage}
         codDisabledProvinceCodes={codDisabledProvinceCodes}
       />
@@ -144,7 +148,7 @@ const resolvedProvince = province || formContext.province;
   }
 
   :global([data-canonical-order-form] .info-box span) {
-    color: #8A704F;
+    color: #6F593F;
   }
 
   :global([data-canonical-order-form] .submit-main),

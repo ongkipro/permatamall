@@ -11,6 +11,7 @@ interface Props {
   selectedVariantId?: string;
   province?: string;
   embedded?: boolean;
+  showVariantSelector?: boolean;
   bannerImage?: string;
   product?: any;
   codDisabledProvinceCodes?: string[];
@@ -21,6 +22,7 @@ const {
   province = '',
   selectedVariantId,
   embedded = false,
+  showVariantSelector = true,
   bannerImage,
   codDisabledProvinceCodes: codDisabledProvinceCodesProp,
 } = Astro.props;
@@ -42,46 +44,63 @@ const formId = embedded ? `${instanceId}-form` : 'middle-form';
   <section class="pb-8 pt-0">
     <form id={formId} class="grid gap-5 pt-4" novalidate>
       <div class="px-4">
-        <section class="form-block form-block-first">
-          <div class="form-block-head gap-1.5">
-            <h2 class="section-title">Pilih Varian</h2>
-            <p class="section-lead">Pilih varian produk yang ingin dipesan.</p>
-          </div>
-          <div class="variant-group simple-variant-group">
-            {
-              product.variants.map((variant: any) => {
-                const comparePrice = variant.comparePrice ?? variant.price;
-                const hasDiscount = comparePrice > variant.price;
-                return (
-                  <label class="variant-option simple-variant-option">
-                    <input
-                      type="radio"
-                      name="variant"
-                      value={variant.id}
-                      checked={variant.id === defaultVariant.id}
-                      data-label={variant.label}
-                      data-price={variant.price}
-                      data-compare={comparePrice}
-                    />
-                    <div class="variant-copy simple-variant-copy">
-                      <div class="variant-radio" />
-                      <div class="variant-main simple-variant-main">
-                        <div class="simple-variant-head">
-                          <p class="variant-label">{variant.label}</p>
+        {
+          !showVariantSelector ? (
+            <input
+              type="radio"
+              name="variant"
+              value={defaultVariant.id}
+              checked
+              hidden
+              aria-hidden="true"
+              tabindex="-1"
+              data-label={defaultVariant.label}
+              data-price={defaultVariant.price}
+              data-compare={defaultComparePrice}
+            />
+          ) : (
+            <section class="form-block form-block-first">
+              <div class="form-block-head gap-1.5">
+                <h2 class="section-title">Pilih Varian</h2>
+                <p class="section-lead">Pilih varian produk yang ingin dipesan.</p>
+              </div>
+              <div class="variant-group simple-variant-group">
+                {
+                  product.variants.map((variant: any) => {
+                    const comparePrice = variant.comparePrice ?? variant.price;
+                    const hasDiscount = comparePrice > variant.price;
+                    return (
+                      <label class="variant-option simple-variant-option">
+                        <input
+                          type="radio"
+                          name="variant"
+                          value={variant.id}
+                          checked={variant.id === defaultVariant.id}
+                          data-label={variant.label}
+                          data-price={variant.price}
+                          data-compare={comparePrice}
+                        />
+                        <div class="variant-copy simple-variant-copy">
+                          <div class="variant-radio" />
+                          <div class="variant-main simple-variant-main">
+                            <div class="simple-variant-head">
+                              <p class="variant-label">{variant.label}</p>
+                            </div>
+                            <div class="variant-price-row simple-variant-price-row">
+                              <span class="variant-price">{formatIdr(variant.price)}</span>
+                              {hasDiscount && <span class="simple-variant-dot" aria-hidden="true" />}
+                              {hasDiscount && <span class="variant-compare">{formatIdr(comparePrice)}</span>}
+                            </div>
+                          </div>
                         </div>
-                        <div class="variant-price-row simple-variant-price-row">
-                          <span class="variant-price">{formatIdr(variant.price)}</span>
-                          {hasDiscount && <span class="simple-variant-dot" aria-hidden="true" />}
-                          {hasDiscount && <span class="variant-compare">{formatIdr(comparePrice)}</span>}
-                        </div>
-                      </div>
-                    </div>
-                  </label>
-                );
-              })
-            }
-          </div>
-        </section>
+                      </label>
+                    );
+                  })
+                }
+              </div>
+            </section>
+          )
+        }
 
         <section class="form-block">
           <div class="form-block-head gap-1.5">

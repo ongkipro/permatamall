@@ -3,6 +3,7 @@ import test from "node:test";
 import {
   buildStorefrontMediaKey,
   MAX_STOREFRONT_MEDIA_BYTES,
+  resolveGallerySelectionIndex,
   validateStorefrontMedia,
 } from "./storefront-media.ts";
 
@@ -27,4 +28,18 @@ test("storefront media rejects active content and oversized files", () => {
     () => validateStorefrontMedia({ name: "image.webp", type: "image/webp", size: MAX_STOREFRONT_MEDIA_BYTES + 1 }),
     /maksimal 5 MB/,
   );
+});
+
+test("gallery selection follows image identity when failures reflow positions", () => {
+  const source = ["1.webp", "2.webp", "3.webp", "4.webp", "5.webp", "6.webp", "7.webp"];
+
+  assert.equal(
+    resolveGallerySelectionIndex(source.slice(1), source, "5.webp"),
+    3,
+  );
+  assert.equal(
+    resolveGallerySelectionIndex(source.filter((image) => image !== "5.webp"), source, "5.webp"),
+    4,
+  );
+  assert.equal(resolveGallerySelectionIndex([], source, "5.webp"), 0);
 });

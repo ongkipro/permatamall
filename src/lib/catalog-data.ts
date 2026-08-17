@@ -25,15 +25,35 @@ function variantLabel(productTitle: string, variantTitle: string): string {
   return cleanVariant || productTitle.trim();
 }
 
-function getCatalogProductDetails(title: string, category: string) {
+function getCatalogProductDetails(
+  title: string,
+  category: string,
+  variantLabels: string[],
+) {
   const categoryLabel = category.trim() || "Produk";
+  const optionCount = variantLabels.length;
+  const optionSummary =
+    optionCount === 1 ? "1 pilihan" : `${optionCount} pilihan`;
   return {
-    subheadline: `Pilih varian ${title} berdasarkan opsi dan harga yang tersedia.`,
-    description: `${title} tercantum dalam kategori ${categoryLabel}. Detail yang ditampilkan mengikuti data katalog toko.`,
+    subheadline: `${title} tersedia dalam ${optionSummary}. Harga mengikuti varian yang dipilih.`,
+    description: `${title} termasuk kategori ${categoryLabel}. Pilihan yang tersedia: ${variantLabels.join(", ")}.`,
     benefits: [],
     keyPoints: [],
     idealFor: [],
   };
+}
+
+function resolveGalleryImages(
+  primaryImage: string,
+  editorialImages?: string[],
+): string[] {
+  if (primaryImage.endsWith("/1.webp")) {
+    const baseDir = primaryImage.slice(0, -7);
+    return [1, 2, 3, 4, 5, 6, 7].map(
+      (position) => `${baseDir}/${position}.webp`,
+    );
+  }
+  return editorialImages?.length ? editorialImages : [primaryImage];
 }
 
 export function mergeStorefrontCatalog(
@@ -108,10 +128,10 @@ export function mergeStorefrontCatalog(
     const firstVariant = variants[0];
     const image = matchedRow?.image_url || editorialProduct.image || editorialProduct.heroImage;
 
-    const baseDir = image.endsWith("/1.webp") ? image.slice(0, -7) : null;
-    const galleryImages = baseDir
-      ? [1, 2, 3, 4, 5, 6, 7].map((num) => `${baseDir}/${num}.webp`)
-      : editorialProduct.images || [image];
+    const galleryImages = resolveGalleryImages(
+      image,
+      editorialProduct.images,
+    );
 
     return [
       {
@@ -159,7 +179,11 @@ export function mergeStorefrontCatalog(
     const image = product.image_url || "/images/logo.webp";
 
     const categoryLabel = product.category?.trim() || "Produk";
-    const details = getCatalogProductDetails(productName, categoryLabel);
+    const details = getCatalogProductDetails(
+      productName,
+      categoryLabel,
+      variants.map((variant) => variant.label),
+    );
 
     catalog.push({
       catalogId: product.id,
@@ -175,7 +199,7 @@ export function mergeStorefrontCatalog(
       ...(firstVariant.comparePrice ? { comparePrice: firstVariant.comparePrice } : {}),
       image,
       heroImage: image,
-      images: [image],
+      images: resolveGalleryImages(image),
       tag: categoryLabel,
       category: categoryLabel,
       relatedCategories: [categoryLabel],

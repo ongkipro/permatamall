@@ -8,6 +8,20 @@ const MEDIA_TYPES = new Map([
 
 export const MAX_STOREFRONT_MEDIA_BYTES = 5 * 1024 * 1024;
 
+export function resolveGallerySelectionIndex(
+  gallery: string[],
+  sourceImages: string[],
+  activeImageUrl: string,
+) {
+  if (gallery.length === 0) return 0;
+  const matchingIndex = gallery.indexOf(activeImageUrl);
+  if (matchingIndex >= 0) return matchingIndex;
+  return Math.min(
+    Math.max(sourceImages.indexOf(activeImageUrl), 0),
+    gallery.length - 1,
+  );
+}
+
 export function validateStorefrontMedia(file: {
   name: string;
   type: string;

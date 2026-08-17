@@ -160,3 +160,50 @@ test("custom D1 products created manually without editorial match are synthesize
     /Korean|original|garansi|COD|gratis ongkir/i,
   );
 });
+
+test("conventional catalog media paths expose the complete seven-image gallery", () => {
+  const products = mergeStorefrontCatalog(
+    [],
+    [
+      {
+        id: 22,
+        title: "DAIRA Tas Selempang & Bahu Kanvas",
+        slug: "daira-tas-selempang-bahu-kanvas",
+        category: "Tas Selempang",
+        image_url:
+          "/images/products/daira-tas-selempang-bahu-kanvas/1.webp",
+        is_active: 1,
+      },
+    ],
+    [
+      {
+        id: 106,
+        product_id: 22,
+        title: "Hitam",
+        price: 128_500,
+        stock: 3,
+      },
+      {
+        id: 107,
+        product_id: 22,
+        title: "Coklat",
+        price: 128_500,
+        stock: 2,
+      },
+    ],
+  );
+
+  assert.equal(products.length, 1);
+  assert.deepEqual(
+    products[0].images,
+    [1, 2, 3, 4, 5, 6, 7].map(
+      (position) =>
+        `/images/products/daira-tas-selempang-bahu-kanvas/${position}.webp`,
+    ),
+  );
+  assert.equal(
+    products[0].subheadline,
+    "DAIRA Tas Selempang & Bahu Kanvas tersedia dalam 2 pilihan. Harga mengikuti varian yang dipilih.",
+  );
+  assert.match(products[0].description, /Hitam, Coklat/);
+});
