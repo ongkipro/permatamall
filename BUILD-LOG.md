@@ -2111,3 +2111,13 @@ Scope: Comprehensive UI/UX redesign and backend enhancement for `/admin/orders`,
 - Verification: focused catalog/event/Purchase tests **15/15 passed**; full `npm test` **225/225 passed**; `npm run check` **304 files, 0 errors, 0 warnings, 0 hints**; `npm run build` complete.
 - Production proof: Google and Meta feeds each returned HTTP 200 with **110/110 unique numeric item IDs**, identical ID sets, numeric group IDs, variant `106`, and no composite IDs. The live variant `106` product page retained the selected variant; Meta `ViewContent` and Google `view_item` each emitted ID `106`; horizontal overflow was zero in Chromium.
 - Deployed commit `cd4e8cf` as Worker version `d691b2d1-80e8-473c-9b9f-d94990d52e94` to `permatamall.shop` and `www.permatamall.shop`.
+
+## Product-Level Catalog Identity — 2026-08-17
+
+- Corrected the catalog contract to use exact decimal `products.id` values as provider item IDs and advertising event content IDs. Variant IDs remain order-selection and optional event metadata only.
+- Collapsed Google Merchant and Meta Commerce feeds from 110 variant rows to 22 product rows. Each feed now emits one item per product, has the same 22-ID set, and omits `item_group_id`.
+- Updated browser Pixel, server CAPI, Google ecommerce events, Purchase order-derived payloads, admin identity displays, regression tests, and `TRACKING_SPECS.md` to the same product-level contract.
+- Verification: focused catalog/event/Purchase tests **15/15 passed**; full `npm test` **225/225 passed**; `npm run check` **304 files, 0 errors, 0 warnings, 0 hints**; `npm run build` complete.
+- Local proof: both feeds returned 22/22 unique product IDs, included product `22`, excluded variant `106`, omitted `item_group_id`, and exposed identical sets. The selected-variant product page and checkout flow retained variant `106`; Meta Pixel, CAPI, and Google events emitted product ID `22`.
+- Production proof: both feeds returned HTTP 200 with the identical product ID set `22` through `1`, no variant ID `106`, and no `item_group_id`. The live product page retained variant `106`; `ViewContent`, `view_item`, `AddToCart`, `InitiateCheckout`, CAPI payloads, `add_to_cart`, and `begin_checkout` emitted product ID `22`, while Google retained `106` only as `item_variant`. Horizontal overflow was zero in Chromium.
+- Deployed commit `20e5559` as Worker version `9461efb3-5d96-47d0-a685-0a87909c2e10` to `permatamall.shop` and `www.permatamall.shop`.

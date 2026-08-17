@@ -49,7 +49,7 @@ Live check on 2026-08-16: `/` 200, `/produk` 200, `sitemap.xml` lists 8 pages + 
 | `npm run build` | Cloudflare server bundle complete |
 | Browser smoke | Public 8/8 menu routes and current-role admin menu/profile 5/5 returned 200 at the expected path; public and admin skip links target the main content; no horizontal overflow at 390 px |
 
-Latest deployed catalog verification (2026-08-17, commit `cd4e8cf`, Worker `d691b2d1-80e8-473c-9b9f-d94990d52e94`): `npm test` 225/225, `npm run check` 304 files with no diagnostics, and `npm run build` completed. Production Google and Meta feeds each returned 110/110 unique numeric item IDs with identical sets; every item and group ID was a canonical positive decimal, both feeds included exact persisted variant ID `106`, and neither exposed a composite ID. The live selected-variant product page retained variant `106`; Meta `ViewContent` and Google `view_item` each emitted item/content ID `106`; horizontal overflow was zero in Chromium.
+Latest deployed catalog verification (2026-08-17, commit `20e5559`, Worker `9461efb3-5d96-47d0-a685-0a87909c2e10`): `npm test` 225/225, `npm run check` 304 files with no diagnostics, and `npm run build` completed. Production Google and Meta feeds each returned HTTP 200 with exactly 22/22 unique product IDs in identical sets (`22` through `1`), no `item_group_id`, and no variant ID `106`. The live product page retained selected variant `106` while Meta `ViewContent` and Google `view_item` both emitted product ID `22`; live `AddToCart`/`InitiateCheckout`, CAPI payloads, and Google `add_to_cart`/`begin_checkout` also emitted product ID `22`, with variant `106` retained only as Google `item_variant`; horizontal overflow was zero in Chromium.
 
 ---
 

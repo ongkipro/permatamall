@@ -911,10 +911,10 @@ Implementation, contract tests, static checks, build, and focused authenticated 
 - [x] **T297** — Historical Numeric Variant IDs Across Feeds and Events.
       -> REQ: TRK-4, TRK-5 · deps: [T296] · Historical result: Google Merchant, Meta catalog, browser Pixel, server CAPI, and Google ecommerce events used exact decimal `product_variants.id` as item/content ID, while `products.id` appeared only as `item_group_id`. T298 corrects that mistaken contract: content identity belongs to the product.
 
-## Phase 88: Product-Level Catalog Identity — Verification Pending
+## Phase 88: Product-Level Catalog Identity — Deployed to Production
 
-- [ ] **T298** — Use Product IDs Across Feeds and Events.
-      -> REQ: TRK-4, TRK-5 · deps: [T297] · Done when: Google Merchant and Meta Commerce emit exactly one item per product with `<g:id>` equal to the canonical positive decimal `products.id` and no `item_group_id`; browser Pixel, server CAPI, and Google ecommerce events use that same product ID regardless of selected variant; variant IDs remain order-selection and optional event metadata only; focused and full tests, static checks, production build, local browser/feed evidence, deployment, and production browser/feed evidence all pass.
+- [x] **T298** — Use Product IDs Across Feeds and Events.
+      -> REQ: TRK-4, TRK-5 · deps: [T297] · Done 2026-08-17: Google Merchant and Meta Commerce now emit exactly one item per product with `<g:id>` equal to canonical positive decimal `products.id` and no `item_group_id`; browser Pixel, server CAPI, and Google ecommerce events use that same product ID regardless of selected variant; variant IDs remain order-selection and optional Google `item_variant` metadata only. Focused tests 15/15, full `npm test` 225/225, `npm run check` 304 files with no diagnostics, production build, local browser/feed evidence, deployment, and production browser/feed evidence all passed. Deployed commit `20e5559` as Worker `9461efb3-5d96-47d0-a685-0a87909c2e10`.
 
 ---
 
