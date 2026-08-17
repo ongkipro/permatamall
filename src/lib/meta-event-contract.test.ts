@@ -2,6 +2,12 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { validateMetaEventPayload } from './meta-event-contract.ts';
 import { formatContentId } from './catalog-feed.ts';
+import {
+  getMetaPurchaseReference,
+  isMetaPurchaseEligible,
+  parseMetaPurchaseVariantIds,
+  validateMetaCatalogContentIds,
+} from './meta-commerce.ts';
 
 const requestUrl = 'https://permatamall.shop/api/meta-event';
 
@@ -140,4 +146,89 @@ test('poisoning inputs are rejected before transport', () => {
   for (const payload of invalidPayloads) {
     assert.equal(validateMetaEventPayload(payload, requestUrl).ok, false);
   }
+});
+
+test('Purchase reference requires the public order status token', () => {
+  assert.deepEqual(
+    getMetaPurchaseReference(
+      {
+        custom_data: {
+          order_number: 'INV-20260816-ABC123',
+          status_token: 'status-token-123456',
+        },
+      },
+      'https://permatamall.shop/thanks',
+    ),
+    {
+      orderLocator: 'INV-20260816-ABC123',
+      statusToken: 'status-token-123456',
+    },
+  );
+  assert.deepEqual(
+    parseMetaPurchaseVariantIds('106,invalid,107,0'),
+    ['106', '107'],
+  );
+});
+
+test('Purchase waits for verified payment except COD orders', () => {
+  const order = {
+    order_number: 'INV-20260816-ABC123',
+    customer_name: 'Siti Rahayu',
+    customer_phone: '6281234567890',
+    customer_email: null,
+    province: 'Jawa Barat',
+    city: 'Bandung',
+    postal_code: null,
+    total_amount: 125_000,
+    payment_method: 'qris',
+    payment_status: 'pending',
+    variant_ids: '106',
+  };
+
+  assert.equal(isMetaPurchaseEligible(order), false);
+  assert.equal(
+    isMetaPurchaseEligible({ ...order, payment_status: 'paid' }),
+    true,
+  );
+  assert.equal(
+    isMetaPurchaseEligible({
+      ...order,
+      payment_method: 'cod',
+      payment_status: 'unpaid',
+    }),
+    true,
+  );
+});
+
+test('commerce content ids must resolve to active D1 variants', async () => {
+  const database = {
+    prepare() {
+      return {
+        bind(...ids: string[]) {
+          return {
+            async all() {
+              return {
+                results: ids
+                  .filter((id) => id === '106')
+                  .map((id) => ({ id })),
+              };
+            },
+          };
+        },
+      };
+    },
+  } as unknown as D1Database;
+
+  assert.deepEqual(
+    await validateMetaCatalogContentIds(database, ['106', '106']),
+    ['106'],
+  );
+  assert.equal(
+    await validateMetaCatalogContentIds(database, ['106', '999']),
+    null,
+  );
+  assert.equal(
+    await validateMetaCatalogContentIds(database, ['not-a-catalog-id']),
+    null,
+  );
 });

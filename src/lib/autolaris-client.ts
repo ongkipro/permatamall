@@ -68,6 +68,21 @@ export type AutoLarisPayment = {
   total: number;
 };
 
+export function assertAutoLarisPaymentIntegrity(
+  payment: AutoLarisPayment,
+  expected: { amount: number; adminFee: number; total: number },
+) {
+  if (
+    payment.amount !== expected.amount ||
+    payment.admin !== expected.adminFee ||
+    payment.total !== expected.total
+  ) {
+    throw new Error(
+      "Nominal pembayaran AutoLaris berbeda dari total checkout.",
+    );
+  }
+}
+
 type AutoLarisResponse = {
   rc?: string;
   ket?: string;
@@ -82,6 +97,16 @@ type AutoLarisResponse = {
     total?: number;
   };
 };
+function safeHttpsUrl(value: string | undefined) {
+  const candidate = nonEmpty(value);
+  if (!candidate) return undefined;
+  try {
+    const parsed = new URL(candidate);
+    return parsed.protocol === "https:" ? parsed.toString() : undefined;
+  } catch {
+    return undefined;
+  }
+}
 
 export function parseAutoLarisPaymentResponse(payload: unknown): AutoLarisPayment {
   if (!payload || typeof payload !== "object") {
@@ -101,9 +126,12 @@ export function parseAutoLarisPaymentResponse(payload: unknown): AutoLarisPaymen
   const total = Number(response.data.total);
   if (
     !transactionId ||
-    !Number.isFinite(amount) ||
-    !Number.isFinite(admin) ||
-    !Number.isFinite(total)
+    !Number.isSafeInteger(amount) ||
+    amount <= 0 ||
+    !Number.isSafeInteger(admin) ||
+    admin < 0 ||
+    !Number.isSafeInteger(total) ||
+    total !== amount + admin
   ) {
     throw new Error("AutoLaris mengembalikan data pembayaran yang tidak lengkap.");
   }
@@ -113,7 +141,7 @@ export function parseAutoLarisPaymentResponse(payload: unknown): AutoLarisPaymen
     virtualAccount: nonEmpty(response.data.virtual_account),
     qr: nonEmpty(response.data.qr),
     paymentCode: nonEmpty(response.data.payment_code),
-    url: nonEmpty(response.data.url),
+    url: safeHttpsUrl(response.data.url),
     amount,
     admin,
     total,

@@ -1,7 +1,6 @@
 import type { APIRoute } from 'astro';
 import {
   getAdminCredential,
-  revokeAdminSessions,
   updateAdminCredential,
 } from '../../../lib/admin-credentials';
 import { jsonError, jsonOk } from '../../../lib/api';
@@ -67,6 +66,7 @@ export const PUT: APIRoute = async ({ request, locals, cookies }) => {
     const actorUsername = locals.admin?.username || '';
     const result = await updateAdminCredential(
       database,
+      sessions,
       actorUsername,
       currentPassword,
       username,
@@ -75,7 +75,6 @@ export const PUT: APIRoute = async ({ request, locals, cookies }) => {
     );
     if (!result.ok) return jsonError(result.error, 400);
 
-    await revokeAdminSessions(sessions, actorUsername);
     cookies.delete(SESSION_COOKIE_NAME, ADMIN_SESSION_COOKIE_OPTIONS);
     return jsonOk({
       message: 'Profil admin diperbarui. Silakan login kembali.',

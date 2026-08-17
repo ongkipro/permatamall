@@ -65,9 +65,9 @@ function readErrorCode(response: unknown): number | undefined {
 }
 
 /**
- * Records the event as pending. Returns false when `eventId` is already known,
- * which makes a replayed browser request a no-op instead of a duplicate
- * conversion — the same guarantee `event_id` gives inside Meta, one layer up.
+ * Records the event as pending. Returns false when the same event name and ID
+ * are already known, so replayed browser/server copies collapse without
+ * allowing another event type to reserve a future Purchase ID.
  */
 export async function enqueueCapiEvent(
   database: D1Database,
@@ -147,15 +147,18 @@ async function transmit(
 export async function deliverCapiEvent(
   database: D1Database,
   eventId: string,
+  eventName: string,
   pixelId: string,
   accessToken: string,
 ) {
   const row = await database
     .prepare(
       `SELECT id, event_id, event_name, payload, attempts, max_attempts
-       FROM capi_event_outbox WHERE event_id = ? AND status = 'pending' LIMIT 1`,
+       FROM capi_event_outbox
+       WHERE event_id = ? AND event_name = ? AND status = 'pending'
+       LIMIT 1`,
     )
-    .bind(eventId)
+    .bind(eventId, eventName)
     .first<OutboxRow>();
   if (!row) return false;
   return transmit(database, row, pixelId, accessToken);
@@ -169,6 +172,7 @@ export async function drainCapiOutbox(
   database: D1Database,
   pixelId: string,
   accessToken: string,
+  maxBatch = MAX_DRAIN_BATCH,
 ): Promise<number> {
   const due = await database
     .prepare(
@@ -177,7 +181,10 @@ export async function drainCapiOutbox(
        WHERE status = 'pending' AND next_retry_at <= ? AND attempts < max_attempts
        ORDER BY id ASC LIMIT ?`,
     )
-    .bind(new Date().toISOString(), MAX_DRAIN_BATCH)
+    .bind(
+      new Date().toISOString(),
+      Math.max(1, Math.min(MAX_DRAIN_BATCH, Math.floor(maxBatch))),
+    )
     .all<OutboxRow>();
 
   let sent = 0;

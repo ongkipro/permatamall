@@ -1,4 +1,10 @@
-import { sqliteTable, text, integer, index } from "drizzle-orm/sqlite-core";
+import {
+  sqliteTable,
+  text,
+  integer,
+  index,
+  uniqueIndex,
+} from "drizzle-orm/sqlite-core";
 
 export const stores = sqliteTable("stores", {
   id: integer("id").primaryKey({ autoIncrement: true }),
@@ -301,14 +307,15 @@ export const orderItems = sqliteTable(
 /**
  * Transactional outbox for Meta CAPI. Events are recorded before transmission
  * so a network failure, a 429, or an expired token cannot silently discard a
- * conversion. `eventId` is unique, which also makes a replayed browser request
- * a no-op rather than a duplicate conversion.
+ * conversion. Event name + event ID is the deduplication key: browser and
+ * server copies of the same event collapse, but another event type cannot
+ * squat a future Purchase ID.
  */
 export const capiEventOutbox = sqliteTable(
   "capi_event_outbox",
   {
     id: integer("id").primaryKey({ autoIncrement: true }),
-    eventId: text("event_id").notNull().unique(),
+    eventId: text("event_id").notNull(),
     eventName: text("event_name").notNull(),
     payload: text("payload").notNull(),
     status: text("status").notNull().default("pending"),
@@ -320,6 +327,10 @@ export const capiEventOutbox = sqliteTable(
     updatedAt: text("updated_at").notNull(),
   },
   (table) => [
+    uniqueIndex("capi_event_outbox_event_unique").on(
+      table.eventName,
+      table.eventId,
+    ),
     index("capi_event_outbox_due_idx").on(table.status, table.nextRetryAt),
   ],
 );

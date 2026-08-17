@@ -172,7 +172,7 @@ class SqliteD1Database {
 
       CREATE TABLE capi_event_outbox (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        event_id TEXT NOT NULL UNIQUE,
+        event_id TEXT NOT NULL,
         event_name TEXT NOT NULL,
         payload TEXT NOT NULL,
         status TEXT NOT NULL DEFAULT 'pending',
@@ -181,7 +181,8 @@ class SqliteD1Database {
         last_error TEXT,
         next_retry_at TEXT NOT NULL,
         created_at TEXT NOT NULL,
-        updated_at TEXT NOT NULL
+        updated_at TEXT NOT NULL,
+        UNIQUE(event_name, event_id)
       );
 
       INSERT INTO stores (id, cod_fee_bearer) VALUES (1, 'buyer');
@@ -226,6 +227,7 @@ test("checkout promotes one abandoned lead and queues one attributable Purchase"
   const database = new SqliteD1Database();
   const d1 = asD1(database);
   const customerPhone = "6281234567890";
+  const abandonedLeadToken = "abn_full_funnel_123456";
   let abandonedId = 0;
   let clickIds: ClickIds = {};
   let order: PersistedOrder | undefined;
@@ -234,6 +236,7 @@ test("checkout promotes one abandoned lead and queues one attributable Purchase"
     "1. /api/record-abandoned-order logic records an abandoned order",
     async () => {
       const abandoned = await recordAbandonedOrder(d1, {
+        leadToken: abandonedLeadToken,
         customerName: "Siti Rahayu",
         customerPhone,
         address: "Jl. Melati 10",
@@ -262,6 +265,7 @@ test("checkout promotes one abandoned lead and queues one attributable Purchase"
       assert.equal(storedAbandoned.customer_phone, customerPhone);
 
       const refreshed = await recordAbandonedOrder(d1, {
+        leadToken: abandonedLeadToken,
         customerName: "Siti Rahayu Updated",
         customerPhone,
         totalAmount: 150000,
@@ -428,13 +432,23 @@ test("checkout promotes one abandoned lead and queues one attributable Purchase"
         false,
       );
       assert.equal(
+        await enqueueCapiEvent(d1, {
+          eventName: "PageView",
+          eventId,
+          eventSourceUrl: "https://shop.example/",
+          userData: {},
+          customData: {},
+        }),
+        true,
+      );
+      assert.equal(
         (
           await readRow<{ total: number }>(
             database,
             "SELECT COUNT(*) AS total FROM capi_event_outbox",
           )
         ).total,
-        1,
+        2,
       );
     },
   );

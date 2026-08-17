@@ -47,6 +47,7 @@ test('default admin rotates with the configured bootstrap password', async () =>
     updated_at: '2026-08-16T00:00:00.000Z',
   };
   let updateValues: unknown[] | null = null;
+  const operations: string[] = [];
   const database = {
     prepare(sql: string) {
       return {
@@ -57,6 +58,7 @@ test('default admin rotates with the configured bootstrap password', async () =>
             },
             async run() {
               updateValues = values;
+              operations.push('update');
               return { meta: { changes: 1 } };
             },
           };
@@ -64,9 +66,22 @@ test('default admin rotates with the configured bootstrap password', async () =>
       };
     },
   } as unknown as D1Database;
+  const sessions = {
+    async list(options: { prefix: string }) {
+      assert.equal(options.prefix, 'admin-session:admin:');
+      return {
+        keys: [{ name: 'admin-session:admin:test-jti' }],
+        list_complete: true,
+      };
+    },
+    async delete(key: string) {
+      operations.push(`delete:${key}`);
+    },
+  } as unknown as KVNamespace;
 
   const result = await updateAdminCredential(
     database,
+    sessions,
     'admin',
     'bootstrap-secret-1234',
     'paduka.admin',
@@ -78,6 +93,10 @@ test('default admin rotates with the configured bootstrap password', async () =>
   assert.equal(updateValues?.[0], 'paduka.admin');
   assert.equal(updateValues?.[3], 1);
   assert.equal(updateValues?.[4], DEFAULT_ADMIN_PASSWORD_HASH);
+  assert.deepEqual(operations, [
+    'delete:admin-session:admin:test-jti',
+    'update',
+  ]);
 });
 
 test('new password hashes use random salts and the bootstrap secret stops working after rotation', async () => {

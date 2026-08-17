@@ -10,6 +10,7 @@ import {
   paymentFeeDescription,
 } from "../../lib/payment-fee-policy";
 import { paymentBrandAsset } from "../../lib/payment-brand";
+import { parseDisabledAutoLarisChannels } from "../../lib/checkout-payment-policy";
 
 export const prerender = false;
 
@@ -77,10 +78,11 @@ export const GET: APIRoute = async ({ locals }) => {
         isCodEnabled = store?.is_cod_enabled !== 0;
         isAutoLarisMasterEnabled = store?.is_autolaris_enabled !== 0;
         autoLarisConfigured = Boolean(autolarisApiKey) && isAutoLarisMasterEnabled;
-        disabledAutoLarisChannels = (store?.disabled_autolaris_channels || "")
-          .split(",")
-          .map((c) => c.trim().toUpperCase())
-          .filter(Boolean);
+        disabledAutoLarisChannels = [
+          ...parseDisabledAutoLarisChannels(
+            store?.disabled_autolaris_channels,
+          ),
+        ];
         paymentFeeBearer = normalizePaymentFeeBearer(store?.payment_fee_bearer);
         codFeeBearer = normalizePaymentFeeBearer(store?.cod_fee_bearer);
         sellerBankAccounts = bankAccounts.results || [];

@@ -29,6 +29,23 @@ test("only pending orders can be explicitly dispatched", () => {
   );
 });
 
+test("internal city-average fallback is never sent to Mengantar", () => {
+  assert.equal(
+    canDispatchOrderToMengantar("cod", "unpaid", "pending", "ICO"),
+    false,
+  );
+  assert.deepEqual(
+    getMengantarDispatchEligibility({
+      ...completeOrder,
+      courierCode: "ICO",
+    }),
+    {
+      eligible: false,
+      reason: "Tarif fallback internal harus dikonfirmasi admin.",
+    },
+  );
+});
+
 test("unpaid online and incomplete pending orders are not dispatchable", () => {
   assert.deepEqual(
     getMengantarDispatchEligibility({

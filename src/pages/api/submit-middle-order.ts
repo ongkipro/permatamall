@@ -3,6 +3,10 @@ import { hasClickId, readClickIdCookie, serializeClickIds } from "../../lib/clic
 import { normalizePhoneNumber } from "../../lib/order-schema";
 import { getRuntimeEnv } from "../../lib/env";
 import { loadStoreCodDisabledProvinceCodes } from "../../lib/form-mode";
+import {
+  checkCheckoutPaymentAvailability,
+  loadStoreCheckoutPaymentPolicy,
+} from "../../lib/checkout-payment-policy";
 import { resolveGeoLocation } from "../../lib/geo";
 import { isProvinceExcluded } from "../../lib/province";
 import { detectExcludedAreaInText } from "../../lib/excluded-area";
@@ -147,10 +151,27 @@ export const POST: APIRoute = async ({ request, locals }) => {
       },
       503,
     );
-  const [geo, disabledProvinceCodes] = await Promise.all([
+  const [geo, disabledProvinceCodes, paymentPolicy] = await Promise.all([
     resolveGeoLocation(request),
     loadStoreCodDisabledProvinceCodes(database),
+    loadStoreCheckoutPaymentPolicy(database),
   ]);
+  const paymentAvailability = checkCheckoutPaymentAvailability({
+    policy: paymentPolicy,
+    paymentMethod: "cod",
+    autoLarisChannel: null,
+    autoLarisConfigured: false,
+  });
+  if (!paymentAvailability.allowed) {
+    return json(
+      {
+        success: false,
+        error: paymentAvailability.message,
+        code: paymentAvailability.code,
+      },
+      409,
+    );
+  }
   const detectedExcludedArea = detectExcludedAreaInText(
     address,
     disabledProvinceCodes,

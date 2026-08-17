@@ -49,6 +49,7 @@ export class DuplicateSubmissionError extends Error {}
 export class OrderInputError extends Error {}
 
 export type RecordAbandonedOrderInput = {
+  leadToken: string;
   customerName: string;
   customerPhone: string;
   address?: string;
@@ -140,14 +141,14 @@ export async function recordAbandonedOrder(
     database
       .prepare(
         `INSERT INTO orders (
-          order_number, store_id, customer_name, customer_phone,
+          order_number, submit_token, store_id, customer_name, customer_phone,
           address, province, city, district,
           payment_method, payment_status, shipping_status,
           total_amount, shipping_cost, discount_amount, cod_service_fee,
           cod_service_fee_vat, cod_fee_bearer, created_at
         )
         SELECT
-          ?, ?, ?, ?,
+          ?, ?, ?, ?, ?,
           ?, ?, '', '',
           'cod', 'unpaid', 'abandoned',
           ?, 0, 0, 0,
@@ -162,6 +163,7 @@ export async function recordAbandonedOrder(
       )
       .bind(
         orderNumber,
+        input.leadToken,
         store.id,
         customerName,
         customerPhone,

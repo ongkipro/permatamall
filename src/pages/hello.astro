@@ -9,7 +9,7 @@ import {
   normalizeAdminUsername,
   verifyAdminLoginPassword,
 } from '../lib/admin-credentials';
-import { ADMIN_SESSION_COOKIE_OPTIONS, SESSION_COOKIE_NAME, secureEqual, signJwt } from '../lib/auth';
+import { ADMIN_SESSION_COOKIE_OPTIONS, SESSION_COOKIE_NAME, getAdminSessionKey, secureEqual, signJwt } from '../lib/auth';
 import {
   clearAdminLoginAttempts,
   consumeAdminLoginAttempt,
@@ -74,12 +74,11 @@ if (Astro.request.method === 'POST') {
           const { token, session } = await signJwt({ username: credential.username, role: credential.role }, authSecret);
           await Promise.all([
             sessions.put(
-              `admin-session:${session.jti}`,
+              getAdminSessionKey(session),
               JSON.stringify({
                 username: session.username,
                 role: session.role,
                 must_change_password: credential.mustChangePassword,
-                credential_updated_at: credential.updatedAt,
               }),
               { expirationTtl: 60 * 60 * 24 },
             ),

@@ -21,6 +21,7 @@ export type MengantarDispatchEligibilityInput = {
   courierCode?: string | null;
   pickupAddressId?: string | null;
 };
+const INTERNAL_FALLBACK_COURIER_CODE = "ICO";
 
 export type MengantarDispatchEligibility = {
   eligible: boolean;
@@ -31,7 +32,11 @@ export function canDispatchOrderToMengantar(
   paymentMethod: string,
   paymentStatus: string,
   shippingStatus: string,
+  courierCode?: string | null,
 ) {
+  if (courierCode?.trim().toUpperCase() === INTERNAL_FALLBACK_COURIER_CODE) {
+    return false;
+  }
   const paymentEligible =
     paymentMethod.toLowerCase() === "cod" ||
     Boolean(PAID_STATUSES[paymentStatus.toLowerCase()]);
@@ -68,10 +73,20 @@ export function getMengantarDispatchEligibility(
     };
   }
   if (
+    input.courierCode?.trim().toUpperCase() ===
+    INTERNAL_FALLBACK_COURIER_CODE
+  ) {
+    return {
+      eligible: false,
+      reason: "Tarif fallback internal harus dikonfirmasi admin.",
+    };
+  }
+  if (
     !canDispatchOrderToMengantar(
       input.paymentMethod,
       input.paymentStatus,
       input.shippingStatus,
+      input.courierCode,
     )
   ) {
     return {

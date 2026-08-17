@@ -98,9 +98,11 @@ function normalizeHttpUrl(value: unknown) {
   const raw = clean(value, 500).replace(/\/+$/, "");
   try {
     const parsed = new URL(raw);
-    return parsed.protocol === "https:" || parsed.protocol === "http:"
-      ? parsed.toString().replace(/\/$/, "")
-      : "";
+    const isSecure = parsed.protocol === "https:";
+    const isLocalHttp =
+      parsed.protocol === "http:" &&
+      (parsed.hostname === "localhost" || parsed.hostname === "127.0.0.1");
+    return isSecure || isLocalHttp ? parsed.toString().replace(/\/$/, "") : "";
   } catch {
     return "";
   }

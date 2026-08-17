@@ -179,6 +179,7 @@ test("recordAbandonedOrder normalizes an Indonesian phone and creates an unpaid 
   } as unknown as D1Database;
 
   const result = await recordAbandonedOrder(mockDb, {
+    leadToken: "abn_test_create_123456",
     customerName: "Paduka Ongki",
     customerPhone: "08123456789",
     address: "Jl. Merdeka No. 1",
@@ -192,18 +193,34 @@ test("recordAbandonedOrder normalizes an Indonesian phone and creates an unpaid 
   assert.equal(result.action, "created");
   assert.match(batchStatements[0].sql, /'unpaid', 'abandoned'/);
   assert.ok(batchStatements[0].args.includes("628123456789"));
+  assert.doesNotMatch(
+    batchStatements[0].sql,
+    /customer_phone = \?\s+AND submit_token = \?/,
+  );
   assert.match(batchStatements[1].sql, /INSERT INTO order_items/);
+  const finalLookup = batchStatements.at(-1);
+  assert.deepEqual(finalLookup?.args, ["628123456789"]);
+  assert.match(finalLookup?.sql || "", /unixepoch\(created_at\).*'-2 hours'/s);
 });
 
 test("recordAbandonedOrder upserts the matching recent lead", async () => {
   let updateSql = "";
   let updateArgs: unknown[] = [];
+  let lookupArgs: unknown[] = [];
+  let lookupSql = "";
   let batchCalled = false;
   const mockDb = {
     prepare(sql: string) {
       const stmt = {
         bind(...args: unknown[]) {
           if (sql.includes("UPDATE orders")) updateArgs = args;
+          if (
+            sql.includes("FROM orders") &&
+            sql.includes("shipping_status = 'abandoned'")
+          ) {
+            lookupArgs = args;
+            lookupSql = sql;
+          }
           return stmt;
         },
         async first() {
@@ -226,6 +243,7 @@ test("recordAbandonedOrder upserts the matching recent lead", async () => {
   } as unknown as D1Database;
 
   const result = await recordAbandonedOrder(mockDb, {
+    leadToken: "abn_test_update_123456",
     customerName: "Nama Terbaru",
     customerPhone: "+62 812-3456-789",
     totalAmount: 75000,
@@ -235,6 +253,8 @@ test("recordAbandonedOrder upserts the matching recent lead", async () => {
   assert.equal(result.orderNumber, "ABN-EXISTING");
   assert.equal(result.action, "updated");
   assert.equal(batchCalled, false);
+  assert.deepEqual(lookupArgs, ["628123456789"]);
+  assert.match(lookupSql, /unixepoch\(created_at\).*'-2 hours'/s);
   assert.match(updateSql, /payment_status = 'unpaid'/);
   assert.match(updateSql, /shipping_status = 'abandoned'/);
   assert.ok(updateArgs.includes(75000));
@@ -244,6 +264,7 @@ test("recordAbandonedOrder rejects a non-mobile Indonesian phone", async () => {
   const unusedDb = {} as D1Database;
   await assert.rejects(
     recordAbandonedOrder(unusedDb, {
+      leadToken: "abn_test_invalid_123456",
       customerName: "Paduka Ongki",
       customerPhone: "0215551234",
     }),

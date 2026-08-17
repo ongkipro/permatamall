@@ -9,6 +9,15 @@ import { persistOrder, DuplicateSubmissionError, OrderInputError } from '../../.
 import { resolveEligibleShippingRates } from '../../../lib/shipping-quote';
 import { readClickIdCookie, hasClickId, serializeClickIds } from '../../../lib/click-ids';
 import { isShippingQuoteFailure, resolveTrustedHeadlessShipping } from '../../../lib/headless-checkout';
+import {
+  checkCheckoutPaymentAvailability,
+  loadStoreCheckoutPaymentPolicy,
+} from '../../../lib/checkout-payment-policy';
+import { getProviderConfig } from '../../../lib/provider-config';
+import {
+  createAutoLarisPaymentForOrder,
+  type AutoLarisPaymentRecord,
+} from '../../../lib/autolaris-payment';
 
 export const prerender = false;
 
@@ -59,7 +68,22 @@ export const POST: APIRoute = async ({ request, locals }) => {
       }, validation.corsHeaders);
     }
 
-    const disabledProvinceCodes = await loadStoreCodDisabledProvinceCodes(database);
+    const [disabledProvinceCodes, paymentPolicy, providerConfig] = await Promise.all([
+      loadStoreCodDisabledProvinceCodes(database),
+      loadStoreCheckoutPaymentPolicy(database),
+      getProviderConfig(database, locals),
+    ]);
+    const paymentAvailability = checkCheckoutPaymentAvailability({
+      policy: paymentPolicy,
+      paymentMethod: data.payment_method,
+      autoLarisChannel: data.payment_channel || null,
+      autoLarisConfigured: Boolean(providerConfig.autolaris.apiKey),
+    });
+    if (!paymentAvailability.allowed) {
+      return headlessError(paymentAvailability.message, 409, {
+        code: paymentAvailability.code,
+      }, validation.corsHeaders);
+    }
     const provinceCode = normalizeProvinceCode(data.province);
     if (data.payment_method === 'cod' && (!provinceCode || isProvinceExcluded(provinceCode, disabledProvinceCodes))) {
       return headlessError('COD tidak tersedia untuk wilayah tujuan ini. Silakan gunakan pembayaran transfer/online.', 422, {
@@ -96,6 +120,24 @@ export const POST: APIRoute = async ({ request, locals }) => {
       adClickIds: storedClickIds,
     });
 
+    let payment: AutoLarisPaymentRecord | undefined;
+    if (
+      data.payment_method !== 'cod' &&
+      data.payment_method !== 'manual_transfer'
+    ) {
+      payment = await createAutoLarisPaymentForOrder(database, locals, {
+        orderId: order.id,
+        channelCode: data.payment_channel!,
+        callbackUrl: new URL('/api/webhooks/autolaris', request.url).toString(),
+      });
+      if (payment.status === 'failed') {
+        await database
+          .prepare("UPDATE orders SET payment_status = 'failed' WHERE id = ?")
+          .bind(order.id)
+          .run();
+      }
+    }
+
     return headlessOk(
       {
         order: {
@@ -111,6 +153,34 @@ export const POST: APIRoute = async ({ request, locals }) => {
           seller_account_holder: order.sellerAccountHolder,
           seller_account_number: order.sellerAccountNumber,
         },
+        payment: payment
+          ? {
+              channel_code: payment.channelCode,
+              fee_bearer: payment.feeBearer,
+              status: payment.status,
+              amount: payment.amount,
+              admin_fee: payment.adminFee,
+              total_amount: payment.totalAmount,
+              virtual_account: payment.virtualAccount || null,
+              qr_payload: payment.qrPayload || null,
+              payment_code: payment.paymentCode || null,
+              payment_url: payment.providerPaymentUrl || null,
+              expires_at: payment.expiresAt || null,
+              error: payment.failedReason || null,
+            }
+          : data.payment_method === 'manual_transfer'
+            ? {
+                channel_code: order.sellerBankCode,
+                bank_name: order.sellerBankName,
+                account_holder: order.sellerAccountHolder,
+                account_number: order.sellerAccountNumber,
+                manual_transfer: true,
+                status: 'pending',
+                amount: order.totalAmount,
+                admin_fee: 0,
+                total_amount: order.totalAmount,
+              }
+            : null,
       },
       201,
       validation.corsHeaders

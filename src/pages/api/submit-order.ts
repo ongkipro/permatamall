@@ -27,6 +27,10 @@ import {
   type AutoLarisPaymentRecord,
 } from "../../lib/autolaris-payment";
 import { getProviderConfig } from "../../lib/provider-config";
+import {
+  checkCheckoutPaymentAvailability,
+  loadStoreCheckoutPaymentPolicy,
+} from "../../lib/checkout-payment-policy";
 import { normalizePhone } from "../../lib/validation";
 
 export const prerender = false;
@@ -109,8 +113,44 @@ export const POST: APIRoute = async ({ request, locals }) => {
       503,
     );
   }
-  const disabledProvinceCodes =
-    await loadStoreCodDisabledProvinceCodes(database);
+  let disabledProvinceCodes: string[];
+  let paymentAvailability: ReturnType<
+    typeof checkCheckoutPaymentAvailability
+  >;
+  try {
+    const [provinceCodes, paymentPolicy, providerConfig] = await Promise.all([
+      loadStoreCodDisabledProvinceCodes(database),
+      loadStoreCheckoutPaymentPolicy(database),
+      getProviderConfig(database, locals),
+    ]);
+    disabledProvinceCodes = provinceCodes;
+    paymentAvailability = checkCheckoutPaymentAvailability({
+      policy: paymentPolicy,
+      paymentMethod: data.payment_method,
+      autoLarisChannel: data.payment_channel || null,
+      autoLarisConfigured: Boolean(providerConfig.autolaris.apiKey),
+    });
+  } catch (error) {
+    console.error("submit-order-payment-config", error);
+    return json(
+      {
+        success: false,
+        error: "Metode pembayaran belum dapat diverifikasi.",
+        code: "PAYMENT_PROVIDER_ERROR",
+      },
+      503,
+    );
+  }
+  if (!paymentAvailability.allowed) {
+    return json(
+      {
+        success: false,
+        error: paymentAvailability.message,
+        code: paymentAvailability.code,
+      },
+      409,
+    );
+  }
   const provinceCode = normalizeProvinceCode(data.province);
   if (
     data.payment_method === "cod" &&
@@ -126,31 +166,6 @@ export const POST: APIRoute = async ({ request, locals }) => {
       },
       422,
     );
-  }
-  if (data.payment_method !== "cod") {
-    try {
-      const provider = (await getProviderConfig(database, locals)).autolaris;
-      if (!provider.apiKey) {
-        return json(
-          {
-            success: false,
-            error: "Pembayaran online belum tersedia. Silakan pilih COD.",
-            code: "PAYMENT_METHOD_UNAVAILABLE",
-          },
-          503,
-        );
-      }
-    } catch (error) {
-      console.error("submit-order-payment-config", error);
-      return json(
-        {
-          success: false,
-          error: "Pembayaran online belum dapat diverifikasi.",
-          code: "PAYMENT_PROVIDER_ERROR",
-        },
-        503,
-      );
-    }
   }
 
   const destinationId = String(

@@ -232,6 +232,7 @@ export function initMiddleOrderForm(
     });
   };
   let hasRecordedAbandonedLead = false;
+  const abandonedLeadToken = createId(`abn_${productSlug}`);
   let abandonedTimer: ReturnType<typeof setTimeout> | null = null;
 
   const maybeRecordAbandonedLead = () => {
@@ -247,6 +248,7 @@ export function initMiddleOrderForm(
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          lead_token: abandonedLeadToken,
           customer_name: customerName,
           customer_phone: customerPhone,
           product_id: productId,

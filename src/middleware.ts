@@ -8,9 +8,10 @@ import {
 import {
   canAccessAdminRoute,
   getDefaultAdminRoute,
+  getAdminSessionKey,
   getSessionCookie,
+  readStoredAdminSession,
   verifyJwt,
-  type AdminRole,
 } from './lib/auth';
 import { getEnvValue, getRuntimeEnv } from './lib/env';
 import {
@@ -67,44 +68,6 @@ function cloneResponse(
   });
 }
 
-function readStoredSession(
-  value: string | null,
-  username: string,
-  role: AdminRole,
-) {
-  if (!value) {
-    return {
-      active: false,
-      mustChangePassword: false,
-      credentialUpdatedAt: "",
-    };
-  }
-  try {
-    const parsed = JSON.parse(value) as {
-      username?: unknown;
-      role?: unknown;
-      must_change_password?: unknown;
-      credential_updated_at?: unknown;
-    };
-    const active =
-      parsed.username === username &&
-      parsed.role === role &&
-      typeof parsed.credential_updated_at === "string";
-    return {
-      active,
-      mustChangePassword: active && parsed.must_change_password === true,
-      credentialUpdatedAt: active
-        ? (parsed.credential_updated_at as string)
-        : "",
-    };
-  } catch {
-    return {
-      active: false,
-      mustChangePassword: false,
-      credentialUpdatedAt: "",
-    };
-  }
-}
 async function loadStoredEmbedAllowedOrigins(
   database: D1Database | undefined,
 ) {
@@ -210,33 +173,18 @@ export const onRequest = defineMiddleware(async (context, next) => {
     const env = getRuntimeEnv(context.locals);
     const secret = getEnvValue('AUTH_SECRET', env);
     const sessions = env?.SESSION as KVNamespace | undefined;
-    const database = env?.OMS_DB as D1Database | undefined;
     const token = getSessionCookie(context.request);
     const session = token ? await verifyJwt(token, secret) : null;
     let active = false;
     let mustChangePassword = false;
-    if (session && sessions && database) {
+    if (session && sessions) {
       try {
-        const stored = readStoredSession(
-          await sessions.get(`admin-session:${session.jti}`),
-          session.username,
-          session.role,
+        const stored = readStoredAdminSession(
+          await sessions.get(getAdminSessionKey(session)),
+          session,
         );
-        if (stored.active) {
-          const credential = await database.prepare(
-            `SELECT updated_at, role
-            FROM admin_credentials
-            WHERE username = ?
-            LIMIT 1`,
-          ).bind(session.username).first<{
-            updated_at: string;
-            role: string;
-          }>();
-          active =
-            credential?.updated_at === stored.credentialUpdatedAt &&
-            credential.role === session.role;
-          mustChangePassword = active && stored.mustChangePassword;
-        }
+        active = stored.active;
+        mustChangePassword = stored.mustChangePassword;
       } catch {
         active = false;
       }

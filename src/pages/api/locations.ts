@@ -10,10 +10,11 @@ import {
 } from '../../lib/location-search';
 import { MengantarClient, type MengantarAddressSearchResult } from '../../lib/mengantar-client';
 import { getProviderConfig } from '../../lib/provider-config';
+import { checkRateLimit, getClientIp, rateLimitHeaders } from '../../lib/rate-limit';
 
 export const prerender = false;
 
-export const GET: APIRoute = async ({ url, locals }) => {
+export const GET: APIRoute = async ({ request, url, locals }) => {
   try {
     const search = url.searchParams.get('search') || '';
     const level = url.searchParams.get('level');
@@ -23,8 +24,27 @@ export const GET: APIRoute = async ({ url, locals }) => {
         { status: 200, headers: { 'Content-Type': 'application/json' } },
       );
     }
+    const runtime = getRuntimeEnv(locals);
+    const rateLimit = await checkRateLimit(
+      runtime?.SESSION as KVNamespace | undefined,
+      `locations:${getClientIp(request.headers)}`,
+      30,
+      60_000,
+    );
+    if (!rateLimit.allowed) {
+      return new Response(
+        JSON.stringify({ success: false, error: 'Terlalu banyak pencarian lokasi.' }),
+        {
+          status: 429,
+          headers: {
+            'Content-Type': 'application/json',
+            ...rateLimitHeaders(rateLimit.remaining, rateLimit.resetAt),
+          },
+        },
+      );
+    }
 
-    const database = getRuntimeEnv(locals)?.OMS_DB;
+    const database = runtime?.OMS_DB;
     if (!database || typeof database !== "object") {
       const items = searchDistrictCatalog(search).map(createDistrictDiscoveryLocation);
       return new Response(

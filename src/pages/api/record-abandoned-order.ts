@@ -3,14 +3,28 @@ import { getRuntimeEnv } from '../../lib/env';
 import { jsonError, jsonOk } from '../../lib/api';
 import { recordAbandonedOrder } from '../../lib/order-persistence';
 import { isValidWa62, normalizePhone } from '../../lib/validation';
+import { checkRateLimit, getClientIp } from '../../lib/rate-limit';
 
 export const POST: APIRoute = async ({ request, locals }) => {
-  const database = getRuntimeEnv(locals)?.OMS_DB;
+  const runtime = getRuntimeEnv(locals);
+  const database = runtime?.OMS_DB;
   if (!database || typeof database !== 'object') {
     return jsonError('Database order belum tersedia.', 503);
   }
+  const rateLimit = await checkRateLimit(
+    runtime?.SESSION as KVNamespace | undefined,
+    `record-abandoned:${getClientIp(request.headers)}`,
+    5,
+    60_000,
+  );
+  if (!rateLimit.allowed) {
+    return jsonError('Terlalu banyak percobaan. Coba lagi sebentar.', 429, {
+      code: 'RATE_LIMITED',
+    });
+  }
 
   const body = await request.json().catch(() => null) as {
+    lead_token?: string;
     customer_name?: string;
     customer_phone?: string;
     product_id?: number | string;
@@ -27,6 +41,10 @@ export const POST: APIRoute = async ({ request, locals }) => {
 
   const customerName = String(body.customer_name || '').trim();
   const customerPhone = normalizePhone(String(body.customer_phone || ''));
+  const leadToken = String(body.lead_token || '').trim();
+  if (!/^[A-Za-z0-9_.:-]{16,160}$/.test(leadToken)) {
+    return jsonError('Token order terbengkalai tidak valid.', 400);
+  }
 
   if (customerName.length < 3) {
     return jsonError('Nama pelanggan minimal 3 karakter.', 400);
@@ -39,6 +57,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
   const variantId = Number(body.variant_id);
   try {
     const recorded = await recordAbandonedOrder(database as D1Database, {
+      leadToken,
       customerName,
       customerPhone,
       address: String(body.address || ''),

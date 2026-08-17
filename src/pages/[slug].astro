@@ -6,7 +6,7 @@ import { getStorefrontProduct } from '../lib/catalog';
 import { resolveFormVariant } from '../lib/form-config';
 import { getLandingPageBySlug, parseShortcodes } from '../lib/landing-pages';
 import { getStoreSupportWhatsapp } from '../lib/public-store';
-import { getSessionCookie, verifyJwt } from '../lib/auth';
+import { getAdminSessionKey, getSessionCookie, readStoredAdminSession, verifyJwt } from '../lib/auth';
 import { getEnvValue, getRuntimeEnv } from '../lib/env';
 import { tenantConfig } from '../lib/tenant';
 
@@ -31,35 +31,16 @@ if (previewRequested) {
     try {
       const env = getRuntimeEnv(Astro.locals);
       const sessions = env?.SESSION as KVNamespace | undefined;
-      const database = env?.OMS_DB as D1Database | undefined;
       const token = getSessionCookie(Astro.request);
       const session = token
         ? await verifyJwt(token, getEnvValue('AUTH_SECRET', env))
         : null;
-      if (session && sessions && database) {
-        const storedValue = await sessions.get(`admin-session:${session.jti}`);
-        const stored = storedValue
-          ? JSON.parse(storedValue) as {
-              username?: unknown;
-              role?: unknown;
-              must_change_password?: unknown;
-              credential_updated_at?: unknown;
-            }
-          : null;
-        if (
-          stored?.username === session.username &&
-          stored.role === session.role &&
-          stored.must_change_password !== true &&
-          typeof stored.credential_updated_at === 'string'
-        ) {
-          const credential = await database
-            .prepare('SELECT updated_at, role FROM admin_credentials WHERE username = ? LIMIT 1')
-            .bind(session.username)
-            .first<{ updated_at: string; role: string }>();
-          isPreview =
-            credential?.updated_at === stored.credential_updated_at &&
-            credential.role === session.role;
-        }
+      if (session && sessions) {
+        const stored = readStoredAdminSession(
+          await sessions.get(getAdminSessionKey(session)),
+          session,
+        );
+        isPreview = stored.active && !stored.mustChangePassword;
       }
     } catch {
       isPreview = false;

@@ -212,14 +212,13 @@ export const PATCH: APIRoute = async ({ request, locals }) => {
     params.push(now);
     params.push(id);
 
+    await revokeAdminSessions(sessions, existing.username);
     await database
       .prepare(
         `UPDATE admin_credentials SET ${updates.join(", ")} WHERE id = ? AND role != 'owner'`,
       )
       .bind(...params)
       .run();
-
-    await revokeAdminSessions(sessions, existing.username);
 
     const updatedUser = await database
       .prepare(
@@ -266,6 +265,7 @@ export const DELETE: APIRoute = async ({ request, locals }) => {
     if (row.role === "owner") {
       return jsonError("Akun owner tidak dapat dihapus dari halaman ini.", 409);
     }
+    await revokeAdminSessions(sessions, row.username);
     const result = await database
       .prepare("DELETE FROM admin_credentials WHERE id = ? AND role != 'owner'")
       .bind(id)
@@ -273,7 +273,6 @@ export const DELETE: APIRoute = async ({ request, locals }) => {
     if (result.meta.changes !== 1) {
       return jsonError("Pengguna tidak ditemukan.", 404);
     }
-    await revokeAdminSessions(sessions, row.username);
     return jsonOk({ message: `Akses ${row.username} dicabut.` });
   } catch (error) {
     console.error("admin-access-delete", error);

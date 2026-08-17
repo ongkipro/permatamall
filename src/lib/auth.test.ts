@@ -6,8 +6,11 @@ import {
   ADMIN_ROLES,
   canAccessAdminRoute,
   getDefaultAdminRoute,
+  getAdminSessionKey,
+  getAdminSessionPrefix,
   getSessionCookie,
   isAdminRole,
+  readStoredAdminSession,
   signJwt,
   verifyJwt,
 } from './auth.ts';
@@ -18,8 +21,7 @@ const OTHER_SECRET = 'unit-test-auth-secret-fedcba9876543210';
 
 // The admin gate that consumes these tokens lives in `src/middleware.ts`, which
 // imports the virtual `astro:middleware` module and extensionless specifiers.
-// Stub the virtual module and re-add `.ts` so the credential-rotation contract
-// can be exercised against the production handler instead of a copy of it.
+// Stub both so the production handler can be exercised instead of a copy.
 const ASTRO_MIDDLEWARE_STUB = 'stub:astro-middleware';
 const middlewareHooks = registerHooks({
   resolve(specifier, context, nextResolve) {
@@ -79,7 +81,7 @@ async function forgeSignedToken(header: unknown, payload: unknown, secret = AUTH
   return `${unsigned}.${Buffer.from(signature).toString('base64url')}`;
 }
 
-function validClaims(overrides: Partial<AdminSession> = {}) {
+function validClaims(overrides: Partial<AdminSession> = {}): AdminSession {
   const now = Math.floor(Date.now() / 1000);
   return {
     username: 'paduka.admin',
@@ -119,6 +121,49 @@ test('a signed session token round-trips its claims through verification', async
   // Two sessions never share a token id, so revoking one cannot revoke another.
   const second = await signJwt({ username: 'paduka.admin', role: 'owner' }, AUTH_SECRET);
   assert.notEqual(second.session.jti, session.jti);
+});
+
+test('KV session identity is authoritative without a credential revision field', () => {
+  const session = validClaims();
+  assert.deepEqual(
+    readStoredAdminSession(
+      JSON.stringify({
+        username: session.username,
+        role: session.role,
+        must_change_password: false,
+      }),
+      session,
+    ),
+    { active: true, mustChangePassword: false },
+  );
+  assert.deepEqual(
+    readStoredAdminSession(
+      JSON.stringify({
+        username: session.username,
+        role: session.role,
+        must_change_password: true,
+      }),
+      session,
+    ),
+    { active: true, mustChangePassword: true },
+  );
+  assert.equal(
+    readStoredAdminSession(
+      JSON.stringify({ username: session.username, role: 'owner' }),
+      session,
+    ).active,
+    false,
+  );
+  assert.equal(readStoredAdminSession('{invalid', session).active, false);
+});
+
+test('admin session keys are scoped by username for deterministic revocation', () => {
+  const session = validClaims();
+  assert.equal(
+    getAdminSessionKey(session),
+    `admin-session:${session.username}:${session.jti}`,
+  );
+  assert.equal(getAdminSessionPrefix(session.username), `admin-session:${session.username}:`);
 });
 
 test('a token signed with a different secret is rejected', async () => {
@@ -295,57 +340,51 @@ test('the session cookie is read only under its exact name', async () => {
 });
 
 
-test('a session is closed once the credential behind it rotates', async () => {
+test('a revoked KV session closes the gate without a credential D1 read', async () => {
   const { token, session } = await signJwt({ username: 'paduka.admin', role: 'advertiser' }, AUTH_SECRET);
-  const issuedAt = '2026-08-16T00:00:00.000Z';
   const storedRecord = JSON.stringify({
     username: session.username,
     role: session.role,
     must_change_password: false,
-    credential_updated_at: issuedAt,
   });
 
-  // Same token, same KV record: only the stored credential row changes.
-  assert.equal((await runAdminRequest({ pathname: '/api/admin/products', token, stored: storedRecord, credential: { updated_at: issuedAt, role: 'advertiser' } })).status, 200);
+  assert.equal((await runAdminRequest({
+    pathname: '/api/admin/products',
+    token,
+    stored: storedRecord,
+    credential: null,
+  })).status, 200);
 
-  // Rotation bumps `updated_at`, which is the session revision.
-  assert.equal((await runAdminRequest({ pathname: '/api/admin/products', token, stored: storedRecord, credential: { updated_at: '2026-08-16T09:30:00.000Z', role: 'advertiser' } })).status, 401);
+  assert.equal((await runAdminRequest({
+    pathname: '/api/admin/products',
+    token,
+    stored: null,
+    credential: null,
+  })).status, 401);
 
-  // A role change invalidates the token's authorisation snapshot too.
-  assert.equal((await runAdminRequest({ pathname: '/api/admin/products', token, stored: storedRecord, credential: { updated_at: issuedAt, role: 'customer_service' } })).status, 401);
-
-  // A deleted operator has no credential row left to match.
-  assert.equal((await runAdminRequest({ pathname: '/api/admin/products', token, stored: storedRecord, credential: null })).status, 401);
-
-  // A revoked (deleted) KV session record closes the gate as well.
-  assert.equal((await runAdminRequest({ pathname: '/api/admin/products', token, stored: null, credential: { updated_at: issuedAt, role: 'advertiser' } })).status, 401);
-
-  // The same rotation on a page route sends the operator back to the login page.
   const pageResponse = await runAdminRequest({
     pathname: '/admin/products',
     token,
-    stored: storedRecord,
-    credential: { updated_at: '2026-08-16T09:30:00.000Z', role: 'advertiser' },
+    stored: null,
+    credential: null,
   });
   assert.equal(pageResponse.headers.get('location'), '/hello');
 });
 
 test('a session record belonging to another operator cannot be reused', async () => {
   const { token, session } = await signJwt({ username: 'paduka.admin', role: 'advertiser' }, AUTH_SECRET);
-  const updatedAt = '2026-08-16T00:00:00.000Z';
   const request = (stored: unknown) =>
     runAdminRequest({
       pathname: '/api/admin/products',
       token,
       stored: typeof stored === 'string' ? stored : JSON.stringify(stored),
-      credential: { updated_at: updatedAt, role: 'advertiser' },
+      credential: null,
     });
 
-  assert.equal((await request({ username: 'someone.else', role: session.role, credential_updated_at: updatedAt })).status, 401);
-  assert.equal((await request({ username: session.username, role: 'owner', credential_updated_at: updatedAt })).status, 401);
-  assert.equal((await request({ username: session.username, role: session.role })).status, 401);
+  assert.equal((await request({ username: 'someone.else', role: session.role })).status, 401);
+  assert.equal((await request({ username: session.username, role: 'owner' })).status, 401);
   assert.equal((await request('{ not json')).status, 401);
-  assert.equal((await request({ username: session.username, role: session.role, credential_updated_at: updatedAt })).status, 200);
+  assert.equal((await request({ username: session.username, role: session.role })).status, 200);
 });
 
 test('the admin gate refuses requests without a usable session token', async () => {
@@ -464,11 +503,11 @@ function createSessionStore(value: string | null) {
   return { get: async () => value } as unknown as KVNamespace;
 }
 
-function createCredentialDatabase(row: CredentialRow) {
+function createCredentialDatabase(_row: CredentialRow) {
   return {
-    prepare: () => ({
-      bind: () => ({ first: async () => row }),
-    }),
+    prepare: () => {
+      throw new Error('Admin middleware must not query D1 for a live KV session.');
+    },
   } as unknown as D1Database;
 }
 

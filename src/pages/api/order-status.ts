@@ -1,5 +1,6 @@
 import type { APIRoute } from "astro";
 import { getRuntimeEnv } from "../../lib/env.ts";
+import { checkRateLimit, getClientIp, rateLimitHeaders } from "../../lib/rate-limit.ts";
 
 export const prerender = false;
 
@@ -8,12 +9,33 @@ const JSON_HEADERS = {
   "Cache-Control": "no-store",
 };
 
-function json(data: Record<string, unknown>, status = 200) {
-  return new Response(JSON.stringify(data), { status, headers: JSON_HEADERS });
+function json(
+  data: Record<string, unknown>,
+  status = 200,
+  headers: Record<string, string> = {},
+) {
+  return new Response(JSON.stringify(data), {
+    status,
+    headers: { ...JSON_HEADERS, ...headers },
+  });
 }
 
 export const POST: APIRoute = async ({ request, locals }) => {
   try {
+    const runtime = getRuntimeEnv(locals);
+    const rateLimit = await checkRateLimit(
+      runtime?.SESSION as KVNamespace | undefined,
+      `order-status:${getClientIp(request.headers)}`,
+      60,
+      60_000,
+    );
+    if (!rateLimit.allowed) {
+      return json(
+        { success: false, error: "Terlalu banyak permintaan status order." },
+        429,
+        rateLimitHeaders(rateLimit.remaining, rateLimit.resetAt),
+      );
+    }
     const body = await request.json().catch(() => null) as {
       order_pk?: unknown;
       order_id?: unknown;
@@ -31,7 +53,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
       );
     }
 
-    const database = getRuntimeEnv(locals)?.OMS_DB as D1Database | undefined;
+    const database = runtime?.OMS_DB as D1Database | undefined;
     if (!database?.prepare) {
       return json(
         { success: false, error: "Database order belum tersedia." },

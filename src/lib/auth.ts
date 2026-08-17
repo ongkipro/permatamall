@@ -24,6 +24,40 @@ export type AdminSession = {
   exp: number;
 };
 
+const ADMIN_SESSION_KEY_PREFIX = 'admin-session:';
+
+export function getAdminSessionPrefix(username: string) {
+  return `${ADMIN_SESSION_KEY_PREFIX}${encodeURIComponent(username)}:`;
+}
+
+export function getAdminSessionKey(
+  session: Pick<AdminSession, 'username' | 'jti'>,
+) {
+  return `${getAdminSessionPrefix(session.username)}${session.jti}`;
+}
+
+export function readStoredAdminSession(
+  value: string | null,
+  session: Pick<AdminSession, 'username' | 'role'>,
+) {
+  if (!value) return { active: false, mustChangePassword: false };
+  try {
+    const parsed = JSON.parse(value) as {
+      username?: unknown;
+      role?: unknown;
+      must_change_password?: unknown;
+    };
+    const active =
+      parsed.username === session.username && parsed.role === session.role;
+    return {
+      active,
+      mustChangePassword: active && parsed.must_change_password === true,
+    };
+  } catch {
+    return { active: false, mustChangePassword: false };
+  }
+}
+
 const ADMIN_PAGE_ROUTES = [
   '/admin/dashboard',
   '/admin/orders',

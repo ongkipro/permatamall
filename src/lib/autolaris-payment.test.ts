@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {
   AUTOLARIS_CHANNEL_OPTIONS,
+  assertAutoLarisPaymentIntegrity,
   parseAutoLarisPaymentResponse,
 } from "./autolaris-client.ts";
 import { summarizePaymentBuckets } from "./autolaris-balance.ts";
@@ -31,6 +32,58 @@ test("AutoLaris response parsing preserves provider instructions and billed tota
     admin: 2500,
     total: 182500,
   });
+});
+
+test("AutoLaris response rejects inconsistent totals and unsafe payment URLs", () => {
+  assert.throws(
+    () =>
+      parseAutoLarisPaymentResponse({
+        rc: "00",
+        data: {
+          trx_id: "TRX-BAD",
+          amount: 180000,
+          admin: 2500,
+          total: 1,
+        },
+      }),
+    /data pembayaran yang tidak lengkap/,
+  );
+  const payment = parseAutoLarisPaymentResponse({
+    rc: "00",
+    data: {
+      trx_id: "TRX-SAFE",
+      url: "javascript:alert(1)",
+      amount: 180000,
+      admin: 2500,
+      total: 182500,
+    },
+  });
+  assert.equal(payment.url, undefined);
+});
+
+test("AutoLaris payment must match the checkout amount exactly", () => {
+  const payment = {
+    transactionId: "TRX-123",
+    amount: 180000,
+    admin: 2500,
+    total: 182500,
+  };
+  assert.doesNotThrow(() =>
+    assertAutoLarisPaymentIntegrity(payment, {
+      amount: 180000,
+      adminFee: 2500,
+      total: 182500,
+    }),
+  );
+  assert.throws(
+    () =>
+      assertAutoLarisPaymentIntegrity(payment, {
+        amount: 180000,
+        adminFee: 1000,
+        total: 181000,
+      }),
+    /berbeda dari total checkout/,
+  );
 });
 
 test("AutoLaris channels map QRIS separately from bank transfer channels", () => {

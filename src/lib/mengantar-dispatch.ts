@@ -159,11 +159,18 @@ export async function dispatchOrderToMengantar(
       error: "Hanya order menunggu yang dapat dipush ke Mengantar.",
     };
   }
+  if (order.courier_code?.trim().toUpperCase() === "ICO") {
+    return {
+      status: "waiting_for_confirmation",
+      error: "Tarif fallback internal harus dikonfirmasi admin.",
+    };
+  }
   if (
     !canDispatchOrderToMengantar(
       order.payment_method,
       order.payment_status,
       order.shipping_status,
+      order.courier_code,
     )
   ) {
     return {

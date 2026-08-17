@@ -1,12 +1,13 @@
 # STATUS — AdsBookCMS
 
-> Verified against the current branch and production: 2026-08-16. Production
-> Worker `c72c7133-15af-4355-97ec-fdaa3ca41f3c` is live; its deployed tree is
-> captured by source commit `6e7cfc3`.
+> Current audit branch verified on 2026-08-16. The production baseline before
+> this release is Worker `c72c7133-15af-4355-97ec-fdaa3ca41f3c`; this audit
+> branch has not been deployed.
 >
-> Current release gates: `npm run check` 312 files / 0 errors / 0 warnings / 0
-> hints · `npm test` 250 / 250 · `npm run build` complete.
-> `npm run deploy -- --dry-run` complete. Local and production D1 are migrated through `0039`.
+> Current branch release gates: `npm run check` 315 files / 0 errors / 0
+> warnings / 0 hints · `npm test` 262 / 262 · `npm run build` complete ·
+> `npm run deploy -- --dry-run` complete. Local D1 is migrated through `0040`;
+> production D1 remains migrated through `0039`.
 >
 > `product_variants.id` is now the one immutable external catalog identity for
 > Google items, Meta catalog items, and every Meta catalog event.
@@ -121,6 +122,17 @@ Storefront, D1, and login-throttling performance follow-up:
 - Login throttling moved from isolate-local/KV read-modify-write behavior to atomic D1 `INSERT ... ON CONFLICT ... RETURNING` counters keyed by source IP and username/IP. Migration `0036` adds the counter table; migration `0037` removes redundant indexes and aligns the landing-section index with its query order.
 - Before deployment, 20 production product-detail requests measured 344.51 ms median / 643.32 ms p95 TTFB with no cache headers. After deployment, 20 warm `cmsads; hit` requests measured 47.13 ms median / 65.19 ms p95: an 86.3% median and 89.9% p95 reduction. The production home route measured 47.61 ms median / 57.80 ms p95 after excluding neither samples nor the single 5.94 s network outlier; p95 remained representative across the 20-request set.
 - Production migrations `0036` and `0037` applied successfully, remote query plans use `idx_orders_created_id` and `idx_landing_sections_page`, and Worker version `6d7eb0cc-86f4-4e1e-9609-3290a7a509f1` serves both custom domains. The Free plan remains sufficient for this defect; reconsider Paid only from measured account-limit or observability pressure.
+
+Login-to-thank-you payment and fulfilment audit:
+
+- Admin authentication now validates signed tokens against one authoritative KV session record without a D1 credential read on every private request. Credential creation, password/role updates, deletion, and logout revoke affected KV sessions; permission tests exercise stale, revoked, rotated, malformed, and cross-role sessions.
+- Store payment switches are enforced at every hosted and Headless checkout boundary, not only rendered in the form. Disabled COD, AutoLaris, and individual online channels fail closed; seller-account requirements and COD province exclusions remain server-authoritative.
+- AutoLaris payment creation accepts only a provider response whose billed amount and total match the order total. Payment polling and webhooks reconcile by the persisted provider transaction, verify callback secrets with timing-safe comparison, reject amount/order mismatches, and never dispatch unpaid online orders.
+- Order submission promotes the matching abandoned row inside the same D1 batch, preserves one immutable order identity, rolls back the whole write when a guarded stock decrement fails, and returns deterministic duplicate/stock errors.
+- Mengantar dispatch rejects internal fallback courier `ICO`, requires COD or verified online payment plus a provider-backed route, serializes outbound creation through a D1 lease, and keeps retryable dispatch state explicit.
+- Thank-you rendering keeps identifiers and customer/payment state in `sessionStorage`, strips sensitive query parameters before subresources load, uses text-only dynamic rendering, polls token-scoped order status, and exposes verified provider payment instructions without inventing bank data.
+- Meta commerce events require active D1 variant IDs. Purchase additionally requires the token-scoped persisted order, uses the order number as the shared Pixel/CAPI identity, derives value and customer data from D1, and waits for verified payment except COD. Migration `0040` scopes the CAPI outbox uniqueness key to `(event_name, event_id)` so a different event type cannot suppress Purchase.
+- Public location, shipping-rate, payment-method, order-status, and tracking operations use shared KV rate limits and `Cache-Control: no-store`. A non-mutating production smoke confirmed `/hello`, the DAIRA product page, payment-method and location APIs at HTTP 200, correct JSON/no-store headers, zero mobile horizontal overflow, and zero product-page console errors. This audit branch has not been deployed.
 
 ---
 

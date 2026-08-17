@@ -24,6 +24,19 @@ export type ProviderConfig = {
 };
 
 const clean = (value: string | null | undefined) => value?.trim() || "";
+export function normalizeProviderBaseUrl(value: unknown) {
+  const raw = typeof value === "string" ? value.trim().replace(/\/+$/, "") : "";
+  try {
+    const parsed = new URL(raw);
+    const isSecure = parsed.protocol === "https:";
+    const isLocalHttp =
+      parsed.protocol === "http:" &&
+      (parsed.hostname === "localhost" || parsed.hostname === "127.0.0.1");
+    return isSecure || isLocalHttp ? parsed.toString().replace(/\/$/, "") : "";
+  } catch {
+    return "";
+  }
+}
 
 export async function getProviderConfig(
   database: D1Database,
@@ -49,8 +62,8 @@ export async function getProviderConfig(
     mengantar: {
       apiKey: mengantarDbKey || mengantarEnvKey,
       baseUrl:
-        clean(row?.mengantar_base_url) ||
-        getEnvValue("MENGANTAR_BASE_URL", env) ||
+        normalizeProviderBaseUrl(row?.mengantar_base_url) ||
+        normalizeProviderBaseUrl(getEnvValue("MENGANTAR_BASE_URL", env)) ||
         DEFAULT_MENGANTAR_BASE_URL,
       source: mengantarDbKey
         ? "dashboard"
@@ -61,8 +74,8 @@ export async function getProviderConfig(
     autolaris: {
       apiKey: autolarisDbKey || autolarisEnvKey,
       baseUrl:
-        clean(row?.autolaris_base_url) ||
-        getEnvValue("AUTOLARIS_BASE_URL", env) ||
+        normalizeProviderBaseUrl(row?.autolaris_base_url) ||
+        normalizeProviderBaseUrl(getEnvValue("AUTOLARIS_BASE_URL", env)) ||
         DEFAULT_AUTOLARIS_BASE_URL,
       source: autolarisDbKey
         ? "dashboard"

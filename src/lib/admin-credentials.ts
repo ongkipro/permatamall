@@ -1,4 +1,4 @@
-import { isAdminRole, secureEqual, verifyPasswordHash } from './auth.ts';
+import { getAdminSessionPrefix, isAdminRole, secureEqual, verifyPasswordHash } from './auth.ts';
 import type { AdminRole } from './auth.ts';
 
 export const DEFAULT_ADMIN_USERNAME = 'admin';
@@ -117,6 +117,7 @@ export async function getAdminCredential(
 
 export async function updateAdminCredential(
   database: D1Database,
+  sessions: KVNamespace,
   actorUsername: string,
   currentPassword: string,
   username: string,
@@ -136,6 +137,7 @@ export async function updateAdminCredential(
   if (passwordError) return { ok: false as const, error: passwordError };
 
   const passwordHash = await hashAdminPassword(newPassword);
+  await revokeAdminSessions(sessions, current.username);
   const updatedAt = new Date().toISOString();
   const result = await database.prepare(`
     UPDATE admin_credentials
@@ -157,25 +159,15 @@ export async function updateAdminCredential(
 
 export async function revokeAdminSessions(
   sessions: KVNamespace,
-  username?: string,
+  username: string,
 ) {
   let cursor: string | undefined;
+  const prefix = getAdminSessionPrefix(username);
   do {
-    const page = await sessions.list({ prefix: 'admin-session:', cursor });
-    await Promise.all(page.keys.map(async (key) => {
-      if (!username) {
-        await sessions.delete(key.name);
-        return;
-      }
-      const value = await sessions.get(key.name);
-      if (!value) return;
-      try {
-        const parsed = JSON.parse(value) as { username?: unknown };
-        if (parsed.username === username) await sessions.delete(key.name);
-      } catch {
-        await sessions.delete(key.name);
-      }
-    }));
+    const page = await sessions.list({ prefix, cursor });
+    for (const key of page.keys) {
+      await sessions.delete(key.name);
+    }
     cursor = page.list_complete ? undefined : page.cursor;
   } while (cursor);
 }

@@ -1,5 +1,6 @@
 import {
   AutoLarisClient,
+  assertAutoLarisPaymentIntegrity,
   type AutoLarisCheckoutChannel,
   type AutoLarisPayment,
 } from "./autolaris-client";
@@ -211,6 +212,11 @@ export async function createAutoLarisPaymentForOrder(
       amount: requestAmount,
       callbackUrl: input.callbackUrl,
       expiresAt,
+    });
+    assertAutoLarisPaymentIntegrity(payment, {
+      amount: requestAmount,
+      adminFee: expectedAdminFee,
+      total: expectedBilledTotal,
     });
 
     await database
