@@ -2178,11 +2178,13 @@ Scope: Comprehensive UI/UX redesign and backend enhancement for `/admin/orders`,
 - **Thank-you boundary**: Completion state stays in `sessionStorage`; sensitive query parameters are removed before downstream requests. Dynamic customer, payment, and shipping values render through text nodes; status polling is token-scoped and provider instructions are rendered only from verified response fields.
 - **Meta signal integrity**: Commerce events require active D1 variant IDs. Purchase requires a token-scoped persisted order, derives value/customer/catalog data from that row, and is accepted only for COD or verified paid online orders. Pixel and CAPI share the order number as `event_id`. Migration `0040_capi_event_identity.sql` changes outbox uniqueness from `event_id` alone to `(event_name, event_id)`.
 - **Public API controls**: Location, shipping-rate, payment-method, order-status, and tracking routes use KV-backed rate limiting and `Cache-Control: no-store`. Store payment policy/provider config reads that are independent now run concurrently.
-- **Production safety smoke**: Non-mutating browser checks confirmed `/hello` and the DAIRA product page at 390×844, zero horizontal overflow, and zero product-page console errors. Production payment-method and location APIs returned HTTP 200 JSON with `Cache-Control: no-store`. No production deploy, provider request, order write, payment, or shipment was performed.
+- **Production release smoke**: Deployed Worker `625ac473-dd5f-4b7a-b87e-56f9517a18d1`. Browser checks confirmed `/hello`, the unauthenticated `/admin` redirect, and the DAIRA product page at 390×844; the product form hydrated, advanced its validation state after input, and had zero horizontal overflow. Production API checks returned HTTP 200 for payment methods, 422 for an empty storefront checkout payload, 401 for an unauthenticated Headless checkout, and 400 for an unsupported Meta event, all with `Cache-Control: no-store`. No order, provider request, payment, or shipment was created.
 - **Verification**:
   - `npm test`: **262/262 passed**.
   - `npm run check`: **315 files, 0 errors, 0 warnings, 0 hints**.
   - `npm run build`: **complete** (Cloudflare server bundle).
   - `npm run deploy -- --dry-run`: **complete**; 197 Worker modules, 4,581.39 KiB upload / 911.66 KiB gzip.
   - Local Wrangler D1 migration: **0040 applied successfully**; no local migration remains pending.
+  - Production Wrangler D1 migration: **0040 applied successfully**; the composite `(event_name, event_id)` outbox index is active and no migration remains pending.
+  - Production Worker deploy: **complete** as version `625ac473-dd5f-4b7a-b87e-56f9517a18d1`.
   - Independent final security re-review: both reported P2 defects resolved; no fix-introduced finding.

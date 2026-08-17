@@ -1,13 +1,12 @@
 # STATUS — AdsBookCMS
 
-> Current audit branch verified on 2026-08-16. The production baseline before
-> this release is Worker `c72c7133-15af-4355-97ec-fdaa3ca41f3c`; this audit
-> branch has not been deployed.
+> Current audit release deployed to production on 2026-08-16 as Worker
+> `625ac473-dd5f-4b7a-b87e-56f9517a18d1`.
 >
 > Current branch release gates: `npm run check` 315 files / 0 errors / 0
 > warnings / 0 hints · `npm test` 262 / 262 · `npm run build` complete ·
 > `npm run deploy -- --dry-run` complete. Local D1 is migrated through `0040`;
-> production D1 remains migrated through `0039`.
+> production D1 is also migrated through `0040`.
 >
 > `product_variants.id` is now the one immutable external catalog identity for
 > Google items, Meta catalog items, and every Meta catalog event.
