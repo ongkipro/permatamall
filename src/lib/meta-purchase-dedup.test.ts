@@ -138,8 +138,8 @@ test("browser and server Purchase legs derive the same event_id for one order", 
   assert.equal(run.postedPayloads[0].status_token, "status-token-42");
   assert.equal(
     run.postedPayloads[0].product_id,
-    "106",
-    "Purchase content ID must equal the persisted D1 variant ID",
+    "22",
+    "Purchase content ID must equal the persisted D1 product ID",
   );
 });
 

@@ -97,18 +97,18 @@ async function findPurchaseContentIds(
 ): Promise<string[]> {
   const result = await database
     .prepare(
-      `SELECT product_variants.product_id, order_items.variant_id
+      `SELECT product_variants.product_id
        FROM order_items
        INNER JOIN product_variants ON product_variants.id = order_items.variant_id
        WHERE order_items.order_id = ?
        ORDER BY order_items.id ASC`,
     )
     .bind(orderId)
-    .all<{ product_id: number; variant_id: number }>();
+    .all<{ product_id: number }>();
 
-  return (result.results ?? []).map(
-    ({ product_id, variant_id }) => formatCatalogItemId(product_id, variant_id).itemId,
-  );
+  return [
+    ...new Set((result.results ?? []).map(({ product_id }) => formatCatalogItemId(product_id))),
+  ];
 }
 
 export const POST: APIRoute = async ({ request, locals }) => {

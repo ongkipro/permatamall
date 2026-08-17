@@ -86,8 +86,9 @@ const { tenantName, tenantSlug } = Astro.props;
     // di dalam fire() supaya dua leg mengutip baris order yang sama.
     const orderId = pick('order_id', '');
     const productName = pick('product_name', tenantName);
+    const productId = pick('product_id', '');
     const variantId = pick('variant_unique_id', '');
-    const catalogItemId = /^[1-9]\d*$/.test(variantId) ? variantId : '';
+    const catalogItemId = /^[1-9]\d*$/.test(productId) ? productId : '';
     const phone = pick('phone', '');
     const name = pick('name', '');
     const province = pick('province', '');

@@ -1,8 +1,6 @@
 import { useEffect, useRef, useState, type SyntheticEvent } from "react";
 import { Input } from "../ui/input";
-import { formatCatalogGroupId, formatCatalogItemId } from "../../lib/catalog-feed";
-import { Copy } from "lucide-react";
-import { toast } from "sonner";
+import { formatCatalogItemId } from "../../lib/catalog-feed";
 type Variant = {
   key: string;
   id?: number | string;
@@ -493,29 +491,6 @@ export function ProductForm({ productId }: { productId?: string }) {
                     <span className="mt-1 block font-mono text-sm text-slate-700">
                       {variant.id || "Dibuat otomatis saat disimpan"}
                     </span>
-                    {variant.id && productId && (
-                      <div className="mt-2 pt-2 border-t border-slate-200">
-                        <span className="block text-[10px] font-bold text-slate-500 uppercase" title="ID spesifik varian untuk event ad/pixel (item_id)">
-                          Content ID
-                        </span>
-                        <div className="mt-0.5 flex items-center justify-between gap-2">
-                          <span className="block font-mono text-xs font-bold text-emerald-700 truncate">
-                            {formatCatalogItemId(productId, variant.id).itemId}
-                          </span>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              void navigator.clipboard.writeText(formatCatalogItemId(productId, variant.id as string | number).itemId);
-                              toast.success("Content ID varian disalin");
-                            }}
-                            className="text-slate-400 hover:text-slate-700 transition-colors"
-                            title="Salin Content ID varian"
-                          >
-                            <Copy className="size-3" />
-                          </button>
-                        </div>
-                      </div>
-                    )}
                   </div>
                   <label>
                     <span className="mb-1 block text-xs font-bold text-slate-600">
@@ -618,9 +593,9 @@ export function ProductForm({ productId }: { productId?: string }) {
             </div>
             <dl className="mt-5 grid grid-cols-2 gap-3 text-xs">
               <div className="rounded-lg bg-slate-50 p-3">
-                <dt className="text-slate-500" title="Digunakan sebagai item_group_id di katalog feed. Content ID spesifik ada di tiap varian.">Catalog Group ID</dt>
+                <dt className="text-slate-500" title="ID produk yang sama dipakai di feed dan event iklan.">Product Content ID</dt>
                 <dd className="mt-1 font-mono font-black text-slate-900">
-                  {productId ? formatCatalogGroupId(productId) : "Otomatis"}
+                  {productId ? formatCatalogItemId(productId) : "Otomatis"}
                 </dd>
               </div>
               <div className="rounded-lg bg-slate-50 p-3">

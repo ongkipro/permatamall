@@ -906,10 +906,15 @@ Implementation, contract tests, static checks, build, and focused authenticated 
 - [x] **T296** — Remove Synthetic Catalog ID Padding Across Feeds and Events.
       -> REQ: TRK-4, TRK-5 · deps: [T295] · Historical result: feeds and events used exact persisted product and variant IDs inside a composite `p<products.id>-v<product_variants.id>` item ID. T297 replaces the composite with the provider-native numeric variant key.
 
-## Phase 87: Numeric Variant Catalog Identity — Deployed to Production
+## Phase 87: Numeric Variant Catalog Identity — Historical, Superseded by T298
 
-- [x] **T297** — Use Numeric Variant IDs Across Feeds and Events.
-      -> REQ: TRK-4, TRK-5 · deps: [T296] · Done when: Google Merchant, Meta catalog, browser Pixel, server CAPI, and Google ecommerce events use the exact decimal `product_variants.id` as item/content ID; grouped variants use exact decimal `products.id` only as `item_group_id`; invalid, non-positive, non-canonical, and unsafe integer IDs fail closed; focused and full tests, static checks, production build, live feeds, and the live selected-variant tracker are verified. **Done 2026-08-17; commit `cd4e8cf`; Worker `d691b2d1-80e8-473c-9b9f-d94990d52e94`.**
+- [x] **T297** — Historical Numeric Variant IDs Across Feeds and Events.
+      -> REQ: TRK-4, TRK-5 · deps: [T296] · Historical result: Google Merchant, Meta catalog, browser Pixel, server CAPI, and Google ecommerce events used exact decimal `product_variants.id` as item/content ID, while `products.id` appeared only as `item_group_id`. T298 corrects that mistaken contract: content identity belongs to the product.
+
+## Phase 88: Product-Level Catalog Identity — Verification Pending
+
+- [ ] **T298** — Use Product IDs Across Feeds and Events.
+      -> REQ: TRK-4, TRK-5 · deps: [T297] · Done when: Google Merchant and Meta Commerce emit exactly one item per product with `<g:id>` equal to the canonical positive decimal `products.id` and no `item_group_id`; browser Pixel, server CAPI, and Google ecommerce events use that same product ID regardless of selected variant; variant IDs remain order-selection and optional event metadata only; focused and full tests, static checks, production build, local browser/feed evidence, deployment, and production browser/feed evidence all pass.
 
 ---
 

@@ -17,7 +17,7 @@ import {
   Eye,
   Filter,
 } from "lucide-react";
-import { formatCatalogGroupId } from "../../lib/catalog-feed";
+import { formatCatalogItemId } from "../../lib/catalog-feed";
 import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 import {
@@ -152,9 +152,9 @@ function ProductActions({
           <Code2 className="size-4 text-emerald-600" aria-hidden="true" />
           <span>Embed checkout form</span>
         </DropdownMenuItem>
-        <DropdownMenuItem onSelect={() => onCopyId(formatCatalogGroupId(product.id))} className="flex items-center gap-2">
+        <DropdownMenuItem onSelect={() => onCopyId(formatCatalogItemId(product.id))} className="flex items-center gap-2">
           <Copy className="size-4 text-slate-500" aria-hidden="true" />
-          <span>Salin Catalog Group ID</span>
+          <span>Salin Product Content ID</span>
         </DropdownMenuItem>
 
         <DropdownMenuSeparator />
@@ -296,7 +296,7 @@ export function ProductCatalog({
     return products.filter((product) => {
       const matchesQuery =
         !normalized ||
-        [product.id, formatCatalogGroupId(product.id), product.title, product.slug, product.category]
+        [product.id, formatCatalogItemId(product.id), product.title, product.slug, product.category]
           .join(" ")
           .toLowerCase()
           .includes(normalized);
@@ -830,9 +830,9 @@ export function ProductCatalog({
 
                   <dl className="mt-3.5 grid grid-cols-3 gap-2 rounded-lg bg-slate-50/80 p-2.5 text-xs">
                     <div>
-                      <dt className="text-[10px] text-slate-500 uppercase font-semibold" title="Digunakan sebagai item_group_id di katalog feed. Content ID spesifik ada di tiap varian.">Catalog Group ID</dt>
+                      <dt className="text-[10px] text-slate-500 uppercase font-semibold" title="ID produk yang sama dipakai di feed dan event iklan.">Product Content ID</dt>
                       <dd className="mt-0.5 font-mono font-bold text-slate-900 text-[11px] truncate">
-                        {formatCatalogGroupId(product.id)}
+                        {formatCatalogItemId(product.id)}
                       </dd>
                     </div>
                     <div>
@@ -854,7 +854,7 @@ export function ProductCatalog({
                       product={product}
                       onDelete={setDeleteTarget}
                       onEmbed={setEmbedTarget}
-                      onCopyId={(id) => void copyText(String(id), "Catalog Group ID")}
+                      onCopyId={(id) => void copyText(String(id), "Product Content ID")}
                       fullWidth
                     />
                   </div>
@@ -870,7 +870,7 @@ export function ProductCatalog({
                 <TableRow className="bg-slate-50/80 text-[11px] font-bold uppercase tracking-wider text-slate-500 border-b border-slate-200">
                   <TableHead className="py-3 pl-5 pr-4 w-[340px]">Produk</TableHead>
                   <TableHead className="py-3 px-4 w-[160px]">Harga</TableHead>
-                  <TableHead className="py-3 px-4 w-[180px]" title="Digunakan sebagai item_group_id di katalog feed. Content ID spesifik ada di tiap varian.">Catalog Group ID</TableHead>
+                  <TableHead className="py-3 px-4 w-[180px]" title="ID produk yang sama dipakai di feed dan event iklan.">Product Content ID</TableHead>
                   <TableHead className="py-3 px-4 w-[100px]">Varian</TableHead>
                   <TableHead className="py-3 px-4 w-[110px]">Status</TableHead>
                   <TableHead className="py-3 pr-5 pl-4 text-right w-[90px]">Aksi</TableHead>
@@ -931,16 +931,16 @@ export function ProductCatalog({
                         </span>
                       </TableCell>
 
-                      {/* Catalog Group ID */}
+                      {/* Product Content ID */}
                       <TableCell className="py-3.5 px-4">
                         <button
                           type="button"
-                          onClick={() => void copyText(formatCatalogGroupId(product.id), "Catalog Group ID")}
+                          onClick={() => void copyText(formatCatalogItemId(product.id), "Product Content ID")}
                           className="group inline-flex items-center gap-1.5 rounded-md px-2 py-1 hover:bg-slate-100 transition-colors text-left"
-                          title="Klik untuk menyalin Catalog Group ID. Digunakan sebagai item_group_id di feed."
+                          title="Klik untuk menyalin Product Content ID yang dipakai di feed dan event iklan."
                         >
                           <span className="font-mono text-xs font-bold text-slate-700 group-hover:text-slate-950">
-                            {formatCatalogGroupId(product.id)}
+                            {formatCatalogItemId(product.id)}
                           </span>
                           <Copy className="size-3 text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity" />
                         </button>
@@ -990,7 +990,7 @@ export function ProductCatalog({
                           product={product}
                           onDelete={setDeleteTarget}
                           onEmbed={setEmbedTarget}
-                          onCopyId={(id) => void copyText(String(id), "Catalog Group ID")}
+                          onCopyId={(id) => void copyText(String(id), "Product Content ID")}
                         />
                       </TableCell>
                     </TableRow>

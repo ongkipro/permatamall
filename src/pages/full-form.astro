@@ -27,7 +27,6 @@ if (!selectedVariant) return Astro.redirect(`/produk/${product.slug}`);
   <MetaLandingTracker
     slug="full-form"
     productId={product.productId}
-    variantId={selectedVariant.id}
     contentName={product.productName}
     price={selectedVariant.price}
   />

@@ -35,8 +35,8 @@ type ValidationResult =
 
 const EVENT_NAMES = new Set<string>(META_EVENT_NAMES);
 const EVENT_ID_PATTERN = /^[A-Za-z0-9_.:-]{1,128}$/;
-// Catalog item IDs are exact positive D1 product_variants.id values. Product
-// IDs remain numeric feed-only item_group_id values.
+// Catalog item IDs are exact positive D1 products.id values. Variant IDs
+// remain order-selection and inventory identifiers only.
 const CATALOG_ITEM_ID_PATTERN = /^[1-9]\d*$/;
 // fb.<subdomainIndex>.<timestamp>.<payload>
 const FB_COOKIE_PATTERN = /^fb\.\d\.\d{10,20}\..+$/;

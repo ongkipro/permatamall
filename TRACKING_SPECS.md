@@ -86,8 +86,8 @@ Security rules:
 | Meta event | GTM event | Browser trigger | Qualification |
 | --- | --- | --- | --- |
 | `PageView` | `page_view` | Eligible page load | Tag and consent state permit browser tracking. |
-| `ViewContent` | `view_item` | One canonical catalog item is viewed | Canonical D1 product + selected variant identity and current D1 value. |
-| `AddToCart` | `add_to_cart` | Current direct-response form reaches qualified customer intent | Selected catalog item ID; never a scroll, impression, or arbitrary CTA click. |
+| `ViewContent` | `view_item` | One canonical product is viewed | Canonical D1 product identity; the selected variant supplies the current value only. |
+| `AddToCart` | `add_to_cart` | Current direct-response form reaches qualified customer intent | Product content ID; never a scroll, impression, or arbitrary CTA click. |
 | `InitiateCheckout` | `begin_checkout` | A valid checkout submit attempt begins | Product, variant, value, and customer boundary have passed browser validation; server still revalidates. |
 | `Purchase` | `purchase` | The qualifying persisted order state is confirmed | COD requires persisted order success; online payment requires authenticated paid reconciliation. |
 
@@ -95,23 +95,28 @@ Security rules:
 
 ## 5. Product Catalog Identity
 
-Every catalog item is one persisted variant. Meta Pixel, Meta CAPI, GTM/Google
+Every catalog item is one persisted product. Meta Pixel, Meta CAPI, GTM/Google
 Ads, Google Merchant Center, and Meta Commerce Manager use the exact decimal
-string of `product_variants.id` as the item ID.
+string of `products.id` as the item/content ID.
 
-Product `22`, variant `106` therefore uses item/content ID `106`. A group of
-genuinely equivalent variants may additionally use the exact decimal string of
-`products.id` (`22`) as `item_group_id`; the product ID is grouping metadata and
-is not sent as an event `content_id`. Do not prefix, pad, offset, hash, combine,
-or otherwise rewrite either persisted D1 key.
+Product `22`, including selected variant `106`, therefore uses item/content ID
+`22`. Variant selection may change price, stock, SKU, and the optional
+`item_variant` event field; it never changes `content_id` or feed `<g:id>`.
+Each provider feed emits one item per product and does not emit
+`item_group_id`. Do not prefix, pad, offset, hash, combine, or otherwise rewrite
+the persisted product key.
 
-- D1 product ID: immutable source for catalog group identity.
-- D1 variant ID: immutable source for catalog item, order-selection, and event identity.
+- D1 product ID: immutable source for catalog item and event identity.
+- D1 variant ID: immutable source for order selection, inventory, and optional variant metadata only.
 - Slug: routing label only.
 - SKU: internal inventory label only.
 - Frontend list index, campaign alias, provider ID, or legacy seed name: invalid tracking identity.
 
-`ViewContent`, `AddToCart`, `InitiateCheckout`, browser Purchase, server CAPI Purchase, Google/Meta catalog feeds, and Google ecommerce events must agree on the same variant-level item ID. Purchase CAPI derives the item IDs from persisted `order_items` rather than trusting browser identifiers.
+`ViewContent`, `AddToCart`, `InitiateCheckout`, browser Purchase, server CAPI
+Purchase, Google/Meta catalog feeds, and Google ecommerce events must agree on
+the same product-level item ID. Purchase CAPI derives product IDs from persisted
+`order_items.variant_id -> product_variants.product_id` relationships rather
+than trusting browser identifiers.
 
 ## 6. Event ID and Purchase Deduplication
 

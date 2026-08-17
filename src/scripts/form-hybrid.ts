@@ -367,10 +367,7 @@ function initHybridOrderFormInstance(formRoot: HTMLElement) {
     return {
       productId,
       variantUniqueId,
-      catalogItemId:
-        productId && variantUniqueId
-          ? formatCatalogItemId(productId, variantUniqueId).itemId
-          : "",
+      catalogItemId: productId ? formatCatalogItemId(productId) : "",
       contentName: String(checked?.dataset.label || config.productName),
       value: Number(checked?.dataset.price || 1),
     };

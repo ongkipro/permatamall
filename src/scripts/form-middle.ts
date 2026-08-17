@@ -156,10 +156,7 @@ export function initMiddleOrderForm(
     const contentName = String(selected?.dataset.label || productName);
     const rawProductId = String(productId || "");
     const variantUniqueId = String(selected?.value || "");
-    const contentId =
-      rawProductId && variantUniqueId
-        ? formatCatalogItemId(rawProductId, variantUniqueId).itemId
-        : "";
+    const contentId = rawProductId ? formatCatalogItemId(rawProductId) : "";
     const value = Number(selected?.dataset.price || 1);
     if ((window as any).fbq) {
       await ensureMetaAdvancedMatching(extraUserData);

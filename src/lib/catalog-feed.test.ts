@@ -1,7 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {
-  formatCatalogGroupId,
   formatCatalogItemId,
   formatContentId,
   generateGoogleCatalogXml,
@@ -20,19 +19,12 @@ test("formatContentId preserves the persisted provider ID exactly", () => {
   assert.throws(() => formatContentId(0), /positive persisted D1 row ID/);
 });
 
-test("catalog item and group IDs are exact numeric variant and product keys", () => {
-  assert.equal(formatCatalogGroupId("22"), "22");
-  assert.deepEqual(formatCatalogItemId("22", 106), {
-    itemId: "106",
-    itemGroupId: "22",
-  });
-  assert.deepEqual(formatCatalogItemId("14001", "434684"), {
-    itemId: "434684",
-    itemGroupId: "14001",
-  });
+test("catalog item ID is the exact numeric product key", () => {
+  assert.equal(formatCatalogItemId("22"), "22");
+  assert.equal(formatCatalogItemId(14001), "14001");
 });
 
-test("generateGoogleCatalogXml groups color variants and leaves a bundle ungrouped", () => {
+test("generateGoogleCatalogXml emits one product item regardless of variant count", () => {
   const mockProducts: CatalogProduct[] = [
     {
       productId: 22,
@@ -51,17 +43,13 @@ test("generateGoogleCatalogXml groups color variants and leaves a bundle ungroup
   ];
 
   const xml = generateGoogleCatalogXml(mockProducts, "https://permatamall.shop");
-  assert.ok(xml.includes("<g:id>10</g:id>"));
-  assert.ok(xml.includes("<g:id>11</g:id>"));
-  assert.ok(xml.includes("<g:id>12</g:id>"));
-  assert.equal(xml.match(/<g:item_group_id>22<\/g:item_group_id>/g)?.length, 2);
-  assert.equal(xml.match(/<g:item_group_title>Tas Kanvas<\/g:item_group_title>/g)?.length, 2);
-  assert.ok(xml.includes("<g:color>Black</g:color>"));
-  assert.ok(xml.includes("<g:variant_option>color:Cream</g:variant_option>"));
-  assert.ok(xml.includes("<g:multipack>2</g:multipack>"));
-  assert.ok(!xml.includes("<g:mpn>"));
-  assert.ok(xml.includes("<g:link>https://permatamall.shop/produk/tas-kanvas?variant_id=10</g:link>"));
-  assert.ok(xml.includes("<g:description>Deskripsi produk detail. Varian: Warna Black.</g:description>"));
+  assert.equal(xml.match(/<item>/g)?.length, 1);
+  assert.ok(xml.includes("<g:id>22</g:id>"));
+  assert.ok(!xml.includes("<g:item_group_id>"));
+  assert.ok(!xml.includes("<g:id>10</g:id>"));
+  assert.ok(!xml.includes("variant_id="));
+  assert.ok(xml.includes("<g:link>https://permatamall.shop/produk/tas-kanvas</g:link>"));
+  assert.ok(xml.includes("<g:description>Deskripsi produk detail.</g:description>"));
   assert.ok(xml.includes("<g:price>85000 IDR</g:price>"));
 });
 
@@ -98,7 +86,7 @@ test("generateMetaCatalogXml emits valid fb_product_category and matching conten
   ];
 
   const xml = generateMetaCatalogXml(mockProducts, "https://permatamall.shop");
-  assert.ok(xml.includes("<g:id>1</g:id>"));
+  assert.ok(xml.includes("<g:id>15005</g:id>"));
   assert.ok(!xml.includes("<g:item_group_id>"));
   assert.ok(xml.includes("<g:fb_product_category>"));
   assert.ok(xml.includes("<g:image_link>https://r2.example.com/pompa.jpg</g:image_link>"));

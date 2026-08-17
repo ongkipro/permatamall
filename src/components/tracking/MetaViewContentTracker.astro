@@ -3,14 +3,13 @@ import { formatCatalogItemId } from '../../lib/catalog-feed';
 interface Props {
   slug: string;
   productId: string | number;
-  variantId: string | number;
   contentName: string;
   price: number;
   checkoutSelector?: string;
 }
 
-const { slug, productId, variantId, contentName, price, checkoutSelector = '#checkout' } = Astro.props;
-const catalogItemId = formatCatalogItemId(productId, variantId).itemId;
+const { slug, productId, contentName, price, checkoutSelector = '#checkout' } = Astro.props;
+const catalogItemId = formatCatalogItemId(productId);
 ---
 
 <script is:inline define:vars={{ slug, catalogItemId, contentName, price, checkoutSelector }}>
