@@ -2083,3 +2083,13 @@ Scope: Comprehensive UI/UX redesign and backend enhancement for `/admin/orders`,
 - Local post-write proof: the warehouse fields are empty and `PRAGMA foreign_key_check` returned no rows.
 - Public production smoke: `/`, `/produk`, and `/produk/daira-tas-selempang-bahu-kanvas` each returned HTTP 200 with a rendered `<main>`; `/admin/settings` redirected an unauthenticated browser to `/hello`.
 - The cleanup is intentionally an operator data action, not a distributable migration: a migration cannot identify private/provider values safely across unrelated installs, and replaying such a write would risk erasing merchant configuration.
+
+## Variant-Level Catalog Identity and Feed Hardening — 2026-08-17
+
+- Replaced array-position catalog identifiers with deterministic IDs derived from persisted D1 product and variant IDs. Every Google Merchant, Meta catalog, browser Pixel, server CAPI, and Google ecommerce event now uses the same `p<product-id>-v<variant-id>` item identity.
+- Added variant-specific product deep links, grouping metadata for color variants only, multipack metadata for bundle offers, structured color attributes, sale prices, and variant-aware descriptions. Google and Meta feeds remain separately generated but now expose the same 110 unique item IDs.
+- Product detail and direct-response funnel routes now honor persisted `variant_id` values. Purchase CAPI derives `content_ids` from persisted `order_items` instead of accepting browser-provided identifiers.
+- Admin product catalog and product form surfaces now display and copy exact feed IDs for products and variants.
+- Verification: targeted feed and event-contract tests **11/11 passed**; full `npm test` **225/225 passed**; `npm run check` **304 files, 0 errors, 0 warnings, 0 hints**; `npm run build` complete.
+- Production smoke: Google feed 200 with 110/110 unique IDs; Meta feed 200 with the identical ID set; bundle deep link selected variant `110`, rendered price `231300`, and emitted tracker ID `p10022-v10110`; product canonical excluded the variant query.
+- Deployed Worker version `78133361-726a-4bcc-84ba-baf4169e45d4` to `permatamall.shop` and `www.permatamall.shop`.

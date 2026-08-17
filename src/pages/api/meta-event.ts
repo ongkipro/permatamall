@@ -5,6 +5,7 @@ import { validateMetaEventPayload } from '../../lib/meta-event-contract';
 import { getRuntimeEnv } from '../../lib/env';
 import { toE164Digits } from '../../lib/meta-capi';
 import { getClientIp } from '../../lib/rate-limit';
+import { formatCatalogItemId } from '../../lib/catalog-feed';
 
 export const prerender = false;
 
@@ -15,6 +16,7 @@ const json = (body: Record<string, unknown>, status: number) =>
   });
 
 type PurchaseOrderRow = {
+  id: number;
   order_number: string;
   customer_name: string;
   customer_phone: string;
@@ -78,8 +80,7 @@ async function findPurchaseOrder(
 ): Promise<PurchaseOrderRow | null> {
   return database
     .prepare(
-      `SELECT
-         order_number, customer_name, customer_phone, customer_email,
+      `SELECT id, order_number, customer_name, customer_phone, customer_email,
          province, city, postal_code, total_amount
        FROM orders
        WHERE (CAST(id AS TEXT) = ? OR order_number = ?)
@@ -88,6 +89,26 @@ async function findPurchaseOrder(
     )
     .bind(reference.orderLocator, reference.orderLocator, reference.statusToken)
     .first<PurchaseOrderRow>();
+}
+
+async function findPurchaseContentIds(
+  database: D1Database,
+  orderId: number,
+): Promise<string[]> {
+  const result = await database
+    .prepare(
+      `SELECT product_variants.product_id, order_items.variant_id
+       FROM order_items
+       INNER JOIN product_variants ON product_variants.id = order_items.variant_id
+       WHERE order_items.order_id = ?
+       ORDER BY order_items.id ASC`,
+    )
+    .bind(orderId)
+    .all<{ product_id: number; variant_id: number }>();
+
+  return (result.results ?? []).map(
+    ({ product_id, variant_id }) => formatCatalogItemId(product_id, variant_id).itemId,
+  );
 }
 
 export const POST: APIRoute = async ({ request, locals }) => {
@@ -111,6 +132,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
 
     let purchaseOrder: PurchaseOrderRow | null = null;
     let purchaseOrderNumber: string | undefined;
+    let purchaseContentIds: string[] | undefined;
     if (payload.eventName === 'Purchase') {
       const reference = getPurchaseReference(rawPayload, payload.eventSourceUrl);
       if (!reference || !reference.statusToken) {
@@ -127,6 +149,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
         return json({ success: false, error: 'Order Purchase tidak ditemukan atau token tidak valid.' }, 404);
       }
       purchaseOrderNumber = purchaseOrder.order_number;
+      purchaseContentIds = await findPurchaseContentIds(database, purchaseOrder.id);
     }
 
     const eventId = purchaseOrderNumber || payload.eventId;
@@ -152,7 +175,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
       },
       customData: {
         contentName: payload.contentName,
-        contentIds: payload.contentIds,
+        contentIds: purchaseOrder ? purchaseContentIds : payload.contentIds,
         value: purchaseOrder?.total_amount ?? payload.value,
         currency: payload.currency,
         orderNumber: purchaseOrderNumber,

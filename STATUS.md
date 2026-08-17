@@ -1,12 +1,19 @@
 # STATUS — AdsBookCMS
 
-> Verified against disk: 2026-08-16 · uncommitted working tree atop `9eb6531` · branch `chore/adsbookcms-foundation`
+> Verified against disk: 2026-08-16 @ `c967faa` · branch `chore/adsbookcms-foundation` · clean tree
 >
-> The baseline moved from `0d2e56a` through six commits that re-founded the repo
-> as AdsBookCMS (649 files, +4,117 / −17,546). Gates re-run on the current
-> uncommitted tree, not inherited from the previous baseline: `npm run check`
-> 304 files / 0 errors / 0 warnings / 0 hints · `npm test` 227 / 227 ·
-> `npm run build` Cloudflare server bundle complete.
+> The baseline moved from `0d2e56a` through seven commits that re-founded the
+> repo as AdsBookCMS. Gates were re-run against the tree that became `c967faa`
+> rather than inherited from the previous baseline: `npm run check` 304 files /
+> 0 errors / 0 warnings / 0 hints · `npm test` 227 / 227 · `npm run build`
+> Cloudflare server bundle complete. `diff-risk` classified that change set R3
+> (auth, payment, and schema paths all touched), and it passed independent
+> review before it landed.
+>
+> Other contract documents in this repository still carry `0d2e56a` in their own
+> "verified against disk" headers. Those hashes have deliberately **not** been
+> bumped here: re-stating a verification date without re-reading the document
+> against the tree is the exact drift ADR-010 exists to prevent.
 
 Current state of the system. Implemented behaviour lives here; history lives in `BUILD-LOG.md`; remaining work lives in `UNIMPLEMENTED_SPECS.md`; structure lives in `ARCHITECTURE.md`.
 
@@ -42,6 +49,8 @@ Live check on 2026-08-16: `/` 200, `/produk` 200, `sitemap.xml` lists 8 pages + 
 | `npm run build` | Cloudflare server bundle complete |
 | Browser smoke | Public 8/8 menu routes and current-role admin menu/profile 5/5 returned 200 at the expected path; public and admin skip links target the main content; no horizontal overflow at 390 px |
 
+Latest deployed catalog verification (2026-08-17, Worker `78133361-726a-4bcc-84ba-baf4169e45d4`): `npm test` 225/225, `npm run check` 304 files with no diagnostics, production Google and Meta feeds each returned 110 unique matching variant IDs, and a production bundle deep link selected variant `110` with tracker ID `p10022-v10110` and value `231300`.
+
 ---
 
 ## 3. What is implemented
@@ -60,7 +69,7 @@ Live check on 2026-08-16: `/` 200, `/produk` 200, `sitemap.xml` lists 8 pages + 
 
 **Headless API** — seven `/api/v1/*` routes (storefront descriptor, products list and detail, district lookup, shipping rates, checkout, tracking events) authenticated by API key against `developer_api_keys`. The independently validated Headless origin allowlist is persisted on `stores.headless_allowed_origins` and editable in Developer settings.
 
-**Tracking** — Meta Pixel plus server-side CAPI through a durable outbox with retry and a shared, order-derived `event_id`; Google Tag and Ads conversion configuration with region-scoped Consent Mode v2; TikTok event hooks; and click-id capture for `gclid`/`gbraid`/`wbraid`/`fbclid`/`ttclid`. Hosted and embedded checkout surfaces emit Purchase only after the order can be resolved and verified.
+**Tracking** — Meta Pixel plus server-side CAPI through a durable outbox with retry and a shared, order-derived `event_id`; Google Tag and Ads conversion configuration with region-scoped Consent Mode v2; TikTok event hooks; and click-id capture for `gclid`/`gbraid`/`wbraid`/`fbclid`/`ttclid`. Hosted and embedded checkout surfaces emit Purchase only after the order can be resolved and verified. Google/Meta catalog feeds and all Meta/GTM commerce events share the variant-level item identity `p<product-id>-v<variant-id>`; product-level `p<product-id>` values are grouping IDs only, and server Purchase content IDs are derived from persisted order items.
 
 ---
 

@@ -46,20 +46,66 @@ export function formatContentId(id: number | string): string {
   return str;
 }
 
+export function formatCatalogGroupId(productId: number | string): string {
+  return `p${formatContentId(productId)}`;
+}
+
 export function formatCatalogItemId(
   productId: number | string,
-  variantIndex: number,
-  totalVariants: number,
-): { itemId: string; itemGroupId?: string } {
-  const pId = formatContentId(productId);
-  if (totalVariants === 1 || variantIndex === 0) {
-    return { itemId: pId };
-  }
-
+  variantId: number | string,
+): { itemId: string; itemGroupId: string } {
   return {
-    itemId: `${pId}_v${variantIndex + 1}`,
-    itemGroupId: pId,
+    itemId: `${formatCatalogGroupId(productId)}-v${formatContentId(variantId)}`,
+    itemGroupId: formatCatalogGroupId(productId),
   };
+}
+
+type VariantAttribute = {
+  name: "color" | "size" | "material" | "pattern";
+  value: string;
+};
+
+function getVariantAttribute(label: string): VariantAttribute | undefined {
+  const match = label.trim().match(/^(warna|color|ukuran|size|bahan|material|motif|pattern)\s*[:\-]?\s*(.+)$/i);
+  if (!match?.[2]) return undefined;
+
+  const names: Record<string, VariantAttribute["name"]> = {
+    warna: "color",
+    color: "color",
+    ukuran: "size",
+    size: "size",
+    bahan: "material",
+    material: "material",
+    motif: "pattern",
+    pattern: "pattern",
+  };
+  return { name: names[match[1].toLowerCase()], value: match[2].trim() };
+}
+
+function getMultipack(label: string): number | undefined {
+  const match = label.match(/\b(\d+)\s*(?:pcs?|buah)\b/i);
+  const quantity = Number(match?.[1]);
+  return Number.isInteger(quantity) && quantity > 1 ? quantity : undefined;
+}
+
+function formatVariantMetadata(
+  productName: string,
+  itemGroupId: string,
+  attribute: VariantAttribute | undefined,
+  grouped: boolean,
+  multipack: number | undefined,
+): string {
+  let xml = "";
+  if (grouped && attribute) {
+    xml += `\n      <g:item_group_id>${escapeXml(itemGroupId)}</g:item_group_id>`;
+    xml += `\n      <g:item_group_title>${escapeXml(productName)}</g:item_group_title>`;
+    xml += `\n      <g:${attribute.name}>${escapeXml(attribute.value)}</g:${attribute.name}>`;
+    xml += `\n      <g:variant_option>${escapeXml(`${attribute.name}:${attribute.value}`)}</g:variant_option>`;
+  }
+  if (multipack) {
+    xml += `\n      <g:multipack>${multipack}</g:multipack>`;
+  }
+  return xml;
 }
 
 export function generateGoogleCatalogXml(
@@ -81,27 +127,36 @@ export function generateGoogleCatalogXml(
     const productLink = `${origin}/produk/${product.slug}`;
     const imageLink = product.heroImage.startsWith("http") ? product.heroImage : `${origin}${product.heroImage}`;
 
+    const variantAttributes = product.variants.map((variant) => getVariantAttribute(variant.label));
+    const groupableVariantCount = variantAttributes.filter(Boolean).length;
+
     product.variants.forEach((variant, index) => {
-      const { itemId, itemGroupId } = formatCatalogItemId(product.productId, index, product.variants.length);
+      const { itemId, itemGroupId } = formatCatalogItemId(product.productId, variant.id);
+      const variantLink = `${productLink}?variant_id=${encodeURIComponent(String(variant.id))}`;
       const titleText = product.variants.length > 1 ? `${product.productName} - ${variant.label}` : product.productName;
       const hasSale = typeof variant.comparePrice === "number" && variant.comparePrice > variant.price;
       const basePriceFormatted = `${hasSale ? variant.comparePrice : variant.price} IDR`;
       const salePriceXml = hasSale
         ? `\n      <g:sale_price>${escapeXml(`${variant.price} IDR`)}</g:sale_price>`
         : "";
-      const itemDescription = product.seoDescription || product.headline || product.description || siteDescription;
-
-      let groupXml = "";
-      if (itemGroupId) {
-        groupXml = `\n      <g:item_group_id>${escapeXml(itemGroupId)}</g:item_group_id>`;
-      }
+      const baseDescription = product.seoDescription || product.description || product.headline || siteDescription;
+      const itemDescription =
+        product.variants.length > 1 ? `${baseDescription} Varian: ${variant.label}.` : baseDescription;
+      const attribute = variantAttributes[index];
+      const variantMetadataXml = formatVariantMetadata(
+        product.productName,
+        itemGroupId,
+        attribute,
+        groupableVariantCount > 1,
+        getMultipack(variant.label),
+      );
 
       itemsXml += `
     <item>
-      <g:id>${escapeXml(itemId)}</g:id>${groupXml}
+      <g:id>${escapeXml(itemId)}</g:id>${variantMetadataXml}
       <g:title>${escapeXml(titleText)}</g:title>
       <g:description>${escapeXml(itemDescription)}</g:description>
-      <g:link>${escapeXml(productLink)}</g:link>
+      <g:link>${escapeXml(variantLink)}</g:link>
       <g:image_link>${escapeXml(imageLink)}</g:image_link>
       <g:availability>in_stock</g:availability>
       <g:price>${escapeXml(basePriceFormatted)}</g:price>${salePriceXml}
@@ -110,7 +165,6 @@ export function generateGoogleCatalogXml(
       <g:brand>${escapeXml(siteTitle)}</g:brand>
       <g:condition>new</g:condition>
       <g:identifier_exists>no</g:identifier_exists>
-      <g:mpn>${escapeXml(variant.sku || itemId)}</g:mpn>
     </item>`;
     });
   }
@@ -144,27 +198,36 @@ export function generateMetaCatalogXml(
     const productLink = `${origin}/produk/${product.slug}`;
     const imageLink = product.heroImage.startsWith("http") ? product.heroImage : `${origin}${product.heroImage}`;
 
+    const variantAttributes = product.variants.map((variant) => getVariantAttribute(variant.label));
+    const groupableVariantCount = variantAttributes.filter(Boolean).length;
+
     product.variants.forEach((variant, index) => {
-      const { itemId, itemGroupId } = formatCatalogItemId(product.productId, index, product.variants.length);
+      const { itemId, itemGroupId } = formatCatalogItemId(product.productId, variant.id);
+      const variantLink = `${productLink}?variant_id=${encodeURIComponent(String(variant.id))}`;
       const titleText = product.variants.length > 1 ? `${product.productName} - ${variant.label}` : product.productName;
       const hasSale = typeof variant.comparePrice === "number" && variant.comparePrice > variant.price;
       const basePriceFormatted = `${hasSale ? variant.comparePrice : variant.price} IDR`;
       const salePriceXml = hasSale
         ? `\n      <g:sale_price>${escapeXml(`${variant.price} IDR`)}</g:sale_price>`
         : "";
-      const itemDescription = product.seoDescription || product.headline || product.description || siteDescription;
-
-      let groupXml = "";
-      if (itemGroupId) {
-        groupXml = `\n      <g:item_group_id>${escapeXml(itemGroupId)}</g:item_group_id>`;
-      }
+      const baseDescription = product.seoDescription || product.description || product.headline || siteDescription;
+      const itemDescription =
+        product.variants.length > 1 ? `${baseDescription} Varian: ${variant.label}.` : baseDescription;
+      const attribute = variantAttributes[index];
+      const variantMetadataXml = formatVariantMetadata(
+        product.productName,
+        itemGroupId,
+        attribute,
+        groupableVariantCount > 1,
+        getMultipack(variant.label),
+      );
 
       itemsXml += `
     <item>
-      <g:id>${escapeXml(itemId)}</g:id>${groupXml}
+      <g:id>${escapeXml(itemId)}</g:id>${variantMetadataXml}
       <g:title>${escapeXml(titleText)}</g:title>
       <g:description>${escapeXml(itemDescription)}</g:description>
-      <g:link>${escapeXml(productLink)}</g:link>
+      <g:link>${escapeXml(variantLink)}</g:link>
       <g:image_link>${escapeXml(imageLink)}</g:image_link>
       <g:availability>in_stock</g:availability>
       <g:price>${escapeXml(basePriceFormatted)}</g:price>${salePriceXml}

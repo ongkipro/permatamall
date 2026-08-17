@@ -14,6 +14,8 @@ if (!productKey) return Astro.redirect('/produk');
 const product = await getStorefrontProduct(Astro.locals, productKey);
 if (!product) return Astro.redirect('/produk');
 const formContext = await resolveFormModeContext(Astro.request);
+const trackedVariant = product.variants[0];
+if (!trackedVariant) return Astro.redirect(`/produk/${product.slug}`);
 const title = `Form Pemesanan ${product.productName} - ${tenantConfig.name}`;
 const description = `Form pemesanan ${product.productName} di ${tenantConfig.name}.`;
 ---
@@ -29,8 +31,9 @@ const description = `Form pemesanan ${product.productName} di ${tenantConfig.nam
   <MetaLandingTracker
     slug="geoipform"
     productId={product.productId}
+    variantId={trackedVariant.id}
     contentName={product.productName}
-    price={product.price}
+    price={trackedVariant.price}
   />
   <GeoIpResolvedForm mode={formContext.mode} province={formContext.province} productSlug={product.slug} />
 </BaseLayout>

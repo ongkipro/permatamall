@@ -74,6 +74,10 @@ const product = await getStorefrontProduct(Astro.locals, page.product_id);
 if (!product) {
   return new Response('Not found', { status: 404 });
 }
+const trackedVariant = product.variants[0];
+if (!trackedVariant) {
+  return new Response('Not found', { status: 404 });
+}
 
 const csPhone = await getStoreSupportWhatsapp(Astro.locals);
 const formSections = page.sections.filter((section) => section.type === 'form');
@@ -130,8 +134,9 @@ const productSchemaJson = JSON.stringify(productSchema).replace(/</g, '\\u003c')
   <MetaLandingTracker
     slug={page.slug}
     productId={product.productId}
+    variantId={trackedVariant.id}
     contentName={product.contentName}
-    price={product.price}
+    price={trackedVariant.price}
   />
 
   {

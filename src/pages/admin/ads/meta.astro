@@ -152,7 +152,7 @@ export const prerender = false;
                 Lihat
               </button>
             </span>
-            <span class="mt-1.5 block text-[11px] text-slate-500">Token tersimpan di enkripsi KV server-side dan tidak pernah dikirim ke browser.</span>
+            <span class="mt-1.5 block text-[11px] text-slate-500">Token disimpan server-side dan nilai lengkapnya tidak pernah dikirim kembali ke browser.</span>
           </label>
         </div>
 
@@ -330,6 +330,7 @@ export const prerender = false;
     const errorBox = document.getElementById('metaError');
     const badge = document.getElementById('metaBadge');
     const statusText = document.getElementById('metaStatus');
+    const saveButton = document.getElementById('saveMeta') as HTMLButtonElement | null;
     const pixelInput = document.getElementById('metaPixelId') as HTMLInputElement;
     const tokenInput = document.getElementById('metaToken') as HTMLInputElement;
     const testCodeInput = document.getElementById('metaTestCode') as HTMLInputElement;
@@ -341,6 +342,26 @@ export const prerender = false;
     const kpiPixelVal = document.getElementById('kpiPixelVal');
     const kpiCapiStatus = document.getElementById('kpiCapiStatus');
     const kpiCapiVal = document.getElementById('kpiCapiVal');
+    let pending = false;
+
+    const showStatus = (message: string, state: 'idle' | 'success' | 'error') => {
+      if (!statusText) return;
+      statusText.setAttribute('role', state === 'error' ? 'alert' : 'status');
+      statusText.setAttribute('aria-live', state === 'error' ? 'assertive' : 'polite');
+      statusText.textContent = message;
+      statusText.className = `min-h-5 text-xs font-bold ${
+        state === 'success' ? 'text-blue-700' : state === 'error' ? 'text-rose-700' : 'text-slate-500'
+      }`;
+    };
+
+    const setPending = (next: boolean) => {
+      pending = next;
+      if (saveButton) {
+        saveButton.disabled = next;
+        saveButton.textContent = next ? 'Menyimpan…' : 'Simpan Meta';
+      }
+      form?.setAttribute('aria-busy', String(next));
+    };
 
     const updateBadge = (ready: boolean) => {
       if (!badge) return;
@@ -354,6 +375,8 @@ export const prerender = false;
       const isPassword = tokenInput.type === 'password';
       tokenInput.type = isPassword ? 'text' : 'password';
       toggleToken.textContent = isPassword ? 'Sembunyikan' : 'Lihat';
+      toggleToken.setAttribute('aria-pressed', String(isPassword));
+      toggleToken.setAttribute('aria-label', isPassword ? 'Sembunyikan CAPI access token' : 'Tampilkan CAPI access token');
     });
 
     fetch('/api/admin/ads', { headers: { Accept: 'application/json' } })
@@ -364,7 +387,7 @@ export const prerender = false;
       })
       .then((data) => {
         pixelInput.value = data.meta_pixel_id || '';
-        if (tokenHint) tokenHint.textContent = data.meta_capi_configured ? 'Tersimpan (Enkripsi Server)' : 'Belum diisi';
+        if (tokenHint) tokenHint.textContent = data.meta_capi_configured ? 'Tersimpan server-side' : 'Belum diisi';
 
         if (kpiPixelVal) kpiPixelVal.textContent = data.meta_pixel_id || 'Belum diisi';
         if (kpiPixelStatus) kpiPixelStatus.className = data.meta_pixel_id ? 'h-2 w-2 rounded-full bg-emerald-500' : 'h-2 w-2 rounded-full bg-slate-300';
@@ -386,13 +409,15 @@ export const prerender = false;
 
     form?.addEventListener('submit', async (e) => {
       e.preventDefault();
-      if (statusText) statusText.textContent = 'Menyimpan konfigurasi Meta...';
-
+      if (pending || !form.reportValidity()) return;
+      setPending(true);
+      showStatus('Menyimpan konfigurasi Meta…', 'idle');
       try {
         const res = await fetch('/api/admin/ads', {
-          method: 'POST',
+          method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
+            action: 'save-meta',
             meta_pixel_id: pixelInput.value.trim(),
             meta_capi_token: tokenInput.value.trim() || undefined,
           }),
@@ -401,10 +426,20 @@ export const prerender = false;
         const payload = await res.json().catch(() => ({}));
         if (!res.ok || !payload.success) throw new Error(payload.error || 'Gagal menyimpan konfigurasi.');
 
-        if (statusText) statusText.textContent = 'Konfigurasi Meta berhasil disimpan!';
-        updateBadge(Boolean(payload.data.meta_pixel_id && payload.data.meta_capi_configured));
+        const data = payload.data;
+        pixelInput.value = data.meta_pixel_id || '';
+        tokenInput.value = '';
+        if (tokenHint) tokenHint.textContent = data.meta_capi_configured ? 'Tersimpan server-side' : 'Belum diisi';
+        if (kpiPixelVal) kpiPixelVal.textContent = data.meta_pixel_id || 'Belum diisi';
+        if (kpiPixelStatus) kpiPixelStatus.className = data.meta_pixel_id ? 'h-2 w-2 rounded-full bg-emerald-500' : 'h-2 w-2 rounded-full bg-slate-300';
+        if (kpiCapiVal) kpiCapiVal.textContent = data.meta_capi_configured ? 'Tersimpan' : 'Belum diisi';
+        if (kpiCapiStatus) kpiCapiStatus.className = data.meta_capi_configured ? 'h-2 w-2 rounded-full bg-emerald-500' : 'h-2 w-2 rounded-full bg-slate-300';
+        showStatus(payload.message || 'Konfigurasi Meta berhasil disimpan!', 'success');
+        updateBadge(Boolean(data.meta_pixel_id && data.meta_capi_configured));
       } catch (err) {
-        if (statusText) statusText.textContent = err instanceof Error ? err.message : 'Gagal menyimpan.';
+        showStatus(err instanceof Error ? err.message : 'Gagal menyimpan.', 'error');
+      } finally {
+        setPending(false);
       }
     });
 
@@ -419,10 +454,15 @@ export const prerender = false;
       testButton.textContent = 'Mengirim...';
 
       try {
-        const res = await fetch('/api/admin/ads/test-meta', {
-          method: 'POST',
+        const res = await fetch('/api/admin/ads', {
+          method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ test_code: code }),
+          body: JSON.stringify({
+            action: 'test-capi',
+            meta_pixel_id: pixelInput.value.trim(),
+            meta_capi_token: tokenInput.value.trim() || undefined,
+            meta_test_event_code: code,
+          }),
         });
         const payload = await res.json().catch(() => ({}));
         if (!res.ok || !payload.success) throw new Error(payload.error || 'Test event ditolak oleh Meta API.');

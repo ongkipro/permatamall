@@ -86,10 +86,21 @@ const { tenantName, tenantSlug } = Astro.props;
     // di dalam fire() supaya dua leg mengutip baris order yang sama.
     const orderId = pick('order_id', '');
     const productName = pick('product_name', tenantName);
-    // content_ids Meta harus product ID (match katalog + funnel ViewContent/AddToCart), bukan variant/lp.
-    // Without a catalog product id, omit content_ids rather than faking it with a
-    // name or variant key that can never match the Meta catalog.
     const productId = pick('product_id', '');
+    const variantId = pick('variant_unique_id', '');
+    const formatCatalogSegment = (value) => {
+      const text = String(value || '').trim();
+      if (!text) return '';
+      if (/^\d+$/.test(text)) {
+        const number = Number(text);
+        return number < 10000 ? String(10000 + number) : text;
+      }
+      return text.length < 5 ? text.padStart(5, '0') : text;
+    };
+    const catalogItemId =
+      productId && variantId
+        ? `p${formatCatalogSegment(productId)}-v${formatCatalogSegment(variantId)}`
+        : '';
     const phone = pick('phone', '');
     const name = pick('name', '');
     const province = pick('province', '');
@@ -107,7 +118,7 @@ const { tenantName, tenantSlug } = Astro.props;
 
     const data = {
       content_name: productName,
-      content_ids: productId ? [productId] : undefined,
+      content_ids: catalogItemId ? [catalogItemId] : undefined,
       content_type: 'product',
       value: Number(conversionValue || 1),
       currency: 'IDR',
@@ -186,9 +197,9 @@ const { tenantName, tenantSlug } = Astro.props;
         pushGtmEcomEvent('purchase', {
           currency: 'IDR',
           value: Number(conversionValue || 1),
-          item_id: productId,
+          item_id: catalogItemId,
           item_name: productName,
-          item_variant: pick('variant_unique_id', '') || undefined,
+          item_variant: variantId || undefined,
           transaction_id: orderId || undefined,
           event_id: finalEventId,
         });
@@ -219,7 +230,7 @@ const { tenantName, tenantSlug } = Astro.props;
         order_number: finalEventId,
         status_token: statusToken,
         lp_name: pick('lp_name', ''),
-        product_id: productId || undefined,
+        product_id: catalogItemId || undefined,
         content_name: productName,
         value: Number(conversionValue || 1),
         currency: 'IDR',

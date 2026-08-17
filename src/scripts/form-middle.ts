@@ -1,4 +1,5 @@
 import { formatIdr } from "../lib/format-idr";
+import { formatCatalogItemId } from "../lib/catalog-feed";
 import { pushGtmEcomEvent } from "../lib/gtm";
 import { isValidWa62 } from "../lib/validation";
 import { navigateAfterCheckout } from "../lib/checkout-navigation";
@@ -153,9 +154,12 @@ export function initMiddleOrderForm(
       'input[name="variant"]:checked',
     );
     const contentName = String(selected?.dataset.label || productName);
-    // content_ids Meta harus product ID (match katalog + funnel ViewContent), bukan variant unique id.
-    const contentId = String(productId || '');
+    const rawProductId = String(productId || "");
     const variantUniqueId = String(selected?.value || "");
+    const contentId =
+      rawProductId && variantUniqueId
+        ? formatCatalogItemId(rawProductId, variantUniqueId).itemId
+        : "";
     const value = Number(selected?.dataset.price || 1);
     if ((window as any).fbq) {
       await ensureMetaAdvancedMatching(extraUserData);

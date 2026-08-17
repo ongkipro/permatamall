@@ -1,4 +1,5 @@
 import { formatIdr } from "../lib/format-idr";
+import { formatCatalogItemId } from "../lib/catalog-feed";
 import { calculateCodFeeBreakdown } from "../lib/payment-fee-policy";
 import { paymentBrandAsset } from "../lib/payment-brand";
 
@@ -361,10 +362,15 @@ function initHybridOrderFormInstance(formRoot: HTMLElement) {
     const checked = form.querySelector<HTMLInputElement>(
       'input[name="variant"]:checked',
     );
+    const productId = String(config.productId || "");
+    const variantUniqueId = String(checked?.value || "");
     return {
-      // content_ids Meta harus product ID (match katalog + funnel ViewContent), bukan variant unique id.
-      productId: String(config.productId || ''),
-      variantUniqueId: String(checked?.value || ""),
+      productId,
+      variantUniqueId,
+      catalogItemId:
+        productId && variantUniqueId
+          ? formatCatalogItemId(productId, variantUniqueId).itemId
+          : "",
       contentName: String(checked?.dataset.label || config.productName),
       value: Number(checked?.dataset.price || 1),
     };
@@ -426,7 +432,7 @@ function initHybridOrderFormInstance(formRoot: HTMLElement) {
         eventName,
         {
           content_name: meta.contentName,
-          content_ids: meta.productId ? [meta.productId] : undefined,
+          content_ids: meta.catalogItemId ? [meta.catalogItemId] : undefined,
           content_type: "product",
           value: meta.value,
           currency: "IDR",
@@ -438,7 +444,7 @@ function initHybridOrderFormInstance(formRoot: HTMLElement) {
       event_name: eventName,
       event_id: eventId,
       lp_name: config.productSlug,
-      product_id: meta.productId || undefined,
+      product_id: meta.catalogItemId || undefined,
       content_name: meta.contentName,
       value: meta.value,
       currency: "IDR",
@@ -455,7 +461,7 @@ function initHybridOrderFormInstance(formRoot: HTMLElement) {
       {
         currency: "IDR",
         value: meta.value,
-        item_id: meta.productId,
+        item_id: meta.catalogItemId,
         item_name: meta.contentName,
         item_variant: meta.variantUniqueId || undefined,
         event_id: eventId,
@@ -468,7 +474,7 @@ function initHybridOrderFormInstance(formRoot: HTMLElement) {
           {
             type: eventName === "AddToCart" ? "adsbook:add-to-cart" : "adsbook:initiate-checkout",
             content_name: meta.contentName,
-            content_ids: meta.productId ? [meta.productId] : undefined,
+            content_ids: meta.catalogItemId ? [meta.catalogItemId] : undefined,
             content_type: "product",
             value: meta.value,
             currency: "IDR",

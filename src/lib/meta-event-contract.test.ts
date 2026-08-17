@@ -14,7 +14,7 @@ const wirePayload = {
   event_id: 'purchase_INV-20260814-ABC123',
   event_source_url: 'https://permatamall.shop/thanks?order=1',
   lp_name: 'asahan-portable',
-  product_id: '434683',
+  product_id: 'p434683-v434684',
   content_name: 'Asahan Portable',
   content_type: 'product',
   value: 89_000,
@@ -39,16 +39,15 @@ test('the payload the storefront actually sends is accepted intact', () => {
   assert.equal(result.value.eventName, 'Purchase');
   assert.equal(result.value.value, 89_000);
   assert.equal(result.value.contentName, 'Asahan Portable');
-  assert.deepEqual(result.value.contentIds, ['434683']);
+  assert.deepEqual(result.value.contentIds, ['p434683-v434684']);
   assert.equal(result.value.currency, 'IDR');
   assert.equal(result.value.eventSourceUrl, 'https://permatamall.shop/thanks');
 });
 
-test('live six-digit catalog ids reach Meta', () => {
-  // Real Zanoby catalog ids. The old /^\d{5}$/ rule rejected all of them.
-  for (const id of ['434683', '434685', '441672']) {
+test('variant-level catalog item IDs reach Meta intact', () => {
+  for (const id of ['p10022-v10111', 'p434683-v434684', 'p441672-v441673']) {
     const result = validateMetaEventPayload({ ...wirePayload, product_id: id }, requestUrl);
-    assert.equal(result.ok, true, `catalog id ${id} must reach Meta`);
+    assert.equal(result.ok, true, `catalog item id ${id} must reach Meta`);
     if (result.ok) assert.deepEqual(result.value.contentIds, [id]);
   }
 });
@@ -76,12 +75,12 @@ test('the Meta-native nested shape is still accepted', () => {
       event_id: 'vc_asahan_1754400000',
       event_source_url: 'https://permatamall.shop/produk/asahan-portable',
       user_data: { phone: '6281234567890', name: 'Siti' },
-      custom_data: { content_name: 'Asahan Portable', content_ids: ['434683'], value: 89_000, currency: 'IDR' },
+      custom_data: { content_name: 'Asahan Portable', content_ids: ['p434683-v434684'], value: 89_000, currency: 'IDR' },
     },
     requestUrl,
   );
   assert.equal(result.ok, true);
-  if (result.ok) assert.deepEqual(result.value.contentIds, ['434683']);
+  if (result.ok) assert.deepEqual(result.value.contentIds, ['p434683-v434684']);
 });
 
 test('malformed browser cookies are dropped without failing the event', () => {
