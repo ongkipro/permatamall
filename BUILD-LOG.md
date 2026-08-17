@@ -2139,3 +2139,10 @@ Scope: Comprehensive UI/UX redesign and backend enhancement for `/admin/orders`,
 - Added `orders.source_form` and `orders.source_path` through `0036_order_source_context.sql`, synchronized the Drizzle snapshot/journal, returned the fields from the authenticated order-detail API, and rendered them beside the customer identity in `OrderDetail`.
 - Focused lifecycle tests passed **11/11** and cover one-row promotion, product/variant replacement, click-ID survival, authoritative CAPI identity, inserted-order return values, token-scoped upserts, and phone rejection. Full `npm test` passed **228/228**; `npm run check` reported **305 files, 0 errors, 0 warnings, 0 hints**; `npm run build` completed; `npm run db:generate` reported no schema changes.
 - Local browser proof: qualified middle-form input produced HTTP 200 with the expected token, variant, and source payload; D1 held one abandoned item with the authoritative product title and price; final submit reused row `6`, changed `ABN-10006` to `INV-10006`, reached `/thanks`, and the authenticated invoice rendered the product, `middle`, and `/middle-form`. Temporary orders, line items, admin credentials, and the reserved stock delta were removed afterward. No remote mutation or deployment was performed.
+
+## Warehouse and Checkout Lifecycle Production Rollout — 2026-08-17
+
+- Committed the verified warehouse and abandoned-lead lifecycle changes as `910169c` and pushed `chore/adsbookcms-foundation` to `origin`.
+- Applied remote D1 migration `0036_order_source_context.sql` successfully before deploying the Worker. A subsequent read-only schema query confirmed `orders.source_form` and `orders.source_path` as `TEXT`; it made no database changes.
+- Deployed `cmsads-permatamall` as Worker version `ae952a0b-92ee-4614-a7f3-07779f2700a0` to `permatamall.shop` and `www.permatamall.shop`.
+- Production smoke: the storefront and DAIRA product page rendered, the deployed middle-form island loaded with no browser console errors, and a deliberately invalid, non-writing abandoned-lead request returned HTTP 422 with `Nomor WhatsApp tidak valid.` No production order or warehouse test data was created.
