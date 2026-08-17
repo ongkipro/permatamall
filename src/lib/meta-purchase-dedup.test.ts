@@ -50,8 +50,9 @@ async function runTracker(orderStatus: OrderStatus): Promise<TrackerRun> {
     event_id: "lead_asahan_1754400000000_ab12cd",
     name: "Siti Rahayu",
     phone: "081234567890",
-    product_id: "434683",
-    product_name: "Asahan Portable",
+    product_id: "22",
+    variant_unique_id: "106",
+    product_name: "DAIRA Tas Selempang & Bahu Kanvas",
     product_price: 150_000,
     quantity: 1,
   };
@@ -135,6 +136,11 @@ test("browser and server Purchase legs derive the same event_id for one order", 
   // as the event_id - the same string the Pixel just used.
   assert.equal(run.postedPayloads[0].order_number, "INV-10042");
   assert.equal(run.postedPayloads[0].status_token, "status-token-42");
+  assert.equal(
+    run.postedPayloads[0].product_id,
+    "p22-v106",
+    "Purchase content ID must preserve the raw D1 product and variant IDs",
+  );
 });
 
 test("a Purchase without a resolvable order number emits nothing at all", async () => {

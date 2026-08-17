@@ -97,9 +97,14 @@ Security rules:
 
 Every catalog item is one persisted variant. Meta Pixel, Meta CAPI, GTM/Google Ads, Google Merchant Center, and Meta Commerce Manager use the same deterministic item ID:
 
-`p<normalized-products.id>-v<normalized-product_variants.id>`
+`p<products.id>-v<product_variants.id>`
 
-Numeric IDs shorter than five characters retain the existing `formatContentId()` normalization before the `p`/`v` prefixes are applied. Example: product `22`, variant `10` becomes item ID `p10022-v10010`. A group of genuinely equivalent variants may additionally use `p<normalized-products.id>` as `item_group_id`; the group ID is not sent as an event `content_id`.
+The `p` and `v` prefixes provide namespace clarity only. The numeric segments
+preserve the persisted D1 IDs exactly: product `22`, variant `106` becomes item
+ID `p22-v106`. Do not pad, offset, hash, or otherwise rewrite either segment.
+A group of genuinely equivalent variants may additionally use
+`p<products.id>` as `item_group_id`; the group ID is not sent as an event
+`content_id`.
 
 - D1 product ID: immutable source for catalog group identity.
 - D1 variant ID: immutable source for catalog item, order-selection, and event identity.

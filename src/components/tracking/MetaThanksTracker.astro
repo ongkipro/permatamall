@@ -88,18 +88,11 @@ const { tenantName, tenantSlug } = Astro.props;
     const productName = pick('product_name', tenantName);
     const productId = pick('product_id', '');
     const variantId = pick('variant_unique_id', '');
-    const formatCatalogSegment = (value) => {
-      const text = String(value || '').trim();
-      if (!text) return '';
-      if (/^\d+$/.test(text)) {
-        const number = Number(text);
-        return number < 10000 ? String(10000 + number) : text;
-      }
-      return text.length < 5 ? text.padStart(5, '0') : text;
-    };
+    const catalogProductId = /^[1-9]\d*$/.test(productId) ? productId : '';
+    const catalogVariantId = /^[1-9]\d*$/.test(variantId) ? variantId : '';
     const catalogItemId =
-      productId && variantId
-        ? `p${formatCatalogSegment(productId)}-v${formatCatalogSegment(variantId)}`
+      catalogProductId && catalogVariantId
+        ? `p${catalogProductId}-v${catalogVariantId}`
         : '';
     const phone = pick('phone', '');
     const name = pick('name', '');

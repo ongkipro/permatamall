@@ -6,15 +6,18 @@ This document describes what can and cannot currently be observed about a runnin
 
 ---
 
-## 1. Current state: essentially none
+## 1. Current state: logs on, nothing watching them
 
-**`wrangler.jsonc` has no `observability` block.** Cloudflare Workers Logs are therefore off. There is no log retention, no queryable history, and no way to answer "what happened on this install at 14:20 yesterday" after the fact.
+**`wrangler.jsonc` now has an `observability` block** — `enabled: true`, `head_sampling_rate: 1`, added in `31941bd` (2026-08-16). Workers Logs are on at full capture, so the labelled `console.error` calls below are queryable after the fact and "what happened on this install at 14:20 yesterday" is now an answerable question.
+
+That closes the retention half of the problem and none of the reaction half. Nothing reports an error to a human, nothing correlates a request across the log lines it produced, and nothing notices an install is down.
 
 What exists:
 
 | Capability | Status |
 | --- | --- |
-| Workers Logs / Logpush | **Not configured** |
+| Workers Logs | **On** — `observability.enabled: true`, `head_sampling_rate: 1` (full capture) |
+| Logpush to external sink | **Not configured** |
 | Error reporting (Sentry or equivalent) | **None** |
 | Uptime / synthetic checks | **None** |
 | Structured logging | **Partial** — 76 `console.error` calls with stable string labels |
@@ -22,7 +25,7 @@ What exists:
 | Business metrics | Present, but only as a live D1 query in `/admin/dashboard` |
 | Alerting | **None** |
 
-The only way to see a runtime error today is `npx wrangler tail` while the error is happening, which requires knowing in advance that something is wrong.
+Before `31941bd` the only way to see a runtime error was `npx wrangler tail` while it was happening, which required knowing in advance that something was wrong. Retrospective queries now work. Discovery still does not: you learn an install is broken because someone tells you.
 
 ---
 

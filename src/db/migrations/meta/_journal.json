@@ -194,8 +194,64 @@
     {
       "idx": 27,
       "version": "6",
+      "when": 1786691709499,
+      "tag": "0027_landing_page_builder",
+      "breakpoints": true
+    },
+    {
+      "idx": 28,
+      "version": "6",
+      "when": 1786703998782,
+      "tag": "0028_orders_index_optimization",
+      "breakpoints": true
+    },
+    {
+      "idx": 29,
+      "version": "6",
+      "when": 1786716288066,
+      "tag": "0029_cloudflare_perf_indexes",
+      "breakpoints": true
+    },
+    {
+      "idx": 30,
+      "version": "6",
       "when": 1786728577349,
       "tag": "0030_developer_api_keys",
+      "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "6",
+      "when": 1786765577762,
+      "tag": "0031_short_abandoned_order_number",
+      "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "6",
+      "when": 1786802578175,
+      "tag": "0032_payment_method_toggles",
+      "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "6",
+      "when": 1786839578587,
+      "tag": "0033_autolaris_channel_toggles",
+      "breakpoints": true
+    },
+    {
+      "idx": 34,
+      "version": "6",
+      "when": 1786876579000,
+      "tag": "0034_remove_foreign_sample_product",
+      "breakpoints": true
+    },
+    {
+      "idx": 35,
+      "version": "6",
+      "when": 1786880924000,
+      "tag": "0035_headless_allowed_origins",
       "breakpoints": true
     }
   ]

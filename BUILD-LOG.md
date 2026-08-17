@@ -2093,3 +2093,12 @@ Scope: Comprehensive UI/UX redesign and backend enhancement for `/admin/orders`,
 - Verification: targeted feed and event-contract tests **11/11 passed**; full `npm test` **225/225 passed**; `npm run check` **304 files, 0 errors, 0 warnings, 0 hints**; `npm run build` complete.
 - Production smoke: Google feed 200 with 110/110 unique IDs; Meta feed 200 with the identical ID set; bundle deep link selected variant `110`, rendered price `231300`, and emitted tracker ID `p10022-v10110`; product canonical excluded the variant query.
 - Deployed Worker version `78133361-726a-4bcc-84ba-baf4169e45d4` to `permatamall.shop` and `www.permatamall.shop`.
+
+## Exact Provider Catalog Identity Restoration — 2026-08-17
+
+- Corrected the synthetic minimum-five-digit transformation introduced after the variant-level feed release. `formatContentId` now preserves positive persisted D1 row IDs exactly, so product `22` and variant `106` produce catalog item ID `p22-v106`; neither numeric namespace is renumbered or padded.
+- Tightened Meta event validation to the canonical variant shape `p<products.id>-v<product_variants.id>`. Group ID `p<products.id>` remains feed-only grouping metadata and is never sent as an event `content_id`.
+- Updated the Google Merchant and Meta feed generators, browser trackers, Purchase deduplication fixture, event-contract regression cases, tracking specification, and admin identity displays to the same exact-ID contract. Historical synthetic-ID tasks T294/T295 are explicitly superseded by T296.
+- Verification: focused catalog/event/Purchase tests **15/15 passed**; full `npm test` **225/225 passed**; `npm run check` **304 files, 0 errors, 0 warnings, 0 hints**; `npm run build` complete.
+- Production proof: Google and Meta feeds each returned HTTP 200 with **110/110 unique item IDs**, exposed identical ID sets, included `p22-v106`, and excluded the former `p10022-v10106`. The live variant `106` product page returned HTTP 200, retained the selected variant, emitted tracker ID `p22-v106`, omitted the padded ID, and had zero horizontal overflow in Chromium.
+- Deployed Worker version `fbd8a462-f084-4935-ab2a-3fcdbbdb83b6` to `permatamall.shop` and `www.permatamall.shop`.

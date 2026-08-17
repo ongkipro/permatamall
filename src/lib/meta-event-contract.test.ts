@@ -14,8 +14,8 @@ const wirePayload = {
   event_id: 'purchase_INV-20260814-ABC123',
   event_source_url: 'https://permatamall.shop/thanks?order=1',
   lp_name: 'asahan-portable',
-  product_id: 'p434683-v434684',
-  content_name: 'Asahan Portable',
+  product_id: 'p22-v106',
+  content_name: 'DAIRA Tas Selempang & Bahu Kanvas',
   content_type: 'product',
   value: 89_000,
   currency: 'IDR',
@@ -38,14 +38,14 @@ test('the payload the storefront actually sends is accepted intact', () => {
   if (!result.ok) return;
   assert.equal(result.value.eventName, 'Purchase');
   assert.equal(result.value.value, 89_000);
-  assert.equal(result.value.contentName, 'Asahan Portable');
-  assert.deepEqual(result.value.contentIds, ['p434683-v434684']);
+  assert.equal(result.value.contentName, 'DAIRA Tas Selempang & Bahu Kanvas');
+  assert.deepEqual(result.value.contentIds, ['p22-v106']);
   assert.equal(result.value.currency, 'IDR');
   assert.equal(result.value.eventSourceUrl, 'https://permatamall.shop/thanks');
 });
 
 test('variant-level catalog item IDs reach Meta intact', () => {
-  for (const id of ['p10022-v10111', 'p434683-v434684', 'p441672-v441673']) {
+  for (const id of ['p22-v106', 'p434683-v434684', 'p441672-v441673']) {
     const result = validateMetaEventPayload({ ...wirePayload, product_id: id }, requestUrl);
     assert.equal(result.ok, true, `catalog item id ${id} must reach Meta`);
     if (result.ok) assert.deepEqual(result.value.contentIds, [id]);

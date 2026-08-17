@@ -894,12 +894,17 @@ Implementation, contract tests, static checks, build, and focused authenticated 
 - [x] **T293** — Verification & Production Live Deployment (`npm test`, `npx tsc --noEmit`, `npx astro check`, `wrangler deploy`).
       -> REQ: UI-10 · deps: [T292] · Done when: 192/192 Node tests pass, 0 typecheck/Astro check errors, clean build deployed live to `https://permatamall.shop/` (commit `f44c2f1`).
 
-## Phase 80: 5-Digit Minimum Product Content-ID Pattern Lock & Auto-Taxonomy Feed Synchronization
+## Phase 80: Synthetic 5-Digit Catalog Identity — Historical, Superseded by T296
 
-- [x] **T294** — 5-Digit Minimum Product Content-ID Pattern Lock (`src/lib/meta-event-contract.ts`).
- -> REQ: TRK-4 · deps: [T293] · Done when: `PRODUCT_ID_PATTERN` enforces `/^[A-Za-z0-9_./-]{5,128}$/` minimum 5-character/digit product content IDs for Meta and Google tracking outbox validation.
-- [x] **T295** — Automated Product Content ID Normalization & Feed Synchronization (`src/lib/catalog-feed.ts`, `src/lib/catalog-feed.test.ts`).
- -> REQ: TRK-5 · deps: [T294] · Done when: `formatContentId(id)` normalizes numeric product IDs < 10000 to 5-digit strings (`10001`+), XML feeds (`google-catalog.xml`, `meta-catalog.xml`) emit 5-digit `<g:id>` and `<g:item_group_id>`, unit tests pass 194/194, 0 TypeScript/Astro check errors, git committed and deployed live to `https://permatamall.shop/` (commit `bd98145`).
+- [x] **T294** — Historical Minimum-Length Catalog ID Validation (Superseded by T296).
+      -> REQ: TRK-4 · Historical result: accepted generic five-character provider IDs. T296 replaced this with the exact persisted variant identity contract.
+- [x] **T295** — Historical Numeric ID Padding (Superseded by T296).
+      -> REQ: TRK-5 · deps: [T294] · Historical result: rewrote small D1 IDs into synthetic five-digit values. T296 removed that transformation because provider item IDs must match the event IDs exactly, not satisfy an invented minimum length.
+
+## Phase 86: Exact Provider Catalog Identity Restoration — Deployed to Production
+
+- [x] **T296** — Remove Synthetic Catalog ID Padding Across Feeds and Events.
+      -> REQ: TRK-4, TRK-5 · deps: [T295] · Done when: Google Merchant, Meta catalog, browser Pixel, server CAPI, and Google ecommerce events use one deterministic `p<products.id>-v<product_variants.id>` identity without rewriting either persisted D1 ID; grouped variants use `p<products.id>` only as `item_group_id`; invalid non-positive IDs fail closed; focused and full tests, static checks, production build, live feeds, and the live selected-variant tracker are verified.
 
 ---
 

@@ -44,12 +44,12 @@ Live check on 2026-08-16: `/` 200, `/produk` 200, `sitemap.xml` lists 8 pages + 
 
 | Gate | Result |
 | --- | --- |
-| `npm test` | **227 / 227 passing** |
+| `npm test` | **225 / 225 passing** |
 | `npm run check` | 304 files · 0 errors · 0 warnings · 0 hints |
 | `npm run build` | Cloudflare server bundle complete |
 | Browser smoke | Public 8/8 menu routes and current-role admin menu/profile 5/5 returned 200 at the expected path; public and admin skip links target the main content; no horizontal overflow at 390 px |
 
-Latest deployed catalog verification (2026-08-17, Worker `78133361-726a-4bcc-84ba-baf4169e45d4`): `npm test` 225/225, `npm run check` 304 files with no diagnostics, production Google and Meta feeds each returned 110 unique matching variant IDs, and a production bundle deep link selected variant `110` with tracker ID `p10022-v10110` and value `231300`.
+Latest deployed catalog verification (2026-08-17, Worker `fbd8a462-f084-4935-ab2a-3fcdbbdb83b6`): `npm test` 225/225, `npm run check` 304 files with no diagnostics, and `npm run build` completed. Production Google and Meta feeds each returned 110/110 unique IDs with identical sets; both included exact persisted-ID item `p22-v106` and excluded the former synthetic `p10022-v10106`. The live selected-variant product page emitted `p22-v106`, omitted the padded ID, and had zero horizontal overflow in Chromium.
 
 ---
 
