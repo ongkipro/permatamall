@@ -2102,3 +2102,12 @@ Scope: Comprehensive UI/UX redesign and backend enhancement for `/admin/orders`,
 - Verification: focused catalog/event/Purchase tests **15/15 passed**; full `npm test` **225/225 passed**; `npm run check` **304 files, 0 errors, 0 warnings, 0 hints**; `npm run build` complete.
 - Production proof: Google and Meta feeds each returned HTTP 200 with **110/110 unique item IDs**, exposed identical ID sets, included `p22-v106`, and excluded the former `p10022-v10106`. The live variant `106` product page returned HTTP 200, retained the selected variant, emitted tracker ID `p22-v106`, omitted the padded ID, and had zero horizontal overflow in Chromium.
 - Deployed Worker version `fbd8a462-f084-4935-ab2a-3fcdbbdb83b6` to `permatamall.shop` and `www.permatamall.shop`.
+
+## Numeric Variant Catalog Identity — 2026-08-17
+
+- Replaced the composite catalog item key with the exact decimal `product_variants.id`. Product `22`, variant `106` now produces item/content ID `106`; exact decimal `products.id` remains feed-only `item_group_id`.
+- Updated both provider feeds, storefront Meta and GTM events, server-derived Purchase content IDs, admin identity displays, and Meta trust-boundary validation. Non-positive, non-canonical, non-numeric, and unsafe integer event IDs fail closed.
+- Production D1 required no rewrite: its integer primary keys were already canonical and globally unique. Read-only verification found 22/22 unique positive product IDs and 110/110 unique positive variant IDs, with zero invalid rows and zero writes.
+- Verification: focused catalog/event/Purchase tests **15/15 passed**; full `npm test` **225/225 passed**; `npm run check` **304 files, 0 errors, 0 warnings, 0 hints**; `npm run build` complete.
+- Production proof: Google and Meta feeds each returned HTTP 200 with **110/110 unique numeric item IDs**, identical ID sets, numeric group IDs, variant `106`, and no composite IDs. The live variant `106` product page retained the selected variant; Meta `ViewContent` and Google `view_item` each emitted ID `106`; horizontal overflow was zero in Chromium.
+- Deployed commit `cd4e8cf` as Worker version `d691b2d1-80e8-473c-9b9f-d94990d52e94` to `permatamall.shop` and `www.permatamall.shop`.

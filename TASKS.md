@@ -906,10 +906,10 @@ Implementation, contract tests, static checks, build, and focused authenticated 
 - [x] **T296** — Remove Synthetic Catalog ID Padding Across Feeds and Events.
       -> REQ: TRK-4, TRK-5 · deps: [T295] · Historical result: feeds and events used exact persisted product and variant IDs inside a composite `p<products.id>-v<product_variants.id>` item ID. T297 replaces the composite with the provider-native numeric variant key.
 
-## Phase 87: Numeric Variant Catalog Identity — Release Pending
+## Phase 87: Numeric Variant Catalog Identity — Deployed to Production
 
-- [ ] **T297** — Use Numeric Variant IDs Across Feeds and Events.
-      -> REQ: TRK-4, TRK-5 · deps: [T296] · Done when: Google Merchant, Meta catalog, browser Pixel, server CAPI, and Google ecommerce events use the exact decimal `product_variants.id` as item/content ID; grouped variants use exact decimal `products.id` only as `item_group_id`; invalid, non-positive, non-canonical, and unsafe integer IDs fail closed; focused and full tests, static checks, production build, live feeds, and the live selected-variant tracker are verified.
+- [x] **T297** — Use Numeric Variant IDs Across Feeds and Events.
+      -> REQ: TRK-4, TRK-5 · deps: [T296] · Done when: Google Merchant, Meta catalog, browser Pixel, server CAPI, and Google ecommerce events use the exact decimal `product_variants.id` as item/content ID; grouped variants use exact decimal `products.id` only as `item_group_id`; invalid, non-positive, non-canonical, and unsafe integer IDs fail closed; focused and full tests, static checks, production build, live feeds, and the live selected-variant tracker are verified. **Done 2026-08-17; commit `cd4e8cf`; Worker `d691b2d1-80e8-473c-9b9f-d94990d52e94`.**
 
 ---
 
