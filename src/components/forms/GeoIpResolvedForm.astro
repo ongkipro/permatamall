@@ -30,13 +30,9 @@ const codDisabledProvinceCodes = await loadStoreCodDisabledProvinceCodes(databas
 const formContext = await resolveFormModeContext(
   Astro.request,
   codDisabledProvinceCodes,
+  mode,
 );
-const resolvedMode =
-  formContext.resolvedMode === 'full'
-    ? 'full'
-    : mode === 'hybrid'
-      ? formContext.resolvedMode
-      : mode;
+const resolvedMode = formContext.resolvedMode;
 const resolvedProvince = province || formContext.province;
 ---
 

@@ -4,17 +4,17 @@ import {
   isProvinceExcluded,
   normalizeProvinceCode,
   parseProvinceCodeList,
-} from './province.ts';
-import { resolveGeoLocation } from './geo.ts';
+} from "./province.ts";
+import { resolveGeoLocation } from "./geo.ts";
 
-export type FormMode = 'middle' | 'full' | 'hybrid';
+export type FormMode = "middle" | "full" | "hybrid";
 
 export type FormModeContext = {
   mode: FormMode;
-  resolvedMode: 'middle' | 'full';
+  resolvedMode: "middle" | "full";
   province: string;
   provinceCode: string;
-  source: 'query' | 'cloudflare' | 'header' | 'geoip' | 'fallback';
+  source: "query" | "explicit" | "cloudflare" | "header" | "geoip" | "fallback";
 };
 
 export function getCodDisabledProvinceCodes(
@@ -40,7 +40,7 @@ export async function loadStoreCodDisabledProvinceCodes(
   if (!database?.prepare) return getCodDisabledProvinceCodes();
   const store = await database
     .prepare(
-      'SELECT cod_disabled_province_codes FROM stores ORDER BY id LIMIT 1',
+      "SELECT cod_disabled_province_codes FROM stores ORDER BY id LIMIT 1",
     )
     .first<{ cod_disabled_province_codes: string | null }>();
   return getCodDisabledProvinceCodes(store?.cod_disabled_province_codes);
@@ -49,26 +49,41 @@ export async function loadStoreCodDisabledProvinceCodes(
 export function resolveFormModeFromProvince(
   province: string,
   disabledList: readonly string[],
-): 'middle' | 'full' {
+): "middle" | "full" {
   const provinceCode = normalizeProvinceCode(province);
-  if (!provinceCode) return 'full';
-  return isProvinceExcluded(provinceCode, disabledList) ? 'full' : 'middle';
+  if (!provinceCode) return "full";
+  return isProvinceExcluded(provinceCode, disabledList) ? "full" : "middle";
 }
 
 export async function resolveFormModeContext(
   request: Request,
   disabledProvinces?: string | readonly string[] | null,
+  requestedMode: FormMode = "hybrid",
 ): Promise<FormModeContext> {
+  const queryMode = new URL(request.url).searchParams.get("form");
+  const mode: FormMode =
+    queryMode === "middle" || queryMode === "full" || queryMode === "hybrid"
+      ? queryMode
+      : requestedMode;
+
+  if (mode !== "hybrid") {
+    return {
+      mode,
+      resolvedMode: mode,
+      province: "",
+      provinceCode: "",
+      source: queryMode === mode ? "query" : "explicit",
+    };
+  }
+
   const disabledList = getCodDisabledProvinceCodes(disabledProvinces);
   const geo = await resolveGeoLocation(request);
-
-  const mode: FormMode = 'hybrid';
   const resolvedMode = resolveFormModeFromProvince(
     geo.provinceCode,
     disabledList,
   );
-  const mappedSource: FormModeContext['source'] =
-    geo.source === 'ipapi' ? 'geoip' : geo.source;
+  const mappedSource: FormModeContext["source"] =
+    geo.source === "ipapi" ? "geoip" : geo.source;
 
   return {
     mode,

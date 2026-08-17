@@ -1,5 +1,9 @@
 import type { CourierRateResult } from "../../lib/mengantar-client";
-import { hasClickId, readClickIdCookie, serializeClickIds } from "../../lib/click-ids";
+import {
+  hasClickId,
+  readClickIdCookie,
+  serializeClickIds,
+} from "../../lib/click-ids";
 import type { ResolvedShippingRates } from "../../lib/shipping-quote";
 import type { APIRoute } from "astro";
 import { selectQuotedRate } from "../../lib/courier-rules";
@@ -27,6 +31,11 @@ import {
   type AutoLarisPaymentRecord,
 } from "../../lib/autolaris-payment";
 import { getProviderConfig } from "../../lib/provider-config";
+import {
+  isAutoLarisChannelEnabled,
+  isAutoLarisPaymentMethod,
+  loadStorePaymentAvailability,
+} from "../../lib/payment-availability";
 import { normalizePhone } from "../../lib/validation";
 
 export const prerender = false;
@@ -109,13 +118,37 @@ export const POST: APIRoute = async ({ request, locals }) => {
       503,
     );
   }
+  let paymentAvailability;
+  try {
+    paymentAvailability = await loadStorePaymentAvailability(database);
+  } catch (error) {
+    console.error("submit-order-payment-availability", error);
+    return json(
+      {
+        success: false,
+        error: "Metode pembayaran belum dapat diverifikasi.",
+        code: "PAYMENT_CONFIGURATION_ERROR",
+      },
+      503,
+    );
+  }
+  if (data.payment_method === "cod" && !paymentAvailability.codEnabled) {
+    return json(
+      {
+        success: false,
+        error:
+          "COD sedang dinonaktifkan. Silakan pilih metode pembayaran lain.",
+        code: "PAYMENT_METHOD_UNAVAILABLE",
+      },
+      422,
+    );
+  }
   const disabledProvinceCodes =
     await loadStoreCodDisabledProvinceCodes(database);
   const provinceCode = normalizeProvinceCode(data.province);
   if (
     data.payment_method === "cod" &&
-    (!provinceCode ||
-      isProvinceExcluded(provinceCode, disabledProvinceCodes))
+    (!provinceCode || isProvinceExcluded(provinceCode, disabledProvinceCodes))
   ) {
     return json(
       {
@@ -127,17 +160,31 @@ export const POST: APIRoute = async ({ request, locals }) => {
       422,
     );
   }
-  if (data.payment_method !== "cod") {
+  if (isAutoLarisPaymentMethod(data.payment_method)) {
     try {
       const provider = (await getProviderConfig(database, locals)).autolaris;
       if (!provider.apiKey) {
         return json(
           {
             success: false,
-            error: "Pembayaran online belum tersedia. Silakan pilih COD.",
+            error:
+              "Pembayaran online belum tersedia. Silakan pilih metode lain.",
             code: "PAYMENT_METHOD_UNAVAILABLE",
           },
           503,
+        );
+      }
+      if (
+        !isAutoLarisChannelEnabled(paymentAvailability, data.payment_channel!)
+      ) {
+        return json(
+          {
+            success: false,
+            error:
+              "Channel pembayaran ini sedang dinonaktifkan. Silakan pilih channel lain.",
+            code: "PAYMENT_CHANNEL_UNAVAILABLE",
+          },
+          422,
         );
       }
     } catch (error) {
@@ -256,7 +303,9 @@ export const POST: APIRoute = async ({ request, locals }) => {
     // Attribution captured at the ad landing by the middleware; kept with the
     // order so a COD sale confirmed later can be uploaded to Google Ads.
     const clickIds = readClickIdCookie(request);
-    const storedClickIds = hasClickId(clickIds) ? serializeClickIds(clickIds) : undefined;
+    const storedClickIds = hasClickId(clickIds)
+      ? serializeClickIds(clickIds)
+      : undefined;
 
     const order = await persistOrder(database, {
       submitToken: data.submit_token,
@@ -289,15 +338,15 @@ export const POST: APIRoute = async ({ request, locals }) => {
     });
 
     let payment: AutoLarisPaymentRecord | undefined;
-    if (
-      data.payment_method !== "cod" &&
-      data.payment_method !== "manual_transfer"
-    ) {
+    if (isAutoLarisPaymentMethod(data.payment_method)) {
       try {
         payment = await createAutoLarisPaymentForOrder(database, locals, {
           orderId: order.id,
           channelCode: data.payment_channel!,
-          callbackUrl: new URL("/api/webhooks/autolaris", request.url).toString(),
+          callbackUrl: new URL(
+            "/api/webhooks/autolaris",
+            request.url,
+          ).toString(),
         });
         if (payment.status === "failed") {
           await database

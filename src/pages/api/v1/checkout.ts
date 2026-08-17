@@ -1,14 +1,38 @@
-import type { APIRoute } from 'astro';
-import { handleOptions, headlessError, headlessOk, validateHeadlessRequest } from '../../../lib/headless-api';
-import { orderSubmitSchema } from '../../../lib/order-schema';
-import { getRuntimeEnv } from '../../../lib/env';
-import { checkRateLimit, getClientIp } from '../../../lib/rate-limit';
-import { loadStoreCodDisabledProvinceCodes } from '../../../lib/form-mode';
-import { isProvinceExcluded, normalizeProvinceCode } from '../../../lib/province';
-import { persistOrder, DuplicateSubmissionError, OrderInputError } from '../../../lib/order-persistence';
-import { resolveEligibleShippingRates } from '../../../lib/shipping-quote';
-import { readClickIdCookie, hasClickId, serializeClickIds } from '../../../lib/click-ids';
-import { isShippingQuoteFailure, resolveTrustedHeadlessShipping } from '../../../lib/headless-checkout';
+import type { APIRoute } from "astro";
+import {
+  handleOptions,
+  headlessError,
+  headlessOk,
+  validateHeadlessRequest,
+} from "../../../lib/headless-api";
+import { orderSubmitSchema } from "../../../lib/order-schema";
+import { getRuntimeEnv } from "../../../lib/env";
+import { checkRateLimit, getClientIp } from "../../../lib/rate-limit";
+import { loadStoreCodDisabledProvinceCodes } from "../../../lib/form-mode";
+import {
+  isProvinceExcluded,
+  normalizeProvinceCode,
+} from "../../../lib/province";
+import {
+  persistOrder,
+  DuplicateSubmissionError,
+  OrderInputError,
+} from "../../../lib/order-persistence";
+import { resolveEligibleShippingRates } from "../../../lib/shipping-quote";
+import {
+  readClickIdCookie,
+  hasClickId,
+  serializeClickIds,
+} from "../../../lib/click-ids";
+import {
+  isShippingQuoteFailure,
+  resolveTrustedHeadlessShipping,
+} from "../../../lib/headless-checkout";
+import {
+  isAutoLarisChannelEnabled,
+  isAutoLarisPaymentMethod,
+  loadStorePaymentAvailability,
+} from "../../../lib/payment-availability";
 
 export const prerender = false;
 
@@ -23,48 +47,115 @@ export const POST: APIRoute = async ({ request, locals }) => {
   try {
     const clientIp = getClientIp(request.headers);
     const sessions = getRuntimeEnv(locals)?.SESSION as KVNamespace | undefined;
-    const rateLimit = await checkRateLimit(sessions, `headless-checkout:${clientIp}`, 15, 60_000);
+    const rateLimit = await checkRateLimit(
+      sessions,
+      `headless-checkout:${clientIp}`,
+      15,
+      60_000,
+    );
     if (!rateLimit.allowed) {
-      return headlessError('Terlalu banyak percobaan order. Silakan tunggu 1 menit.', 429, {
-        code: 'RATE_LIMITED',
-      }, validation.corsHeaders);
+      return headlessError(
+        "Terlalu banyak percobaan order. Silakan tunggu 1 menit.",
+        429,
+        {
+          code: "RATE_LIMITED",
+        },
+        validation.corsHeaders,
+      );
     }
 
-    const body = (await request.json().catch(() => null)) as Record<string, unknown> | null;
+    const body = (await request.json().catch(() => null)) as Record<
+      string,
+      unknown
+    > | null;
     if (!body) {
-      return headlessError('Payload JSON order tidak valid.', 400, {
-        code: 'INVALID_PAYLOAD',
-      }, validation.corsHeaders);
+      return headlessError(
+        "Payload JSON order tidak valid.",
+        400,
+        {
+          code: "INVALID_PAYLOAD",
+        },
+        validation.corsHeaders,
+      );
     }
 
-    if (String(body.website || body.honeypot || '').trim()) {
-      return headlessError('Request ditolak.', 400, {
-        code: 'HONEYPOT_TRIGGERED',
-      }, validation.corsHeaders);
+    if (String(body.website || body.honeypot || "").trim()) {
+      return headlessError(
+        "Request ditolak.",
+        400,
+        {
+          code: "HONEYPOT_TRIGGERED",
+        },
+        validation.corsHeaders,
+      );
     }
 
     const parsed = orderSubmitSchema.safeParse(body);
     if (!parsed.success) {
-      return headlessError(parsed.error.errors[0]?.message || 'Data order tidak valid.', 422, {
-        code: 'VALIDATION_ERROR',
-        errors: parsed.error.format(),
-      }, validation.corsHeaders);
+      return headlessError(
+        parsed.error.errors[0]?.message || "Data order tidak valid.",
+        422,
+        {
+          code: "VALIDATION_ERROR",
+          errors: parsed.error.format(),
+        },
+        validation.corsHeaders,
+      );
     }
 
     const data = parsed.data;
     const database = getRuntimeEnv(locals)?.OMS_DB as D1Database | undefined;
     if (!database?.prepare) {
-      return headlessError('Database order belum dikonfigurasi.', 503, {
-        code: 'DATABASE_UNAVAILABLE',
-      }, validation.corsHeaders);
+      return headlessError(
+        "Database order belum dikonfigurasi.",
+        503,
+        {
+          code: "DATABASE_UNAVAILABLE",
+        },
+        validation.corsHeaders,
+      );
     }
 
-    const disabledProvinceCodes = await loadStoreCodDisabledProvinceCodes(database);
+    const [disabledProvinceCodes, paymentAvailability] = await Promise.all([
+      loadStoreCodDisabledProvinceCodes(database),
+      loadStorePaymentAvailability(database),
+    ]);
+    if (data.payment_method === "cod" && !paymentAvailability.codEnabled) {
+      return headlessError(
+        "COD sedang dinonaktifkan. Silakan gunakan metode pembayaran lain.",
+        422,
+        {
+          code: "PAYMENT_METHOD_UNAVAILABLE",
+        },
+        validation.corsHeaders,
+      );
+    }
+    if (
+      isAutoLarisPaymentMethod(data.payment_method) &&
+      !isAutoLarisChannelEnabled(paymentAvailability, data.payment_channel!)
+    ) {
+      return headlessError(
+        "Channel pembayaran sedang dinonaktifkan. Silakan gunakan channel lain.",
+        422,
+        {
+          code: "PAYMENT_CHANNEL_UNAVAILABLE",
+        },
+        validation.corsHeaders,
+      );
+    }
     const provinceCode = normalizeProvinceCode(data.province);
-    if (data.payment_method === 'cod' && (!provinceCode || isProvinceExcluded(provinceCode, disabledProvinceCodes))) {
-      return headlessError('COD tidak tersedia untuk wilayah tujuan ini. Silakan gunakan pembayaran transfer/online.', 422, {
-        code: 'COD_DISABLED_FOR_REGION',
-      }, validation.corsHeaders);
+    if (
+      data.payment_method === "cod" &&
+      (!provinceCode || isProvinceExcluded(provinceCode, disabledProvinceCodes))
+    ) {
+      return headlessError(
+        "COD tidak tersedia untuk wilayah tujuan ini. Silakan gunakan pembayaran transfer/online.",
+        422,
+        {
+          code: "COD_DISABLED_FOR_REGION",
+        },
+        validation.corsHeaders,
+      );
     }
 
     const shipping = await resolveTrustedHeadlessShipping(body, data, (input) =>
@@ -72,7 +163,9 @@ export const POST: APIRoute = async ({ request, locals }) => {
     );
 
     const clickIds = readClickIdCookie(request);
-    const storedClickIds = hasClickId(clickIds) ? serializeClickIds(clickIds) : undefined;
+    const storedClickIds = hasClickId(clickIds)
+      ? serializeClickIds(clickIds)
+      : undefined;
 
     const order = await persistOrder(database, {
       submitToken: data.submit_token,
@@ -81,7 +174,9 @@ export const POST: APIRoute = async ({ request, locals }) => {
       customerEmail: data.customer_email || undefined,
       address: data.address,
       province: data.province,
-      city: String(body.city || '').trim().slice(0, 120),
+      city: String(body.city || "")
+        .trim()
+        .slice(0, 120),
       district: data.district,
       postalCode: data.postal_code || undefined,
       variantKey: data.variant_id,
@@ -113,27 +208,47 @@ export const POST: APIRoute = async ({ request, locals }) => {
         },
       },
       201,
-      validation.corsHeaders
+      validation.corsHeaders,
     );
   } catch (error) {
     if (error instanceof DuplicateSubmissionError) {
-      return headlessError('Order sedang diproses atau sudah dibuat sebelumnya.', 409, {
-        code: 'DUPLICATE_ORDER',
-      }, validation.corsHeaders);
+      return headlessError(
+        "Order sedang diproses atau sudah dibuat sebelumnya.",
+        409,
+        {
+          code: "DUPLICATE_ORDER",
+        },
+        validation.corsHeaders,
+      );
     }
     if (isShippingQuoteFailure(error)) {
-      return headlessError(error.message, error.status, {
-        code: error.code,
-      }, validation.corsHeaders);
+      return headlessError(
+        error.message,
+        error.status,
+        {
+          code: error.code,
+        },
+        validation.corsHeaders,
+      );
     }
     if (error instanceof OrderInputError) {
-      return headlessError(error.message, 422, {
-        code: 'ORDER_INPUT_ERROR',
-      }, validation.corsHeaders);
+      return headlessError(
+        error.message,
+        422,
+        {
+          code: "ORDER_INPUT_ERROR",
+        },
+        validation.corsHeaders,
+      );
     }
-    return headlessError('Gagal memproses checkout pesanan.', 500, {
-      code: 'CHECKOUT_PROCESSING_ERROR',
-      details: error instanceof Error ? error.message : String(error),
-    }, validation.corsHeaders);
+    return headlessError(
+      "Gagal memproses checkout pesanan.",
+      500,
+      {
+        code: "CHECKOUT_PROCESSING_ERROR",
+        details: error instanceof Error ? error.message : String(error),
+      },
+      validation.corsHeaders,
+    );
   }
 };

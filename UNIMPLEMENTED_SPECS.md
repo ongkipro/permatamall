@@ -31,6 +31,8 @@ These cannot be closed from inside this repository. Each needs a canonical provi
 | Mengantar wallet | Display live provider balance | **Blocked** | No canonical balance endpoint or verified response schema. `/admin/balance` is an AutoLaris D1 reconciliation ledger, not a provider wallet and not a withdrawal surface. |
 | AutoLaris callback | Replace the configured shared-secret callback with the provider's official authentication/signature contract | **Blocked** | Payment creation, persistence, instruction rendering, and idempotent paid reconciliation all work. `/api/webhooks/autolaris` authenticates against `AUTOLARIS_WEBHOOK_SECRET`; the provider's official signature/header specification and replay rules are unavailable. |
 
+Scoped re-audit on 2026-08-18 found no additional provider-contract gaps. The AutoLaris public technical contract remains unavailable, so the shared-secret callback boundary above stays explicit and fail-closed; store and per-channel payment switches are now also enforced server-side before order/payment mutation. The Mengantar transport and operator-surface boundaries below still match disk. No live provider mutation was performed.
+
 Unknown or unauthenticated provider events **must fail closed** (ADR-007). Do not add a permissive branch to unblock testing.
 
 ### Closing a blocked contract

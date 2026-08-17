@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { registerHooks } from "node:module";
 import test from "node:test";
 import {
   AUTOLARIS_CHANNEL_OPTIONS,
@@ -6,6 +7,21 @@ import {
 } from "./autolaris-client.ts";
 import { summarizePaymentBuckets } from "./autolaris-balance.ts";
 import { reconcileAutoLarisPaidPayment } from "./autolaris-reconciliation.ts";
+const extensionResolver = registerHooks({
+  resolve(specifier, context, nextResolve) {
+    try {
+      return nextResolve(specifier, context);
+    } catch (error) {
+      const isRelativeWithoutExtension =
+        specifier.startsWith(".") && !/\.[a-z0-9]+$/i.test(specifier);
+      if (!isRelativeWithoutExtension) throw error;
+      return nextResolve(`${specifier}.ts`, context);
+    }
+  },
+});
+const { createAutoLarisPaymentForOrder } =
+  await import("./autolaris-payment.ts");
+extensionResolver.deregister();
 
 test("AutoLaris response parsing preserves provider instructions and billed total", () => {
   const payment = parseAutoLarisPaymentResponse({
@@ -34,24 +50,75 @@ test("AutoLaris response parsing preserves provider instructions and billed tota
 });
 
 test("AutoLaris channels map QRIS separately from bank transfer channels", () => {
-  const qris = AUTOLARIS_CHANNEL_OPTIONS.find((option) => option.code === "QRIS");
+  const qris = AUTOLARIS_CHANNEL_OPTIONS.find(
+    (option) => option.code === "QRIS",
+  );
   assert.equal(qris?.paymentMethod, "qris");
   assert.equal(
-    AUTOLARIS_CHANNEL_OPTIONS
-      .filter((option) => option.code !== "QRIS")
-      .every((option) => option.paymentMethod === "bank_transfer"),
+    AUTOLARIS_CHANNEL_OPTIONS.filter((option) => option.code !== "QRIS").every(
+      (option) => option.paymentMethod === "bank_transfer",
+    ),
     true,
   );
   assert.equal(
-    AUTOLARIS_CHANNEL_OPTIONS.map((option) => String(option.code)).includes("DANA"),
+    AUTOLARIS_CHANNEL_OPTIONS.map((option) => String(option.code)).includes(
+      "DANA",
+    ),
     false,
+  );
+});
+test("disabled AutoLaris channel is rejected before transaction creation", async () => {
+  const database = {
+    prepare(sql: string) {
+      return {
+        bind() {
+          return this;
+        },
+        async first() {
+          if (sql.includes("FROM payment_transactions")) return null;
+          if (sql.includes("FROM orders")) {
+            return { payment_method: "qris" };
+          }
+          if (sql.includes("disabled_autolaris_channels")) {
+            return {
+              is_cod_enabled: 1,
+              is_autolaris_enabled: 1,
+              disabled_autolaris_channels: "QRIS",
+            };
+          }
+          throw new Error(
+            `Unexpected SQL after disabled-channel guard: ${sql}`,
+          );
+        },
+      };
+    },
+  } as unknown as D1Database;
+
+  await assert.rejects(
+    () =>
+      createAutoLarisPaymentForOrder(database, {} as App.Locals, {
+        orderId: 1,
+        channelCode: "QRIS",
+        callbackUrl: "https://shop.test/api/webhooks/autolaris",
+      }),
+    /dinonaktifkan oleh toko/i,
   );
 });
 
 test("recorded balance separates paid funds, pending bills, fees, and failures", () => {
   const summary = summarizePaymentBuckets([
-    { status: "paid", transaction_count: 2, billed_total: 350000, admin_fees: 5000 },
-    { status: "pending", transaction_count: 1, billed_total: 175000, admin_fees: 2500 },
+    {
+      status: "paid",
+      transaction_count: 2,
+      billed_total: 350000,
+      admin_fees: 5000,
+    },
+    {
+      status: "pending",
+      transaction_count: 1,
+      billed_total: 175000,
+      admin_fees: 2500,
+    },
     { status: "failed", transaction_count: 3, billed_total: 0, admin_fees: 0 },
   ]);
   assert.deepEqual(summary, {
@@ -134,4 +201,3 @@ test("paid reconciliation is idempotent and preserves the first paid timestamp",
   assert.equal(state.shippingStatus, "pending");
   assert.equal(state.paidAt, originalPaidAt);
 });
-

@@ -1,8 +1,13 @@
 import type { APIRoute } from "astro";
-import { hasClickId, readClickIdCookie, serializeClickIds } from "../../lib/click-ids";
+import {
+  hasClickId,
+  readClickIdCookie,
+  serializeClickIds,
+} from "../../lib/click-ids";
 import { normalizePhoneNumber } from "../../lib/order-schema";
 import { getRuntimeEnv } from "../../lib/env";
 import { loadStoreCodDisabledProvinceCodes } from "../../lib/form-mode";
+import { loadStorePaymentAvailability } from "../../lib/payment-availability";
 import { resolveGeoLocation } from "../../lib/geo";
 import { isProvinceExcluded } from "../../lib/province";
 import { detectExcludedAreaInText } from "../../lib/excluded-area";
@@ -147,10 +152,22 @@ export const POST: APIRoute = async ({ request, locals }) => {
       },
       503,
     );
-  const [geo, disabledProvinceCodes] = await Promise.all([
+  const [geo, disabledProvinceCodes, paymentAvailability] = await Promise.all([
     resolveGeoLocation(request),
     loadStoreCodDisabledProvinceCodes(database),
+    loadStorePaymentAvailability(database),
   ]);
+  if (!paymentAvailability.codEnabled) {
+    return json(
+      {
+        success: false,
+        error:
+          "COD sedang dinonaktifkan. Silakan gunakan form pengiriman lengkap.",
+        code: "PAYMENT_METHOD_UNAVAILABLE",
+      },
+      422,
+    );
+  }
   const detectedExcludedArea = detectExcludedAreaInText(
     address,
     disabledProvinceCodes,
@@ -175,7 +192,9 @@ export const POST: APIRoute = async ({ request, locals }) => {
     // Attribution captured at the ad landing by the middleware; kept with the
     // order so a COD sale confirmed later can be uploaded to Google Ads.
     const clickIds = readClickIdCookie(request);
-    const storedClickIds = hasClickId(clickIds) ? serializeClickIds(clickIds) : undefined;
+    const storedClickIds = hasClickId(clickIds)
+      ? serializeClickIds(clickIds)
+      : undefined;
 
     const order = await persistOrder(database, {
       submitToken,

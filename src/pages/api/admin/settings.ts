@@ -10,7 +10,10 @@ import {
 } from "../../../lib/embed-security";
 import { parseHeadlessAllowedOrigins } from "../../../lib/headless-api";
 import { getEnvValue, getRuntimeEnv, maskSecretValue } from "../../../lib/env";
-import { AutoLarisClient } from "../../../lib/autolaris-client";
+import {
+  AUTOLARIS_CHANNEL_OPTIONS,
+  AutoLarisClient,
+} from "../../../lib/autolaris-client";
 import { MengantarClient } from "../../../lib/mengantar-client";
 import { getProviderConfig } from "../../../lib/provider-config";
 
@@ -19,6 +22,9 @@ export const prerender = false;
 const DEFAULT_TEST_DESTINATION_ID = "5fc62de8f8f44b34aa4bdc58";
 const PHONE_PATTERN = /^\+?\d{9,15}$/;
 const CRM_KEYS = ["welcome", "1", "2", "3", "4", "5", "6", "7"] as const;
+const AUTOLARIS_CHECKOUT_CHANNEL_CODES = new Set<string>(
+  AUTOLARIS_CHANNEL_OPTIONS.map(({ code }) => code),
+);
 
 type SettingsPayload = {
   action?:
@@ -105,7 +111,6 @@ function normalizeHttpUrl(value: unknown) {
     return "";
   }
 }
-
 
 function normalizeTemplates(value: Record<string, string> | undefined) {
   return Object.fromEntries(
@@ -233,8 +238,7 @@ export const GET: APIRoute = async ({ locals }) => {
           support_whatsapp: row.support_whatsapp ?? "",
           payment_fee_bearer:
             row.payment_fee_bearer === "seller" ? "seller" : "buyer",
-          cod_fee_bearer:
-            row.cod_fee_bearer === "seller" ? "seller" : "buyer",
+          cod_fee_bearer: row.cod_fee_bearer === "seller" ? "seller" : "buyer",
           is_cod_enabled: row.is_cod_enabled !== 0,
           is_autolaris_enabled: row.is_autolaris_enabled !== 0,
           disabled_autolaris_channels: (row.disabled_autolaris_channels || "")
@@ -372,9 +376,7 @@ export const PUT: APIRoute = async ({ request, locals }) => {
         );
       }
       await db
-        .prepare(
-          "UPDATE stores SET embed_allowed_origins = ? WHERE id = ?",
-        )
+        .prepare("UPDATE stores SET embed_allowed_origins = ? WHERE id = ?")
         .bind(policy.origins.join(","), current.store_id)
         .run();
       return jsonOk({
@@ -391,9 +393,7 @@ export const PUT: APIRoute = async ({ request, locals }) => {
         );
       }
       await db
-        .prepare(
-          "UPDATE stores SET headless_allowed_origins = ? WHERE id = ?",
-        )
+        .prepare("UPDATE stores SET headless_allowed_origins = ? WHERE id = ?")
         .bind(policy.patterns.join(","), current.store_id)
         .run();
       return jsonOk({
@@ -402,13 +402,11 @@ export const PUT: APIRoute = async ({ request, locals }) => {
       });
     }
 
-
     if (body.action === "save-payment-fee-policy") {
       if (
         (body.payment_fee_bearer !== "buyer" &&
           body.payment_fee_bearer !== "seller") ||
-        (body.cod_fee_bearer !== "buyer" &&
-          body.cod_fee_bearer !== "seller")
+        (body.cod_fee_bearer !== "buyer" && body.cod_fee_bearer !== "seller")
       ) {
         return jsonError("Penanggung biaya admin tidak valid.", 400);
       }
@@ -416,11 +414,7 @@ export const PUT: APIRoute = async ({ request, locals }) => {
         .prepare(
           "UPDATE stores SET payment_fee_bearer = ?, cod_fee_bearer = ? WHERE id = ?",
         )
-        .bind(
-          body.payment_fee_bearer,
-          body.cod_fee_bearer,
-          current.store_id,
-        )
+        .bind(body.payment_fee_bearer, body.cod_fee_bearer, current.store_id)
         .run();
       return jsonOk({
         message: "Kebijakan biaya pembayaran berhasil disimpan.",
@@ -433,13 +427,21 @@ export const PUT: APIRoute = async ({ request, locals }) => {
     if (body.action === "save-payment-toggles") {
       const isCodEnabled = body.is_cod_enabled === false ? 0 : 1;
       const isAutoLarisEnabled = body.is_autolaris_enabled === false ? 0 : 1;
-      
+
       // Ensure columns exist on older fixtures without throwing
       try {
-        await db.prepare("ALTER TABLE stores ADD is_cod_enabled INTEGER DEFAULT 1 NOT NULL").run();
+        await db
+          .prepare(
+            "ALTER TABLE stores ADD is_cod_enabled INTEGER DEFAULT 1 NOT NULL",
+          )
+          .run();
       } catch {}
       try {
-        await db.prepare("ALTER TABLE stores ADD is_autolaris_enabled INTEGER DEFAULT 1 NOT NULL").run();
+        await db
+          .prepare(
+            "ALTER TABLE stores ADD is_autolaris_enabled INTEGER DEFAULT 1 NOT NULL",
+          )
+          .run();
       } catch {}
 
       await db
@@ -459,15 +461,17 @@ export const PUT: APIRoute = async ({ request, locals }) => {
     }
     if (body.action === "save-autolaris-channels") {
       const disabledList = Array.isArray(body.disabled_autolaris_channels)
-        ? body.disabled_autolaris_channels
-            .map((c) => String(c).trim().toUpperCase())
-            .filter(Boolean)
+        ? [
+            ...new Set(
+              body.disabled_autolaris_channels
+                .map((channel) => String(channel).trim().toUpperCase())
+                .filter((channel) =>
+                  AUTOLARIS_CHECKOUT_CHANNEL_CODES.has(channel),
+                ),
+            ),
+          ]
         : [];
       const disabledStr = disabledList.join(",");
-
-      try {
-        await db.prepare("ALTER TABLE stores ADD disabled_autolaris_channels TEXT DEFAULT '' NOT NULL").run();
-      } catch {}
 
       await db
         .prepare(
@@ -504,28 +508,22 @@ export const PUT: APIRoute = async ({ request, locals }) => {
         verificationMessage = "API Key AutoLaris belum diisi.";
       }
 
-      const allChannels = [
-        { code: "QRIS", name: "QRIS All Bank & e-Wallet" },
-        { code: "VABCA", name: "Virtual Account BCA" },
-        { code: "VAMANDIRI", name: "Virtual Account Mandiri" },
-        { code: "VABNI", name: "Virtual Account BNI" },
-        { code: "VABRI", name: "Virtual Account BRI" },
-        { code: "VAPERMATA", name: "Virtual Account Permata" },
-        { code: "VABSI", name: "Virtual Account BSI" },
-        { code: "VACIMB", name: "Virtual Account CIMB Niaga" },
-        { code: "VADANAMON", name: "Virtual Account Danamon" },
-        { code: "DANA", name: "DANA E-Wallet" },
-      ];
+      const allChannels = AUTOLARIS_CHANNEL_OPTIONS.map(({ code, label }) => ({
+        code,
+        name: label,
+      }));
 
       const results = allChannels.map((ch) => {
-        const isStoreDisabled = disabledList.includes(ch.code) || !isAutoLarisMaster;
+        const isStoreDisabled =
+          disabledList.includes(ch.code) || !isAutoLarisMaster;
         const isConfigured = Boolean(apiKey);
         let status = "ready";
         let message = "Channel aktif & siap digunakan di checkout.";
 
         if (!isConfigured) {
           status = "unconfigured";
-          message = "API Key AutoLaris belum diisi (Disembunyikan dari checkout).";
+          message =
+            "API Key AutoLaris belum diisi (Disembunyikan dari checkout).";
         } else if (!isApiVerified) {
           status = "unverified";
           message = verificationMessage;
@@ -662,7 +660,10 @@ export const PUT: APIRoute = async ({ request, locals }) => {
         )
         .run();
       if (localSave.meta.changes !== 1) {
-        return jsonError("Gudang tidak ditemukan. Muat ulang halaman lalu coba lagi.", 409);
+        return jsonError(
+          "Gudang tidak ditemukan. Muat ulang halaman lalu coba lagi.",
+          409,
+        );
       }
 
       let resolvedPickupAddressId = pickupAddressId;

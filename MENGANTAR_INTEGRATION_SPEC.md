@@ -1,6 +1,7 @@
 # Mengantar Integration — Technical Contract and Gap Register
 
 > Verified against disk: 2026-08-16 @ 0d2e56a
+> Scoped provider-boundary audit: 2026-08-18. The client transport, sequential dispatch and lease controls, eligibility gates, courier/COD filtering, pickup timing, credential masking, and admin authorization still match this contract. No live provider mutation was performed; the unpaid-order operator surface and externally blocked tracking/wallet contracts remain unchanged.
 
 This document is the technical source of truth for AdsBookCMS behavior at the Mengantar boundary. It separates repository-observed transport code, locally verified application behavior, operator-gated live mutations, and provider contracts that remain unknown.
 

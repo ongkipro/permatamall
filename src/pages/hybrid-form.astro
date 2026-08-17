@@ -1,15 +1,9 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
-import FormHybridContent from '../components/forms/FormHybridContent.astro';
-import FormMiddleContent from '../components/forms/FormMiddleContent.astro';
+import GeoIpResolvedForm from '../components/forms/GeoIpResolvedForm.astro';
 import MetaLandingTracker from '../components/tracking/MetaLandingTracker.astro';
 import { getStorefrontProduct } from '../lib/catalog';
-import { getRuntimeEnv } from '../lib/env';
 import { resolveFormVariant } from '../lib/form-config';
-import {
-  loadStoreCodDisabledProvinceCodes,
-  resolveFormModeContext,
-} from '../lib/form-mode';
 import { tenantConfig } from '../lib/tenant';
 import '../styles/form-hybrid.css';
 
@@ -22,13 +16,6 @@ const product = await getStorefrontProduct(Astro.locals, productKey);
 if (!product) return Astro.redirect('/produk');
 const selectedVariant = resolveFormVariant(product, variantKey);
 if (!selectedVariant) return Astro.redirect(`/produk/${product.slug}`);
-const database = getRuntimeEnv(Astro.locals)?.OMS_DB as D1Database | undefined;
-const codDisabledProvinceCodes =
-  await loadStoreCodDisabledProvinceCodes(database);
-const formContext = await resolveFormModeContext(
-  Astro.request,
-  codDisabledProvinceCodes,
-);
 ---
 
 <BaseLayout
@@ -45,23 +32,11 @@ const formContext = await resolveFormModeContext(
     price={selectedVariant.price}
   />
   <div class="mx-auto max-w-[480px] bg-white py-4">
-    {
-      formContext.resolvedMode === 'middle' ? (
-        <FormMiddleContent
-          productSlug={product.slug}
-          selectedVariantId={selectedVariant.id}
-          province={formContext.province}
-          codDisabledProvinceCodes={codDisabledProvinceCodes}
-          embedded={true}
-        />
-      ) : (
-        <FormHybridContent
-          productSlug={product.slug}
-          selectedVariantId={selectedVariant.id}
-          codDisabledProvinceCodes={codDisabledProvinceCodes}
-          embedded={true}
-        />
-      )
-    }
+    <GeoIpResolvedForm
+      mode="hybrid"
+      productSlug={product.slug}
+      selectedVariantId={selectedVariant.id}
+      embedded={true}
+    />
   </div>
 </BaseLayout>

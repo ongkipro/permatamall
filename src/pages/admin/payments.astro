@@ -1,13 +1,13 @@
 ---
 import AdminLayout from '../../layouts/AdminLayout.astro';
-import { AUTOLARIS_CHANNELS } from '../../lib/autolaris-client';
+import { AUTOLARIS_CHECKOUT_CHANNELS } from '../../lib/autolaris-client';
 import { paymentFeeDescription } from '../../lib/payment-fee-policy';
 import AdminPageHeader from '../../components/admin/AdminPageHeader.astro';
 import SellerBankAccounts from '../../components/admin/SellerBankAccounts';
 
 export const prerender = false;
 
-const channelLabels: Record<(typeof AUTOLARIS_CHANNELS)[number], string> = {
+const channelLabels: Record<(typeof AUTOLARIS_CHECKOUT_CHANNELS)[number], string> = {
   QRIS: 'QRIS (BCA, Mandiri, GoPay, OVO, ShopeePay, Dana, LinkAja)',
   VABCA: 'Virtual Account BCA',
   VAMANDIRI: 'Virtual Account Mandiri',
@@ -17,7 +17,6 @@ const channelLabels: Record<(typeof AUTOLARIS_CHANNELS)[number], string> = {
   VABSI: 'Virtual Account BSI',
   VACIMB: 'Virtual Account CIMB Niaga',
   VADANAMON: 'Virtual Account Danamon',
-  DANA: 'DANA E-Wallet',
 };
 const callbackUrl = new URL('/api/webhooks/autolaris', Astro.url.origin).toString();
 ---
@@ -251,7 +250,7 @@ const callbackUrl = new URL('/api/webhooks/autolaris', Astro.url.origin).toStrin
             <span class="size-2 rounded-full bg-blue-600 animate-pulse"></span>
             Periksa Kesiapan Channel Live
           </button>
-          <span class="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-bold text-slate-700">{AUTOLARIS_CHANNELS.length} Channel</span>
+          <span class="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-bold text-slate-700">{AUTOLARIS_CHECKOUT_CHANNELS.length} Channel</span>
         </div>
       </div>
 
@@ -271,11 +270,11 @@ const callbackUrl = new URL('/api/webhooks/autolaris', Astro.url.origin).toStrin
             </tr>
           </thead>
           <tbody class="divide-y divide-slate-100">
-            {AUTOLARIS_CHANNELS.map((channel) => (
+            {AUTOLARIS_CHECKOUT_CHANNELS.map((channel) => (
               <tr class="transition-colors hover:bg-slate-50/80" data-channel-row={channel}>
                 <td class="px-4 py-3.5 font-bold text-slate-900">{channelLabels[channel]}</td>
                 <td class="px-4 py-3.5 font-mono font-bold text-blue-700">{channel}</td>
-                <td class="px-4 py-3.5 text-right font-medium text-slate-600">{channel === 'DANA' ? 'Tidak aktif' : paymentFeeDescription(channel)}</td>
+                <td class="px-4 py-3.5 text-right font-medium text-slate-600">{paymentFeeDescription(channel)}</td>
                 <td class="px-4 py-3.5 text-center">
                   <span id={`channel-badge-${channel}`} class="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-slate-50 px-2.5 py-0.5 text-[10px] font-bold text-slate-600">
                     <span class="size-1.5 rounded-full bg-slate-400"></span>

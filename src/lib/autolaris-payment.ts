@@ -10,6 +10,10 @@ import {
   type PaymentFeeBearer,
 } from "./payment-fee-policy";
 import { getProviderConfig } from "./provider-config";
+import {
+  isAutoLarisChannelEnabled,
+  loadStorePaymentAvailability,
+} from "./payment-availability";
 
 export type AutoLarisPaymentRecord = {
   id: number;
@@ -130,11 +134,14 @@ export async function createAutoLarisPaymentForOrder(
   if (order.payment_method === "cod") {
     throw new Error("Order COD tidak memerlukan AutoLaris.");
   }
+  const availability = await loadStorePaymentAvailability(database);
+  if (!isAutoLarisChannelEnabled(availability, input.channelCode)) {
+    throw new Error("Channel AutoLaris dinonaktifkan oleh toko.");
+  }
   const cleanPhone = order.customer_phone?.replace(/\D/g, "") || "081234567890";
   const customerEmail =
     order.customer_email?.trim() ||
     `${cleanPhone}@${new URL(input.callbackUrl).hostname}`;
-
 
   const now = new Date();
   const expiresAt = new Date(now.getTime() + 24 * 60 * 60 * 1000);
@@ -251,4 +258,3 @@ export async function createAutoLarisPaymentForOrder(
   if (!updated) throw new Error("Catatan pembayaran gagal dimuat ulang.");
   return updated;
 }
-

@@ -28,7 +28,10 @@ async function loadCachedStoreCodDisabledProvinceCodes(
 ): Promise<string[]> {
   if (sessions) {
     try {
-      const cached = await sessions.get<unknown>(STORE_CONFIG_CACHE_KEY, "json");
+      const cached = await sessions.get<unknown>(
+        STORE_CONFIG_CACHE_KEY,
+        "json",
+      );
       if (
         Array.isArray(cached) &&
         cached.every((code): code is string => typeof code === "string")
@@ -97,11 +100,14 @@ export const GET: APIRoute = async ({ request, locals }) => {
     database,
     sessions,
   );
-  const modeContext = await resolveFormModeContext(request, disabledCodes);
+  const modeContext = await resolveFormModeContext(
+    request,
+    disabledCodes,
+    requestedMode,
+  );
   const formUrls = buildFormUrls(product, selectedVariant);
   const embedUrls = buildEmbedFormUrls(product, selectedVariant);
-  const resolvedMode =
-    requestedMode === "hybrid" ? modeContext.resolvedMode : requestedMode;
+  const resolvedMode = modeContext.resolvedMode;
 
   return jsonOk(
     {
