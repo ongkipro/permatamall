@@ -1,6 +1,9 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import type { Product } from "../data/products.ts";
+import {
+  editorialProductContentByCatalogId,
+  type Product,
+} from "../data/products.ts";
 import { mergeStorefrontCatalog } from "./catalog-data.ts";
 
 function product(slug: string, productId: string): Product {
@@ -32,6 +35,64 @@ function product(slug: string, productId: string): Product {
     ],
   };
 }
+
+const expectedSeededProductBrands = [
+  "ZIVIA",
+  "AIRA",
+  "CANDY",
+  "AMARA",
+  "NOURA",
+  "SORAYA",
+  "LENZY",
+  "SHELIN",
+  "LUNNA",
+  "LUCKY",
+  "KEISYA",
+  "JEMINA",
+  "HALONA",
+  "EMIRA",
+  "DILY",
+  "CAROLINE",
+  "BERLYN",
+  "AYIEN",
+  "ARIELA",
+  "ANGGUN",
+  "AJUNA",
+  "DAIRA",
+] as const;
+
+test("PermataMall editorial copy covers every seeded product with distinct content", () => {
+  const entries = Object.entries(editorialProductContentByCatalogId);
+  assert.deepEqual(
+    entries.map(([id]) => Number(id)),
+    Array.from({ length: 22 }, (_, index) => index + 1),
+  );
+  assert.equal(
+    new Set(entries.map(([, content]) => content.description)).size,
+    entries.length,
+  );
+
+  for (const [id, content] of entries) {
+    const expectedBrand = expectedSeededProductBrands[Number(id) - 1];
+    assert.ok(expectedBrand);
+    assert.ok(content.seoTitle.startsWith(`${expectedBrand} `));
+    assert.ok(content.seoDescription.includes(expectedBrand));
+    assert.ok(content.description.startsWith(`${expectedBrand} `));
+    assert.ok(content.subheadline.length > 0);
+    assert.ok(content.seoTitle.length <= 60);
+    assert.ok(
+      content.seoDescription.length >= 120 &&
+        content.seoDescription.length <= 160,
+    );
+    assert.equal(content.benefits.length, 3);
+    assert.equal(content.keyPoints.length, 3);
+    assert.equal(content.idealFor.length, 3);
+    assert.doesNotMatch(
+      JSON.stringify(content),
+      /kulit asli|original|garansi|gratis ongkir|waterproof/i,
+    );
+  }
+});
 
 const aussie = product("aussie", "10001");
 const bensu = product("bensu", "10002");
@@ -203,7 +264,14 @@ test("conventional catalog media paths expose the complete seven-image gallery",
   );
   assert.equal(
     products[0].subheadline,
-    "DAIRA Tas Selempang & Bahu Kanvas tersedia dalam 2 pilihan. Harga mengikuti varian yang dipilih.",
+    editorialProductContentByCatalogId[22].subheadline,
   );
-  assert.match(products[0].description, /Hitam, Coklat/);
+  assert.equal(
+    products[0].description,
+    editorialProductContentByCatalogId[22].description,
+  );
+  assert.deepEqual(
+    products[0].benefits,
+    editorialProductContentByCatalogId[22].benefits,
+  );
 });

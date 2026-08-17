@@ -1,4 +1,7 @@
-import type { Product } from "../data/products";
+import {
+  editorialProductContentByCatalogId,
+  type Product,
+} from "../data/products.ts";
 
 export interface CatalogProductRow {
   id: number;
@@ -179,6 +182,7 @@ export function mergeStorefrontCatalog(
     const image = product.image_url || "/images/logo.webp";
 
     const categoryLabel = product.category?.trim() || "Produk";
+    const editorialContent = editorialProductContentByCatalogId[product.id];
     const details = getCatalogProductDetails(
       productName,
       categoryLabel,
@@ -192,21 +196,26 @@ export function mergeStorefrontCatalog(
       productName,
       contentName: productName,
       headline: productName,
-      subheadline: details.subheadline,
-      seoTitle: productName,
-      seoDescription: `Lihat pilihan varian, harga, dan ketersediaan ${productName}. Detail mengikuti informasi katalog toko.`,
+      subheadline: editorialContent?.subheadline ?? details.subheadline,
+      seoTitle: editorialContent?.seoTitle ?? productName,
+      seoDescription:
+        editorialContent?.seoDescription ??
+        `Lihat pilihan varian, harga, dan ketersediaan ${productName}. Detail mengikuti informasi katalog toko.`,
       price: firstVariant.price,
       ...(firstVariant.comparePrice ? { comparePrice: firstVariant.comparePrice } : {}),
       image,
       heroImage: image,
       images: resolveGalleryImages(image),
-      tag: categoryLabel,
+      tag: editorialContent?.tag ?? categoryLabel,
       category: categoryLabel,
       relatedCategories: [categoryLabel],
-      description: details.description,
-      benefits: details.benefits,
-      keyPoints: details.keyPoints,
-      idealFor: details.idealFor,
+      ...(editorialContent?.relatedTags
+        ? { relatedTags: editorialContent.relatedTags }
+        : {}),
+      description: editorialContent?.description ?? details.description,
+      benefits: editorialContent?.benefits ?? details.benefits,
+      keyPoints: editorialContent?.keyPoints ?? details.keyPoints,
+      idealFor: editorialContent?.idealFor ?? details.idealFor,
       offerText: "Harga mengikuti varian terpilih.",
       ctaText: "Lanjutkan Pesanan",
       // Ratings, sold counts and reviews are merchant-owned evidence. They are

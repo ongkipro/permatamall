@@ -4,6 +4,7 @@ import Icon from '../shared/Icon.astro';
 interface Product {
   name: string;
   category: string;
+  subheadline?: string;
   description: string;
   href: string;
   image: string;
@@ -114,6 +115,10 @@ const formatPrice = (val: number) => `Rp${val.toLocaleString('id-ID')}`;
                   {product.name}
                 </a>
               </h3>
+
+              <p class="mt-1.5 line-clamp-2 text-[11px] leading-[1.5] text-[#77736C]">
+                {product.subheadline || product.description}
+              </p>
 
               {product.ratingValue && (
                 <div class="mt-2 flex flex-wrap items-center gap-1.5 text-[10px] text-[#555555]">
