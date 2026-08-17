@@ -27,6 +27,8 @@ export type PersistOrderInput = {
   courierCode?: string;
   courierService?: string;
   adClickIds?: string;
+  sourceForm?: string;
+  sourcePath?: string;
 };
 
 export type PersistedOrder = {
@@ -49,75 +51,139 @@ export class DuplicateSubmissionError extends Error {}
 export class OrderInputError extends Error {}
 
 export type RecordAbandonedOrderInput = {
+  submitToken: string;
   customerName: string;
   customerPhone: string;
   address?: string;
   province?: string;
-  totalAmount?: number;
-  variantId?: number;
+  productId: number;
+  variantId: number;
+  sourceForm: string;
+  sourcePath: string;
 };
 
 export type RecordedAbandonedOrder = {
   id: number;
   orderNumber: string;
   customerPhone: string;
-  action: "created" | "updated";
+  action: "created" | "updated" | "skipped";
+};
+
+const normalizeSourceContext = (sourceForm?: string, sourcePath?: string) => {
+  const normalizedForm = String(sourceForm || "").trim().slice(0, 80);
+  const normalizedPath = String(sourcePath || "").trim().slice(0, 240);
+  return {
+    sourceForm: normalizedForm || null,
+    sourcePath: normalizedPath.startsWith("/") ? normalizedPath : null,
+  };
 };
 
 export async function recordAbandonedOrder(
   database: D1Database,
   input: RecordAbandonedOrderInput,
 ): Promise<RecordedAbandonedOrder> {
+  const submitToken = input.submitToken.trim();
   const customerName = input.customerName.trim();
   const customerPhone = normalizePhone(input.customerPhone);
+  if (submitToken.length < 16 || submitToken.length > 120) {
+    throw new OrderInputError("Token lead tidak valid.");
+  }
   if (customerName.length < 3) {
     throw new OrderInputError("Nama pelanggan minimal 3 karakter.");
   }
   if (!isValidWa62(customerPhone)) {
     throw new OrderInputError("Nomor WhatsApp tidak valid.");
   }
-  const address = input.address?.trim() || "";
-  const province = input.province?.trim() || "";
-  const totalAmount =
-    typeof input.totalAmount === "number" && Number.isFinite(input.totalAmount)
-      ? Math.max(0, Math.round(input.totalAmount))
-      : 0;
-  const createdAt = new Date().toISOString();
-  const existing = await database
+  if (
+    !Number.isInteger(input.productId) ||
+    input.productId < 1 ||
+    !Number.isInteger(input.variantId) ||
+    input.variantId < 1
+  ) {
+    throw new OrderInputError("Produk atau varian tidak valid.");
+  }
+
+  const variant = await database
     .prepare(
-      `SELECT id, order_number
-       FROM orders
-       WHERE customer_phone = ?
-         AND shipping_status = 'abandoned'
-         AND unixepoch(created_at) >= unixepoch('now', '-2 hours')
-       ORDER BY id DESC
+      `SELECT pv.id, pv.price
+       FROM product_variants pv
+       INNER JOIN products p ON p.id = pv.product_id
+       WHERE p.id = ?
+         AND pv.id = ?
+         AND p.is_active = 1
        LIMIT 1`,
     )
-    .bind(customerPhone)
-    .first<{ id: number; order_number: string }>();
+    .bind(input.productId, input.variantId)
+    .first<{ id: number; price: number }>();
+  if (!variant) {
+    throw new OrderInputError("Produk atau varian tidak ditemukan.");
+  }
+
+  const address = input.address?.trim() || "";
+  const province = input.province?.trim() || "";
+  const unitPrice = Math.max(0, Math.round(Number(variant.price) || 0));
+  const createdAt = new Date().toISOString();
+  const source = normalizeSourceContext(input.sourceForm, input.sourcePath);
+  const existing = await database
+    .prepare(
+      `SELECT id, order_number, shipping_status
+       FROM orders
+       WHERE submit_token = ?
+       LIMIT 1`,
+    )
+    .bind(submitToken)
+    .first<{
+      id: number;
+      order_number: string;
+      shipping_status: string;
+    }>();
+
+  if (existing && existing.shipping_status !== "abandoned") {
+    return {
+      id: existing.id,
+      orderNumber: existing.order_number,
+      customerPhone,
+      action: "skipped",
+    };
+  }
 
   if (existing) {
-    await database
-      .prepare(
-        `UPDATE orders
-         SET customer_name = ?,
-             address = COALESCE(NULLIF(?, ''), address),
-             province = COALESCE(NULLIF(?, ''), province),
-             total_amount = ?,
-             payment_status = 'unpaid',
-             shipping_status = 'abandoned',
-             created_at = ?
-         WHERE id = ? AND shipping_status = 'abandoned'`,
-      )
-      .bind(
-        customerName,
-        address,
-        province,
-        totalAmount,
-        createdAt,
-        existing.id,
-      )
-      .run();
+    await database.batch([
+      database
+        .prepare(
+          `UPDATE orders
+           SET customer_name = ?,
+               customer_phone = ?,
+               address = COALESCE(NULLIF(?, ''), address),
+               province = COALESCE(NULLIF(?, ''), province),
+               total_amount = ?,
+               source_form = ?,
+               source_path = ?,
+               created_at = ?
+           WHERE id = ? AND submit_token = ? AND shipping_status = 'abandoned'`,
+        )
+        .bind(
+          customerName,
+          customerPhone,
+          address,
+          province,
+          unitPrice,
+          source.sourceForm,
+          source.sourcePath,
+          createdAt,
+          existing.id,
+          submitToken,
+        ),
+      database
+        .prepare("DELETE FROM order_items WHERE order_id = ?")
+        .bind(existing.id),
+      database
+        .prepare(
+          `INSERT INTO order_items (order_id, variant_id, quantity, unit_price)
+           VALUES (?, ?, 1, ?)`,
+        )
+        .bind(existing.id, variant.id, unitPrice),
+    ]);
     return {
       id: existing.id,
       orderNumber: existing.order_number,
@@ -136,71 +202,63 @@ export async function recordAbandonedOrder(
     .first<{ max_id: number | null }>();
   const nextId = (maxRow?.max_id || 0) + 1;
   const orderNumber = `ABN-${10000 + nextId}`;
-  const statements = [
+  const results = await database.batch([
     database
       .prepare(
         `INSERT INTO orders (
-          order_number, store_id, customer_name, customer_phone,
+          order_number, submit_token, store_id, customer_name, customer_phone,
           address, province, city, district,
           payment_method, payment_status, shipping_status,
           total_amount, shipping_cost, discount_amount, cod_service_fee,
-          cod_service_fee_vat, cod_fee_bearer, created_at
+          cod_service_fee_vat, cod_fee_bearer, source_form, source_path, created_at
         )
         SELECT
-          ?, ?, ?, ?,
+          ?, ?, ?, ?, ?,
           ?, ?, '', '',
           'cod', 'unpaid', 'abandoned',
           ?, 0, 0, 0,
-          0, 'buyer', ?
+          0, 'buyer', ?, ?, ?
         WHERE NOT EXISTS (
           SELECT 1
           FROM orders
-          WHERE customer_phone = ?
-            AND shipping_status = 'abandoned'
-            AND unixepoch(created_at) >= unixepoch('now', '-2 hours')
+          WHERE submit_token = ?
         )`,
       )
       .bind(
         orderNumber,
+        submitToken,
         store.id,
         customerName,
         customerPhone,
         address,
         province || "ID-JK",
-        totalAmount,
+        unitPrice,
+        source.sourceForm,
+        source.sourcePath,
         createdAt,
-        customerPhone,
+        submitToken,
       ),
-  ];
-  if (input.variantId && input.variantId > 0) {
-    statements.push(
-      database
-        .prepare(
-          `INSERT INTO order_items (order_id, variant_id, quantity, unit_price)
-           SELECT o.id, pv.id, 1, ?
-           FROM orders o
-           INNER JOIN product_variants pv ON pv.id = ?
-           WHERE o.order_number = ?`,
-        )
-        .bind(totalAmount, input.variantId, orderNumber),
-    );
-  }
-  statements.push(
     database
       .prepare(
-        `SELECT id, order_number
+        `INSERT INTO order_items (order_id, variant_id, quantity, unit_price)
+         SELECT o.id, ?, 1, ?
+         FROM orders o
+         WHERE o.order_number = ?
+           AND o.submit_token = ?
+           AND o.shipping_status = 'abandoned'`,
+      )
+      .bind(variant.id, unitPrice, orderNumber, submitToken),
+    database
+      .prepare(
+        `SELECT id, order_number, shipping_status
          FROM orders
-         WHERE customer_phone = ?
-           AND shipping_status = 'abandoned'
-           AND unixepoch(created_at) >= unixepoch('now', '-2 hours')
-         ORDER BY id DESC
+         WHERE submit_token = ?
          LIMIT 1`,
       )
-      .bind(customerPhone),
-  );
-  const results = await database.batch(statements);
+      .bind(submitToken),
+  ]);
   const row = results.at(-1)?.results?.[0] as
-    | { id?: number; order_number?: string }
+    | { id?: number; order_number?: string; shipping_status?: string }
     | undefined;
   if (!row?.id || !row.order_number) {
     throw new Error("Order terbengkalai gagal disimpan.");
@@ -209,7 +267,7 @@ export async function recordAbandonedOrder(
     id: row.id,
     orderNumber: row.order_number,
     customerPhone,
-    action: "created",
+    action: row.shipping_status === "abandoned" ? "created" : "skipped",
   };
 }
 
@@ -271,13 +329,12 @@ export async function persistOrder(
     .prepare(
       `SELECT id, order_number, public_status_token
        FROM orders
-       WHERE customer_phone = ?
+       WHERE submit_token = ?
+         AND customer_phone = ?
          AND shipping_status = 'abandoned'
-         AND unixepoch(created_at) >= unixepoch('now', '-2 hours')
-       ORDER BY id DESC
        LIMIT 1`,
     )
-    .bind(input.customerPhone)
+    .bind(input.submitToken, input.customerPhone)
     .first<{
       id: number;
       order_number: string;
@@ -302,6 +359,7 @@ export async function persistOrder(
   const createdAt = new Date().toISOString();
   const paymentStatus =
     input.paymentMethod === "cod" ? "unpaid" : "pending";
+  const source = normalizeSourceContext(input.sourceForm, input.sourcePath);
 
   try {
     const orderStatement = abandonedOrder
@@ -332,15 +390,17 @@ export async function persistOrder(
                  courier_code = ?,
                  courier_service = ?,
                  ad_click_ids = COALESCE(?, ad_click_ids),
+                 source_form = COALESCE(?, source_form),
+                 source_path = COALESCE(?, source_path),
                  seller_bank_account_id = ?,
                  seller_bank_code = ?,
                  seller_bank_name = ?,
                  seller_account_holder = ?,
                  seller_account_number = ?
              WHERE id = ?
+               AND submit_token = ?
                AND customer_phone = ?
-               AND shipping_status = 'abandoned'
-               AND unixepoch(created_at) >= unixepoch('now', '-2 hours')`,
+               AND shipping_status = 'abandoned'`,
           )
           .bind(
             orderNumber,
@@ -365,6 +425,8 @@ export async function persistOrder(
             input.courierCode || null,
             input.courierService || null,
             input.adClickIds || null,
+            source.sourceForm,
+            source.sourcePath,
             sellerBankAccount?.id || null,
             sellerBankAccount?.bank_code || null,
             sellerBankAccount
@@ -373,6 +435,7 @@ export async function persistOrder(
             sellerBankAccount?.account_holder || null,
             sellerBankAccount?.account_number || null,
             abandonedOrder.id,
+            input.submitToken,
             input.customerPhone,
           )
       : database
@@ -383,11 +446,12 @@ export async function persistOrder(
               total_amount, shipping_cost, cod_service_fee, cod_service_fee_vat,
               cod_fee_bearer, payment_method, payment_status, shipping_status,
               destination_area_id, courier_code, courier_service, ad_click_ids,
+              source_form, source_path,
               seller_bank_account_id, seller_bank_code, seller_bank_name,
               seller_account_holder, seller_account_number, created_at
             ) VALUES (
               ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending',
-              ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+              ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
             )`,
           )
           .bind(
@@ -415,6 +479,8 @@ export async function persistOrder(
             input.courierCode || null,
             input.courierService || null,
             input.adClickIds || null,
+            source.sourceForm,
+            source.sourcePath,
             sellerBankAccount?.id || null,
             sellerBankAccount?.bank_code || null,
             sellerBankAccount

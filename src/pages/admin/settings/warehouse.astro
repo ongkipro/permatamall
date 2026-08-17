@@ -141,12 +141,12 @@ export const prerender = false;
     let pending = false;
     const field = (id: string) => document.getElementById(id) as HTMLInputElement | HTMLTextAreaElement | null;
 
-    const show = (message: string, state: 'idle' | 'success' | 'error') => {
+    const show = (message: string, state: 'idle' | 'success' | 'warning' | 'error') => {
       if (!status) return;
-      status.setAttribute('role', state === 'error' ? 'alert' : 'status');
-      status.setAttribute('aria-live', state === 'error' ? 'assertive' : 'polite');
+      status.setAttribute('role', state === 'error' || state === 'warning' ? 'alert' : 'status');
+      status.setAttribute('aria-live', state === 'error' || state === 'warning' ? 'assertive' : 'polite');
       status.textContent = message;
-      status.className = `min-h-5 text-xs font-bold ${state === 'success' ? 'text-blue-700' : state === 'error' ? 'text-rose-700' : 'text-slate-500'}`;
+      status.className = `min-h-5 text-xs font-bold ${state === 'success' ? 'text-blue-700' : state === 'warning' ? 'text-amber-700' : state === 'error' ? 'text-rose-700' : 'text-slate-500'}`;
     };
 
     // --- Origin Pin State ---
@@ -383,7 +383,11 @@ export const prerender = false;
         const p = await r.json().catch(() => ({}));
         if (!r.ok || !p.success) throw new Error(p.error || 'Gagal menyimpan gudang.');
         if (p.data?.pickup_address_id) field('pickupAddressId')!.value = p.data.pickup_address_id;
-        show(p.message || 'Konfigurasi gudang tersimpan.', 'success');
+        if (p.data?.provider_sync?.status === 'pending') {
+          show(p.data.provider_sync.message || p.message || 'Tersimpan lokal, tapi sinkronisasi pending.', 'warning');
+        } else {
+          show(p.message || 'Konfigurasi gudang tersimpan.', 'success');
+        }
       } catch (error) {
         show(error instanceof Error ? error.message : 'Gagal menyimpan gudang.', 'error');
       } finally {

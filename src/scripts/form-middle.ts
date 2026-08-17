@@ -244,17 +244,24 @@ export function initMiddleOrderForm(
 
     if (abandonedTimer) clearTimeout(abandonedTimer);
     abandonedTimer = setTimeout(() => {
+      const selectedVariant = form?.querySelector<HTMLInputElement>(
+        'input[name="variant"]:checked',
+      );
+      if (!selectedVariant) return;
       hasRecordedAbandonedLead = true;
       void fetch("/api/record-abandoned-order", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          submit_token: sessionGuardToken,
           customer_name: customerName,
           customer_phone: customerPhone,
           product_id: productId,
-          product_title: productName,
+          variant_id: String(selectedVariant.value || ""),
           address: addressInput ? addressInput.value.trim() : "",
           province,
+          source_form: "middle",
+          source_path: window.location.pathname,
         }),
       }).catch(() => {
         hasRecordedAbandonedLead = false;
@@ -702,6 +709,8 @@ export function initMiddleOrderForm(
           variant_unique_id: String(checked.value || ""),
           variant_id: String(checked.value || ""),
           shipping_cost: 0,
+          source_form: "middle",
+          source_path: window.location.pathname,
         }),
       });
       const payload = (await response.json().catch(() => ({}))) as any;

@@ -190,6 +190,8 @@ export const POST: APIRoute = async ({ request, locals }) => {
       shippingCost: 0,
       paymentMethod: "cod",
       adClickIds: storedClickIds,
+      sourceForm: String(body.source_form || ""),
+      sourcePath: String(body.source_path || ""),
     });
     scheduleReceiverPerformanceRefresh(
       database,

@@ -617,13 +617,13 @@ export const PUT: APIRoute = async ({ request, locals }) => {
 
     if (body.action === "save-warehouse") {
       if (!current.warehouse_id)
-        return jsonError("Gudang aktif belum tersedia.", 409);
+        return jsonError("Gudang belum tersedia untuk store ini.", 409);
       const warehouseName = clean(body.warehouse?.name, 120);
       const contactName = clean(body.warehouse?.contact_name, 120);
       const contactPhone = normalizePhone(body.warehouse?.contact_phone);
-      const originAreaId = clean(body.warehouse?.origin_area_id, 120);
-      const originLabel = clean(body.warehouse?.origin_label, 300);
-      const pickupAddressId = clean(body.warehouse?.pickup_address_id, 120);
+      const originAreaId = clean(body.warehouse?.origin_area_id, 160);
+      const originLabel = clean(body.warehouse?.origin_label, 240);
+      const pickupAddressId = clean(body.warehouse?.pickup_address_id, 160);
       const address = clean(body.warehouse?.address, 500);
       const city = clean(body.warehouse?.city, 120);
       const province = clean(body.warehouse?.province, 120);
@@ -639,32 +639,8 @@ export const PUT: APIRoute = async ({ request, locals }) => {
       }
       if (!PHONE_PATTERN.test(contactPhone))
         return jsonError("Telepon PIC harus berisi 9-15 digit.", 400);
-      let resolvedPickupAddressId = pickupAddressId || "";
-      if (providerConfig.mengantar.apiKey) {
-        try {
-          resolvedPickupAddressId = await new MengantarClient(
-            providerConfig.mengantar.apiKey,
-            providerConfig.mengantar.baseUrl,
-          ).ensurePickupAddress({
-            addressId: pickupAddressId || undefined,
-            pickupName: warehouseName,
-            pickupPic: contactName,
-            pickupPicPhone: contactPhone,
-            pickupAddress: address,
-            pickupAutofill: originAreaId,
-          });
-        } catch (error) {
-          const message =
-            error instanceof Error
-              ? error.message
-              : "Sinkronisasi pickup address Mengantar gagal.";
-          return jsonError(
-            `${message} Data gudang lokal tidak diubah.`,
-            message.includes("timeout") ? 504 : 502,
-          );
-        }
-      }
-      await db
+
+      const localSave = await db
         .prepare(
           `
         UPDATE warehouses
@@ -678,19 +654,90 @@ export const PUT: APIRoute = async ({ request, locals }) => {
           contactPhone,
           originAreaId,
           originLabel,
-          resolvedPickupAddressId,
+          pickupAddressId,
           address,
           city,
           province,
           current.warehouse_id,
         )
         .run();
-      return jsonOk({
+      if (localSave.meta.changes !== 1) {
+        return jsonError("Gudang tidak ditemukan. Muat ulang halaman lalu coba lagi.", 409);
+      }
+
+      let resolvedPickupAddressId = pickupAddressId;
+      let providerSync: {
+        status: "synced" | "pending";
+        message: string;
+      } = {
+        status: "pending",
         message:
-          resolvedPickupAddressId === pickupAddressId
-            ? "Konfigurasi gudang berhasil disimpan."
-            : "Alamat pickup dibuat atau dipulihkan di Mengantar dan konfigurasi gudang berhasil disimpan.",
-        data: { pickup_address_id: resolvedPickupAddressId },
+          "Data gudang lokal tersimpan. API key Mengantar belum dikonfigurasi; pickup address belum diverifikasi.",
+      };
+
+      if (providerConfig.mengantar.apiKey) {
+        try {
+          const confirmedPickupAddressId = await new MengantarClient(
+            providerConfig.mengantar.apiKey,
+            providerConfig.mengantar.baseUrl,
+          ).ensurePickupAddress({
+            addressId: pickupAddressId || undefined,
+            pickupName: warehouseName,
+            pickupPic: contactName,
+            pickupPicPhone: contactPhone,
+            pickupAddress: address,
+            pickupAutofill: originAreaId,
+          });
+          let pickupIdStored = true;
+
+          if (confirmedPickupAddressId !== pickupAddressId) {
+            try {
+              const pickupIdSave = await db
+                .prepare(
+                  "UPDATE warehouses SET pickup_address_id = ? WHERE id = ?",
+                )
+                .bind(confirmedPickupAddressId, current.warehouse_id)
+                .run();
+              if (pickupIdSave.meta.changes !== 1) {
+                throw new Error("Warehouse pickup ID update missed its row.");
+              }
+              resolvedPickupAddressId = confirmedPickupAddressId;
+            } catch (error) {
+              console.error("warehouse-pickup-id-update", error);
+              pickupIdStored = false;
+              providerSync = {
+                status: "pending",
+                message:
+                  "Data gudang lokal tersimpan dan alamat pickup sudah diterima Mengantar, tetapi ID pickup belum tersimpan. Coba simpan lagi.",
+              };
+            }
+          }
+
+          if (pickupIdStored) {
+            providerSync = {
+              status: "synced",
+              message:
+                "Data gudang dan alamat pickup Mengantar berhasil disimpan.",
+            };
+          }
+        } catch (error) {
+          const message =
+            error instanceof Error
+              ? error.message
+              : "Sinkronisasi pickup address Mengantar gagal.";
+          providerSync = {
+            status: "pending",
+            message: `Data gudang lokal tersimpan, tetapi sinkronisasi Mengantar gagal: ${message}`,
+          };
+        }
+      }
+
+      return jsonOk({
+        message: providerSync.message,
+        data: {
+          pickup_address_id: resolvedPickupAddressId,
+          provider_sync: providerSync,
+        },
       });
     }
 

@@ -510,23 +510,22 @@ function initHybridOrderFormInstance(formRoot: HTMLElement) {
 
     if (abandonedTimer) clearTimeout(abandonedTimer);
     abandonedTimer = setTimeout(() => {
-      hasRecordedAbandonedLead = true;
       const selectedVariant = getSelectedVariant();
-      const variantId = selectedVariant ? Number(selectedVariant.value) : undefined;
-      const variantPrice = getSelectedPrice();
-      const totalAmount = variantPrice > 0 ? variantPrice + (state.shipping?.shipping_cost || 0) : undefined;
+      if (!selectedVariant) return;
+      hasRecordedAbandonedLead = true;
       void fetch("/api/record-abandoned-order", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          submit_token: state.submitToken,
           customer_name: customerName,
           customer_phone: customerPhone,
           product_id: config.productId,
-          variant_id: Number.isFinite(variantId) && (variantId ?? 0) > 0 ? variantId : undefined,
-          total_amount: typeof totalAmount === "number" && totalAmount > 0 ? totalAmount : undefined,
-          product_title: config.productName,
+          variant_id: String(selectedVariant.value || ""),
           address: addressInput ? addressInput.value.trim() : "",
           province: state.selectedProvince || state.geoProvince || "",
+          source_form: "hybrid",
+          source_path: window.location.pathname,
         }),
       }).catch(() => {
         hasRecordedAbandonedLead = false;
@@ -615,6 +614,7 @@ function initHybridOrderFormInstance(formRoot: HTMLElement) {
     courierServiceId: "",
     shipmentProviderCode: "",
     warehouseUniqueId: "",
+    submitToken: createId(`sb_${config.productSlug}`),
   };
 
 
@@ -1889,10 +1889,7 @@ function initHybridOrderFormInstance(formRoot: HTMLElement) {
     // event_id yang dipakai server CAPI, supaya Meta bisa dedup jadi 1 conversion.
     const eventId = createId(`lead_${config.productSlug}`);
     const guardToken = createId(`tg_${config.productSlug}`);
-    if (!state.submitToken) {
-      state.submitToken = createId(`sb_${config.productSlug}`);
-    }
-    const submitToken = state.submitToken;
+    const submitToken = state.submitToken as string;
 
     let orderId = `PS-${Date.now().toString().slice(-8)}`;
     let orderPk = `pk_${Date.now()}`;
@@ -1913,7 +1910,7 @@ function initHybridOrderFormInstance(formRoot: HTMLElement) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          submit_token: `${submitToken}_${eventId}`,
+          submit_token: submitToken,
           customer_name: customerName,
           seller_bank_account_id:
             state.paymentMethod === "manual_transfer"
@@ -1947,6 +1944,8 @@ function initHybridOrderFormInstance(formRoot: HTMLElement) {
             state.shipping.shipment_provider_code ||
             undefined,
           shipping_cost: shippingCost,
+          source_form: "hybrid",
+          source_path: window.location.pathname,
           province:
             state.selectedProvince || state.location.province || undefined,
         }),

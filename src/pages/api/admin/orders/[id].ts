@@ -73,6 +73,8 @@ type OrderRow = {
   receiver_performance_json: string | null;
   receiver_performance_checked_at: string | null;
   ad_click_ids: string | null;
+  source_form: string | null;
+  source_path: string | null;
   created_at: string;
   warehouse_name: string | null;
   pickup_address_id: string | null;
@@ -157,6 +159,8 @@ async function loadOrder(database: D1Database, rawOrderKey: string) {
       o.receiver_performance_json,
       o.receiver_performance_checked_at,
       o.ad_click_ids,
+      o.source_form,
+      o.source_path,
       o.created_at,
       w.name AS warehouse_name,
       w.pickup_address_id,
@@ -277,6 +281,8 @@ export const GET: APIRoute = async ({ params, locals }) => {
         })(),
         receiver_performance_checked_at: order.receiver_performance_checked_at,
         ad_click_ids: order.ad_click_ids,
+        source_form: order.source_form,
+        source_path: order.source_path,
         created_at: order.created_at,
         payment: payment ? {
           reference_id: payment.reference_id,

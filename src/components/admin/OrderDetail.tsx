@@ -104,6 +104,8 @@ type Order = {
   receiver_performance: ReceiverPerformance | null;
   receiver_performance_checked_at: string | null;
   ad_click_ids?: string | null;
+  source_form?: string | null;
+  source_path?: string | null;
   created_at: string;
   payment: PaymentDetails | null;
   items: OrderItem[];
@@ -1206,6 +1208,29 @@ export function OrderDetail({ invoice }: { invoice: string }) {
                   <p className="mt-1 font-mono text-sm font-black text-slate-950">{safePhone || "—"}</p>
                 </div>
               </div>
+              {(order.source_form || order.source_path) && (
+                <div className="border-t border-slate-100 pt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">
+                      Sumber Form
+                    </span>
+                    <p className="mt-1 text-sm font-black text-slate-950">
+                      {order.source_form || "—"}
+                    </p>
+                  </div>
+                  <div className="min-w-0">
+                    <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">
+                      Halaman Asal
+                    </span>
+                    <p
+                      className="mt-1 truncate font-mono text-[11px] font-bold text-slate-600"
+                      title={order.source_path || undefined}
+                    >
+                      {order.source_path || "—"}
+                    </p>
+                  </div>
+                </div>
+              )}
 
               <div className="border-t border-slate-100 pt-4">
                 <div className="flex items-center justify-between gap-3">

@@ -1,8 +1,11 @@
 import type { APIRoute } from 'astro';
 import { getRuntimeEnv } from '../../lib/env';
 import { jsonError, jsonOk } from '../../lib/api';
-import { recordAbandonedOrder } from '../../lib/order-persistence';
-import { isValidWa62, normalizePhone } from '../../lib/validation';
+import {
+  OrderInputError,
+  recordAbandonedOrder,
+} from '../../lib/order-persistence';
+import { normalizePhone } from '../../lib/validation';
 
 export const POST: APIRoute = async ({ request, locals }) => {
   const database = getRuntimeEnv(locals)?.OMS_DB;
@@ -10,44 +13,33 @@ export const POST: APIRoute = async ({ request, locals }) => {
     return jsonError('Database order belum tersedia.', 503);
   }
 
-  const body = await request.json().catch(() => null) as {
+  const body = (await request.json().catch(() => null)) as {
+    submit_token?: string;
     customer_name?: string;
     customer_phone?: string;
     product_id?: number | string;
     variant_id?: number | string;
-    product_title?: string;
     address?: string;
     province?: string;
-    total_amount?: number;
+    source_form?: string;
+    source_path?: string;
   } | null;
 
   if (!body) {
     return jsonError('Payload tidak valid.', 400);
   }
 
-  const customerName = String(body.customer_name || '').trim();
-  const customerPhone = normalizePhone(String(body.customer_phone || ''));
-
-  if (customerName.length < 3) {
-    return jsonError('Nama pelanggan minimal 3 karakter.', 400);
-  }
-  if (!isValidWa62(customerPhone)) {
-    return jsonError('Nomor WhatsApp tidak valid.', 400);
-  }
-
-  const numericTotalAmount = Number(body.total_amount);
-  const variantId = Number(body.variant_id);
   try {
     const recorded = await recordAbandonedOrder(database as D1Database, {
-      customerName,
-      customerPhone,
+      submitToken: String(body.submit_token || ''),
+      customerName: String(body.customer_name || ''),
+      customerPhone: normalizePhone(String(body.customer_phone || '')),
+      productId: Number(body.product_id),
+      variantId: Number(body.variant_id),
       address: String(body.address || ''),
       province: String(body.province || ''),
-      totalAmount: Number.isFinite(numericTotalAmount)
-        ? numericTotalAmount
-        : undefined,
-      variantId:
-        Number.isInteger(variantId) && variantId > 0 ? variantId : undefined,
+      sourceForm: String(body.source_form || ''),
+      sourcePath: String(body.source_path || ''),
     });
     return jsonOk({
       success: true,
@@ -56,6 +48,9 @@ export const POST: APIRoute = async ({ request, locals }) => {
     });
   } catch (error) {
     console.error('record-abandoned-order error:', error);
+    if (error instanceof OrderInputError) {
+      return jsonError(error.message, 422);
+    }
     if (
       error instanceof Error &&
       error.message === 'Store belum dikonfigurasi.'

@@ -205,6 +205,8 @@ export const orders = sqliteTable(
     // Google click id captured at the ad landing, kept so a COD sale confirmed
     // days later can still be uploaded as an offline conversion.
     adClickIds: text("ad_click_ids"),
+    sourceForm: text("source_form"),
+    sourcePath: text("source_path"),
     courierCode: text("courier_code"),
     courierService: text("courier_service"),
     cnoteNo: text("cnote_no"),

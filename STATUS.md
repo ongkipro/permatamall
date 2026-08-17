@@ -32,7 +32,7 @@ The previous version of this file described a different repository — it opened
 | R2 | `cmsads-permatamall-assets` |
 | KV | `SESSION` |
 | Version | `1.2.0` / `2026.08-hardened` (`src/lib/version.ts`) |
-| Schema | 36 migration files, `0000`–`0035` |
+| Schema | 37 migration files, `0000`–`0036` |
 | Environments | one — no staging, no `env.*` blocks |
 | CI | push to `main` → check → test → build → `wrangler deploy` |
 
@@ -44,12 +44,16 @@ Live check on 2026-08-16: `/` 200, `/produk` 200, `sitemap.xml` lists 8 pages + 
 
 | Gate | Result |
 | --- | --- |
-| `npm test` | **225 / 225 passing** |
-| `npm run check` | 304 files · 0 errors · 0 warnings · 0 hints |
+| `npm test` | **228 / 228 passing** |
+| `npm run check` | 305 files · 0 errors · 0 warnings · 0 hints |
 | `npm run build` | Cloudflare server bundle complete |
-| Browser smoke | Public 8/8 menu routes and current-role admin menu/profile 5/5 returned 200 at the expected path; public and admin skip links target the main content; no horizontal overflow at 390 px |
+| Browser smoke | Existing public/admin navigation baseline remains recorded below; authenticated local flows have proved warehouse save/reload under provider failure and abandoned-lead capture → same-row checkout promotion → `/thanks` → invoice detail with product and form-source context |
 
-Latest deployed catalog verification (2026-08-17, commit `20e5559`, Worker `9461efb3-5d96-47d0-a685-0a87909c2e10`): `npm test` 225/225, `npm run check` 304 files with no diagnostics, and `npm run build` completed. Production Google and Meta feeds each returned HTTP 200 with exactly 22/22 unique product IDs in identical sets (`22` through `1`), no `item_group_id`, and no variant ID `106`. The live product page retained selected variant `106` while Meta `ViewContent` and Google `view_item` both emitted product ID `22`; live `AddToCart`/`InitiateCheckout`, CAPI payloads, and Google `add_to_cart`/`begin_checkout` also emitted product ID `22`, with variant `106` retained only as Google `item_variant`; horizontal overflow was zero in Chromium.
+Latest deployed catalog verification (2026-08-17, commit `20e5559`, Worker `9461efb3-5d96-47d0-a685-0a87909c2e10`): `npm test` 225/225, `npm run check` 304 files with no diagnostics, and `npm run build` completed. Production Google and Meta feeds each returned HTTP 200 with exactly 22/22 unique product IDs in identical sets (`22` through `1`), no `item_group_id`, and no variant ID `106`. Product IDs are the variable-length canonical decimal `products.id` values: product `22` is emitted as `"22"`, never five-digit-padded `"00022"` or synthetic `"10022"`. The live product page retained selected variant `106` while Meta `ViewContent` and Google `view_item` both emitted product ID `22`; live `AddToCart`/`InitiateCheckout`, CAPI payloads, and Google `add_to_cart`/`begin_checkout` also emitted product ID `22`, with variant `106` retained only as Google `item_variant`; horizontal overflow was zero in Chromium.
+
+Latest local warehouse verification (2026-08-17, not deployed): the warehouse settings route now commits the complete local row before attempting Mengantar reconciliation. A failed provider call preserves the operator's input and returns an explicit pending-sync contract instead of a 502 that discards the save. Focused tests passed 3/3; the full suite passed 228/228; `npm run check` reported 305 files with no diagnostics; `npm run build` completed; and a real browser save/reload retained name, PIC, normalized phone, origin ID/label, address, city, province, and manual pickup ID. Temporary local credentials and warehouse test values were removed after verification.
+
+Latest local checkout-lifecycle verification (2026-08-17, not deployed): middle and hybrid forms now preserve one lead token, selected variant, and form/path context through final submission. Lead capture derives product identity and price from D1, writes one abandoned line item, and upserts only the matching recent token; checkout promotes that row without duplication. Focused lifecycle tests passed 11/11; the full suite passed 228/228; `npm run check` reported 305 files with no diagnostics; `npm run build` completed; and Drizzle reported no pending schema changes. A real browser flow returned HTTP 200 for lead capture and checkout, reached `/thanks`, and rendered the authoritative product plus `middle` and `/middle-form` on the authenticated invoice. Temporary local data was removed afterward.
 
 ---
 
@@ -59,7 +63,7 @@ Latest deployed catalog verification (2026-08-17, commit `20e5559`, Worker `9461
 
 **Landing pages** — D1-backed builder with ordered `html` and `form` sections, drag reorder, shortcode pills, 480px mobile canvas preview, rendered through the `/[slug]` catch-all with admin-gated `?preview=1`.
 
-**Checkout** — three form modes (hybrid, middle, full) plus a geo-resolved variant and a cross-origin embed. Province-based COD gating from trusted Cloudflare geo, district autocomplete over a 7,285-district index, live Mengantar rate quotes, honeypot and rate-limit guards, `submit_token` idempotency, atomic order + items + stock reservation.
+**Checkout** — three form modes (hybrid, middle, full) plus a geo-resolved variant and a cross-origin embed. Province-based COD gating from trusted Cloudflare geo, district autocomplete over a 7,285-district index, live Mengantar rate quotes, honeypot and rate-limit guards, `submit_token` idempotency, atomic order + items + stock reservation, and token-scoped abandoned-lead promotion that preserves the authoritative product and form-source context.
 
 **Payments** — COD, manual bank transfer with seller bank accounts, and AutoLaris QRIS/VA with per-channel toggles, fee-bearer policy (buyer or seller) for both payment and COD fees, a dedicated instruction page with copy-to-clipboard and countdown, and idempotent webhook reconciliation.
 
@@ -69,7 +73,7 @@ Latest deployed catalog verification (2026-08-17, commit `20e5559`, Worker `9461
 
 **Headless API** — seven `/api/v1/*` routes (storefront descriptor, products list and detail, district lookup, shipping rates, checkout, tracking events) authenticated by API key against `developer_api_keys`. The independently validated Headless origin allowlist is persisted on `stores.headless_allowed_origins` and editable in Developer settings.
 
-**Tracking** — Meta Pixel plus server-side CAPI through a durable outbox with retry and a shared, order-derived `event_id`; Google Tag and Ads conversion configuration with region-scoped Consent Mode v2; TikTok event hooks; and click-id capture for `gclid`/`gbraid`/`wbraid`/`fbclid`/`ttclid`. Hosted and embedded checkout surfaces emit Purchase only after the order can be resolved and verified. Google/Meta catalog feeds and all Meta/GTM commerce events use the exact decimal `product_variants.id` as item/content ID; exact decimal `products.id` values are feed-only grouping IDs, and server Purchase content IDs are derived from persisted order items.
+**Tracking** — Meta Pixel plus server-side CAPI through a durable outbox with retry and a shared, order-derived `event_id`; Google Tag and Ads conversion configuration with region-scoped Consent Mode v2; TikTok event hooks; and click-id capture for `gclid`/`gbraid`/`wbraid`/`fbclid`/`ttclid`. Hosted and embedded checkout surfaces emit Purchase only after the order can be resolved and verified. Google/Meta catalog feeds and all Meta/GTM commerce events use the exact decimal `products.id` as item/content ID; variant IDs remain order-selection and optional Google `item_variant` metadata only.
 
 ---
 
@@ -81,9 +85,8 @@ Live catalog: 22 women's handbag products with 110 variants, seeded by `scripts/
 
 Known data issues, all tracked:
 
-- The local development D1 still holds the previously provisioned warehouse row — a real address, phone number, and Mengantar ObjectIds. The repository is clean, but that data lives in local state and presumably in the remote database; scrubbing it needs a remote write and is a separate decision.
 - The demo seed is `scripts/seed-catalog.sql`, run with `npm run db:reset:demo:local`. It is **destructive to the catalog** by design — a demo seed's job is a known state — but its deletes are guarded so they never touch order history. The former `src/db/seed.sql`, which held two previous merchants' catalogs plus genuine-looking provider ids, a real address and a real phone number, was deleted on 2026-08-16.
-- `schema.ts` is missing two tables and three columns that exist in migrations; the Drizzle journal stops at `0030`.
+- `schema.ts` and the Drizzle snapshot now cover the three formerly missing columns through migration `0036`; two migration-created tables remain outside the Drizzle declarations.
 
 ---
 

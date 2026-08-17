@@ -98,6 +98,9 @@ Security rules:
 Every catalog item is one persisted product. Meta Pixel, Meta CAPI, GTM/Google
 Ads, Google Merchant Center, and Meta Commerce Manager use the exact decimal
 string of `products.id` as the item/content ID.
+The ID is variable-length, not a fixed-width five-digit value. Preserve the
+canonical database representation without leading zeroes or synthetic offsets:
+product `22` is `"22"`, never `"00022"` or `"10022"`.
 
 Product `22`, including selected variant `106`, therefore uses item/content ID
 `22`. Variant selection may change price, stock, SKU, and the optional

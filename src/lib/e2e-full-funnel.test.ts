@@ -154,6 +154,8 @@ class SqliteD1Database {
         courier_code TEXT,
         courier_service TEXT,
         ad_click_ids TEXT,
+        source_form TEXT,
+        source_path TEXT,
         seller_bank_account_id INTEGER,
         seller_bank_code TEXT,
         seller_bank_name TEXT,
@@ -234,12 +236,15 @@ test("checkout promotes one abandoned lead and queues one attributable Purchase"
     "1. /api/record-abandoned-order logic records an abandoned order",
     async () => {
       const abandoned = await recordAbandonedOrder(d1, {
+        submitToken: "submit-full-funnel-001",
         customerName: "Siti Rahayu",
         customerPhone,
         address: "Jl. Melati 10",
         province: "ID-JI",
-        totalAmount: 150000,
+        productId: 10001,
         variantId: 20001,
+        sourceForm: "hybrid",
+        sourcePath: "/produk/aussie",
       });
       abandonedId = abandoned.id;
 
@@ -250,9 +255,12 @@ test("checkout promotes one abandoned lead and queues one attributable Purchase"
         shipping_status: string;
         payment_status: string;
         customer_phone: string;
+        source_form: string;
+        source_path: string;
       }>(
         database,
-        `SELECT id, shipping_status, payment_status, customer_phone
+        `SELECT id, shipping_status, payment_status, customer_phone,
+                source_form, source_path
          FROM orders WHERE id = ?`,
         abandoned.id,
       );
@@ -260,11 +268,30 @@ test("checkout promotes one abandoned lead and queues one attributable Purchase"
       assert.equal(storedAbandoned.shipping_status, "abandoned");
       assert.equal(storedAbandoned.payment_status, "unpaid");
       assert.equal(storedAbandoned.customer_phone, customerPhone);
+      assert.equal(storedAbandoned.source_form, "hybrid");
+      assert.equal(storedAbandoned.source_path, "/produk/aussie");
+      const abandonedItem = await readRow<{
+        variant_id: number;
+        quantity: number;
+        unit_price: number;
+      }>(
+        database,
+        `SELECT variant_id, quantity, unit_price
+         FROM order_items WHERE order_id = ?`,
+        abandoned.id,
+      );
+      assert.equal(abandonedItem.variant_id, 20001);
+      assert.equal(abandonedItem.quantity, 1);
+      assert.equal(abandonedItem.unit_price, 150000);
 
       const refreshed = await recordAbandonedOrder(d1, {
+        submitToken: "submit-full-funnel-001",
         customerName: "Siti Rahayu Updated",
         customerPhone,
-        totalAmount: 150000,
+        productId: 10001,
+        variantId: 20001,
+        sourceForm: "hybrid",
+        sourcePath: "/produk/aussie",
       });
       assert.equal(refreshed.action, "updated");
       assert.equal(refreshed.id, abandoned.id);
@@ -314,6 +341,8 @@ test("checkout promotes one abandoned lead and queues one attributable Purchase"
         courierCode: "jne",
         courierService: "REG",
         adClickIds: serializeClickIds(clickIds),
+        sourceForm: "hybrid",
+        sourcePath: "/produk/aussie",
       });
 
       assert.equal(order.id, abandonedId);
@@ -323,14 +352,19 @@ test("checkout promotes one abandoned lead and queues one attributable Purchase"
         shipping_status: string;
         submit_token: string;
         ad_click_ids: string;
+        source_form: string;
+        source_path: string;
       }>(
         database,
-        `SELECT id, shipping_status, submit_token, ad_click_ids
+        `SELECT id, shipping_status, submit_token, ad_click_ids,
+                source_form, source_path
          FROM orders WHERE id = ?`,
         abandonedId,
       );
       assert.equal(stored.shipping_status, "pending");
       assert.equal(stored.submit_token, "submit-full-funnel-001");
+      assert.equal(stored.source_form, "hybrid");
+      assert.equal(stored.source_path, "/produk/aussie");
       assert.equal(
         (
           await readRow<{ total: number }>(
@@ -340,6 +374,42 @@ test("checkout promotes one abandoned lead and queues one attributable Purchase"
         ).total,
         1,
       );
+
+      const storedItem = await readRow<{
+        variant_id: number;
+        quantity: number;
+        unit_price: number;
+      }>(
+        database,
+        `SELECT variant_id, quantity, unit_price
+         FROM order_items WHERE order_id = ?`,
+        abandonedId,
+      );
+      assert.equal(storedItem.variant_id, 20001);
+      assert.equal(storedItem.quantity, 1);
+      assert.equal(storedItem.unit_price, 150000);
+
+      const lateCapture = await recordAbandonedOrder(d1, {
+        submitToken: "submit-full-funnel-001",
+        customerName: "Siti Rahayu",
+        customerPhone,
+        productId: 10001,
+        variantId: 20001,
+        sourceForm: "hybrid",
+        sourcePath: "/produk/aussie",
+      });
+      assert.equal(lateCapture.action, "skipped");
+      const afterLateCapture = await readRow<{
+        total: number;
+        abandoned: number;
+      }>(
+        database,
+        `SELECT COUNT(*) AS total,
+                SUM(CASE WHEN shipping_status = 'abandoned' THEN 1 ELSE 0 END) AS abandoned
+         FROM orders`,
+      );
+      assert.equal(afterLateCapture.total, 1);
+      assert.equal(afterLateCapture.abandoned, 0);
     },
   );
 

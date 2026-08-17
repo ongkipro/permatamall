@@ -155,11 +155,15 @@ test("recordAbandonedOrder normalizes an Indonesian phone and creates an unpaid 
         },
         async first() {
           if (sql.includes("MAX(id)")) return { max_id: 100 };
+          if (sql.includes("WHERE submit_token = ?")) return null;
           if (
             sql.includes("FROM orders") &&
             sql.includes("shipping_status = 'abandoned'")
           ) {
             return null;
+          }
+          if (sql.includes("FROM product_variants pv")) {
+            return { id: 101, price: 50000 };
           }
           if (sql.includes("SELECT id FROM stores")) return { id: 9 };
           throw new Error(`Unexpected first query: ${sql}`);
@@ -172,19 +176,26 @@ test("recordAbandonedOrder normalizes an Indonesian phone and creates an unpaid 
       return batchStatements.map((_, index) => ({
         results:
           index === batchStatements.length - 1
-            ? [{ id: 41, order_number: batchStatements[0].args[0] }]
+            ? [{
+                id: 41,
+                order_number: batchStatements[0].args[0],
+                shipping_status: "abandoned",
+              }]
             : [],
       }));
     },
   } as unknown as D1Database;
 
   const result = await recordAbandonedOrder(mockDb, {
+    submitToken: "abandoned-test-0001",
     customerName: "Paduka Ongki",
     customerPhone: "08123456789",
     address: "Jl. Merdeka No. 1",
     province: "ID-JB",
-    totalAmount: 50000,
+    productId: 77,
     variantId: 101,
+    sourceForm: "middle",
+    sourcePath: "/produk/test",
   });
 
   assert.equal(result.id, 41);
@@ -195,57 +206,76 @@ test("recordAbandonedOrder normalizes an Indonesian phone and creates an unpaid 
   assert.match(batchStatements[1].sql, /INSERT INTO order_items/);
 });
 
-test("recordAbandonedOrder upserts the matching recent lead", async () => {
-  let updateSql = "";
-  let updateArgs: unknown[] = [];
-  let batchCalled = false;
+test("recordAbandonedOrder updates the abandoned row matching its submit token", async () => {
+  type CapturedStatement = {
+    sql: string;
+    args: unknown[];
+  };
+  let batchStatements: CapturedStatement[] = [];
   const mockDb = {
     prepare(sql: string) {
+      const captured: CapturedStatement = { sql, args: [] };
       const stmt = {
+        captured,
         bind(...args: unknown[]) {
-          if (sql.includes("UPDATE orders")) updateArgs = args;
+          captured.args = args;
           return stmt;
         },
         async first() {
+          if (sql.includes("FROM product_variants pv")) {
+            return { id: 101, price: 50000 };
+          }
           return {
             id: 22,
             order_number: "ABN-EXISTING",
+            shipping_status: "abandoned",
           };
-        },
-        async run() {
-          updateSql = sql;
-          return { success: true };
         },
       };
       return stmt;
     },
-    async batch() {
-      batchCalled = true;
-      return [];
+    async batch(statements: Array<{ captured: CapturedStatement }>) {
+      batchStatements = statements.map((statement) => statement.captured);
+      return batchStatements.map(() => ({ results: [] }));
     },
   } as unknown as D1Database;
 
   const result = await recordAbandonedOrder(mockDb, {
+    submitToken: "abandoned-test-0002",
     customerName: "Nama Terbaru",
     customerPhone: "+62 812-3456-789",
-    totalAmount: 75000,
+    productId: 77,
+    variantId: 101,
+    sourceForm: "hybrid",
+    sourcePath: "/produk/test",
   });
 
   assert.equal(result.id, 22);
   assert.equal(result.orderNumber, "ABN-EXISTING");
   assert.equal(result.action, "updated");
-  assert.equal(batchCalled, false);
-  assert.match(updateSql, /payment_status = 'unpaid'/);
-  assert.match(updateSql, /shipping_status = 'abandoned'/);
-  assert.ok(updateArgs.includes(75000));
+  assert.equal(batchStatements.length, 3);
+  assert.doesNotMatch(batchStatements[0].sql, /payment_status\s*=/);
+  assert.doesNotMatch(
+    batchStatements[0].sql,
+    /shipping_status\s*=\s*'abandoned'\s*,/,
+  );
+  assert.match(batchStatements[0].sql, /shipping_status = 'abandoned'/);
+  assert.ok(batchStatements[0].args.includes(50000));
+  assert.match(batchStatements[1].sql, /DELETE FROM order_items/);
+  assert.match(batchStatements[2].sql, /INSERT INTO order_items/);
 });
 
 test("recordAbandonedOrder rejects a non-mobile Indonesian phone", async () => {
   const unusedDb = {} as D1Database;
   await assert.rejects(
     recordAbandonedOrder(unusedDb, {
+      submitToken: "abandoned-test-0003",
       customerName: "Paduka Ongki",
       customerPhone: "0215551234",
+      productId: 77,
+      variantId: 101,
+      sourceForm: "middle",
+      sourcePath: "/produk/test",
     }),
     (error: unknown) =>
       error instanceof OrderInputError &&

@@ -2114,10 +2114,28 @@ Scope: Comprehensive UI/UX redesign and backend enhancement for `/admin/orders`,
 
 ## Product-Level Catalog Identity — 2026-08-17
 
-- Corrected the catalog contract to use exact decimal `products.id` values as provider item IDs and advertising event content IDs. Variant IDs remain order-selection and optional event metadata only.
+- Corrected the catalog contract to use exact decimal `products.id` values as provider item IDs and advertising event content IDs. These are variable-length canonical database IDs, not fixed-width five-digit values: product `22` remains `"22"`, never `"00022"` or synthetic `"10022"`. Variant IDs remain order-selection and optional event metadata only.
 - Collapsed Google Merchant and Meta Commerce feeds from 110 variant rows to 22 product rows. Each feed now emits one item per product, has the same 22-ID set, and omits `item_group_id`.
 - Updated browser Pixel, server CAPI, Google ecommerce events, Purchase order-derived payloads, admin identity displays, regression tests, and `TRACKING_SPECS.md` to the same product-level contract.
 - Verification: focused catalog/event/Purchase tests **15/15 passed**; full `npm test` **225/225 passed**; `npm run check` **304 files, 0 errors, 0 warnings, 0 hints**; `npm run build` complete.
 - Local proof: both feeds returned 22/22 unique product IDs, included product `22`, excluded variant `106`, omitted `item_group_id`, and exposed identical sets. The selected-variant product page and checkout flow retained variant `106`; Meta Pixel, CAPI, and Google events emitted product ID `22`.
 - Production proof: both feeds returned HTTP 200 with the identical product ID set `22` through `1`, no variant ID `106`, and no `item_group_id`. The live product page retained variant `106`; `ViewContent`, `view_item`, `AddToCart`, `InitiateCheckout`, CAPI payloads, `add_to_cart`, and `begin_checkout` emitted product ID `22`, while Google retained `106` only as `item_variant`. Horizontal overflow was zero in Chromium.
 - Deployed commit `20e5559` as Worker version `9461efb3-5d96-47d0-a685-0a87909c2e10` to `permatamall.shop` and `www.permatamall.shop`.
+
+## Durable Warehouse Settings Save — 2026-08-17
+
+- Repaired `/api/admin/settings` so a Mengantar pickup-address failure no longer discards valid warehouse input. The route now writes the complete local warehouse row first, then attempts provider reconciliation.
+- Added an explicit response contract: provider failures return HTTP 200 with `success: true`, the persisted pickup ID, `provider_sync.status = "pending"`, and an actionable message; accepted provider responses may replace the pickup ID and return `provider_sync.status = "synced"`.
+- Added `src/lib/settings-warehouse.test.ts` covering network failure after local persistence, a provider-confirmed pickup ID, and the no-provider-key path with a retained manual ID.
+- Updated `/admin/settings/warehouse` to render pending provider reconciliation as an assertive amber warning while preserving the existing success and error states.
+- Verification: focused warehouse tests **3/3 passed**; full `npm test` **228/228 passed**; `npm run check` **305 files, 0 errors, 0 warnings, 0 hints**; `npm run build` complete.
+- Local browser proof: with Mengantar forced unreachable, an authenticated save returned HTTP 200 with `provider_sync: pending`; the warning remained visible and enabled; reload retained warehouse name, PIC, normalized phone, origin ID/label, address, city, province, and manual pickup ID. Temporary credentials and test data were removed afterward. No remote mutation or deployment was performed.
+
+## Canonical Abandoned-Lead Checkout Lifecycle — 2026-08-17
+
+- Repaired the lifecycle root cause instead of hiding incomplete rows in admin: middle and hybrid forms now reuse one session-stable `submit_token`, submit the selected `variant_id`, and attach `source_form` plus `source_path` to both lead capture and final checkout.
+- Hardened `/api/record-abandoned-order` around server-owned catalog data. It validates an Indonesian mobile number and token, resolves the active product/variant and price from D1, records one unpaid `abandoned` order item, and updates only a recent abandoned row with the same token. Customer phone alone is no longer an upsert key.
+- Changed final persistence to promote the matching abandoned row to `pending`, replace its placeholder item atomically, and return the newly inserted order row when no lead exists. Browser-provided product titles and totals no longer decide abandoned lead product identity or price.
+- Added `orders.source_form` and `orders.source_path` through `0036_order_source_context.sql`, synchronized the Drizzle snapshot/journal, returned the fields from the authenticated order-detail API, and rendered them beside the customer identity in `OrderDetail`.
+- Focused lifecycle tests passed **11/11** and cover one-row promotion, product/variant replacement, click-ID survival, authoritative CAPI identity, inserted-order return values, token-scoped upserts, and phone rejection. Full `npm test` passed **228/228**; `npm run check` reported **305 files, 0 errors, 0 warnings, 0 hints**; `npm run build` completed; `npm run db:generate` reported no schema changes.
+- Local browser proof: qualified middle-form input produced HTTP 200 with the expected token, variant, and source payload; D1 held one abandoned item with the authoritative product title and price; final submit reused row `6`, changed `ABN-10006` to `INV-10006`, reached `/thanks`, and the authenticated invoice rendered the product, `middle`, and `/middle-form`. Temporary orders, line items, admin credentials, and the reserved stock delta were removed afterward. No remote mutation or deployment was performed.

@@ -60,15 +60,15 @@ The blocker here is the operator surface plus a live capture — not the transpo
 
 ### B. Pickup address and schedule — implemented, needs contract re-verification and live proof
 
-This is **implemented**, not pending. Both paths already follow accept-before-persist:
+Both paths are implemented, but local configuration and provider-confirmed state are deliberately separate:
 
-- `src/pages/api/admin/settings.ts:620` calls `ensurePickupAddress` before writing the `warehouses` row; a provider failure returns 502 (504 on timeout) with `"Data gudang lokal tidak diubah."` and D1 is left untouched.
-- `src/pages/api/admin/shipping.ts:395` calls `schedulePickupTime`, requires a provider schedule reference in the response, and returns 502 `"Mengantar tidak mengembalikan referensi jadwal; D1 tidak diubah."` when it is absent.
+- `src/pages/api/admin/settings.ts` first persists the complete operator-entered `warehouses` row. It then attempts `ensurePickupAddress`; a rejected, timed-out, or unreachable provider returns HTTP 200 with `provider_sync.status = "pending"` and keeps the submitted pickup ID. Only a provider-accepted response can replace that ID. The local settings remain available without falsely presenting provider synchronisation as confirmed.
+- `src/pages/api/admin/shipping.ts` calls `schedulePickupTime`, requires a provider schedule reference in the response, and returns 502 `"Mengantar tidak mengembalikan referensi jadwal; D1 tidak diubah."` when it is absent.
 
-What remains is not code:
+What remains is live contract proof rather than another local persistence change:
 
 1. Re-verify the `/address` and `/time` request/response schemas against current Mengantar documentation — they were implemented from an earlier reading.
-2. Exercise the accepted, rejected, timeout, and duplicate-pickup paths against the live provider under explicit approval (see §6).
+2. Exercise the accepted, rejected, timeout, duplicate-pickup, and later retry paths against the live provider under explicit approval (see §6).
 
 ---
 

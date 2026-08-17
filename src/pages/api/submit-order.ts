@@ -284,6 +284,8 @@ export const POST: APIRoute = async ({ request, locals }) => {
       courierCode: selectedRate.courier_code,
       courierService: selectedRate.courier_service,
       adClickIds: storedClickIds,
+      sourceForm: String(body.source_form || ""),
+      sourcePath: String(body.source_path || ""),
     });
 
     let payment: AutoLarisPaymentRecord | undefined;
