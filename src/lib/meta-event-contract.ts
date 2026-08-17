@@ -35,11 +35,19 @@ type ValidationResult =
 
 const EVENT_NAMES = new Set<string>(META_EVENT_NAMES);
 const EVENT_ID_PATTERN = /^[A-Za-z0-9_.:-]{1,128}$/;
-// Catalog items are exact persisted D1 product/variant row IDs. The prefixes
-// disambiguate the two integer namespaces; neither numeric segment is rewritten.
-const PRODUCT_ID_PATTERN = /^p[1-9]\d*-v[1-9]\d*$/;
+// Catalog item IDs are exact positive D1 product_variants.id values. Product
+// IDs remain numeric feed-only item_group_id values.
+const CATALOG_ITEM_ID_PATTERN = /^[1-9]\d*$/;
 // fb.<subdomainIndex>.<timestamp>.<payload>
 const FB_COOKIE_PATTERN = /^fb\.\d\.\d{10,20}\..+$/;
+
+function isCatalogItemId(value: unknown): value is string {
+  return (
+    typeof value === 'string' &&
+    CATALOG_ITEM_ID_PATTERN.test(value) &&
+    Number.isSafeInteger(Number(value))
+  );
+}
 
 function record(value: unknown): Record<string, unknown> | null {
   return value !== null && typeof value === 'object' && !Array.isArray(value)
@@ -126,7 +134,7 @@ export function validateMetaEventPayload(input: unknown, requestUrl: string): Va
       !Array.isArray(rawContentIds) ||
       rawContentIds.length === 0 ||
       rawContentIds.length > 20 ||
-      rawContentIds.some((id) => typeof id !== 'string' || !PRODUCT_ID_PATTERN.test(id))
+      rawContentIds.some((id) => !isCatalogItemId(id))
     ) {
       return { ok: false, error: 'Meta content_ids harus berisi maksimal 20 ID produk katalog.' };
     }

@@ -69,7 +69,7 @@ Latest deployed catalog verification (2026-08-17, Worker `fbd8a462-f084-4935-ab2
 
 **Headless API** — seven `/api/v1/*` routes (storefront descriptor, products list and detail, district lookup, shipping rates, checkout, tracking events) authenticated by API key against `developer_api_keys`. The independently validated Headless origin allowlist is persisted on `stores.headless_allowed_origins` and editable in Developer settings.
 
-**Tracking** — Meta Pixel plus server-side CAPI through a durable outbox with retry and a shared, order-derived `event_id`; Google Tag and Ads conversion configuration with region-scoped Consent Mode v2; TikTok event hooks; and click-id capture for `gclid`/`gbraid`/`wbraid`/`fbclid`/`ttclid`. Hosted and embedded checkout surfaces emit Purchase only after the order can be resolved and verified. Google/Meta catalog feeds and all Meta/GTM commerce events share the variant-level item identity `p<product-id>-v<variant-id>`; product-level `p<product-id>` values are grouping IDs only, and server Purchase content IDs are derived from persisted order items.
+**Tracking** — Meta Pixel plus server-side CAPI through a durable outbox with retry and a shared, order-derived `event_id`; Google Tag and Ads conversion configuration with region-scoped Consent Mode v2; TikTok event hooks; and click-id capture for `gclid`/`gbraid`/`wbraid`/`fbclid`/`ttclid`. Hosted and embedded checkout surfaces emit Purchase only after the order can be resolved and verified. Google/Meta catalog feeds and all Meta/GTM commerce events use the exact decimal `product_variants.id` as item/content ID; exact decimal `products.id` values are feed-only grouping IDs, and server Purchase content IDs are derived from persisted order items.
 
 ---
 

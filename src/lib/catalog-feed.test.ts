@@ -20,15 +20,15 @@ test("formatContentId preserves the persisted provider ID exactly", () => {
   assert.throws(() => formatContentId(0), /positive persisted D1 row ID/);
 });
 
-test("catalog IDs bind each item to unmodified product and variant IDs", () => {
-  assert.equal(formatCatalogGroupId("22"), "p22");
+test("catalog item and group IDs are exact numeric variant and product keys", () => {
+  assert.equal(formatCatalogGroupId("22"), "22");
   assert.deepEqual(formatCatalogItemId("22", 106), {
-    itemId: "p22-v106",
-    itemGroupId: "p22",
+    itemId: "106",
+    itemGroupId: "22",
   });
   assert.deepEqual(formatCatalogItemId("14001", "434684"), {
-    itemId: "p14001-v434684",
-    itemGroupId: "p14001",
+    itemId: "434684",
+    itemGroupId: "14001",
   });
 });
 
@@ -51,10 +51,10 @@ test("generateGoogleCatalogXml groups color variants and leaves a bundle ungroup
   ];
 
   const xml = generateGoogleCatalogXml(mockProducts, "https://permatamall.shop");
-  assert.ok(xml.includes("<g:id>p22-v10</g:id>"));
-  assert.ok(xml.includes("<g:id>p22-v11</g:id>"));
-  assert.ok(xml.includes("<g:id>p22-v12</g:id>"));
-  assert.equal(xml.match(/<g:item_group_id>p22<\/g:item_group_id>/g)?.length, 2);
+  assert.ok(xml.includes("<g:id>10</g:id>"));
+  assert.ok(xml.includes("<g:id>11</g:id>"));
+  assert.ok(xml.includes("<g:id>12</g:id>"));
+  assert.equal(xml.match(/<g:item_group_id>22<\/g:item_group_id>/g)?.length, 2);
   assert.equal(xml.match(/<g:item_group_title>Tas Kanvas<\/g:item_group_title>/g)?.length, 2);
   assert.ok(xml.includes("<g:color>Black</g:color>"));
   assert.ok(xml.includes("<g:variant_option>color:Cream</g:variant_option>"));
@@ -98,7 +98,7 @@ test("generateMetaCatalogXml emits valid fb_product_category and matching conten
   ];
 
   const xml = generateMetaCatalogXml(mockProducts, "https://permatamall.shop");
-  assert.ok(xml.includes("<g:id>p15005-v1</g:id>"));
+  assert.ok(xml.includes("<g:id>1</g:id>"));
   assert.ok(!xml.includes("<g:item_group_id>"));
   assert.ok(xml.includes("<g:fb_product_category>"));
   assert.ok(xml.includes("<g:image_link>https://r2.example.com/pompa.jpg</g:image_link>"));

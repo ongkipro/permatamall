@@ -39,7 +39,7 @@ export function formatContentId(id: number | string): string {
 }
 
 export function formatCatalogGroupId(productId: number | string): string {
-  return `p${formatContentId(productId)}`;
+  return formatContentId(productId);
 }
 
 export function formatCatalogItemId(
@@ -47,7 +47,7 @@ export function formatCatalogItemId(
   variantId: number | string,
 ): { itemId: string; itemGroupId: string } {
   return {
-    itemId: `${formatCatalogGroupId(productId)}-v${formatContentId(variantId)}`,
+    itemId: formatContentId(variantId),
     itemGroupId: formatCatalogGroupId(productId),
   };
 }
