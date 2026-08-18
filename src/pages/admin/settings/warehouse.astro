@@ -225,9 +225,12 @@ export const prerender = false;
       originSearchResults?.classList.add('hidden');
       originSearch?.setAttribute('aria-expanded', 'false');
       try {
-        const r = await fetch(`/api/locations?search=${encodeURIComponent(q)}`, { signal: areaAbort.signal });
-        const p = await r.json();
-        const items: OriginLocation[] = (Array.isArray(p?.items) ? p.items : []).map((item: any) => ({
+        const r = await fetch(`/api/locations?search=${encodeURIComponent(q)}&require_provider=1`, { signal: areaAbort.signal });
+        const p = await r.json().catch(() => ({}));
+        if (!r.ok || !p.success) {
+          throw new Error(p.error || 'Gagal mencari lokasi Mengantar.');
+        }
+        const items: OriginLocation[] = (Array.isArray(p.items) ? p.items : []).map((item: any) => ({
           id: String(item.id || item.location_id || ''),
           label: String(item.label || ''),
           district: String(item.district_name || item.district || item.subdistrict_name || ''),
@@ -236,7 +239,7 @@ export const prerender = false;
           city: String(item.city_name || item.city || ''),
           province: String(item.province_name || item.province || ''),
           postal_code: String(item.postal_code || '-'),
-        }));
+        })).filter((item: OriginLocation) => item.id);
         if (!items.length) {
           if (originSearchHint) originSearchHint.textContent = 'Tidak ditemukan. Coba kata kunci lain (contoh: "krembangan selatan").';
           originSearch?.setAttribute('aria-expanded', 'false');
@@ -307,10 +310,12 @@ export const prerender = false;
           });
         }
         renderOriginDistricts();
-      } catch (e: any) {
-        if (e?.name === 'AbortError') return;
+      } catch (e: unknown) {
+        if (e instanceof DOMException && e.name === 'AbortError') return;
+        const message = e instanceof Error ? e.message : 'Gagal mencari lokasi Mengantar. Coba lagi.';
         originSearch?.setAttribute('aria-expanded', 'false');
-        if (originSearchHint) { originSearchHint.textContent = 'Gagal mencari. Coba lagi.'; originSearchHint.className = 'mt-1.5 min-h-5 text-xs font-medium text-rose-600'; }
+        if (originSearchHint) { originSearchHint.textContent = message; originSearchHint.className = 'mt-1.5 min-h-5 text-xs font-medium text-rose-600'; }
+        show(message, 'error');
       }
     };
 
@@ -355,7 +360,7 @@ export const prerender = false;
       event.preventDefault();
       if (pending) return;
       if (!originAreaId?.value) {
-        show('Pilih kecamatan origin dulu.', 'error');
+        show('Pilih kelurahan/desa origin yang memiliki Area ID Mengantar dulu.', 'error');
         originSearch?.focus();
         return;
       }

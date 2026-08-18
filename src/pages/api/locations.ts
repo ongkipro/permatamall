@@ -13,10 +13,22 @@ import { getProviderConfig } from '../../lib/provider-config';
 
 export const prerender = false;
 
+function mengantarNotConfigured() {
+  return new Response(
+    JSON.stringify({
+      success: false,
+      code: 'MENGANTAR_NOT_CONFIGURED',
+      error: 'API Mengantar belum dikonfigurasi. Simpan API key di Pengaturan > Integrasi sebelum memilih origin gudang.',
+    }),
+    { status: 409, headers: { 'Content-Type': 'application/json' } },
+  );
+}
+
 export const GET: APIRoute = async ({ url, locals }) => {
   try {
     const search = url.searchParams.get('search') || '';
     const level = url.searchParams.get('level');
+    const requireProvider = url.searchParams.get('require_provider') === '1';
     if (!search || search.trim().length < 2) {
       return new Response(
         JSON.stringify({ success: true, locations: [] }),
@@ -26,6 +38,7 @@ export const GET: APIRoute = async ({ url, locals }) => {
 
     const database = getRuntimeEnv(locals)?.OMS_DB;
     if (!database || typeof database !== "object") {
+      if (requireProvider) return mengantarNotConfigured();
       const items = searchDistrictCatalog(search).map(createDistrictDiscoveryLocation);
       return new Response(
         JSON.stringify({ success: true, items, locations: items }),
@@ -34,6 +47,7 @@ export const GET: APIRoute = async ({ url, locals }) => {
     }
     const config = (await getProviderConfig(database as D1Database, locals)).mengantar;
     if (!config.apiKey) {
+      if (requireProvider) return mengantarNotConfigured();
       const items = searchDistrictCatalog(search).map(createDistrictDiscoveryLocation);
       return new Response(
         JSON.stringify({ success: true, items, locations: items }),
