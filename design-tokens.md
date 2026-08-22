@@ -1,54 +1,53 @@
 ---
-name: CMSAds Compact Market Storefront Tokens
-description: Legacy Petani Sejahtera compact-market token profile; not a universal tenant brand
-scope: compact-market
+name: adsbookcms-storefront
+description: Monochrome ink on white, Dawn-clean, one 480px column
+theme: { default: light, dark: out-of-scope,
+         white-temperature: neutral,
+         why: "The public surface is black and white so a landing page or a
+               custom product page can introduce its own colour without
+               fighting a house accent." }
 colors:
-  primary: "#064E3B"          # Deep Emerald 900
-  primary-accent: "#047857"   # Emerald 700
-  primary-subtle: "#ECFDF5"   # Emerald 50
-  ink-heading: "#0F172A"      # Slate 900
-  ink-body: "#475569"         # Slate 600
-  ink-muted: "#94A3B8"        # Slate 400
-  canvas: "#FFFFFF"
-  surface-subtle: "#F8FAFC"   # Slate 50
-  border-hairline: "#F1F5F9"  # Slate 100
-  border-subtle: "#E2E8F0"    # Slate 200
-  status-success: "#059669"   # Operational success only
-  badge-contrast: "#0F172A"   # Evidence-backed labels only
-typography:
-  display: "Plus Jakarta Sans, font-extrabold, tracking-tight"
-  body: "Inter / Plus Jakarta Sans, font-medium, leading-relaxed"
-spacing:
-  compact-container-max: "max-w-[480px]"
-  section-py: "py-7 (28px)"
-  item-gap: "gap-3.5 (14px)"
-radius:
-  sm: "rounded-md (6px)"
-  md: "rounded-xl (12px)"
-  lg: "rounded-2xl (16px)"
-  pill: "rounded-full (9999px)"
-shadows:
-  subtle: "shadow-2xs"
-  hover: "shadow-md"
+  ink:            "#111111"   # primary text, solid buttons, inverse surfaces
+  ink-secondary:  "#555555"   # body copy, 7.4:1 on white
+  ink-muted:      "#767676"   # captions, 4.6:1 on white - the floor
+  canvas:         "#FAFAFA"   # page behind the column
+  surface:        "#FFFFFF"   # the 480px reading column, cards
+  raised:         "#F5F5F5"   # media wells, inactive chips
+  border:         "#E5E5E5"   # hairline, used sparingly
+  on-ink:         "#FFFFFF"   # text on ink
+  focus:          "#2563EB"   # focus ring only - see accessibility notes
+typography: { display: "Inter 700", body: "Inter 400", emphasis: "Inter 600" }
+spacing: { base: 4px }
+radius: { none: 0 }           # Shape Lock: square. Dawn is square.
+shadows: { none }             # hairlines instead
+motion: { duration-base: 200ms, easing: ease-out }
 ---
 
-## Scope
+## Rationale
 
-These tokens preserve the legacy `compact-market` Petani Sejahtera presentation. They do not override a tenant's `PUBLIC_SITE_THEME_COLOR`, the responsive `wide-catalog` shell, the canonical admin design system, or operational status semantics.
+The storefront was warm neutrals plus a gold accent. That reads as a brand, and
+this is not a brand — it is a CMS that installs for any merchant, and the store
+that renders it has its own. A monochrome public surface stays out of the way:
+a landing page can bring one colour and own it completely, and a custom product
+page can do the same without arguing with a house gold that appears in twelve
+badge backgrounds.
 
-## Design Rules
+Neutral rather than warm or cool on purpose. A temperature is a brand decision,
+and this palette is deliberately declining to make one on the merchant's behalf.
+Three neutral steps carry the hierarchy — canvas behind the column, white
+surface, and a light well for media — so depth comes from the neutrals rather
+than from shadows sprinkled on flat white.
 
-1. **Coordinated palette**
-   - Use Deep Emerald (`#064E3B`, `#047857`) with Slate neutrals.
-   - Avoid unrelated rainbow pills and decorative status colors.
-2. **Evidence-backed labels**
-   - A comparison discount may render only when the D1 variant supplies `compare_price > price`.
-   - Ratings, reviews, sales counts, bestseller labels, guarantees, originality claims, and merchant-verification badges require explicit evidence-backed data.
-   - Missing evidence renders no badge; visual consistency is not permission to invent proof.
-3. **Header boundary**
-   - The compact announcement bar may use the tenant's coordinated dark brand tone.
-   - The non-sticky header uses the selected tenant's logo, name, and canonical links.
-   - Tenant identity never changes checkout validation, tracking identity, order lifecycle, or admin colors.
-4. **Template boundary**
-   - `compact-container-max` applies only to the compact-market storefront and checkout shell.
-   - `wide-catalog` uses its own responsive container and shared storefront contract from `STOREFRONT_DESIGN_SYSTEM.md`.
+Square corners and hairlines follow Dawn: borders separate, they do not frame.
+A photo does not need a box drawn around it when it already has edges.
+
+## Accessibility notes
+
+- `ink-muted` `#767676` is 4.6:1 on `#FFFFFF` — the floor for body copy. Do not
+  lighten it. `#999999`, which the tree used, is 2.8:1 and fails.
+- The focus ring stays blue. It is the one colour left, and it is deliberate:
+  monochrome cannot express focus against a monochrome page, and a 3:1
+  non-text contrast minimum applies to focus indicators.
+- Ink on white is 18.1:1; `ink-secondary` on white is 7.4:1.
+- Nothing conveys state by colour alone — sold out, selected and error all
+  carry a text or weight change as well.

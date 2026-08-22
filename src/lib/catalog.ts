@@ -1,4 +1,4 @@
-import { editorialProducts, type Product } from "../data/products";
+import { type Product } from "../data/products";
 import { getRuntimeEnv } from "./env";
 import {
   mergeStorefrontCatalog,
@@ -9,7 +9,7 @@ import {
   loadPublishedProductContent,
   mergeRuntimeProductContent,
 } from "./storefront-content";
-import { CANONICAL_SAMPLE_PRODUCT } from "./sample-product";
+import { catalogProductId } from "./catalog-feed";
 
 async function loadCatalogRows(database: D1Database) {
   const [products, variants] = await database.batch([
@@ -73,22 +73,7 @@ export async function getStorefrontProducts(
       rows.products,
       runtimeContent,
     );
-    const samplePresentation = editorialProducts.find(
-      (product) =>
-        product.productId === String(CANONICAL_SAMPLE_PRODUCT.id),
-    );
-    if (
-      samplePresentation &&
-      rows.products.some(
-        (product) => product.id === CANONICAL_SAMPLE_PRODUCT.id,
-      ) &&
-      !presentations.some(
-        (product) => product.productId === samplePresentation.productId,
-      )
-    ) {
-      presentations.push(samplePresentation);
-    }
-    return mergeStorefrontCatalog(presentations, rows.products, rows.variants);
+    return mergeStorefrontCatalog(rows.products, rows.variants, presentations);
   } catch (error) {
     console.error("storefront-catalog-load", error);
     return [];
@@ -102,6 +87,11 @@ export async function getStorefrontProduct(locals: App.Locals, key: string) {
     (product) =>
       product.slug === key ||
       product.productId === key ||
-      String(product.catalogId) === key,
+      String(product.catalogId) === key ||
+      // `/api/v1/products` hands a caller the numeric Product ID as content_id.
+      // Accepting it back keeps the documented list/detail round trip stable.
+      // is the difference between a documented round trip and a 404 on the value
+      // the API just returned.
+      catalogProductId(product.productId) === key,
   );
 }

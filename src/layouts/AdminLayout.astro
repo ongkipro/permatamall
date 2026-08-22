@@ -1,8 +1,7 @@
 ---
-import '../styles/global.css';
+import '../styles/admin.css';
 import { AdminShell } from '../components/admin/AdminShell.tsx';
 import { ADMIN_ACCENT } from '../components/admin/admin-navigation';
-import { tenantConfig } from '../lib/tenant';
 
 interface Props {
   title: string;
@@ -11,12 +10,14 @@ interface Props {
 
 const { title, activeMenu } = Astro.props;
 const currentPath = (Astro.url.pathname + Astro.url.search).replace(/\/$/, '') || '/';
-const adminRole = Astro.locals.admin?.role || 'owner';
+const adminRole = Astro.locals.admin?.role ?? 'customer_service';
+const mustChangePassword = Astro.locals.admin?.mustChangePassword ?? false;
+const sidebarDefaultOpen = Astro.cookies.get('sidebar_state')?.value !== 'false';
 
 ---
 
 <!DOCTYPE html>
-<html lang={tenantConfig.locale}>
+<html lang={Astro.locals.tenant.locale}>
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
@@ -26,11 +27,9 @@ const adminRole = Astro.locals.admin?.role || 'owner';
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <meta property="og:type" content="website" />
-    <meta property="og:title" content={`${title} - ${tenantConfig.adminName}`} />
-    <meta property="og:image" content="/og-admin.webp" />
+    <meta property="og:title" content={`${title} - ${Astro.locals.tenant.adminName}`} />
     <meta property="twitter:card" content="summary_large_image" />
-    <meta property="twitter:image" content="/og-admin.webp" />
-    <title>{title} - {tenantConfig.adminName}</title>
+    <title>{title} - {Astro.locals.tenant.adminName}</title>
     <link rel="icon" type="image/x-icon" href="/favicon.ico" />
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon.png" />
     <link rel="icon" type="image/svg+xml" href="/images/logo.svg" />
@@ -44,36 +43,18 @@ const adminRole = Astro.locals.admin?.role || 'owner';
     <AdminShell
       client:load
       title={title}
-      adminName={tenantConfig.adminName}
+      adminName={Astro.locals.tenant.adminName}
+      siteName={Astro.locals.tenant.name}
+      siteLogo={Astro.locals.tenant.logo}
       activeMenu={activeMenu}
       currentPath={currentPath}
-      siteUrl={tenantConfig.siteUrl}
+      siteUrl={Astro.locals.tenant.siteUrl}
       adminRole={adminRole}
+      mustChangePassword={mustChangePassword}
+      sidebarDefaultOpen={sidebarDefaultOpen}
     >
       <slot />
     </AdminShell>
-    <style is:global>
-      /* Admin loading placeholders stay static; only action feedback may spin. */
-      .admin-shell .animate-pulse {
-        animation: none;
-      }
-
-      .admin-shell [data-slot='select-content'] {
-        animation: none !important;
-        transition: none !important;
-      }
-
-      @media (max-width: 1023px) {
-        .admin-shell input,
-        .admin-shell select,
-        .admin-shell textarea {
-          font-size: 1rem !important;
-          line-height: 1.5rem;
-        }
-      }
-
-    </style>
-
     <!-- Vanilla JS for the admin drawer, global search, and logout enhancement. -->
     <script>
       // Delegate submit for dynamically rendered logout forms

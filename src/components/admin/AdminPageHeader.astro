@@ -14,7 +14,7 @@ const hasActions = Astro.slots.has('actions');
 <header class="flex flex-col gap-3 border-b border-slate-200/80 pb-4 sm:flex-row sm:items-end sm:justify-between sm:pb-5">
   <div class="min-w-0">
     {backHref && (
-      <a href={backHref} class="mb-2 inline-flex min-h-8 items-center text-xs font-bold text-slate-500 transition hover:text-slate-950">
+      <a href={backHref} class="mb-1 -ml-1 inline-flex min-h-11 items-center px-1 text-xs font-bold text-slate-500 transition hover:text-slate-950">
         <span aria-hidden="true">←</span><span class="ml-1.5">{backLabel}</span>
       </a>
     )}

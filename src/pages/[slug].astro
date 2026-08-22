@@ -1,13 +1,15 @@
 ---
-import GeoIpResolvedForm from '../components/forms/GeoIpResolvedForm.astro';
-import MetaLandingTracker from '../components/tracking/MetaLandingTracker.astro';
+import GeoIpResolvedForm from '../components/storefront/forms/GeoIpResolvedForm.astro';
+import MetaLandingTracker from '../components/storefront/tracking/MetaLandingTracker.astro';
 import BaseLayout from '../layouts/BaseLayout.astro';
 import { getStorefrontProduct } from '../lib/catalog';
 import { getLandingPageBySlug, parseShortcodes } from '../lib/landing-pages';
 import { getStoreSupportWhatsapp } from '../lib/public-store';
 import { getSessionCookie, verifyJwt } from '../lib/auth';
 import { getEnvValue, getRuntimeEnv } from '../lib/env';
-import { tenantConfig } from '../lib/tenant';
+import '../styles/form-hybrid.css';
+import '../styles/landing-pages/landing.css';
+import { defaultCatalogContentId } from '../lib/catalog-feed';
 
 export const prerender = false;
 
@@ -18,7 +20,7 @@ if (!page) {
   const product = await getStorefrontProduct(Astro.locals, slug);
   if (product) return Astro.redirect(`/produk/${product.slug}`, 308);
 
-  return new Response('Not found', { status: 404 });
+  return Astro.rewrite('/404');
 }
 
 const previewRequested = Astro.url.searchParams.get('preview') === '1';
@@ -65,13 +67,29 @@ if (previewRequested) {
     }
   }
 }
+if (isPreview) Astro.response.headers.set('Cache-Control', 'no-store');
 if (!page.is_active && !isPreview) {
-  return new Response('Not found', { status: 404 });
+  return Astro.rewrite('/404');
 }
 
 const product = await getStorefrontProduct(Astro.locals, page.product_id);
 if (!product) {
-  return new Response('Not found', { status: 404 });
+  return Astro.rewrite('/404');
+}
+
+// When this page has taken over the product's page, the product URL is its
+// only address, so a direct visit to the landing slug is sent there.
+//
+// The hand-off is detected by a header the product route sets, NOT by
+// `Astro.url`: a rewrite does not carry the original path here, so this route
+// sees the landing slug either way. Reading `Astro.url` made `/produk/<slug>`
+// rewrite here, redirect straight back, and loop until the browser gave up —
+// measured at 50 redirects before it was changed.
+const productPagePath = `/produk/${product.slug}`;
+const servedAsProductPage =
+  Astro.request.headers.get('x-adsbook-product-page') === product.slug;
+if (page.is_product_page && !servedAsProductPage && !isPreview) {
+  return Astro.redirect(productPagePath, 308);
 }
 
 const csPhone = await getStoreSupportWhatsapp(Astro.locals);
@@ -81,21 +99,23 @@ const firstFormSectionId = formSections[0]?.id;
 // Clean title and description: focus strictly on product name without redundant "landing page" text
 const rawTitle = page.meta_title || page.title || product.seoTitle || product.productName;
 const metaTitle = rawTitle.replace(/\s*\(?\s*landing\s*page\s*\)?/gi, '').trim();
-const rawDesc = page.meta_description || product.seoDescription || `Pesan ${product.productName} original online. Garansi COD.`;
+const rawDesc = page.meta_description || product.seoDescription || `Lihat pilihan varian, harga, dan ketersediaan ${product.productName}.`;
 const metaDescription = rawDesc.replace(/\s*landing\s*page\s*/gi, ' ').trim();
-const canonical = `${tenantConfig.siteUrl}/${page.slug}`;
+// Canonical follows the address that is actually live for this page.
+const canonicalPath = page.is_product_page ? productPagePath : `/${page.slug}`;
+const canonical = `${Astro.locals.tenant.siteUrl}${canonicalPath}`;
 
 const productSchema = {
   '@context': 'https://schema.org',
   '@type': 'Product',
   name: product.productName,
   description: metaDescription,
-  image: [new URL(product.heroImage, tenantConfig.siteUrl).toString()],
+  image: [new URL(product.heroImage, Astro.locals.tenant.siteUrl).toString()],
   sku: product.productId,
   category: product.category,
   brand: {
     '@type': 'Brand',
-    name: tenantConfig.name,
+    name: Astro.locals.tenant.name,
   },
   offers: product.variants.map((variant) => ({
     '@type': 'Offer',
@@ -107,7 +127,7 @@ const productSchema = {
     name: variant.label,
     seller: {
       '@type': 'Organization',
-      name: tenantConfig.name,
+      name: Astro.locals.tenant.name,
     },
   })),
 };
@@ -128,7 +148,7 @@ const productSchemaJson = JSON.stringify(productSchema).replace(/</g, '\\u003c')
   </Fragment>
   <MetaLandingTracker
     slug={page.slug}
-    productId={product.productId}
+    contentId={defaultCatalogContentId(product)}
     contentName={product.contentName}
     price={product.price}
   />

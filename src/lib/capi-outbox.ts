@@ -143,6 +143,125 @@ async function transmit(
   return decision.status === "sent";
 }
 
+/**
+ * Longest delay `decideRetry` can ever schedule. A `pending` event whose
+ * `next_retry_at` has passed by more than this is not merely waiting its turn —
+ * nothing is draining it.
+ */
+export const CAPI_MAX_BACKOFF_MS = 60 * 60_000;
+
+/** Rows inspected by the bounded delivery-window read below. */
+export const CAPI_DELIVERY_WINDOW = 200;
+
+export type CapiOutboxDepth = {
+  /** Enqueued, not yet delivered, still inside its retry budget. */
+  pending: number;
+  /** Terminally undeliverable — a dead token or an exhausted attempt budget. */
+  failed: number;
+  /** Subset of `pending` whose `next_retry_at` is already in the past. */
+  overdue: number;
+  /** `created_at` of the oldest undelivered row, or null when there are none. */
+  oldestCreatedAt: string | null;
+};
+
+export type CapiDeliveryWindow = {
+  rowsScanned: number;
+  lastDeliveredAt: string | null;
+  lastFailedAt: string | null;
+};
+
+type DepthRow = {
+  pending: number | null;
+  failed: number | null;
+  overdue: number | null;
+  oldest_created_at: string | null;
+};
+
+const count = (value: number | null | undefined) =>
+  Number.isFinite(Number(value)) ? Number(value) : 0;
+
+/**
+ * How much conversion signal is owed to Meta right now.
+ *
+ * One statement. `status IN ('pending','failed')` is served by
+ * `capi_event_outbox_due_idx (status, next_retry_at)` as two equality probes,
+ * so the rows read are the *undelivered* rows only — near zero on a healthy
+ * install, and proportional to the backlog exactly when the backlog is the
+ * thing being asked about. Delivered rows are never touched.
+ *
+ * Returns null when the table cannot be read, which the caller must report as
+ * "unknown" rather than as a depth of zero.
+ */
+export async function readCapiOutboxDepth(
+  database: D1Database,
+): Promise<CapiOutboxDepth | null> {
+  try {
+    const row = await database
+      .prepare(
+        `SELECT
+           SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) AS pending,
+           SUM(CASE WHEN status = 'failed' THEN 1 ELSE 0 END) AS failed,
+           SUM(CASE WHEN status = 'pending' AND next_retry_at <= ? THEN 1 ELSE 0 END) AS overdue,
+           MIN(CASE WHEN status IN ('pending', 'failed') THEN created_at END) AS oldest_created_at
+         FROM capi_event_outbox
+         WHERE status IN ('pending', 'failed')`,
+      )
+      .bind(new Date().toISOString())
+      .first<DepthRow>();
+    return {
+      pending: count(row?.pending),
+      failed: count(row?.failed),
+      overdue: count(row?.overdue),
+      oldestCreatedAt: row?.oldest_created_at ?? null,
+    };
+  } catch (error) {
+    console.error("capi-outbox-depth-unreadable", error);
+    return null;
+  }
+}
+
+/**
+ * When Meta last accepted an event, and when one last failed.
+ *
+ * lazy: bounded reverse-rowid scan of the newest `CAPI_DELIVERY_WINDOW` rows
+ * rather than `MAX(updated_at) WHERE status = 'sent'`, which would read every
+ * delivered row on every dashboard refresh — nothing indexes `updated_at` and
+ * the outbox is never pruned. Ceiling: a delivery older than the last 200
+ * events reads as "none recorded", which on a store still sending conversions
+ * is itself the answer. Upgrade path: add `(status, updated_at)` in a forward
+ * migration and drop the window.
+ */
+export async function readCapiDeliveryWindow(
+  database: D1Database,
+): Promise<CapiDeliveryWindow | null> {
+  try {
+    const row = await database
+      .prepare(
+        `SELECT
+           COUNT(*) AS rows_scanned,
+           MAX(CASE WHEN status = 'sent' THEN updated_at END) AS last_delivered_at,
+           MAX(CASE WHEN status = 'failed' THEN updated_at END) AS last_failed_at
+         FROM (
+           SELECT status, updated_at FROM capi_event_outbox ORDER BY id DESC LIMIT ?
+         )`,
+      )
+      .bind(CAPI_DELIVERY_WINDOW)
+      .first<{
+        rows_scanned: number | null;
+        last_delivered_at: string | null;
+        last_failed_at: string | null;
+      }>();
+    return {
+      rowsScanned: count(row?.rows_scanned),
+      lastDeliveredAt: row?.last_delivered_at ?? null,
+      lastFailedAt: row?.last_failed_at ?? null,
+    };
+  } catch (error) {
+    console.error("capi-outbox-delivery-window-unreadable", error);
+    return null;
+  }
+}
+
 /** Sends one already-enqueued event immediately. */
 export async function deliverCapiEvent(
   database: D1Database,

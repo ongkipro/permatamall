@@ -1,7 +1,15 @@
+import { metaNameParts, toE164Digits } from "../lib/meta-identity.ts";
+import { normalizePhone } from "../lib/validation";
 import { formatIdr } from "../lib/format-idr";
 import { pushGtmEcomEvent } from "../lib/gtm";
 import { isValidWa62 } from "../lib/validation";
 import { navigateAfterCheckout } from "../lib/checkout-navigation";
+import {
+  AbandonedLeadCaptureGate,
+  createAbandonedLeadFingerprint,
+  readAbandonedLeadFingerprints,
+  writeAbandonedLeadFingerprint,
+} from "../lib/abandoned-lead-session";
 
 type MiddleFormConfig = {
   instanceId: string;
@@ -72,15 +80,6 @@ export function initMiddleOrderForm(
   if (!parsedConfig) return;
   const { productSlug, productId, productName, province } = parsedConfig;
   const fmt = formatIdr;
-  const normalizePhone = (raw: string) => {
-    const digits = String(raw || "").replace(/\D/g, "");
-    if (!digits) return "";
-    if (digits.startsWith("620")) return `62${digits.slice(3)}`;
-    if (digits.startsWith("0")) return `62${digits.slice(1)}`;
-    if (digits.startsWith("8")) return `62${digits}`;
-    if (digits.startsWith("62")) return digits;
-    return digits;
-  };
   const isValidName = (value: string) =>
     /^[A-Za-zÀ-ÿ][A-Za-zÀ-ÿ\s'.-]{2,119}$/.test(value) &&
     /[A-Za-zÀ-ÿ]{2}/.test(value);
@@ -108,13 +107,14 @@ export function initMiddleOrderForm(
   const buildAdvancedMatching = async (
     extraUserData?: Record<string, unknown>,
   ) => {
-    const normalizedPhone = String(extraUserData?.customer_phone || "").replace(
-      /\D/g,
-      "",
+    // Normalised exactly as the server CAPI leg does. Both legs describe one
+    // person; a difference here means Meta matches neither.
+    const normalizedPhone = toE164Digits(
+      String(extraUserData?.customer_phone || ""),
     );
-    const normalizedName = String(extraUserData?.customer_name || "").trim();
-    const firstName = normalizedName.split(/\s+/)[0] || "";
-    const lastName = normalizedName.split(/\s+/).slice(1).join(" ");
+    const { firstName, lastName } = metaNameParts(
+      String(extraUserData?.customer_name || ""),
+    );
     return {
       ph: normalizedPhone ? await hashSha256Hex(normalizedPhone) : undefined,
       fn: firstName ? await hashSha256Hex(firstName) : undefined,
@@ -204,7 +204,7 @@ export function initMiddleOrderForm(
         const parentOrigin = document.referrer ? new URL(document.referrer).origin : "*";
         window.parent.postMessage(
           {
-            type: eventName === "AddToCart" ? "cmsads:add-to-cart" : "cmsads:initiate-checkout",
+            type: eventName === "AddToCart" ? "adsbook:add-to-cart" : "adsbook:initiate-checkout",
             content_name: contentName,
             content_ids: contentId ? [contentId] : undefined,
             content_type: "product",
@@ -232,32 +232,67 @@ export function initMiddleOrderForm(
       country: "id",
     });
   };
-  let hasRecordedAbandonedLead = false;
-  let abandonedTimer: ReturnType<typeof setTimeout> | null = null;
+  const abandonedCapture = new AbandonedLeadCaptureGate(
+    readAbandonedLeadFingerprints(sessionStorage),
+  );
+  let abandonedTimer: number | undefined;
 
   const maybeRecordAbandonedLead = () => {
-    if (hasRecordedAbandonedLead) return;
     const customerName = String(nameInput?.value || "").trim();
     const customerPhone = normalizePhone(String(phoneInput?.value || ""));
     if (customerName.length < 3 || !isValidWa62(customerPhone)) return;
 
-    if (abandonedTimer) clearTimeout(abandonedTimer);
-    abandonedTimer = setTimeout(() => {
-      hasRecordedAbandonedLead = true;
+    const fingerprint = createAbandonedLeadFingerprint({
+      customerName,
+      customerPhone,
+      productId,
+    });
+    if (!abandonedCapture.shouldStart(fingerprint)) return;
+
+    // The capture used to send product_id and product_title and no variant. The
+    // endpoint reads neither of those - only variant_id - so every lead from
+    // this form landed with no order_items at all, and the operator saw "Produk
+    // belum dipilih" on a lead that was filled in on a product page. The full
+    // form always sent it; this one did not.
+    const selectedVariant = formRoot?.querySelector<HTMLInputElement>(
+      'input[name="variant"]:checked',
+    );
+    const abandonedVariantId = Number(selectedVariant?.value);
+    const abandonedPrice = Number(selectedVariant?.dataset.price || 0);
+
+    window.clearTimeout(abandonedTimer);
+    abandonedTimer = window.setTimeout(() => {
+      if (!abandonedCapture.start(fingerprint)) return;
       void fetch("/api/record-abandoned-order", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          website: String(
+            formRoot?.querySelector<HTMLInputElement>(
+              '[name="contact_url_confirm"]',
+            )?.value || "",
+          ),
           customer_name: customerName,
           customer_phone: customerPhone,
           product_id: productId,
           product_title: productName,
+          variant_id:
+            Number.isInteger(abandonedVariantId) && abandonedVariantId > 0
+              ? abandonedVariantId
+              : undefined,
+          total_amount: abandonedPrice > 0 ? abandonedPrice : undefined,
           address: addressInput ? addressInput.value.trim() : "",
           province,
         }),
-      }).catch(() => {
-        hasRecordedAbandonedLead = false;
-      });
+      })
+        .then((response) => {
+          if (!response.ok) throw new Error("Abandoned capture rejected.");
+          abandonedCapture.finish(fingerprint, true);
+          writeAbandonedLeadFingerprint(sessionStorage, fingerprint);
+        })
+        .catch(() => {
+          abandonedCapture.finish(fingerprint, false);
+        });
     }, 600);
   };
 
@@ -283,9 +318,8 @@ export function initMiddleOrderForm(
   const submitButtonLabel = submitButton?.querySelector(".submit-main-label");
   const summaryLabel = formRoot?.querySelector("#summary-label");
   const summaryCompare = formRoot?.querySelector("#summary-compare");
-  const summaryDiscount = formRoot?.querySelector("#summary-discount");
+  const summaryPriceValue = formRoot?.querySelector("#summary-price-value");
   const summaryCompareRow = formRoot?.querySelector<HTMLElement>("#summary-compare-row");
-  const summaryDiscountRow = formRoot?.querySelector<HTMLElement>("#summary-discount-row");
   const summaryTotal = formRoot?.querySelector("#summary-total");
   const summaryTotalNote = formRoot?.querySelector("#summary-total-note");
 
@@ -472,10 +506,9 @@ export function initMiddleOrderForm(
     const hasDiscount = compare > price;
     const total = price;
     summaryCompareRow?.toggleAttribute("hidden", !hasDiscount);
-    summaryDiscountRow?.toggleAttribute("hidden", !hasDiscount);
     setNodeText(summaryLabel, checked.dataset.label || productName);
     setNodeText(summaryCompare, fmt(compare));
-    setNodeText(summaryDiscount, `- ${fmt(Math.max(0, compare - price))}`);
+    setNodeText(summaryPriceValue, fmt(price));
     setNodeText(
       summaryTotalNote,
       "Ongkir & admin dikonfirmasi via CS",
@@ -685,13 +718,13 @@ export function initMiddleOrderForm(
     const eventId = createId(`middle_${productSlug}`);
     const guardToken = sessionGuardToken;
     let order: any = null;
-    let paymentUrl = "";
     try {
       const response = await fetch("/api/submit-middle-order", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           submit_token: guardToken,
+          website: String(fd.get("contact_url_confirm") || ""),
           customer_name: customerName,
           customer_phone: customerPhone,
           address,
@@ -744,12 +777,6 @@ export function initMiddleOrderForm(
         rawOrder?.data && typeof rawOrder.data === "object"
           ? rawOrder.data
           : rawOrder;
-      paymentUrl = String(
-        payload?.data?.payment_url ||
-          payload?.payment_url ||
-          order?.payment_url ||
-          "",
-      ).trim();
       const normalizedOrderId = String(
         payload?.data?.order_id || payload?.order_id || order?.order_id || "",
       ).trim();
@@ -772,10 +799,9 @@ export function initMiddleOrderForm(
       return;
     }
 
-    // eventId tetap dipakai untuk lead/funnel awal.
-    // purchaseEventId dibuat terpisah agar Purchase di thanks page tidak double
-    // dan tidak bentrok dengan event funnel lain untuk order yang sama.
-    const purchaseEventId = createId(`purchase_${productSlug}`);
+    // eventId hanya untuk lead/funnel awal. Purchase di thanks page memakai
+    // order_number - nilai yang sama dengan event_id server CAPI - supaya Meta
+    // dedup jadi 1 conversion, bukan id acak yang tidak pernah cocok.
     const orderId = String(
       order?.order_id ||
         order?.invoice_number ||
@@ -802,7 +828,6 @@ export function initMiddleOrderForm(
       order_status: orderStatus,
       payment_status: paymentStatus,
       event_id: eventId,
-      purchase_event_id: purchaseEventId,
       value: price,
       name: customerName,
       phone: customerPhone,
@@ -816,20 +841,11 @@ export function initMiddleOrderForm(
       total_payment: totalPayment,
       variant_unique_id: String(checked.value || ""),
       variant_label: label,
-      payment_url: paymentUrl,
       guard_token: guardToken,
     };
     sessionStorage.setItem("thanks_state", JSON.stringify(state));
     setSubmitting(true, "Mengalihkan...");
 
-    const q = new URLSearchParams({
-      order_id: orderId,
-      status_token: statusToken,
-    });
-    navigateAfterCheckout(`/thanks?${q.toString()}`, {
-      orderId: String(orderId || ''),
-      total: Number(totalPayment),
-      currency: 'IDR',
-    });
+    navigateAfterCheckout("/thanks");
   });
 }

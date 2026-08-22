@@ -30,47 +30,66 @@ export function escapeXml(value: string): string {
     .replace(/'/g, "&apos;");
 }
 
-export function formatContentId(id: number | string): string {
-  const str = String(id || "").trim();
-  if (!str) return "10001";
-  if (/^\d+$/.test(str)) {
-    const num = Number(str);
-    if (num < 10000) {
-      return String(10000 + num);
-    }
-    return str;
+/**
+ * The catalog identity scheme, and the one rule that governs everything here:
+ * the `id` a feed publishes must be **exactly** the string the Pixel and CAPI
+ * send as `content_ids`, or Advantage+ and Dynamic Product Ads have nothing to
+ * match and catalog retargeting is silently dead.
+ *
+ * It was dead. The feed published `10001`, derived by adding 10000 to the row
+ * id; the admin screen showed the operator that same `10001`; and the Pixel
+ * sent the raw row id, `1`. Three values for one product.
+ *
+ * AdsBookCMS uses one catalog item per product. The immutable D1 Product ID is
+ * generated as a five-digit number, so product_id, content_id and feed <g:id>
+ * are the same value. Variants remain checkout choices and do not create
+ * separate catalog identities.
+ *
+ * - **Stable forever.** Google: "Once you've assigned an ID to a product, don't
+ *   change it", and never reuse it, even for a deleted product. That rules out
+ *   SKU as the basis, despite both platforms recommending it — `sku` here is
+ *   nullable and merchant-editable, so it is exactly the thing that changes.
+ *   Product IDs are allocated once and never edited.
+ * - **Unambiguous in transit.** Decimal, no leading zero, minimum five digits.
+ *   Legacy short IDs fail closed instead of being padded into a value that is
+ *   no longer the real Product ID.
+ */
+
+/** Canonical ads identity: the immutable numeric D1 Product ID. */
+export function catalogProductId(productId: number | string): string {
+  const value = String(productId).trim();
+  if (!/^[1-9]\d{4,15}$/.test(value) || !Number.isSafeInteger(Number(value))) {
+    throw new RangeError("Product ID katalog harus berupa angka minimal 5 digit.");
   }
-  if (str.length < 5) {
-    return str.padStart(5, "0");
-  }
-  return str;
+  return value;
 }
 
-export function formatCatalogItemId(
-  productId: number | string,
-  variant: CatalogProductVariant,
-  variantIndex: number,
-  totalVariants: number,
-): { itemId: string; itemGroupId?: string } {
-  const pId = formatContentId(productId);
-  if (totalVariants === 1 || variantIndex === 0) {
-    return { itemId: pId };
-  }
-
-  return {
-    itemId: `${pId}_v${variantIndex + 1}`,
-    itemGroupId: pId,
-  };
+/**
+ * The content id for a page where no variant has been chosen yet — a product
+ * detail page or a landing page. The feed is product-level, while the first
+ * variant remains the default price shown by the storefront.
+ *
+ * Returns `undefined` rather than a guess when the product has no variants.
+ * A `content_ids` that matches nothing in the catalog is worse than none: it
+ * reports a match rate that is real to Meta and meaningless to the merchant.
+ */
+export function defaultCatalogContentId(product: {
+  productId: number | string;
+  variants?: readonly { id: number | string }[];
+}): string | undefined {
+  const first = product.variants?.[0];
+  if (!first) return undefined;
+  return catalogProductId(product.productId);
 }
 
 export function generateGoogleCatalogXml(
   products: CatalogProduct[],
-  siteOrigin: string = "https://permatamall.shop",
+  siteOrigin: string,
   title?: string,
   description?: string,
 ): string {
   const origin = siteOrigin.replace(/\/$/, "");
-  const siteTitle = title || "CMSAds Merchant Store";
+  const siteTitle = title || "AdsBookCMS Merchant Store";
   const siteDescription = description || "Solusi Produk Berkualitas";
 
   let itemsXml = "";
@@ -82,38 +101,36 @@ export function generateGoogleCatalogXml(
     const productLink = `${origin}/produk/${product.slug}`;
     const imageLink = product.heroImage.startsWith("http") ? product.heroImage : `${origin}${product.heroImage}`;
 
-    product.variants.forEach((variant, index) => {
-      const { itemId, itemGroupId } = formatCatalogItemId(product.productId, variant, index, product.variants.length);
-      const titleText = product.variants.length > 1 ? `${product.productName} - ${variant.label}` : product.productName;
-      const hasSale = typeof variant.comparePrice === "number" && variant.comparePrice > variant.price;
-      const basePriceFormatted = `${hasSale ? variant.comparePrice : variant.price} IDR`;
-      const salePriceXml = hasSale
-        ? `\n      <g:sale_price>${escapeXml(`${variant.price} IDR`)}</g:sale_price>`
-        : "";
-      const itemDescription = product.seoDescription || product.headline || product.description || siteDescription;
+    const variant = product.variants[0];
+    const itemId = catalogProductId(product.productId);
+    // Omitted when no taxonomy rule was confident. Both platforms treat the
+    // category as optional; a wrong one can cause feed disapproval.
+    const googleCategoryXml = taxonomy.googleCategoryId
+      ? `\n      <g:google_product_category>${taxonomy.googleCategoryId}</g:google_product_category>`
+      : "";
+    const titleText = product.productName;
+    const hasSale = typeof variant.comparePrice === "number" && variant.comparePrice > variant.price;
+    const basePriceFormatted = `${hasSale ? variant.comparePrice : variant.price} IDR`;
+    const salePriceXml = hasSale
+      ? `\n      <g:sale_price>${escapeXml(`${variant.price} IDR`)}</g:sale_price>`
+      : "";
+    const itemDescription = product.seoDescription || product.headline || product.description || siteDescription;
 
-      let groupXml = "";
-      if (itemGroupId) {
-        groupXml = `\n      <g:item_group_id>${escapeXml(itemGroupId)}</g:item_group_id>`;
-      }
-
-      itemsXml += `
+    itemsXml += `
     <item>
-      <g:id>${escapeXml(itemId)}</g:id>${groupXml}
+      <g:id>${escapeXml(itemId)}</g:id>
       <g:title>${escapeXml(titleText)}</g:title>
       <g:description>${escapeXml(itemDescription)}</g:description>
       <g:link>${escapeXml(productLink)}</g:link>
       <g:image_link>${escapeXml(imageLink)}</g:image_link>
       <g:availability>in_stock</g:availability>
       <g:price>${escapeXml(basePriceFormatted)}</g:price>${salePriceXml}
-      <g:google_product_category>${taxonomy.googleCategoryId}</g:google_product_category>
+${googleCategoryXml}
       <g:product_type>${escapeXml(taxonomy.productType)}</g:product_type>
       <g:brand>${escapeXml(siteTitle)}</g:brand>
       <g:condition>new</g:condition>
-      <g:identifier_exists>no</g:identifier_exists>
-      <g:mpn>${escapeXml(variant.sku || itemId)}</g:mpn>
+      <g:identifier_exists>no</g:identifier_exists>${variant.sku ? `\n      <g:mpn>${escapeXml(variant.sku)}</g:mpn>` : ""}
     </item>`;
-    });
   }
 
   return `<?xml version="1.0" encoding="UTF-8"?>
@@ -128,12 +145,12 @@ export function generateGoogleCatalogXml(
 
 export function generateMetaCatalogXml(
   products: CatalogProduct[],
-  siteOrigin: string = "https://permatamall.shop",
+  siteOrigin: string,
   title?: string,
   description?: string,
 ): string {
   const origin = siteOrigin.replace(/\/$/, "");
-  const siteTitle = title || "CMSAds Merchant Store";
+  const siteTitle = title || "AdsBookCMS Merchant Store";
   const siteDescription = description || "Solusi Produk Berkualitas";
 
   let itemsXml = "";
@@ -145,37 +162,36 @@ export function generateMetaCatalogXml(
     const productLink = `${origin}/produk/${product.slug}`;
     const imageLink = product.heroImage.startsWith("http") ? product.heroImage : `${origin}${product.heroImage}`;
 
-    product.variants.forEach((variant, index) => {
-      const { itemId, itemGroupId } = formatCatalogItemId(product.productId, variant, index, product.variants.length);
-      const titleText = product.variants.length > 1 ? `${product.productName} - ${variant.label}` : product.productName;
-      const hasSale = typeof variant.comparePrice === "number" && variant.comparePrice > variant.price;
-      const basePriceFormatted = `${hasSale ? variant.comparePrice : variant.price} IDR`;
-      const salePriceXml = hasSale
-        ? `\n      <g:sale_price>${escapeXml(`${variant.price} IDR`)}</g:sale_price>`
-        : "";
-      const itemDescription = product.seoDescription || product.headline || product.description || siteDescription;
+    const variant = product.variants[0];
+    const itemId = catalogProductId(product.productId);
+    const googleCategoryXml = taxonomy.googleCategoryId
+      ? `\n      <g:google_product_category>${taxonomy.googleCategoryId}</g:google_product_category>`
+      : "";
+    const metaCategoryXml = taxonomy.metaCategoryName
+      ? `\n      <g:fb_product_category>${escapeXml(taxonomy.metaCategoryName)}</g:fb_product_category>`
+      : "";
+    const titleText = product.productName;
+    const hasSale = typeof variant.comparePrice === "number" && variant.comparePrice > variant.price;
+    const basePriceFormatted = `${hasSale ? variant.comparePrice : variant.price} IDR`;
+    const salePriceXml = hasSale
+      ? `\n      <g:sale_price>${escapeXml(`${variant.price} IDR`)}</g:sale_price>`
+      : "";
+    const itemDescription = product.seoDescription || product.headline || product.description || siteDescription;
 
-      let groupXml = "";
-      if (itemGroupId) {
-        groupXml = `\n      <g:item_group_id>${escapeXml(itemGroupId)}</g:item_group_id>`;
-      }
-
-      itemsXml += `
+    itemsXml += `
     <item>
-      <g:id>${escapeXml(itemId)}</g:id>${groupXml}
+      <g:id>${escapeXml(itemId)}</g:id>
       <g:title>${escapeXml(titleText)}</g:title>
       <g:description>${escapeXml(itemDescription)}</g:description>
       <g:link>${escapeXml(productLink)}</g:link>
       <g:image_link>${escapeXml(imageLink)}</g:image_link>
       <g:availability>in_stock</g:availability>
       <g:price>${escapeXml(basePriceFormatted)}</g:price>${salePriceXml}
-      <g:fb_product_category>${escapeXml(taxonomy.metaCategoryName)}</g:fb_product_category>
-      <g:google_product_category>${taxonomy.googleCategoryId}</g:google_product_category>
+${metaCategoryXml}${googleCategoryXml}
       <g:product_type>${escapeXml(taxonomy.productType)}</g:product_type>
       <g:brand>${escapeXml(siteTitle)}</g:brand>
       <g:condition>new</g:condition>
     </item>`;
-    });
   }
 
   return `<?xml version="1.0" encoding="UTF-8"?>

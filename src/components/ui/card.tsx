@@ -25,7 +25,7 @@ function CardHeader({ className, ...props }: React.ComponentProps<"div">) {
   <div
    data-slot="card-header"
    className={cn(
-    "group/card-header @container/card-header grid auto-rows-min items-start gap-1 rounded-t-xl px-(--card-spacing) has-data-[slot=card-action]:grid-cols-[1fr_auto] has-data-[slot=card-description]:grid-rows-[auto_auto] [.border-b]:pb-(--card-spacing)",
+    "group/card-header @container/card-header grid grid-cols-1 auto-rows-min items-start gap-1 rounded-t-xl px-(--card-spacing) has-data-[slot=card-action]:grid-cols-[1fr_auto] has-data-[slot=card-description]:grid-rows-[auto_auto] [.border-b]:pb-(--card-spacing)",
     className
    )}
    {...props}
@@ -33,9 +33,21 @@ function CardHeader({ className, ...props }: React.ComponentProps<"div">) {
  )
 }
 
-function CardTitle({ className, ...props }: React.ComponentProps<"div">) {
+/**
+ * A card title is a section heading, but it renders a <div> by default because
+ * the correct level depends on what sits above it on the page — and a wrong
+ * level is worse for a screen reader than no level at all. Pass `as="h3"` (or
+ * whichever level the page's outline calls for) wherever the card genuinely
+ * heads a section. Tailwind preflight normalises heading size and weight, so
+ * the tag carries semantics only, not appearance.
+ */
+function CardTitle({
+ className,
+ as: Tag = "div",
+ ...props
+}: React.ComponentProps<"div"> & { as?: "div" | "h2" | "h3" | "h4" }) {
  return (
-  <div
+  <Tag
    data-slot="card-title"
    className={cn(
     "text-base leading-snug font-medium group-data-[size=sm]/card:text-sm",

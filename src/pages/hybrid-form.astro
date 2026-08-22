@@ -1,8 +1,8 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
-import FormHybridContent from '../components/forms/FormHybridContent.astro';
-import FormMiddleContent from '../components/forms/FormMiddleContent.astro';
-import MetaLandingTracker from '../components/tracking/MetaLandingTracker.astro';
+import FormHybridContent from '../components/storefront/forms/FormHybridContent.astro';
+import FormMiddleContent from '../components/storefront/forms/FormMiddleContent.astro';
+import MetaLandingTracker from '../components/storefront/tracking/MetaLandingTracker.astro';
 import { getStorefrontProduct } from '../lib/catalog';
 import { getRuntimeEnv } from '../lib/env';
 import { resolveFormVariant } from '../lib/form-config';
@@ -10,8 +10,8 @@ import {
   loadStoreCodDisabledProvinceCodes,
   resolveFormModeContext,
 } from '../lib/form-mode';
-import { tenantConfig } from '../lib/tenant';
 import '../styles/form-hybrid.css';
+import { catalogProductId } from '../lib/catalog-feed';
 
 export const prerender = false;
 
@@ -32,7 +32,7 @@ const formContext = await resolveFormModeContext(
 ---
 
 <BaseLayout
-  title={`Form Pemesanan ${product.productName} - ${tenantConfig.name}`}
+  title={`Form Pemesanan ${product.productName} - ${Astro.locals.tenant.name}`}
   description={`Form pemesanan adaptif ${product.productName} dengan mode middle atau full berdasarkan wilayah pengunjung.`}
   image={product.heroImage}
   hideHeader={true}
@@ -40,7 +40,7 @@ const formContext = await resolveFormModeContext(
 >
   <MetaLandingTracker
     slug="hybrid-form"
-    productId={product.productId}
+    contentId={catalogProductId(product.productId)}
     contentName={product.productName}
     price={selectedVariant.price}
   />

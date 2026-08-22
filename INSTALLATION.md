@@ -1,234 +1,259 @@
-# CMSAds Installation and Tenant Onboarding
+# Installing AdsBookCMS
 
-This document owns the portable installation path for maintainers and AI coding agents. It distinguishes local repository bootstrap, Cloudflare resource provisioning, storefront creation, data onboarding, and deployment. These are separate operations with separate evidence and approval boundaries.
+> Verified against disk: 2026-08-19 @ `3666a1d` + the working tree on `feat/admin-access-dashboard`
 
-## 1. Installation Outcomes
+This document describes how an install is actually stood up today, and where that process is still rougher than the product intends to be. It contains no commands that do not exist. Where a step is manual because the tooling has not been built yet, it says so and points at the gap.
 
-CMSAds supports two runtime shapes:
+**An install is one Worker, one store.** Two stores mean running this procedure twice against two separate sets of Cloudflare resources.
 
-| Shape | Public owner | CMSAds ingress | Use when |
-| --- | --- | --- | --- |
-| Integrated | CMSAds Worker | `custom-domain` | One Worker renders storefront, forms, admin, and API. |
-| Headless | Separate storefront Worker | `service-only` | The tenant needs a fully custom frontend while CMSAds remains the private commerce and operations backend. |
+---
 
-No active headless reference deployment is registered. Treat the headless shape as a supported architecture that still requires a separately reviewed storefront Worker, private `CMSADS` service binding, route contract, and independent deployment proof.
+## 1. What an install consists of
 
-## 2. Non-Negotiable Isolation
+| Component | Created by | Notes |
+| --- | --- | --- |
+| Worker | `wrangler deploy` | name must be globally unique in the account |
+| D1 database | `wrangler d1 create` | binding `OMS_DB` |
+| KV namespace | `wrangler kv namespace create` | binding `SESSION` |
+| R2 bucket | `wrangler r2 bucket create` | binding `ASSET_BUCKET` |
+| Workers AI | binding only | no resource to create |
+| Custom domain | Cloudflare dashboard or `routes` in `wrangler.jsonc` | apex and `www` |
 
-A new tenant receives:
+Binding **names** are fixed across every install — `OMS_DB`, `SESSION`, `ASSET_BUCKET`, `AI`, `ASSETS`. Only the underlying resource names and ids differ. Do not rename bindings per install; the application resolves them by name.
 
-- one independently named CMSAds Worker;
-- one D1 database for that tenant's catalog, orders, payments, shipping, ads configuration, access, and runtime content;
-- one KV namespace for sessions and quotas;
-- one R2 bucket for tenant media;
-- one Workers AI binding;
-- tenant-specific provider credentials and Cloudflare secrets;
-- one explicit ingress mode.
+---
 
-Provisioning applies the repository schema and bootstraps only the new store row, one forced-rotation owner credential, and the canonical immutable sample described below. It does not copy content, media, customer records, orders, payment records, provider configuration, tracking credentials, sessions, secrets, or merchant products from Petani Sejahtera or another tenant.
+## 2. Prerequisites
 
-The exact sample is product ID `10001`, slug `aussie`, and title `Aussie Sample`, with:
+- Node 22+ and npm 10+
+- A Cloudflare account with Workers, D1, R2, and Workers AI available
+- Wrangler authenticated to **that** account — confirm with `npx wrangler whoami` before creating anything
+- A domain on that Cloudflare account
 
-- variant `20001`: `500ml`, Rp150,000, `600g`;
-- variant `20002`: `1 Liter`, Rp300,000, `1100g`.
+A repository copy grants no access to another account's resources. The ids committed in `wrangler.jsonc` are all-zero placeholders and must be replaced with resources owned by the target install.
 
-The sample is an installer-owned invariant for exercising forms before merchant onboarding. Admin and API mutations reject attempts to edit or delete it; local UI/API proof observed `409` for mutation attempts. It is not merchant catalog content and must not be relabeled or copied into a storefront.
+---
 
-`PUBLIC_CONTENT_PACK=runtime-managed` is mandatory for a new merchant. Missing content fails closed; it must never fall back to Petani Sejahtera copy or assets.
-
-## 3. Local Repository Bootstrap
-
-Requirements:
-
-- Node.js 22 or newer;
-- npm 10 or newer;
-- a POSIX shell;
-- Git access to this private repository.
-
-Run from the repository root:
+## 3. Local bootstrap
 
 ```bash
-./scripts/install.sh
-```
-
-The script:
-
-1. verifies Node and npm;
-2. runs the lockfile-pinned `npm ci`;
-3. validates the committed tenant registry;
-4. generates Cloudflare types from `petanisejahtera-preview`, or from `CMSADS_DEFAULT_TENANT` when explicitly set;
-5. runs Astro and TypeScript checks.
-
-It does not authenticate a Cloudflare account, create remote resources, migrate D1, deploy a Worker, configure DNS, set secrets, or import merchant data.
-
-For a different registered development profile:
-
-```bash
-CMSADS_DEFAULT_TENANT=<registered-tenant> ./scripts/install.sh
-```
-
-The selected profile must already exist in `wrangler.jsonc`.
-
-## 4. New Cloudflare Account Preparation
-
-A repository copy does not grant access to the current operator's Cloudflare resources. D1, KV, R2, Workers, Custom Domains, service bindings, and secrets are account-scoped.
-
-Before remote work:
-
-1. authenticate Wrangler to the intended Cloudflare account through the operator-approved method;
-2. confirm the account identity with `npx wrangler whoami` without printing tokens;
-3. choose a globally unique tenant slug, Worker name, domain, D1 name, KV name, and R2 bucket name;
-4. decide `custom-domain` versus `service-only` before provisioning;
-5. review which committed registry environments belong to the new account.
-
-A separately operated fleet should retain only environments owned by that fleet. Do not reuse another account's resource IDs, deploy its tenant names as placeholders, or treat a committed ID as proof that the resource exists in the current account.
-
-## 5. No-Side-Effect Tenant Plan
-
-Integrated tenant:
-
-```bash
-npm run tenant:install -- --plan \
-  --slug merchant-b \
-  --domain shop.example.com \
-  --name "Merchant B" \
-  --owner-name "Merchant Owner" \
-  --owner-email owner@example.com \
-  --template wide-catalog \
-  --ingress custom-domain
-```
-
-Headless tenant:
-
-```bash
-npm run tenant:install -- --plan \
-  --slug merchant-b \
-  --domain shop.example.com \
-  --name "Merchant B" \
-  --owner-name "Merchant Owner" \
-  --owner-email owner@example.com \
-  --template compact-market \
-  --ingress service-only
-```
-
-The plan prints:
-
-- exact Worker and resource names;
-- ingress mode and canonical domain;
-- `runtime-managed` content ownership;
-- the canonical immutable sample contract;
-- `importsExistingTenantData: false`;
-- whether deployment was requested.
-
-A plan does not change the registry or Cloudflare.
-
-## 6. Remote Provisioning
-
-Remote provisioning is a production mutation. It requires explicit approval naming the tenant and account. After approval:
-
-```bash
-npm run tenant:install -- --yes \
-  --slug merchant-b \
-  --domain shop.example.com \
-  --name "Merchant B" \
-  --owner-name "Merchant Owner" \
-  --owner-email owner@example.com \
-  --template wide-catalog \
-  --ingress custom-domain
-```
-
-Without `--publish`, the installer:
-
-1. writes the new environment into `wrangler.jsonc`;
-2. creates isolated KV, D1, and R2 resources;
-3. validates the generated tenant contract;
-4. applies repository migrations to that new D1;
-5. creates one owner credential with a temporary password and forced first-login rotation;
-6. inserts and verifies only product `10001` and variants `20001`/`20002` as the immutable canonical sample;
-7. stops before deployment.
-
-The temporary password is shown once. Do not copy it into Git, documentation, prompts, screenshots, logs, or project memory.
-
-`--publish` is an additional deployment request. Use it only when the same conversation explicitly approves provisioning and deployment. Prefer provisioning first, validating the generated tenant, then obtaining a separate deployment approval.
-
-## 7. Headless Storefront Setup
-
-A `service-only` CMSAds Worker is intentionally unreachable from the public Internet. Before the tenant can use it:
-
-1. create a separate storefront repository and Worker;
-2. attach the tenant's exact domain to the storefront Worker;
-3. add a reviewed private service binding pointing to `cmsads-<tenant>`; use the name `CMSADS` only when that is the storefront's committed convention;
-4. route only reviewed CMSAds path families through that binding;
-5. keep public catalog and marketing routes inside the storefront Worker;
-6. validate same-origin API behavior and the protected admin boundary;
-7. deploy storefront and backend independently.
-
-Canonical operational gateway paths are `/admin`, `/api`, `/hello`, `/thanks`, `/hybrid-form`, `/middle-form`, and `/full-form`. The clean route cutover has no `/form-hybrid`, `/form-middle`, or `/form-full` aliases. Local route proof is not proof that a separately owned storefront gateway was deployed or accepted by Cloudflare.
-
-See [`STOREFRONT_INTEGRATION.md`](./STOREFRONT_INTEGRATION.md) for the frontend, form, province-policy, and Meta Ads contract.
-
-## 8. Merchant Data and Content Onboarding
-
-Provisioning starts with only the protected canonical sample as commerce data. Complete onboarding per tenant:
-
-1. replace the temporary owner credential at `/hello`;
-2. configure store identity and support contact;
-3. review the store-level `cod_disabled_province_codes` policy separately from courier/provider exclusions;
-4. configure one warehouse and precise Mengantar origin;
-5. create merchant products and variants through Product Management without modifying or deleting the canonical sample;
-6. upload merchant-owned media to that tenant's R2;
-7. configure courier and COD eligibility;
-8. set provider keys through approved secret or masked dashboard paths;
-9. configure Meta Pixel/CAPI and Google identifiers in Ads & Tracking;
-10. store tenant-specific, non-secret AI instructions;
-11. generate or save drafts, review factual claims, and publish explicitly;
-12. integrate the storefront against canonical product, form, tracking, and order contracts;
-13. verify the selected tenant locally before any release.
-
-Never seed production claims, testimonials, customer data, credentials, orders, payment records, or another merchant's media from repository fixtures. The immutable sample is a system verification fixture, not publishable merchant content.
-
-## 9. Release Gates
-
-CMSAds backend:
-
-```bash
-npm test
+npm ci
 npm run check
-npm run tenant:validate
-npm run tenant:build -- <tenant>
-npm run tenant:dry-run -- <tenant>
+npm test
 ```
 
-Storefront frontend:
+If these do not pass on a clean checkout, stop — the problem is the checkout, not the install.
 
-- run that repository's own tests, static checks, build, and Wrangler dry-run;
-- exercise the affected public journey at desktop and mobile widths;
-- verify the gateway route matrix;
-- verify Meta browser events without exposing server credentials;
-- verify the form and order flow without provider mutation unless separately approved.
+---
 
-Remote D1 migration and Worker deployment are separate approvals:
+## 4. Create Cloudflare resources
 
 ```bash
-CF_D1_REMOTE=1 npm run tenant:migrate:remote -- <tenant>
-CF_DEPLOY_REMOTE=1 npm run tenant:deploy -- <tenant>
+npx wrangler d1 create <store>-d1
+npx wrangler kv namespace create SESSION
+npx wrangler r2 bucket create <store>-assets
 ```
 
-A CMSAds deploy does not deploy the standalone storefront. A storefront deploy does not migrate or deploy CMSAds. Neither operation imports another tenant's data.
+Each command prints an id. Put them into `wrangler.jsonc`, replacing the reference values:
 
-## 10. AI Agent Onboarding Checklist
+```jsonc
+{
+  "name": "<worker-name>",
+  "d1_databases":  [{ "binding": "OMS_DB",       "database_name": "<store>-d1", "database_id": "…", "migrations_dir": "src/db/migrations" }],
+  "kv_namespaces": [{ "binding": "SESSION",      "id": "…" }],
+  "r2_buckets":    [{ "binding": "ASSET_BUCKET", "bucket_name": "<store>-assets" }],
+  "ai":            { "binding": "AI" },
+  "routes": [
+    { "pattern": "<domain>",     "custom_domain": true },
+    { "pattern": "www.<domain>", "custom_domain": true }
+  ]
+}
+```
 
-An AI agent adapting CMSAds for a new tenant must record:
+Keep `"workers_dev": false` so the install never gets an unreviewed `*.workers.dev` endpoint.
 
-- target Cloudflare account and exact tenant slug, without exposing credentials;
-- integrated or headless topology;
-- storefront repository owner and backend repository owner;
-- public domain, Worker names, service binding, and route matrix;
-- new isolated D1/KV/R2/AI resource identities;
-- explicit confirmation that existing tenant data is not imported;
-- merchant-provided catalog, claims, media, provider, and tracking inputs;
-- form mode and journey chosen for each entry route;
-- Meta event map, `event_id` ownership, canonical `content_ids`, and Purchase gate;
-- exact local checks, browser scenarios, deployments, migrations, and non-actions.
+---
 
-Do not broaden remote approval, infer provider contracts, fabricate merchant content, or mark planned adapters as implemented.
+## 5. Store identity — set by the installer, not by the build
+
+**You do not configure identity here.** A migrated database with no `stores` row
+redirects every route to `/install`, and the wizard writes the store name,
+address, tagline, support number, template and the operator's own credential in
+one transaction (§9). Identity is read from that row per request, so renaming the
+store in `/admin` takes effect on the next request with no rebuild.
+
+> This section used to be the configuration procedure, and it said identity was
+> compiled into the bundle. That was true before migration `0036`; following it
+> now means rebuilding to change a value the admin screen already edits — and it
+> never mentioned `/install` at all, which is the screen a fresh install actually
+> opens on.
+
+The `PUBLIC_SITE_*` vars remain as the **fallback** for a store that has not set
+a field — which, before the wizard runs, is every field. They still reach the
+bundle through `import.meta.env` at build time, so a change to them needs a
+rebuild. Keep them accurate, because they are what an uninstalled Worker shows:
+
+| Variable | Effect |
+| --- | --- |
+| `PUBLIC_SITE_NAME` | every `<title>`, header, footer, JSON-LD publisher, OG site name |
+| `PUBLIC_SITE_URL` | canonical origin — must be `https:`, no path, no query, or it silently falls back |
+| `PUBLIC_SITE_DESCRIPTION` | default meta description |
+| `PUBLIC_SITE_LOGO` | storefront and admin logo path |
+| `PUBLIC_SITE_TAGLINE` | brand line, also used to compose the default title |
+| `PUBLIC_SITE_THEME_COLOR` | must match `#rrggbb` or it falls back |
+| `PUBLIC_SITE_LOCALE` | `id-ID` style; drives `lang` and OG locale |
+| `PUBLIC_STOREFRONT_TEMPLATE` | `compact-market` or `wide-catalog` — an unknown value logs `tenant-unknown-storefront-template` and falls back to `compact-market` |
+| `PUBLIC_ADMIN_NAME` | admin shell display name |
+| `PUBLIC_COD_DISABLED_PROVINCES` | comma-separated province names excluded from COD |
+| `PUBLIC_EMBED_ALLOWED_ORIGINS` | fallback embed allowlist until one is saved in the database |
+| `PUBLIC_HEADLESS_ALLOWED_ORIGINS` | optional Headless API fallback until its separate allowlist is saved in the database |
+
+Keep `wrangler.jsonc` `vars` and `.env` in agreement. Both feed the build, precedence between them is undetermined, and a few keys (`PUBLIC_COD_DISABLED_PROVINCES`, `PUBLIC_EMBED_ALLOWED_ORIGINS`, `PUBLIC_HEADLESS_ALLOWED_ORIGINS`) are additionally read at runtime through `getRuntimeEnv()`, where only the Worker's own vars apply.
+
+`slug` is derived from the store name by the installer and stored on the row;
+`PUBLIC_TENANT_SLUG` overrides it and `"adsbook"` is the last resort. It is used
+only for diagnostics.
+
+---
+
+## 6. Secrets
+
+Set as Worker secrets, never in `wrangler.jsonc`:
+
+```bash
+npx wrangler secret put AUTH_SECRET
+npx wrangler secret put INSTALL_TOKEN
+npx wrangler secret put BOOTSTRAP_ADMIN_PASSWORD
+```
+
+Provider credentials — `MENGANTAR_API_KEY`, `AUTOLARIS_API_KEY`, `META_CAPI_ACCESS_TOKEN`, and their base URLs — can be set either as secrets or, preferably, saved later from `/admin/profile` and `/admin/ads`. The database value wins over the deployed secret, and `/admin` reports which source is active.
+
+`INSTALL_TOKEN` is the one-time capability requested by the fresh-install wizard;
+use a unique random value of at least 16 characters. It is never stored in D1.
+
+For local development the same keys go in `.dev.vars`, which is never committed.
+
+---
+
+## 7. Verify the schema path
+
+The Worker bundles all 44 checked-in migrations (`0000`–`0043`) and applies a valid missing suffix
+automatically before serving a database-backed request. No terminal migration step
+is required for first run. Invalid, unknown, or ahead migration history returns a
+labelled 503 instead of running the application against an indeterminate schema.
+
+An operator may still preflight the same chain explicitly:
+
+```bash
+npm run db:migrate:local
+npm run db:migrate:remote    # live D1; separate approval required
+```
+
+Migration `0007` contains a legacy bootstrap credential for databases provisioned
+outside the wizard. The first-run installer replaces it atomically with the
+operator's chosen credential. Migration `0034` removes the inherited foreign
+sample row when safe; no catalog dataset ships.
+
+---
+
+## 8. Deploy
+
+```bash
+npm run build
+npm run deploy
+```
+
+Then attach the custom domain and confirm:
+
+```bash
+curl -s -o /dev/null -w '%{http_code}\n' https://<domain>/
+curl -s -o /dev/null -w '%{http_code}\n' https://<domain>/produk
+```
+
+Pushing to `main` in **this** repository deploys nothing — CI runs check, test and build, and there are no Cloudflare credentials here (ADR-012). Deployment belongs to an install repository. See `RELEASE.md` §1.
+
+---
+
+## 9. First run
+
+1. Open the domain. The first database-backed request applies the bundled
+   migration chain. With no store row, every normal route redirects to **`/install`**.
+2. Fill the form once: store name, address (`https:`), optional tagline and
+   support WhatsApp, the admin username and password **you choose**, and the
+   storefront template. Submitting writes the store and your credential in a
+   single transaction, and the wizard refuses to run again.
+   - The installer refuses before writing anything if `AUTH_SECRET` is unset or
+     shorter than 32 characters — otherwise the install would complete and then
+     lock you out, because the login route needs it to sign a session.
+3. You land on `/hello`. Sign in with the credential you just chose; nothing is
+   left to rotate.
+   - `admin` / `admin` remains the fallback only for an install whose credential
+     was never claimed by a wizard. A session on it reaches nothing but its own
+     password change. `BOOTSTRAP_ADMIN_PASSWORD` (16 characters or more)
+     replaces it entirely.
+4. Configure, in order:
+   - `/admin/settings/store` — store name and support WhatsApp (the support number feeds the public `/kontak` page)
+   - `/admin/settings/warehouse` — pickup origin and Mengantar origin ids; shipping quotes fail without this
+   - `/admin/profile` — provider API keys and base URLs
+   - `/admin/expeditions` — which couriers and which COD services are offered; a fresh install starts with the neutral ten-courier catalogue, and the operator may narrow it here
+   - `/admin/ads/meta` and `/admin/ads/google` — pixel, CAPI token, GTM, conversion ids
+   - `/admin/settings/crm` — WhatsApp follow-up templates
+   - `/admin/products` — the real catalog
+
+The storefront does not wait for home content. With no published home row it
+renders a neutral automatic catalogue of the store's own active products, so an
+install is usable the moment products exist. The JSON/AI content workbench is
+off the main navigation (ADR-018), but `/admin/content` itself stays reachable
+and unchanged; the bounded banner, slider, and supporting-copy editor that
+replaces it is **A-134** in `TASKS.md`.
+
+---
+
+## 10. Running more than one install
+
+A Cloudflare Worker has **no relationship to git**. `wrangler deploy` uploads a built bundle from whatever directory you run it in; Cloudflare never sees a repository. A repo buys you history and CI, nothing else. You can deploy an install from a laptop with no remote at all.
+
+So one repository *can* target many Workers. Verified against the installed wrangler (4.120.0):
+
+| Mechanism | Command | What it changes |
+| --- | --- | --- |
+| Separate config file | `wrangler deploy --config installs/toko-a.jsonc` | everything: name, bindings, routes, vars |
+| Named environment | `wrangler deploy --env toko-a` | the `env.toko-a` block in one config |
+| Name override | `wrangler deploy --name toko-a` | the Worker name only — **not** its bindings, so it would point at another install's database. Never use this alone to separate stores |
+
+The `env.*` mechanism is real (`RawEnvironment` in the wrangler config schema) and is what the upstream engine used.
+
+### The constraint that decides this today
+
+Identity now resolves at runtime from D1 (**A-10**, ADR-003, gap G1 closed), so
+the bundle no longer carries a store's name. The only per-install difference left
+in the repository is bindings and routes — one build can serve every install, and
+a repository holding N small config files is genuinely cheap. This is the
+condition the section below was waiting on; the topology decision itself is still
+open as **A-50**.
+
+### Why installs are separate repositories today
+
+ADR-012 puts each install in its own repository. That is a deliberate trade: maximum isolation between a live store and product development, paid for with drift — every install must be brought forward by hand.
+
+A-10 has landed, so the revisit is now due (**A-50**). Whatever is chosen, mixing store configuration back into the product repository is what produced the state this codebase spent a day repairing: another merchant's content on a live storefront, and a deploy workflow that pointed at somebody else's Worker.
+
+---
+
+## 11. What is still manual
+
+The WordPress-like path now begins after Cloudflare resources exist. Sections 1–6
+still require a terminal and Cloudflare credentials: create the Worker, D1, KV,
+and R2 resources; attach the domain; configure bindings and secrets. The Worker
+then applies its bundled schema automatically, redirects to `/install`, stores
+runtime identity plus the operator credential, renders an explicit content setup
+state, and supports runtime storefront definitions without a rebuild.
+
+Infrastructure provisioning itself is not automated, and it is the whole of what
+stands between this and a WordPress-style install. The claim gap this section
+used to name — an exposed uninstalled Worker being taken by the first direct
+`/api/install` caller — is closed: `src/pages/api/install.ts` requires the
+`INSTALL_TOKEN` secret, refuses anything shorter than 16 characters, and compares
+it in constant time. The open decisions are **A-50** (how a second install is
+created), **A-51** (how an install learns it is behind) and **A-52** (whether the
+product ships as a versioned artifact) in `TASKS.md`.

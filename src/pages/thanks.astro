@@ -1,23 +1,25 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
-import MetaThanksTracker from '../components/tracking/MetaThanksTracker.astro';
-import { formatIdr } from '../lib/format-idr';
+import MetaThanksTracker from '../components/storefront/tracking/MetaThanksTracker.astro';
 import { getStorefrontProducts } from '../lib/catalog';
 import { getStoreSupportWhatsapp } from '../lib/public-store';
-import { tenantConfig } from '../lib/tenant';
 import { cn } from '../lib/cn';
 import { badgeVariants, buttonVariants } from '../lib/ui-variants';
-import Icon from '../components/shared/Icon.astro';
+import Icon from '../components/storefront/shared/Icon.astro';
+
+if (
+  Astro.url.searchParams.has('order_id') ||
+  Astro.url.searchParams.has('order_pk') ||
+  Astro.url.searchParams.has('status_token')
+) return Astro.redirect('/thanks', 303);
+Astro.response.headers.set('Cache-Control', 'no-store');
 
 const products = await getStorefrontProducts(Astro.locals);
-const product = products[0];
-if (!product) return Astro.redirect('/produk');
-
-const defaultVariant = product.variants[0];
-const previewShipping = 20000;
-const previewTotal = defaultVariant.price + previewShipping;
-const previewDiscount = defaultVariant.comparePrice ? defaultVariant.comparePrice - defaultVariant.price : 0;
 const csPhone = await getStoreSupportWhatsapp(Astro.locals);
+// This store's own logo. It used to be a hardcoded `/images/logo.webp` — the
+// demo store's wordmark — so every install's confirmation page carried another
+// merchant's brand at the moment the customer trusts it most.
+const storeLogo = Astro.locals.tenant.logo;
 const productCatalog = products.map((item) => ({
   slug: item.slug,
   productName: item.productName,
@@ -33,27 +35,23 @@ const productCatalog = products.map((item) => ({
 ---
 
 <BaseLayout
-  title={`Terima Kasih - ${tenantConfig.name}`}
-  description={`Halaman konfirmasi pesanan ${tenantConfig.name}.`}
+  title={`Terima Kasih - ${Astro.locals.tenant.name}`}
+  description={`Halaman konfirmasi pesanan ${Astro.locals.tenant.name}.`}
   hideHeader={true}
   hideFooter={true}
 >
-  <main class="min-h-screen bg-[#F8F7F4] font-sans text-[14px] text-slate-800 antialiased py-4 sm:py-8">
-    <MetaThanksTracker tenantName={tenantConfig.name} tenantSlug={tenantConfig.slug} />
-    <div class="mx-auto w-full max-w-[480px] overflow-hidden rounded-none border border-slate-200 bg-white shadow-xs">
+  <script is:inline slot="head">
+    if (window.location.search) {
+      window.history.replaceState(null, '', `${window.location.pathname}${window.location.hash}`);
+    }
+  </script>
+  <main id="thanks-shell" hidden class="min-h-screen bg-white font-sans text-[14px] text-slate-800 antialiased py-4 sm:py-8">
+    <MetaThanksTracker tenantName={Astro.locals.tenant.name} tenantSlug={Astro.locals.tenant.slug} />
+    <div class="mx-auto w-full max-w-[480px] overflow-hidden rounded-none border border-slate-200 bg-white">
       <header
         class="relative z-30 flex items-center justify-between border-b border-slate-200 bg-white px-5 py-4"
       >
-        <span class="logo-text text-slate-950 font-bold tracking-wider text-xs" id="brand-logo">{product.productName.toUpperCase()}</span>
-        <span
-          class="inline-flex items-center gap-1.5 rounded-none border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-emerald-700"
-        >
-          <i class="relative flex size-2"
-            ><i class="absolute inline-flex size-full animate-ping rounded-full bg-emerald-400 opacity-70"></i><i
-              class="relative inline-flex size-2 rounded-full bg-emerald-500"></i></i
-          >
-          CS Active
-        </span>
+        <span class="logo-text text-slate-950 font-bold tracking-wider text-xs" id="brand-logo">{Astro.locals.tenant.name}</span>
       </header>
     <section class="px-5 pb-5 pt-7 text-center" data-motion="hero">
       <div
@@ -62,9 +60,6 @@ const productCatalog = products.map((item) => ({
       >
         <Icon name="lucide:circle-check" class="size-9" aria-hidden="true" />
       </div>
-      <span id="preview-badge" hidden class={cn('mb-2', badgeVariants({ variant: 'neutral', size: 'sm' }))}
-        >Preview mode</span
-      >
       <h1
         id="thanks-title"
         class="mx-auto mt-2 max-w-[320px] text-[22px] font-semibold leading-tight tracking-[-0.03em] text-slate-950"
@@ -77,11 +72,11 @@ const productCatalog = products.map((item) => ({
     </section>
 
     <section class="border-y border-slate-100 bg-slate-50 px-5 py-5 text-center" data-motion="summary">
-      <p id="payment-title" class="text-[11px] font-medium uppercase tracking-[0.1em] text-slate-500">
+      <p id="payment-title" class="text-[11px] font-normal uppercase tracking-[0.1em] text-slate-500">
         Bayar saat paket tiba
       </p>
       <p id="total-payment-hero" class="mt-1 text-[32px] font-bold leading-none tracking-[-0.04em] text-slate-950">
-        {formatIdr(previewTotal)}
+        —
       </p>
       <span
         id="payment-badge"
@@ -96,7 +91,7 @@ const productCatalog = products.map((item) => ({
         <h2 class="text-[15px] font-semibold tracking-[-0.02em] text-slate-950">Produk dipesan</h2>
         <span
           id="quantity-badge"
-          class="rounded-full bg-slate-50 px-2.5 py-1 text-xs font-medium text-slate-500 ring-1 ring-slate-100"
+          class="rounded-full bg-slate-50 px-2.5 py-1 text-xs font-normal text-slate-500 ring-1 ring-slate-100"
           >Qty 1</span
         >
       </div>
@@ -105,8 +100,8 @@ const productCatalog = products.map((item) => ({
         <div class="relative grid size-[84px] shrink-0 place-items-center overflow-hidden rounded-md">
           <img
             id="product-image"
-            src={product.image}
-            alt={product.productName}
+            src={storeLogo}
+            alt=""
             class="h-full w-full rounded-md object-contain"
             loading="lazy"
           />
@@ -116,12 +111,10 @@ const productCatalog = products.map((item) => ({
             id="product-name"
             class="truncate text-[19px] font-semibold leading-tight tracking-[-0.03em] text-slate-950"
           >
-            {product.productName}
+            —
           </h3>
-          <p id="variant-label" class="mt-1 text-[14px] font-medium leading-5 text-emerald-700">
-            {defaultVariant.label}
-          </p>
-          <p id="product-headline" class="mt-1 line-clamp-2 text-[12px] leading-5 text-slate-500">{product.headline}</p>
+          <p id="variant-label" class="mt-1 text-[14px] font-normal leading-5 text-emerald-700">—</p>
+          <p id="product-headline" class="mt-1 line-clamp-2 text-[12px] leading-5 text-slate-500"></p>
         </div>
       </div>
     </section>
@@ -130,32 +123,32 @@ const productCatalog = products.map((item) => ({
       <h2 class="mb-3 text-[15px] font-semibold tracking-[-0.02em] text-slate-950">Ringkasan pembayaran</h2>
       <div class="divide-y divide-slate-100 overflow-hidden rounded-none border border-slate-200">
         <div class="flex justify-between gap-3 px-4 py-3 text-[13px]">
-          <span class="text-slate-500">Harga produk</span><span id="product-price" class="font-medium text-slate-900"
-            >{formatIdr(defaultVariant.comparePrice ?? defaultVariant.price)}</span
+          <span class="text-slate-500">Harga produk</span><span id="product-price" class="font-normal text-slate-900"
+            >—</span
           >
         </div>
         <div id="discount-row" class="flex justify-between gap-3 px-4 py-3 text-[13px]">
-          <span class="text-slate-500">Diskon promo</span><span id="discount-display" class="font-medium text-red-600"
-            >-{formatIdr(previewDiscount)}</span
+          <span class="text-slate-500">Diskon promo</span><span id="discount-display" class="font-normal text-red-600"
+            >—</span
           >
         </div>
         <div id="product-subtotal-row" hidden>
-          <span>Subtotal produk</span><span id="product-subtotal">{formatIdr(defaultVariant.price)}</span>
+          <span>Subtotal produk</span><span id="product-subtotal">—</span>
         </div>
         <div class="flex justify-between gap-3 px-4 py-3 text-[13px]">
-          <span class="text-slate-500">Ongkos kirim</span><span id="shipping-cost" class="font-medium text-slate-900"
-            >{formatIdr(previewShipping)}</span
+          <span class="text-slate-500">Ongkos kirim</span><span id="shipping-cost" class="font-normal text-slate-900"
+            >—</span
           >
         </div>
-        <div class="flex items-center justify-between gap-3 bg-[#F8F7F4] px-4 py-4">
+        <div class="flex items-center justify-between gap-3 bg-[#F5F5F5] px-4 py-4">
           <div>
-            <p id="total-label" class="text-[13px] font-medium text-slate-900">Total COD</p>
+            <p id="total-label" class="text-[13px] font-normal text-slate-900">Total COD</p>
             <p id="total-note" class="mt-0.5 text-[10px] uppercase tracking-wide text-amber-600">
               Siapkan uang pas saat kurir tiba
             </p>
           </div>
           <strong id="total-payment" class="text-[21px] font-bold tracking-[-0.03em] text-emerald-700"
-            >{formatIdr(previewTotal)}</strong
+            >—</strong
           >
         </div>
       </div>
@@ -169,28 +162,28 @@ const productCatalog = products.map((item) => ({
         <div class="grid grid-cols-[112px_1fr] gap-3 py-3">
           <span class="text-slate-500">No. Pesanan</span><span
             id="order-id"
-            class="text-right font-medium text-slate-900">#PS-DEMO-240601</span
+            class="text-right font-normal text-slate-900">—</span
           >
         </div>
         <div class="grid grid-cols-[112px_1fr] gap-3 py-3">
-          <span class="text-slate-500">Nama</span><span id="customer-name" class="text-right font-medium text-slate-900"
-            >Bapak Demo</span
+          <span class="text-slate-500">Nama</span><span id="customer-name" class="text-right font-normal text-slate-900"
+            >—</span
           >
         </div>
         <div class="grid grid-cols-[112px_1fr] gap-3 py-3">
           <span class="text-slate-500">WhatsApp</span><span
             id="customer-phone"
-            class="text-right font-medium text-slate-900">6281234567890</span
+            class="text-right font-normal text-slate-900">—</span
           >
         </div>
         <div class="grid grid-cols-[112px_1fr] gap-3 py-3">
           <span class="text-slate-500">Alamat</span><span id="full-address" class="text-right leading-6 text-slate-700"
-            >Jl. Contoh No. 12, RT 01/RW 02, dekat balai desa</span
+            >—</span
           >
         </div>
         <div id="area-row" class="grid grid-cols-[112px_1fr] gap-3 py-3">
-          <span class="text-slate-500">Area</span><span id="area-display" class="text-right font-medium text-slate-900"
-            >Cibitung, Bekasi, Jawa Barat 17520</span
+          <span class="text-slate-500">Area</span><span id="area-display" class="text-right font-normal text-slate-900"
+            >—</span
           >
         </div>
       </div>
@@ -202,7 +195,7 @@ const productCatalog = products.map((item) => ({
         <div class="grid grid-cols-[18px_1fr] gap-3">
           <span class="mt-0.5 size-4 rounded-full bg-emerald-600 ring-4 ring-emerald-100"></span>
           <div>
-            <p id="step-one-title" class="text-[13px] font-medium text-slate-950">Pesanan diterima</p><p
+            <p id="step-one-title" class="text-[13px] font-normal text-slate-950">Pesanan diterima</p><p
               id="step-one-copy"
               class="mt-0.5 text-xs text-slate-500"
             >
@@ -214,7 +207,7 @@ const productCatalog = products.map((item) => ({
           <span class="mt-1 size-3 rounded-full bg-white ring-2 ring-emerald-600 ring-offset-2 ring-offset-slate-50"
           ></span>
           <div>
-            <p id="step-two-title" class="text-[13px] font-medium text-slate-950">Verifikasi admin</p><p
+            <p id="step-two-title" class="text-[13px] font-normal text-slate-950">Verifikasi admin</p><p
               id="step-two-copy"
               class="mt-0.5 text-xs text-slate-500"
             >
@@ -225,7 +218,7 @@ const productCatalog = products.map((item) => ({
         <div class="grid grid-cols-[18px_1fr] gap-3 opacity-60">
           <span class="mt-0.5 size-4 rounded-full bg-slate-200 ring-1 ring-slate-200"></span>
           <div>
-            <p id="step-three-title" class="text-[13px] font-medium text-slate-950">Packing & pengiriman</p><p
+            <p id="step-three-title" class="text-[13px] font-normal text-slate-950">Packing & pengiriman</p><p
               id="step-three-copy"
               class="mt-0.5 text-xs text-slate-500"
             >
@@ -275,13 +268,13 @@ const productCatalog = products.map((item) => ({
           <div class="grid grid-cols-[18px_1fr] gap-2.5">
             <span class="mt-[11px] size-1.5 rounded-full bg-amber-500"></span><p>
               Siapkan uang tunai sesuai total tagihan: <span id="note-total" class="font-bold text-slate-950"
-                >{formatIdr(previewTotal)}</span
+                >—</span
               >.
             </p>
           </div>
           <div class="grid grid-cols-[18px_1fr] gap-2.5">
             <span class="mt-[11px] size-1.5 rounded-full bg-amber-500"></span><p>
-              Pastikan nomor WhatsApp <span id="note-phone" class="font-medium text-slate-950">6281234567890</span> tetap
+              Pastikan nomor WhatsApp <span id="note-phone" class="font-normal text-slate-950">—</span> tetap
               aktif untuk konfirmasi admin atau kurir.
             </p>
           </div>
@@ -295,7 +288,7 @@ const productCatalog = products.map((item) => ({
     </section>
 
     <section id="whatsapp-section" class="px-5 py-6 text-center" data-motion="cta">
-      <p class="text-[11px] font-medium uppercase tracking-[0.12em] text-emerald-700">Langkah berikutnya</p>
+      <p class="text-[11px] font-normal uppercase tracking-[0.12em] text-emerald-700">Langkah berikutnya</p>
       <h2 id="cta-title" class="mt-1 text-[20px] font-semibold tracking-[-0.03em] text-slate-950">
         Konfirmasi ke admin
       </h2>
@@ -308,7 +301,7 @@ const productCatalog = products.map((item) => ({
         href="#"
         target="_blank"
         rel="nofollow noopener noreferrer"
-        title={`Lanjutkan pembayaran pesanan ${tenantConfig.name}`}
+        title={`Lanjutkan pembayaran pesanan ${Astro.locals.tenant.name}`}
         hidden
         class={cn('mt-4 flex w-full', buttonVariants({ variant: 'dark', size: 'lg' }))}>Lanjutkan Pembayaran</a
       >
@@ -317,7 +310,7 @@ const productCatalog = products.map((item) => ({
         href="#"
         target="_blank"
         rel="nofollow noopener noreferrer"
-        title={`Konfirmasi pesanan ${tenantConfig.name} melalui WhatsApp`}
+        title={`Konfirmasi pesanan ${Astro.locals.tenant.name} melalui WhatsApp`}
         class={cn('mt-4 flex w-full', buttonVariants({ variant: 'primary', size: 'lg' }))}
       >
         <Icon name="lucide:message-circle" class="size-5" aria-hidden="true" />
@@ -418,7 +411,7 @@ const productCatalog = products.map((item) => ({
     }
   </style>
 
-  <script is:inline define:vars={{ csPhone, productCatalog }}>
+  <script is:inline define:vars={{ csPhone, productCatalog, storeLogo }}>
     const fmt = (n) =>
       `Rp${Math.round(Number(n || 0))
         .toLocaleString('id-ID')
@@ -431,40 +424,6 @@ const productCatalog = products.map((item) => ({
         '"': '&quot;',
         "'": '&#39;',
       })[character] ?? character);
-    const params = new URLSearchParams(window.location.search);
-    const publicParams = new URLSearchParams();
-    for (const key of ['order_id', 'status_token']) {
-      const value = params.get(key);
-      if (value) publicParams.set(key, value);
-    }
-    const publicSearch = publicParams.toString();
-    const sanitizedUrl = `${window.location.pathname}${publicSearch ? `?${publicSearch}` : ''}${window.location.hash}`;
-    if (`${window.location.pathname}${window.location.search}${window.location.hash}` !== sanitizedUrl) {
-      window.history.replaceState(null, '', sanitizedUrl);
-    }
-    const previewState = {
-      order_id: 'PS-DEMO-240601',
-      order_pk: '',
-      payment_method: 'cod',
-      payment_url: '',
-      name: 'Bapak Demo',
-      phone: '6281234567890',
-      address: 'Jl. Contoh No. 12, RT 01/RW 02, dekat balai desa',
-      district: 'Cibitung',
-      city: 'Bekasi',
-      province: 'Jawa Barat',
-      postal_code: '17520',
-      product_name: 'Asahan Portable',
-      variant_label: 'Asahan Portable - Beli 1 Pcs',
-      product_image: '/images/produk/asahan-portable.webp',
-      product_headline: 'Solusi praktis untuk kebutuhan rumah tangga Anda.',
-      quantity: 1,
-      product_price: 150000,
-      compare_price: 229000,
-      shipping_cost: 20000,
-      total_payment: 170000,
-    };
-
     let clientState = null;
     try {
       clientState = JSON.parse(sessionStorage.getItem('thanks_state') || 'null');
@@ -472,19 +431,17 @@ const productCatalog = products.map((item) => ({
       clientState = null;
     }
 
-    const hasIncomingState = Boolean(
-      clientState ||
-      params.get('order_id') ||
-      params.get('name') ||
-      params.get('product_name') ||
-      params.get('variant_label'),
-    );
-    const activeState = hasIncomingState ? clientState : previewState;
-    const isPreview = !hasIncomingState || params.get('preview') === '1';
-    const pick = (key, fallback = '') => String(activeState?.[key] ?? params.get(key) ?? fallback);
-    const pickNum = (key, fallback = 0) => Number(activeState?.[key] ?? params.get(key) ?? fallback);
+    const hasClientState = Boolean(clientState);
+    if (!hasClientState) {
+      document.documentElement.hidden = true;
+      window.location.replace('/produk');
+    }
 
-    const orderId = pick('order_id', 'PS-000000');
+    const activeState = clientState || {};
+    const pick = (key, fallback = '') => String(activeState?.[key] ?? fallback);
+    const pickNum = (key, fallback = 0) => Number(activeState?.[key] ?? fallback);
+
+    const orderId = pick('order_id', '');
     const orderPk = pick('order_pk', orderId);
     const statusToken = pick('status_token', '');
     const paymentMethod = pick('payment_method', pick('pm', 'cod')).toLowerCase();
@@ -506,7 +463,7 @@ const productCatalog = products.map((item) => ({
     const city = pick('city', '');
     const province = pick('province', '');
     const postalCode = pick('postal_code', '');
-    const rawProductName = pick('product_name', 'Aussie');
+    const rawProductName = pick('product_name', '');
     const rawVariantLabel = pick('variant_label', rawProductName);
     const variantUniqueId = pick('variant_unique_id', '');
     const catalogProduct = productCatalog.find(
@@ -519,7 +476,7 @@ const productCatalog = products.map((item) => ({
     );
     const productName = catalogProduct?.productName || rawProductName;
     const variantLabel = catalogVariant?.label || rawVariantLabel;
-    const productImage = pick('product_image', catalogProduct?.image || '/images/logo.webp');
+    const productImage = pick('product_image', catalogProduct?.image || '');
     const productHeadline = pick('product_headline', catalogProduct?.headline || '');
     const quantity = Math.max(1, pickNum('quantity', 1));
     const productPrice = pickNum('product_price', pickNum('value', catalogVariant?.price || 0));
@@ -557,8 +514,13 @@ const productCatalog = products.map((item) => ({
     const headlineEl = document.getElementById('product-headline');
     if (productHeadline) headlineEl.textContent = productHeadline;
     else headlineEl.hidden = true;
-    document.getElementById('product-image').src = productImage;
-    document.getElementById('product-image').alt = productName;
+    const productImageElement = document.getElementById('product-image');
+    if (productImage) {
+      productImageElement.setAttribute('src', productImage);
+      productImageElement.setAttribute('alt', productName);
+    } else {
+      productImageElement.hidden = true;
+    }
     const productDisplayTotal = comparePrice > productPrice ? comparePrice * quantity : productTotal;
     document.getElementById('product-price').textContent = fmt(productDisplayTotal);
     document.getElementById('product-subtotal').textContent = fmt(productTotal);
@@ -577,8 +539,6 @@ const productCatalog = products.map((item) => ({
     document.getElementById('note-total').textContent = fmt(totalPayment || productPrice || 0);
     document.getElementById('note-phone').textContent = phone;
 
-    const previewBadge = document.getElementById('preview-badge');
-    if (isPreview && previewBadge) previewBadge.hidden = false;
 
     if (leadOnly) {
       document.getElementById('thanks-title').textContent = 'Pesanan berhasil dibuat';
@@ -599,7 +559,7 @@ const productCatalog = products.map((item) => ({
       document.getElementById('note-title').textContent = 'Catatan konfirmasi COD';
       document.getElementById('note-list').innerHTML = `
         <div class="grid grid-cols-[18px_1fr] gap-2.5"><span class="mt-[11px] size-1.5 rounded-full bg-amber-500"></span><p>Nominal saat ini hanya estimasi harga produk: <span class="font-bold text-slate-950">${fmt(productTotal || productPrice || 0)}</span>.</p></div>
-        <div class="grid grid-cols-[18px_1fr] gap-2.5"><span class="mt-[11px] size-1.5 rounded-full bg-amber-500"></span><p>Biaya admin, ongkir, dan total akhir dikonfirmasi Customer Service melalui WhatsApp <span class="font-medium text-slate-950">${escapeHtml(phone)}</span>.</p></div>
+        <div class="grid grid-cols-[18px_1fr] gap-2.5"><span class="mt-[11px] size-1.5 rounded-full bg-amber-500"></span><p>Biaya admin, ongkir, dan total akhir dikonfirmasi Customer Service melalui WhatsApp <span class="font-normal text-slate-950">${escapeHtml(phone)}</span>.</p></div>
         <div class="grid grid-cols-[18px_1fr] gap-2.5"><span class="mt-[11px] size-1.5 rounded-full bg-amber-500"></span><p>Pastikan nomor aktif agar pesanan COD bisa segera diproses.</p></div>`;
       document.getElementById('cta-title').textContent = 'Hubungi admin';
       document.getElementById('cta-copy').textContent =
@@ -710,8 +670,15 @@ const productCatalog = products.map((item) => ({
       wa.hidden = true;
     }
 
-    if (!isPreview && !leadOnly && orderPk && statusToken) {
-      fetch(`/api/order-status?order_pk=${encodeURIComponent(orderPk)}&status_token=${encodeURIComponent(statusToken)}`, { cache: 'no-store' })
+    document.getElementById('thanks-shell').hidden = false;
+
+    if (!leadOnly && orderPk && statusToken) {
+      fetch('/api/order-status', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ order_pk: orderPk, status_token: statusToken }),
+        cache: 'no-store',
+      })
         .then(async (res) => {
           const data = await res.json().catch(() => ({}));
           if (!res.ok || data?.success === false) return;

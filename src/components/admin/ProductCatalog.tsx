@@ -14,11 +14,10 @@ import {
   Copy,
   Plus,
   RefreshCw,
-  Sparkles,
   Eye,
   Filter,
 } from "lucide-react";
-import { formatContentId } from "../../lib/catalog-feed";
+import { catalogProductId } from "../../lib/catalog-feed";
 import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 import {
@@ -50,8 +49,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "../ui/dropdown-menu";
-import { isCanonicalSampleProductId } from "../../lib/sample-product";
-import { buildEmbedMarkup } from "../../lib/embed-markup";
+import { EMBED_SNIPPET_VERSION, buildEmbedMarkup } from "../../lib/embed-markup";
 
 export type ProductVariant = {
   id: number | string;
@@ -74,10 +72,12 @@ export type Product = {
 type FormMode = "middle" | "full" | "hybrid";
 type EmbedConfig = {
   variants: Array<{
+    id: number | string;
     content_id: string;
     label: string;
   }>;
   selected_variant: {
+    id: number | string;
     content_id: string;
   };
 };
@@ -123,7 +123,6 @@ function ProductActions({
 }) {
   const editUrl = `/admin/products/edit?id=${encodeURIComponent(String(product.id))}`;
   const storefrontUrl = `/produk/${product.slug}`;
-  const isSample = isCanonicalSampleProductId(product.id);
 
   return (
     <DropdownMenu>
@@ -142,7 +141,7 @@ function ProductActions({
         <DropdownMenuItem asChild>
           <a href={editUrl} className="flex items-center gap-2">
             <Pencil className="size-4 text-slate-500" aria-hidden="true" />
-            <span>{isSample ? "Lihat data contoh" : "Edit produk"}</span>
+            <span>Edit produk</span>
           </a>
         </DropdownMenuItem>
         <DropdownMenuItem asChild>
@@ -160,19 +159,15 @@ function ProductActions({
           <span>Salin Content ID</span>
         </DropdownMenuItem>
 
-        {!isSample && (
-          <>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem
-              variant="destructive"
-              onSelect={() => onDelete(product)}
-              className="flex items-center gap-2"
-            >
-              <Trash2 className="size-4" aria-hidden="true" />
-              <span>Hapus produk</span>
-            </DropdownMenuItem>
-          </>
-        )}
+        <DropdownMenuSeparator />
+        <DropdownMenuItem
+          variant="destructive"
+          onSelect={() => onDelete(product)}
+          className="flex items-center gap-2"
+        >
+          <Trash2 className="size-4" aria-hidden="true" />
+          <span>Hapus produk</span>
+        </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   );
@@ -271,7 +266,7 @@ export function ProductCatalog({
         }
         const config = payload as EmbedConfig & { success: true };
         setEmbedConfig(config);
-        setEmbedVariantId(config.selected_variant.content_id);
+        setEmbedVariantId(String(config.selected_variant.id));
       })
       .catch((reason) => {
         if (!(reason instanceof Error && reason.name === "AbortError")) {
@@ -303,7 +298,7 @@ export function ProductCatalog({
     return products.filter((product) => {
       const matchesQuery =
         !normalized ||
-        [product.id, formatContentId(product.id), product.title, product.slug, product.category]
+        [product.id, catalogProductId(product.id), product.title, product.slug, product.category]
           .join(" ")
           .toLowerCase()
           .includes(normalized);
@@ -452,7 +447,7 @@ export function ProductCatalog({
   };
   const standaloneUrl = buildIntegrationUrl(FORM_PATHS[embedMode]);
   const embedUrl = buildIntegrationUrl("/embed/form", true);
-  const embedId = `cmsads-order-form-${String(embedTarget?.id || "").replace(/[^a-z0-9_-]/gi, "-")}`;
+  const embedId = `adsbook-order-form-${String(embedTarget?.id || "").replace(/[^a-z0-9_-]/gi, "-")}`;
   const embedMarkup = embedUrl
     ? buildEmbedMarkup({
         origin: embedOrigin,
@@ -465,7 +460,6 @@ export function ProductCatalog({
       })
     : null;
   const iframeHtml = embedMarkup?.plainIframe || "";
-  const autoHeightHtml = embedMarkup?.autoHeightIframe || "";
   const widgetHtml = embedMarkup?.widget || "";
 
   const copyText = async (value: string, label: string) => {
@@ -597,21 +591,6 @@ export function ProductCatalog({
           </CardContent>
         </Card>
       </section>
-
-      {/* Banner Data Contoh */}
-      {products.some((product) => isCanonicalSampleProductId(product.id)) && (
-        <div className="flex items-start gap-3 rounded-xl border border-blue-200 bg-blue-50/80 p-4 text-blue-950">
-          <Sparkles className="mt-0.5 size-5 shrink-0 text-blue-600" />
-          <div className="text-xs leading-5">
-            <p className="font-bold text-blue-950 text-sm">
-              Terdapat data contoh bawaan (Aussie / Portable).
-            </p>
-            <p className="mt-0.5 text-blue-800">
-              Data contoh digunakan untuk pengujian alur checkout & embed form. Anda dapat menambah produk baru kapan saja.
-            </p>
-          </div>
-        </div>
-      )}
 
       {/* Main Catalog Container */}
       <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xs">
@@ -769,11 +748,15 @@ export function ProductCatalog({
             </Button>
           </div>
         ) : !isDesktop ? (
-          /* Mobile Product Card List */
-          <div className="grid gap-3 p-4 lg:hidden" aria-label="Daftar produk mobile">
+          /* Mobile Product Card List.
+             grid-cols-1 is load-bearing: it expands to minmax(0, 1fr). Without it the
+             implicit column is sized `auto`, so a card's min-content width — driven by
+             the `truncate` (white-space: nowrap) title and slug — widens the column past
+             the viewport. The wrapper clips that overflow, which put the status switch
+             and the Aksi menu off-screen and unreachable on mobile. */
+          <div className="grid grid-cols-1 gap-3 p-4 lg:hidden" aria-label="Daftar produk mobile">
             {paginated.map((product) => {
               const priceRange = getProductPriceRange(product.variants);
-              const isSample = isCanonicalSampleProductId(product.id);
 
               return (
                 <article
@@ -798,16 +781,12 @@ export function ProductCatalog({
                       <div className="flex items-start justify-between gap-2">
                         <div className="min-w-0">
                           <h3 className="font-bold text-sm text-slate-950 truncate">
-                            {isSample ? (
-                              product.title
-                            ) : (
-                              <a
-                                href={`/admin/products/edit?id=${encodeURIComponent(String(product.id))}`}
-                                className="hover:text-emerald-700 hover:underline"
-                              >
-                                {product.title}
-                              </a>
-                            )}
+                            <a
+                              href={`/admin/products/edit?id=${encodeURIComponent(String(product.id))}`}
+                              className="hover:text-emerald-700 hover:underline"
+                            >
+                              {product.title}
+                            </a>
                           </h3>
                           <p className="mt-0.5 font-mono text-[11px] text-slate-500 truncate">
                             /{product.slug}
@@ -827,20 +806,15 @@ export function ProductCatalog({
                           <Switch
                             size="sm"
                             checked={Boolean(product.is_active)}
-                            disabled={
-                              isSample ||
-                              togglingProductIds.has(String(product.id))
-                            }
+                            disabled={togglingProductIds.has(String(product.id))}
                             onCheckedChange={(checked) =>
                               void toggleProductStatus(product, checked)
                             }
                             aria-label={`${Boolean(product.is_active) ? "Nonaktifkan" : "Aktifkan"} ${product.title}`}
                             title={
-                              isSample
-                                ? "Produk contoh tidak dapat diubah"
-                                : Boolean(product.is_active)
-                                  ? "Jadikan draft"
-                                  : "Aktifkan produk"
+                              Boolean(product.is_active)
+                                ? "Jadikan draft"
+                                : "Aktifkan produk"
                             }
                           />
                         </div>
@@ -860,7 +834,7 @@ export function ProductCatalog({
                     <div>
                       <dt className="text-[10px] text-slate-500 uppercase font-semibold">Content ID</dt>
                       <dd className="mt-0.5 font-mono font-bold text-slate-900 text-[11px] truncate">
-                        {formatContentId(product.id)}
+                        {catalogProductId(product.id)}
                       </dd>
                     </div>
                     <div>
@@ -907,7 +881,6 @@ export function ProductCatalog({
               <TableBody>
                 {paginated.map((product) => {
                   const priceRange = getProductPriceRange(product.variants);
-                  const isSample = isCanonicalSampleProductId(product.id);
 
                   return (
                     <TableRow key={product.id} className="hover:bg-slate-50/60 transition-colors">
@@ -929,23 +902,12 @@ export function ProductCatalog({
                           </div>
                           <div className="min-w-0">
                             <div className="flex items-center gap-2">
-                              {isSample ? (
-                                <span className="font-bold text-slate-950 text-sm">
-                                  {product.title}
-                                </span>
-                              ) : (
-                                <a
-                                  href={`/admin/products/edit?id=${encodeURIComponent(String(product.id))}`}
-                                  className="font-bold text-slate-950 text-sm hover:text-emerald-700 hover:underline"
-                                >
-                                  {product.title}
-                                </a>
-                              )}
-                              {isSample && (
-                                <Badge variant="secondary" className="text-[9px] px-1.5 py-0 bg-blue-50 text-blue-700 border-blue-200 font-semibold">
-                                  Contoh
-                                </Badge>
-                              )}
+                              <a
+                                href={`/admin/products/edit?id=${encodeURIComponent(String(product.id))}`}
+                                className="font-bold text-slate-950 text-sm hover:text-emerald-700 hover:underline"
+                              >
+                                {product.title}
+                              </a>
                             </div>
                             <div className="flex items-center gap-2 mt-0.5">
                               <span className="font-mono text-[11px] text-slate-400">
@@ -975,12 +937,12 @@ export function ProductCatalog({
                       <TableCell className="py-3.5 px-4">
                         <button
                           type="button"
-                          onClick={() => void copyText(formatContentId(product.id), "Content ID")}
+                          onClick={() => void copyText(catalogProductId(product.id), "Product / Content ID")}
                           className="group inline-flex items-center gap-1.5 rounded-md px-2 py-1 hover:bg-slate-100 transition-colors text-left"
                           title="Klik untuk menyalin Content ID"
                         >
                           <span className="font-mono text-xs font-bold text-slate-700 group-hover:text-slate-950">
-                            {formatContentId(product.id)}
+                            {catalogProductId(product.id)}
                           </span>
                           <Copy className="size-3 text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity" />
                         </button>
@@ -1010,20 +972,15 @@ export function ProductCatalog({
                           <Switch
                             size="sm"
                             checked={Boolean(product.is_active)}
-                            disabled={
-                              isSample ||
-                              togglingProductIds.has(String(product.id))
-                            }
+                            disabled={togglingProductIds.has(String(product.id))}
                             onCheckedChange={(checked) =>
                               void toggleProductStatus(product, checked)
                             }
                             aria-label={`${Boolean(product.is_active) ? "Nonaktifkan" : "Aktifkan"} ${product.title}`}
                             title={
-                              isSample
-                                ? "Produk contoh tidak dapat diubah"
-                                : Boolean(product.is_active)
-                                  ? "Jadikan draft"
-                                  : "Aktifkan produk"
+                              Boolean(product.is_active)
+                                ? "Jadikan draft"
+                                : "Aktifkan produk"
                             }
                           />
                         </div>
@@ -1086,14 +1043,14 @@ export function ProductCatalog({
           if (!open) setEmbedTarget(null);
         }}
       >
-        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
+        <DialogContent className="max-h-[calc(100dvh-2rem)] overflow-y-auto sm:max-w-2xl">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Code2 className="size-5 text-emerald-600" />
               <span>Embed Checkout Form - {embedTarget?.title}</span>
             </DialogTitle>
             <DialogDescription>
-              Pilih alur dan varian awal. Snippet embed selalu menggunakan ID produk dan varian canonical dari CMSAds.
+              Pilih alur dan varian awal. Snippet embed selalu menggunakan ID produk dan varian canonical dari AdsBookCMS.
             </DialogDescription>
           </DialogHeader>
 
@@ -1113,7 +1070,7 @@ export function ProductCatalog({
             </section>
           ) : embedConfig ? (
             <div className="space-y-4">
-              <div className="grid gap-3 sm:grid-cols-2">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <label className="block">
                   <span className="mb-1.5 block text-xs font-bold text-slate-700">
                     Mode Form Checkout
@@ -1141,8 +1098,8 @@ export function ProductCatalog({
                   >
                     {embedConfig.variants.map((variant) => (
                       <option
-                        key={variant.content_id}
-                        value={variant.content_id}
+                        key={String(variant.id)}
+                        value={String(variant.id)}
                       >
                         {variant.label}
                       </option>
@@ -1156,7 +1113,7 @@ export function ProductCatalog({
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <h3 className="text-xs font-bold uppercase tracking-wider text-emerald-950">
-                      CMSAds Widget Snippet
+                      AdsBookCMS Widget Snippet
                     </h3>
                     <Badge variant="default" className="bg-emerald-700 text-white font-bold text-[9px] uppercase">
                       Direkomendasikan
@@ -1166,7 +1123,7 @@ export function ProductCatalog({
                     type="button"
                     size="sm"
                     className="h-8 gap-1.5 bg-emerald-700 text-white hover:bg-emerald-800 text-xs"
-                    onClick={() => void copyText(widgetHtml, "CMSAds Widget")}
+                    onClick={() => void copyText(widgetHtml, "AdsBookCMS Widget")}
                   >
                     <Copy className="size-3.5" />
                     Salin Snippet
@@ -1179,7 +1136,7 @@ export function ProductCatalog({
                   value={widgetHtml}
                   readOnly
                   rows={6}
-                  aria-label="CMSAds widget embed"
+                  aria-label="AdsBookCMS widget embed"
                   className="mt-3 w-full resize-y rounded-lg border border-emerald-300 bg-white p-3 font-mono text-[11px] leading-5 text-slate-800 outline-none focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600"
                 />
               </section>
@@ -1253,6 +1210,15 @@ export function ProductCatalog({
                   </div>
                 </div>
               </details>
+
+              <p className="rounded-lg border border-slate-200 bg-slate-50 p-3 text-xs leading-5 text-slate-700">
+                <strong>Versi snippet: v{EMBED_SNIPPET_VERSION}.</strong>{" "}
+                Snippet yang sudah ditempel tidak ikut ter-update saat sistem
+                di-deploy. Setiap kali halaman merchant memuat form dengan versi
+                lama, sistem mencatat <code className="font-mono">embed-snippet-stale</code>{" "}
+                beserta domain halaman tersebut di Workers Logs — minta merchant
+                menyalin ulang snippet di atas bila itu muncul.
+              </p>
 
               <p className="rounded-lg border border-blue-200 bg-blue-50/80 p-3 text-xs leading-5 text-blue-900">
                 <strong>Keamanan Domain Embed:</strong> Pastikan domain website tempat embed ditambahkan ke daftar domain di <strong>Pengaturan → Store & CS → Domain untuk Embed</strong> agar form diizinkan memuat.

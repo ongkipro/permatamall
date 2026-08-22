@@ -1,11 +1,11 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
-import GeoIpResolvedForm from '../components/forms/GeoIpResolvedForm.astro';
-import MetaLandingTracker from '../components/tracking/MetaLandingTracker.astro';
+import GeoIpResolvedForm from '../components/storefront/forms/GeoIpResolvedForm.astro';
+import MetaLandingTracker from '../components/storefront/tracking/MetaLandingTracker.astro';
 import { getStorefrontProduct } from '../lib/catalog';
 import { resolveFormVariant } from '../lib/form-config';
-import { tenantConfig } from '../lib/tenant';
 import '../styles/form-hybrid.css';
+import { catalogProductId } from '../lib/catalog-feed';
 
 export const prerender = false;
 
@@ -19,7 +19,7 @@ if (!selectedVariant) return Astro.redirect(`/produk/${product.slug}`);
 ---
 
 <BaseLayout
-  title={`Form Middle ${product.productName} - ${tenantConfig.name}`}
+  title={`Form Middle ${product.productName} - ${Astro.locals.tenant.name}`}
   description={`Form middle funnel ${product.productName} dengan alur singkat tanpa kecamatan dan tanpa ongkir.`}
   image={product.heroImage}
   hideHeader={true}
@@ -27,7 +27,7 @@ if (!selectedVariant) return Astro.redirect(`/produk/${product.slug}`);
 >
   <MetaLandingTracker
     slug="middle-form"
-    productId={product.productId}
+    contentId={catalogProductId(product.productId)}
     contentName={product.productName}
     price={selectedVariant.price}
   />

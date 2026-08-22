@@ -98,7 +98,13 @@ export const CrmActionGroup: React.FC<CrmActionGroupProps> = ({
       )}
 
       {(!collapsible || expanded) && (
-        <div className="grid grid-cols-5 gap-1.5 sm:grid-cols-2 w-full pt-1">
+        // The breakpoints were inverted: `grid-cols-5 sm:grid-cols-2` gave a phone
+        // five columns and a desktop two. At 360px each of the five tracks is
+        // (310 - 24)/5 = 57px, while a CrmActionButton's min-content is ~74px
+        // (px-2 + gap + the nowrap label + the clicked badge), so the row overflowed
+        // by ~80px — clipped without a scroll path by the Card's own overflow-hidden
+        // in OrderDetail. Two columns is what desktop already rendered.
+        <div className="grid grid-cols-2 gap-1.5 w-full pt-1">
           {CRM_STEPS.map((step) => {
             const url = crmUrls[step.key] || '';
             const isClicked = Boolean(clickedSteps[step.key]);

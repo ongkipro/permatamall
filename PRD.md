@@ -1,335 +1,297 @@
-# PRD: CMSAds Engine — Full-System Specification
+# PRD — AdsBookCMS (single)
 
-## Overview
+## A21 — A landing page may become the product page
 
-CMSAds Engine is a complete e-commerce operations platform built on Astro v7 SSR and Cloudflare Workers, designed for the **Indonesian Direct-Response (DR) Storefront** market. The system spans three domains:
+### Goals
 
-1. **Storefront** — a template-selected, mobile-first commerce surface: compact direct-response funnels may use a centered 480px shell, while wide-catalog tenants use responsive catalog layouts. Both reuse factual product media, hybrid/middle checkout flows, and COD province exclusion.
-2. **Merchant Admin Panel** — a D1-backed OMS covering orders, products, shipping, ads tracking, warehouse configuration, CRM templates, payment gateway, and receiver delivery performance.
-3. **Backend Integrations** — Mengantar logistics API (shipping rates, address lookup, pickup scheduling, receiver history), AutoLaris payment gateway (QRIS/VA/bank transfer), and Meta/Google conversion tracking (Pixel Advanced Matching + Server CAPI).
+- One product can be sold through a purpose-built landing page without that page becoming a second competing URL.
+- The operator decides it from the landing-page list, and can undo it.
 
-## Platform Profile & Canonical Boundaries
+### Non-goals
 
-- **Profile:** `platform`
-- **Overlays:** `multi-tenant`, `custom-domain`, `commerce`, `personal-data`, `ai-system`, `mobile-desktop`, `data-analytics`
-- **Commerce truth:** D1 `products`, `product_variants`, `orders`, `order_items`, and `payment_transactions` own catalog identity, customer-order state, and the payment ledger.
-- **Runtime content truth:** D1 `storefront_content` owns draft/published home and product copy; tenant R2 owns media; the compiled Petani Sejahtera source remains a migration fallback only.
-- **Tenant boundary:** one build-selected Worker per tenant with isolated `OMS_DB`, `SESSION`, `ASSET_BUCKET`, and `AI` bindings. No request-hostname tenant dispatcher is part of this architecture.
-- **Personal-data and analytics boundary:** tenant D1 persists customer name, phone, email, address, payment state, and receiver-performance snapshots; tracking emits hashed or configured identifiers only when the tenant configuration is present.
-- **Unknown/provider/legal boundary:** official Mengantar tracking/balance contracts and the official AutoLaris callback-signature contract remain unverified. This PRD defines engineering behavior and deployment controls, not legal certification, retention-law applicability, or provider SLA promises.
+- Listing native Astro landing routes in the CMS. That needs the typed manifest in `REQ-143`/`A-133` and is unbuilt; `docs/LANDING-PAGES.md` states the contract so a page written before then already fits it.
+- Letting a native Astro route claim a product page. The claim is a database fact on `landing_pages`; a file has no row.
+
+### Requirements
+
+- **REQ-159** — An operator shall be able to make one active CMS landing page serve its product's page, and to release it again.
+- **REQ-160** — Where a landing page serves the product page, `/produk/<product-slug>` shall render it and be its canonical address, and the landing page's own slug shall permanently redirect there, so exactly one URL is live.
+- **REQ-161** — At most one landing page may serve a given product's page, enforced by the database rather than by the interface.
+- **REQ-162** — If the claiming landing page becomes inactive or releases the claim, then `/produk/<product-slug>` shall return to the standard product template; a product shall never 404 because a landing page changed.
+- **REQ-163** — Every landing page, CMS or native, shall answer at `domain/<slug>` with no path prefix, except where `REQ-160` moves it to the product URL.
+
+### Technical decisions
+
+- **The product route hands off by rewrite, signalled on the request.** A rewrite does not carry the original path, so the landing route cannot tell a hand-off from a direct visit by reading `Astro.url` — doing so put the two routes in an endless redirect loop. An `x-adsbook-product-page` header carries the fact instead.
+- **A partial unique index, not application logic.** `WHERE is_product_page = 1` leaves unclaimed drafts out of the index entirely, so any number may target one product while only one may hold it.
+- **Copy stays historical, navigation stays live.** The admin list builds its link from the product slug when a page is claimed, so an operator never copies an address that merely redirects.
+
+## A20 — One date-range control across every reporting surface
+
+### Goals
+
+- An operator picks a reporting period the same way on the dashboard, the order list, and the shipping workspace.
+- A period can be an explicit start and end date, not only a named preset.
+
+### Non-goals
+
+- A new date-picker dependency. The platform's own `<input type="date">` already renders a real calendar, and on a phone it renders the OS picker, which beats any in-page grid.
+- Per-surface period semantics. One resolver already exists (`admin-date-filter.ts`); this phase extends it rather than growing a second.
+
+### Requirements
+
+- **REQ-154** — The dashboard, order list, and shipping workspace shall present one shared period control offering the same presets plus an explicit custom range.
+- **REQ-155** — A custom range shall be expressed as an inclusive start and end date in Asia/Jakarta, and shall be rejected — not silently reinterpreted — when the start is after the end, either date is unparseable, or the span exceeds that surface's documented maximum.
+- **REQ-156** — Where a surface caps how much history it can report on, the control shall state the cap and prevent selecting past it rather than truncating the answer silently.
+- **REQ-157** — A request naming a period the server cannot resolve shall be refused with a stated reason; it shall not fall back to a different period and present the result as the one that was asked for.
+- **REQ-158** — The active period shall be legible without opening the control, including which custom dates are in force.
+
+### Technical decisions
+
+- **`<input type="date">`, not a calendar library.** It is a real date picker, it is the native one on mobile, it needs no bundle, and the repository currently carries no date dependency at all. A two-month drag-select grid would be the only reason to add one, and no requirement here asks for that.
+- **One resolver, extended.** `resolveAdminDateRange` gains an optional custom range and a validating parser shared by all three APIs, because two of them currently pass an unvalidated string into a typed parameter and silently receive the 7-day default for anything unrecognised — including `custom`.
+- **The cap stays per surface.** The dashboard already limits custom ranges to 30 days and hides the 90/180-day presets; the order and shipping lists do not have that constraint. The control takes the cap as input rather than imposing one number on surfaces with different costs.
+
+## A19 — Operator notifications for revenue events
+
+### Goals
+
+- An operator learns that an order arrived, a lead was left behind, or a payment cleared without watching the dashboard.
+- Notification state is server-owned and per-install, so it survives a reload, a second device, and a different browser.
+- No third-party messaging account, credential, or per-message cost is introduced.
+
+### Non-goals
+
+- Outbound messaging channels (WhatsApp gateway, Telegram, email). They carry a per-install credential and, for WhatsApp, a per-message cost; none is required to solve "the operator did not notice".
+- Customer-facing notifications. This phase is operator-only.
+- Delivery while no admin page is open anywhere. That needs Web Push and is specified as REQ-153, deliberately deferred rather than implied.
+
+### Requirements
+
+- **REQ-146** — When a checkout creates an order, the system shall record exactly one `order` notification for that order, and a repeated or replayed write shall not produce a second one.
+- **REQ-147** — When a qualified missed-order lead is captured, the system shall record exactly one `lead` notification for that lead.
+- **REQ-148** — When an order's payment becomes paid, the system shall record exactly one `payment` notification for that order, whichever confirmation path set it.
+- **REQ-149** — Notification recording shall never fail, delay, or roll back the commerce write that triggered it; a notification store that is unavailable shall be logged and skipped, not surfaced to the buyer.
+- **REQ-150** — The system shall expose to an authenticated operator an unread count and a reverse-chronological notification list scoped to roles that own commerce work; `advertiser` shall not receive commerce notifications.
+- **REQ-151** — An operator shall be able to mark one notification read and to mark all read; read state shall be per operator, so one operator reading does not blind another.
+- **REQ-152** — Where an admin page is open and the browser has granted permission, the system shall raise a browser notification for an unread event at most once per event per browser, and the absence or denial of that permission shall degrade to the in-app list without an error state.
+- **REQ-153** *(Planned)* — Where no admin page is open, the system shall deliver the same events through Web Push using VAPID and a service worker. On iOS this requires the operator to install the admin to the home screen first, a platform restriction that shall be stated in the operator UI rather than silently failing.
+
+### Technical decisions
+
+- **D1, not KV, for the notification store.** The feature needs ordering, an unread count, and per-operator read state — all queries. KV holds the alert-transition state in `operational-alerts.ts` because that is one value per signal; this is a list.
+- **Polling, not SSE or WebSocket.** An open SSE stream pins a Worker isolate per open admin tab for as long as it stays open. The admin page is already loaded and already makes requests; a bounded poll on an open page costs less and cannot leak isolates.
+- **Recording is inline with the commerce write, wrapped fail-open.** A queue would need its own delivery guarantee to solve a problem the write itself already orders correctly. REQ-149 makes the failure mode explicit instead.
+- **Dedupe is a stored uniqueness constraint keyed by event type plus subject id**, the same discipline the CAPI outbox uses for `event_id` — retries and replays are expected, so exactly-once is enforced by the store rather than by the caller remembering.
+
+## A18 — Deterministic storefront home and structured content editor
+
+### Goals
+
+- Make the public homepage automatically index active products and published landing pages.
+- Replace JSON/AI homepage authoring with bounded banner, slider, and supporting-copy fields.
+
+### Non-goals
+
+- Runtime discovery of arbitrary `.astro` files, raw HTML/JSON authoring, Workers AI generation, or deleting existing landing URLs.
+
+### Requirements
+
+- **REQ-140** — The system shall render the public homepage with the canonical `compact-market` composition only; a stored alternate template shall not change homepage layout.
+- **REQ-141** — When a product is active and has a sellable variant, the system shall include it in the homepage catalog automatically, newest first, in a two-column grid with ten items initially visible and an accessible Load more control for remaining items.
+- **REQ-142** — When a CMS landing page is active, the system shall include its title, safe summary, and canonical public URL in the homepage landing-page index and sitemap without a separate homepage publish action.
+- **REQ-143** — Where a native Astro landing page is registered in a typed source manifest, the system shall validate its unique slug and required public metadata at build time and include it in the same homepage index and sitemap.
+- **REQ-144** — The system shall replace the `admin/content` JSON editor with named, bounded fields for homepage banner, slider, and supporting public copy; it shall not expose raw JSON, raw HTML, or AI generation controls.
+- **REQ-145** — If structured homepage content is absent or invalid, then the system shall still render the automatic product and landing-page index with a neutral, truthful fallback rather than a setup-blocking homepage.
+
+### Technical decisions
+
+- **Native landing registry:** a typed source manifest, not runtime filesystem discovery. Cloudflare Workers bundles routes and cannot enumerate source files safely at runtime.
+- **Migration:** preserve existing `storefront_content` records during migration, then expose only bounded structured fields to operators.
+
+> Last executed baseline: 2026-08-17 @ `5cb1d32` + the A13 working tree.
+
+## 0. About this document
+
+AdsBookCMS is a direct-response commerce CMS that installs onto Cloudflare Workers. **One installer run produces one Worker, one database, one store.**
+
+The previous version of this document specified a multi-tenant engine with a provisioning installer, a tenant registry, and fleet deployment — none of which exists in this repository. It also defined three requirement IDs twice with different text, and mandated behaviour (`admin`/`admin` login) that the code was deliberately hardened against.
+
+Requirement numbering therefore **restarts** here. The old `REQ-*`, `SEC-*`, `PAY-*`, `ORD-*`, `TRK-*`, `UI-*` identifiers referenced by `TASKS.md` do not resolve to this document and should not be reintroduced.
+
+Each requirement carries a status:
+
+- **Implemented** — covered by the last executed repository baseline or later evidence named in the row
+- **Partial** — works, with a stated limitation
+- **Accepted** — decided product behavior; the row states whether source is visible, while execution remains unclaimed until evidence exists
+- **Planned** — decided backlog behavior not yet built
 
 ---
 
-## Goals
+## 1. Product definition
 
-- **G-1**: Deliver fast, clean, professional, responsive storefronts without visual distraction; measure Core Web Vitals against the selected tenant and route rather than assuming one template-wide result.
-- **G-2**: Render tenant product media accurately and without artificial inset framing; repository illustrations must not be presented as merchant product photographs.
-- **G-3**: Preserve stable event identity, validated identifiers, consent-aware customer signals, and browser/server `Purchase` deduplication without claiming measurement or attribution certainty.
-- **G-4**: Provide complete legal navigation (6 policy routes) and factual COD, payment, shipping, and merchant-policy information.
-- **G-5**: Operate a D1-backed Merchant Admin Panel for end-to-end order, product, shipping, and ads management without external SaaS dependencies.
-- **G-6**: Use verified Mengantar contracts as the external authority for address resolution, shipping estimates, pickup operations, shipment creation, and receiver history; do not invent unavailable tracking, wallet, or recovery behavior.
-- **G-7**: Harden authentication and data security to production-grade standards using Web Crypto primitives (PBKDF2-SHA256, HMAC-SHA256 JWT, KV session revocation).
-- **G-8**: Reuse one versioned codebase across independently deployed Cloudflare Workers, with one isolated D1/KV/R2 resource set and one custom-domain set per tenant.
+AdsBookCMS gives one merchant a complete direct-response storefront: catalog, landing pages, checkout with cash-on-delivery and online payment, order and shipping operations against an Indonesian 3PL aggregator, ad-signal tracking for Meta and Google, and an admin dashboard — deployed as a single Cloudflare Worker the merchant owns.
 
----
+**Goals**
+1. A merchant can install, configure, and operate a store without a developer after the first deploy.
+2. The install is isolated: its own Worker, database, media bucket, domain, and credentials.
+3. Commerce truth is server-side. Browser state never determines price, stock, or eligibility.
+4. Ad platforms receive accurate, deduplicated conversion signals.
 
-## Non-Goals
-
-- Shared-runtime multi-tenancy or host-based database switching inside one Worker. Tenant isolation shall use separate Worker deployments and separate Cloudflare bindings.
-- Heavy JS animation libraries that degrade mobile loading on Indonesian 3G/4G networks.
-- Real-time WebSocket features (chat, live notifications) — polling is sufficient for order status.
-- Fully automated bulk production deployment. Tenant deploys remain explicit, one-at-a-time operations with migration, dry-run, and approval gates.
+**Non-goals**
+1. Multi-store operation inside one Worker (ADR-001).
+2. Customer-authored code or a plugin runtime.
+3. Public self-service signup.
+4. Marketplace features — multi-seller, bidding, escrow.
 
 ---
 
-## Requirements (EARS Syntax)
+## 2. Installation and configuration
 
-### A. Tenant-Selected Storefront Layout and UI/UX
-
-- **REQ-1** (State-driven): While a tenant selects the `compact-market` storefront template, the system shall render public marketing and catalog content in the current centered 480px mobile-first shell. Other registered templates shall own their responsive width without changing shared checkout, tracking, or API contracts.
-- **REQ-2** (Ubiquitous): The system shall resolve storefront design tokens from the build-selected tenant identity and template. The Petani Sejahtera content pack shall retain its Deep Agricultural Emerald and Slate system; another tenant shall not inherit those brand colors implicitly.
-- **REQ-3** (State-driven): While the Petani Sejahtera compact template is active, the system shall render product images frameless on a white product canvas without grey inset boxes or artificial borders.
-- **REQ-4** (State-driven): While rendering shared storefront chrome, the system shall use the selected tenant name, logo, help identity, and template composition. The Petani Sejahtera compact template retains its current trust bar and non-sticky mobile header.
-- **REQ-5** (Ubiquitous): The system shall provide 6 dedicated legal/policy routes (`/kebijakan-privasi`, `/syarat-ketentuan`, `/kebijakan-cookie`, `/pengiriman`, `/disclaimer`, `/kontak`).
-
-### B. Conversion Tracking & Meta CAPI
-
-- **REQ-6** (Event-driven): When a customer submits a checkout form or visits `/thanks`, the system shall send SHA-256 hashed customer identifiers (`ph`, `fn`, `ln`, `external_id`) to Meta Pixel and CAPI for Advanced Matching.
-- **REQ-7** (State-driven): While processing CAPI requests (`/api/meta-event.ts`), the system shall resolve `meta_pixel_id` and `meta_capi_token` dynamically from Cloudflare D1 `stores` table via `getStoreAdsConfig(locals)` with env fallback.
-- **REQ-8** (Unwanted): If a user refreshes or revisits `/thanks`, then the client guard `once('Purchase_' + purchaseEventId)` and `once('Purchase_order_' + orderId)` shall block duplicate Meta/GTM Purchase events.
-- **REQ-9** (Ubiquitous): The system shall pass the canonical D1 product ID as a numeric-string `content_ids` value across tracking events that support catalog identifiers. The identifier contract is the product's D1 identity, not a provider-specific or marketing alias.
-
-### C. Order Engine & Payment Integration
-
-- **REQ-10** (Event-driven): When an order is submitted via `/api/submit-order` or `/api/submit-middle-order`, the system shall validate the customer and variant, atomically insert `orders` + `order_items`, decrement stock once, derive product value from D1 pricing, and return the persisted `order_pk` plus invoice `INV-YYYYMMDD-XXXXXXXX`. It shall never return success when persistence fails.
-- **REQ-11** (Event-driven): When AutoLaris posts a `PAID` notification to `/api/webhooks/autolaris`, the system shall verify `x-autolaris-secret` using constant-time comparison, update an existing D1 order to `payment_status = 'paid'`, and return an error when the database mutation fails or matches no order.
-- **REQ-12** (Event-driven): When a token-authorized `/payment` or `/thanks` view requests `/api/order-status`, the system shall return the current D1 payment status plus only the latest recorded provider instructions for that order. Non-COD checkout shall remain on `/payment`, render QRIS/VA/payment-code instructions, and redirect to `/thanks` only after a paid-equivalent status; unknown orders shall return `404` rather than synthetic unpaid state.
-
-### D. Storefront Checkout & Logistics
-
-- **REQ-13** (Event-driven): When a customer enters a kecamatan prefix in checkout, the system shall return only matching kecamatan from the bundled Indonesian district index, resolve a representative Mengantar destination area ID after the customer selects kecamatan plus city, and calculate shipping without requiring a village selection.
-- **REQ-14** (State-driven): While calculating shipping rates (`/api/shipping-rates`), the system shall resolve the warehouse origin from D1 `warehouses.origin_area_id` first, falling back to `MENGANTAR_ORIGIN_AREA_ID` env variable.
-- **REQ-15** (State-driven): While rendering available payment methods (`/api/payment-methods`), the system shall exclude COD for provinces listed in `PUBLIC_COD_DISABLED_PROVINCES` and for courier services flagged `unsupported_cod` by Mengantar.
-- **REQ-16** (Unwanted): If the same non-empty `submit_token` is reused, then the D1 unique constraint shall reject the duplicate with `409` across Worker isolates. A honeypot field (`website`) shall reject bot submissions before persistence.
-
-### E. Admin Authentication & Security
-
-- **REQ-17** (State-driven): While no operator credential has replaced the bootstrap account, the system shall permit the documented `admin` / `admin` login only through `/hello`, force the admin into `/admin/profile`, and require replacement with a PBKDF2-SHA256 password of at least eight characters before any other admin workflow. Profile updates shall require the current password, store only the new hash in D1, and invalidate every existing session.
-- **REQ-18** (State-driven): While serving admin pages or admin API routes, the middleware shall verify the HMAC-SHA256 JWT in the `cmsads_session` HTTP-only cookie, check Cloudflare KV session liveness and the D1 credential revision, redirect unauthenticated page requests to `/hello`, return JSON `401` for unauthenticated APIs, and block non-profile routes while the bootstrap password remains active.
-- **REQ-19** (Ubiquitous): The system shall enforce security headers on all responses (`X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy`, `Permissions-Policy`) and block cross-origin unsafe mutations on admin API routes (`sec-fetch-site` / `origin` check).
-- **REQ-20** (Ubiquitous): The system shall validate file uploads with 5 MB request/file limits, MIME type and magic-byte verification, cryptorandom R2 keys, and a KV-backed hourly upload quota.
-
-### F. Admin Dashboard & Analytics
-
-- **REQ-21** (State-driven): While rendering `/admin/dashboard`, the system shall display operational KPIs computed from D1 orders: total revenue, total orders, conversion rate (paid/total), RTS rate (returned/total), and payment mix breakdown (COD / bank transfer / QRIS percentages).
-
-### G. Admin Order Management
-
-- **REQ-22** (State-driven): While rendering `/admin/orders`, the system shall list orders from D1 with search (invoice, customer name, phone), payment/shipping status filters, and pagination (max 100 per page).
-- **REQ-23** (Event-driven): When an admin updates shipping status on an order, the system shall PATCH the order record in D1 without mutating payment status, and display pending/success/error feedback.
-- **REQ-24** (State-driven): While rendering `/admin/orders/[invoice]`, the system shall display receiver delivery rate, CMS risk policy, courier-history totals, customer delivery data, ordered products, and inline shipping-status update controls.
-- **REQ-25** (Ubiquitous): The system shall provide touch-friendly WhatsApp CRM follow-up controls (Welcome, 1-7: COD, Unpaid, Packing, Shipped, Delivered, RTS, Review) on order detail pages. Each control renders a CRM template with variables `{{nama}}`, `{{wa}}`, `{{alamat}}`, `{{kecamatan}}`, `{{inv}}`, `{{produk}}`, `{{ongkir}}`, `{{total}}`, `{{resi}}`, `{{kurir}}` and opens a normalized `wa.me` URL with the rendered message.
-- **REQ-132** (Event-driven / Scheduled): The system shall automatically identify and delete abandoned or unpaid orders older than 7 days from `orders` and `order_items` tables to prevent database bloat and cache accumulation.
-- **REQ-133** (Event-driven): The system shall permit authenticated operators to manually delete single or multiple orders from `/admin/orders` via API `DELETE /api/admin/orders`, cleanly removing associated D1 order rows, line items, and payment transactions.
-- **REQ-134** (State-driven): The admin order surfaces (`OrdersTable.tsx` and `OrderDetail.tsx`) shall render WhatsApp CRM follow-up action buttons as compact, styled controls: default WhatsApp Green background (`#25D366` / `bg-emerald-600`), single-letter or compact step labels (`W`, `D`, `F1`–`F5`, `P`, `C`, `U`), and state persistence turning clicked buttons BLACK (`bg-slate-900` text-white) to track completed operator follow-ups. The controls shall be refactored into modular React components (`CrmActionButton`, `CrmActionGroup`).
-### H. Admin Product Catalog
-
-- **REQ-26** (State-driven): While rendering `/admin/products`, the system shall list products from D1 showing its automatically generated product ID, category, variant count, and active/draft status. Product titles shall open the dedicated edit page, and each row/card shall expose an action menu with explicit deletion confirmation.
-- **REQ-27** (Event-driven): When an admin creates, edits, or deletes a product via `/admin/products/new`, `/admin/products/edit`, or the catalog action menu, the system shall automatically generate immutable canonical D1 product and variant IDs, perform atomic product-plus-variant mutations with slug and SKU collision checks, reject caller-assigned IDs on create, and reject deletion of any variant or product referenced by existing order items. Successful product deletion shall remove its unreferenced variants before the product.
-- **REQ-28** (Ubiquitous): The system shall upload product images to Cloudflare R2 with cryptorandom keys, MIME/magic-byte validation, 5 MB limit, and immutable cache-control headers on served assets.
-- **REQ-56** (State-driven): While rendering storefront catalog, product detail, campaign checkout, social proof, confirmation, home, or 404 recommendations, the system shall merge rich editorial content with the tenant's D1 operational catalog by canonical D1 product ID; D1 shall control public title, slug, category, image override, active state, sellable stock, canonical D1 variant IDs, and prices, and inactive or checkout-incomplete records shall not be offered.
-- **REQ-57** (Event-driven): When a caller requests `/api/form-config` with an active D1 product ID or public slug, optional canonical D1 variant ID, and `middle`, `full`, or `hybrid` mode, the system shall resolve one D1-authoritative product/variant selection and return canonical render URLs; hybrid mode shall resolve to middle/full from trusted request geo context without changing the shared form UI.
-- **REQ-58** (Superseded by REQ-74): The former checkout contract combined authoritative quote validation with direct provider dispatch. Quote validation remains required, but checkout-triggered Mengantar dispatch is no longer an active requirement.
-- **REQ-59** (Ubiquitous): The system shall reject inactive or checkout-incomplete variants from every order persistence path and rate-limit public order submission endpoints before parsing or mutating order data.
-
-### I. Admin Shipping & Logistics Operations
-
-- **REQ-29** (State-driven): While rendering `/admin/shipping`, the system shall display a responsive React operations surface backed by D1 shipments, with search, status filters, desktop table and mobile card layouts, loading/error/empty states.
-- **REQ-30** (Event-driven): When an admin updates shipment status or schedules a pickup, the system shall mutate the corresponding D1 record via `/api/admin/shipping` and provide pending/success/error feedback.
-- **REQ-31** (State-driven): While managing courier configuration, the system shall allow enabling/disabling couriers and toggling COD support per courier via D1 `courier_rules` table.
-
-### J. Admin Ads & Tracking Configuration
-
-- **REQ-32** (State-driven): While rendering `/admin/ads/meta`, the system shall display Meta Pixel ID and CAPI token configuration with masked secret handling, dirty-state detection, and a server-side test endpoint.
-- **REQ-33** (State-driven): While rendering `/admin/ads/google`, the system shall display Google Ads Conversion ID and Conversion Label as a validated pair; both fields must be present or both absent.
-- **REQ-34** (Ubiquitous): The system shall never echo CAPI tokens or webhook secrets in API responses; blank submissions preserve the existing configured value.
-
-### K. Admin Settings — Store, Warehouse & CRM
-
-- **REQ-35** (State-driven): While rendering `/admin/settings/store`, the system shall display store identity and customer service WhatsApp number configuration, persisted to D1 `stores` table.
-- **REQ-36** (State-driven): While rendering `/admin/settings/warehouse`, the system shall display warehouse configuration with PIC name, PIC phone (auto-formatted to `62` prefix with live validation hint), and a two-step Mengantar origin picker that groups results by kecamatan before requesting kelurahan/desa. The precise area ID and selected label shall persist to D1 `warehouses`.
-- **REQ-37** (State-driven): While rendering `/admin/settings/crm`, the system shall display collapsible CRM template editors (Welcome + 1-7) with labeled, touch-friendly variable insertion controls for customer phone, address, district, shipping cost, and the remaining supported order fields, persisted as JSON to D1 `stores.crm_templates`.
-
-### L. Admin Receiver Performance
-
-- **REQ-38** (Event-driven): When an admin queries a phone number via `/admin/check`, or when a checkout persists a new order, the system shall fetch Mengantar's actual per-courier receiver history, derive delivery rate as `delivered / completed × 100`, classify operational risk using the documented CMSAds policy, and display or persist the courier breakdown. Background checkout refreshes shall use Cloudflare `waitUntil()` and shall not fabricate a provider-issued score.
-- **REQ-68** (State-driven): While rendering `/admin/check`, the system shall combine receiver-history lookup and shipping estimation in one authenticated operator tool. The page shall lock origin to the active warehouse, require supported destination resolution before requesting rates, and keep both checks read-only unless a separate order or warehouse mutation explicitly persists state.
-
-### M. Admin Payment Gateway
-
-- **REQ-39** (State-driven): While rendering `/admin/payments`, the system shall distinguish masked AutoLaris API-key readiness from callback-secret readiness, display the runtime-derived webhook callback URL, explain the exact missing configuration and COD impact, and expose a local configuration check that does not claim provider connectivity. The supported-channel table shall describe client capability without presenting fabricated merchant account state.
-
-### N. Admin Navigation & Responsive Layout
-
-- **REQ-40** (Ubiquitous): The system shall use one canonical admin navigation and visual system for every tenant across the Commerce, Operations, Growth, and Finance & System workspaces. Tenant storefront theme and template configuration shall not alter admin colors, spacing, density, responsive breakpoints, component behavior, or route hierarchy; tenant variation inside `/admin/*` is limited to identity and bound operational data. At desktop widths, a collapsible and independently scrollable sidebar shall keep the main workspace fluid; below the desktop breakpoint, a fixed five-item app bar shall expose Dashboard, Order, Shipping, Product, and a modal all-menu sheet. A keyboard-accessible command palette shall be available from the desktop search control, the mobile search icon, and `Ctrl/Cmd+K`; it shall search route labels, descriptions, groups, and keywords without horizontal page overflow. All modal navigation shall trap focus, close on `Escape` or backdrop activation, restore focus to its trigger, keep every route reachable, and expose controls at least 44px high.
-- **REQ-77** (Ubiquitous): Dashboard, Order Management, and Shipping shall default to `Semua waktu` and share the ordered presets `Semua waktu`, `Hari ini`, `Kemarin`, `7 hari terakhir`, `30 hari terakhir`, `Bulan ini`, and `Bulan lalu`. Preset boundaries shall be inclusive Jakarta calendar dates; Reset shall restore every filter including the period; invalid API period values shall fail with HTTP `400`. Dashboard may additionally accept a custom range of at most 31 inclusive days.
-- **REQ-78** (Ubiquitous): The canonical admin shall remain visually compact without reducing usability: mobile workspaces use narrow outer gutters, short shared headers, two-column KPI grids when labels remain readable, 44px minimum touch targets, and 16px search/login inputs; desktop workspaces retain the same hierarchy at higher density. Desktop command search shall render as a viewport-centered dialog, while mobile command search shall use the same bottom-sheet interaction as the all-menu, rise from the viewport bottom, retain a bounded height with scrollable results, and avoid clipping or page-level overflow. The mobile all-menu shall expose a visible `Keluar` action that submits `POST /api/admin/logout`, revokes the current server-side session, clears the session cookie, and returns to `/hello`. The admin login shall use the repository-owned fixed `admin-login.webp` background for every tenant, keep the credential card readable over the image, preserve the selected crop across device sizes, honor safe-area insets, and fit without horizontal or vertical overflow at supported viewport sizes.
-- **REQ-79** (Ubiquitous): Order Management and Shipping shall use aligned two-column filter controls and full-width mobile cards without nested horizontal gutters. Order Management dispatch selection and Shipping pickup selection shall start empty, render an undistorted 20px checkbox inside a touch target of at least 44px, expose filter-aware select/deselect controls, represent partial selection as indeterminate, and keep explicit bulk actions reachable while scrolling. Selection alone shall never dispatch an order or schedule a pickup; provider creation and pickup mutations require their corresponding explicit actions.
-
-### O. Pending Provider-Integrated Operations
-
-- **REQ-41** (Event-driven): When an authenticated operator selects one eligible pending order or a mixed set in Order Management and chooses Push to Mengantar, the system shall evaluate eligibility per order, submit eligible orders through one non-concurrent sequential `POST /order` queue, persist each provider-accepted result independently, and return per-order `success`, `unpaid`, `skipped`, or `failed` outcomes without rolling back successful siblings. Failed attempts shall remain pending, visible, and retryable in Order Management with their reason. A provider-accepted unpaid draft is a successful creation with `isPaid: false` and no `cnote_no`; the system shall never invent a waybill.
-- **REQ-42** (Event-driven): When an admin saves a Mengantar pickup address or schedule, the system shall synchronize `/address` or `/time` first and shall not present a local D1 record as provider-confirmed when synchronization fails.
-- **REQ-43** (State-driven): While a provider-accepted non-COD Mengantar shipment is unpaid, the system shall retain `isPaid: false` and absent `cnote_no`, expose it in Shipping as an unpaid provider draft, and offer recovery only through a verified `/order/pay-unpaid` contract after wallet top-up.
-- **REQ-44** (Event-driven): When a customer selects an enabled online payment method, the system shall create an idempotent AutoLaris invoice after D1 order persistence, store provider transaction/instruction/status/expiry data in D1, and reconcile payment only through the official authenticated callback contract.
-
-### P. Provider Configuration & Expedition Availability
-
-- **REQ-45** (State-driven): While an admin manages `/admin/profile`, the system shall accept replacement Mengantar and AutoLaris API keys plus HTTP(S) base URLs alongside account credentials, persist provider dashboard values to D1, keep raw keys out of read responses, and use server environment values only as fallback when no dashboard key exists.
-- **REQ-46** (State-driven): While an admin manages `/admin/expeditions`, the system shall persist independent service and COD availability per courier. The public Shipping Rates API shall exclude disabled services and shall exclude COD-disabled services from COD checkout responses.
-
-### Q. Deployment-per-Tenant Cloudflare Architecture
-
-- **REQ-47** (Ubiquitous): The repository shall define each tenant as a named Cloudflare environment so `CLOUDFLARE_ENV=<tenant>` selects that environment at Astro dev and build time and produces an independently named Worker.
-- **REQ-48** (Ubiquitous): Every tenant environment shall declare its own non-inheritable `OMS_DB`, `SESSION`, and `ASSET_BUCKET` bindings. Application code shall keep stable binding names and shall never choose a tenant database from an untrusted request hostname.
-- **REQ-49** (State-driven): While deploying a `custom-domain` tenant, Wrangler shall attach each reviewed exact hostname as a Cloudflare Custom Domain. While deploying a `service-only` tenant, Wrangler shall attach no public route and the Worker shall remain reachable only through a reviewed service-binding caller.
-- **REQ-50** (State-driven): While rendering public storefront metadata, the system shall resolve tenant identity and presentation from typed non-secret environment variables with safe defaults, so independently built Workers can render distinct names, canonical URLs, logos, descriptions, locales, theme colors, and storefront templates without forking operational logic. The shared admin shell shall consume tenant identity and bound data but retain the canonical ADScms visual system defined by REQ-40.
-- **REQ-51** (Event-driven): When a developer installs the repository, one POSIX shell entrypoint shall verify the supported Node/npm toolchain, run the lockfile-pinned install that includes TypeScript and Wrangler, generate Cloudflare binding types, and run static validation without installing global packages.
-- **REQ-52** (Unwanted): If a tenant name is missing or unknown, tenant-scoped development, build, migration, type-generation, dry-run, and deployment commands shall fail before invoking Astro or Wrangler. Remote migration and deployment shall remain separately approval-gated and shall never iterate over every tenant implicitly.
-
-### R. Dashboard-Managed Meta & Google Tracking
-
-- **REQ-53** (State-driven): While an admin manages Ads & Tracking, the system shall persist Meta Pixel/CAPI, Google Tag Manager container, and Google Ads conversion configuration in the tenant's D1 database, expose only masked secret state, and load the effective configuration into the storefront without requiring a rebuild.
-- **REQ-54** (Unwanted): If a public Meta CAPI request contains an unsupported event name, malformed identifier, cross-origin source URL, invalid product/value payload, or oversized customer data, then the system shall reject it before sending anything to Meta. Admin connection tests shall require a valid Meta Test Event Code and use a supported Graph API version.
-
-### S. Build-Selected Tenant Content and Templates
-
-- **REQ-55** (Superseded by REQ-63): The original build-selected content-pack contract is retained only as migration history. Build-selected storefront templates remain valid, but tenant copy and generation instructions move to runtime Worker resources.
-- **REQ-60** (Superseded in part by REQ-67): If a tenant environment references an unknown storefront template or legacy fallback pack, then tenant validation shall fail before invoking Astro or Wrangler. Runtime content validity is enforced at draft/publication boundaries.
-- **REQ-61** (State-driven): While an operator uses `/admin/*`, the system shall display the selected tenant identity within the canonical ADScms shell while reading sessions, operational data, assets, provider configuration, content records, and generation state only from that Worker's bound KV, D1, R2, and Workers AI resources.
-- **REQ-62** (Unwanted): If two tenant environments reuse a Worker name, custom domain, D1 database, KV namespace, or R2 bucket; if any environment lacks its `AI` binding; if a `service-only` environment configures a public route; or if a `custom-domain` environment lacks an exact route matching `PUBLIC_SITE_URL`, then tenant validation shall fail.
-
-### T. Runtime-Owned AI Content and Fleet Releases
-
-- **REQ-63** (State-driven): While a tenant Worker renders public frontend content, repository code shall own only typed schemas, renderers, and shared behavior; the tenant's published copy shall come from its isolated D1 database, media shall come from its isolated R2 bucket, and tenant-specific AI instructions shall never be committed to Git.
-- **REQ-64** (Event-driven): When an authenticated content-generation request is made, the Worker shall combine operational D1 product facts with that Worker's stored instructions, invoke its Workers AI binding, validate the structured result, and save it as a draft. Generation shall never change published content without an explicit publish action and shall never control price, stock, provider IDs, payment, logistics, ads credentials, or order state.
-- **REQ-65** (Ubiquitous): Every supported storefront order form shall persist its validated order, items, and stock transition atomically to the active Worker's D1 before provider side effects; the persisted order shall be visible through the shared admin order APIs without cross-Worker synchronization.
-- **REQ-66** (Event-driven): When one accepted Git revision is prepared, CI shall validate the repository once and dry-run every registered tenant on pull requests. A release shall deploy only the exact tenant slug selected through an explicit manual dispatch; merging or pushing `main` shall never deploy a Worker. D1 migrations shall remain a separate explicit approval gate.
-- **REQ-67** (Unwanted): If AI instructions are missing, generated JSON is invalid or oversized, a content key and schema disagree, or a publish request has no valid draft, then the system shall reject the mutation without changing the currently published content.
-- **REQ-69** (State-driven): While an authenticated operator manages runtime storefront content, the system shall provide a tenant-scoped first-party workbench that lists instruction readiness plus draft/published status for each content key and performs explicit save, generate, manual draft, publish, and R2 media-upload actions without returning stored instructions in read responses.
-- **REQ-70** (Event-driven): When an operator provisions a merchant with the repository installer, the system shall validate identity and resource uniqueness, register one exact Worker/Custom Domain plus isolated D1/KV/R2/AI bindings, apply migrations, bootstrap one named owner credential, and skip deployment unless `--publish` is explicitly supplied.
-- **REQ-71** (State-driven): While an owner manages tenant access, the system shall create and revoke named `admin`, `advertiser`, and `customer_service` credentials with forced password rotation. Owner retains unrestricted access and exclusive user management; admin may operate every tenant workflow except user management; advertiser may access dashboard, products, storefront content/media, ads/tracking, and their own profile; customer service may access dashboard, orders, shipping, customer checks/rates, and their own profile. Middleware and navigation shall use the same deny-by-default permission policy, dynamic child routes shall inherit their parent permission, unauthorized APIs shall return JSON `403`, unauthorized pages shall redirect to the role's default workspace, and legacy collaborator credentials shall migrate to advertiser.
-- **REQ-72** (State-driven): While public storefront content is missing, public rendering shall show an honest setup state or omit an unpublished product. It shall never render another merchant's compiled copy as a fallback.
-- **REQ-73** (Superseded by REQ-74): The former middle-order-only release rule is retained as implementation history; the active lifecycle applies the same explicit operator release boundary to every newly submitted order.
-
-- **REQ-74** (State-driven): After any checkout endpoint successfully persists a new order, the order shall remain in Order Management with `shipping_status = pending`. An authenticated operator shall first verify payment readiness, customer/address data, resolved Mengantar destination, courier/service, and warehouse, then explicitly Push to Mengantar. A local confirmation shall not move an unaccepted order into Shipping.
-- **REQ-75** (Event-driven): When an operator edits an order destination before provider creation, the editor shall default to a district/city search backed by the bundled Indonesian catalog and resolve the chosen district/city to one real Mengantar area identity. It may offer optional kelurahan/desa precision. The selection shall persist its provider identity and human-readable district/city/province/postal data and re-quote the actual public courier `price` server-side before saving. An unresolved destination or unselected courier/service shall prevent provider dispatch.
-- **REQ-76** (Ubiquitous): Only a provider-accepted response may persist provider identity, set `shipping_status = processing`, and expose the order in Shipping. Shipping shall list provider-created `processing`, `shipped`, `delivered`, or `returned` shipments and own resi visibility, lifecycle status, and pickup scheduling. Provider rejection or transport failure shall clear any dispatch claim, keep the order `pending` in Order Management with an actionable reason, and remain retryable. Missing `cnote_no` shall remain visibly absent.
-
-- **REQ-80** (Ubiquitous): The repository shall provide a responsive Indonesian multi-page visual guide under `doc/preview` that maps the public/admin/provider system, runtime and data ownership, canonical order-to-shipment lifecycle, tenant isolation, local setup, and guarded Cloudflare release path. The guide shall distinguish implemented, operator-gated, blocked, and unverified behavior; remain navigable at desktop and mobile widths; and identify the canonical Markdown specifications and source code as authoritative.
-
-- **REQ-81** (Unwanted): If verified evidence is absent, public storefront renderers and AI-generated drafts shall omit aggregate ratings, review counts, sales counts, bestseller badges, guarantee/originality claims, and comparison discounts. Comparison prices may appear only when the operational variant provides a value greater than its current price. AI generation shall receive the active D1 catalog as homepage context, emit empty testimonial/review arrays, and reserve evidence-backed trust fields for explicit manual operator entry.
-- **REQ-82** (Ubiquitous): While a tenant selects the `wide-catalog` storefront template, its homepage, product detail, shared header/footer, legal navigation, metadata, and responsive presentation shall use that tenant's identity and theme without merchant-specific copy or media semantics from another content pack. Repository illustrations shall be labelled as images rather than product photographs.
-- **REQ-83** (Unwanted): If an operator or AI agent identifies a suspected duplicate/orphan Worker, the cleanup workflow shall compare the exact tenant registry against Cloudflare Worker inventory, Custom Domains, routes, enabled `workers.dev` endpoints, deployments, and bindings before deletion. Deletion shall require explicit approval naming one Worker and shall not delete or mutate shared D1, KV, R2, DNS, Custom Domain, secrets, or another Worker without separate approval.
-- **REQ-84** (State-driven): While a separately owned storefront and CMSAds share one merchant origin, the storefront Worker shall serve public catalog paths itself and forward only reviewed operational route families to a `service-only` CMSAds Worker through a private service binding. A CMSAds deployment shall not own or replace that storefront route.
-
-### U. Portable Installation and Headless Storefront Integration
-
-- **REQ-85** (Event-driven): When a maintainer runs the supported local installer, the system shall verify Node/npm, perform the lockfile-pinned dependency install, validate the committed tenant registry, generate Cloudflare types for an explicitly selected registered profile, and run static checks without authenticating Cloudflare, provisioning resources, migrating remote D1, deploying, configuring DNS or secrets, or importing merchant data.
-- **REQ-86** (State-driven): While CMSAds is prepared in a different Cloudflare account, the operator shall treat Workers, D1, KV, R2, routes, service bindings, and secrets as account-scoped; the plan shall use unique names and shall never treat another account's committed resource IDs as evidence that resources exist or are reusable.
-- **REQ-87** (Event-driven): When an approved new tenant is provisioned, the installer shall create independently named D1, KV, R2, and Workers AI resources, apply the repository schema, create the new store row, one forced-rotation owner credential, and the canonical immutable sample defined by REQ-98, set runtime-managed content, and report `importsExistingTenantData: false`. It shall not copy another tenant's products, content, media, customers, orders, payment records, provider configuration, tracking credentials, sessions, or secrets.
-- **REQ-88** (State-driven): While a tenant uses `custom-domain` ingress, the CMSAds Worker shall own the reviewed public Custom Domain and may render storefront, forms, admin, and API. While a tenant uses `service-only` ingress, CMSAds shall expose no public route and a separately deployed storefront Worker shall own the public domain and reach CMSAds only through reviewed private service-binding routes.
-- **REQ-89** (Ubiquitous): A headless storefront may customize public layout, route hierarchy, components, motion, brand presentation, and reviewed copy, but canonical catalog/variant identity, price, stock, weight, address resolution, shipping, payment eligibility, order persistence, operator lifecycle, and server tracking shall remain CMSAds-owned and shall not be overridden in the browser.
-- **REQ-90** (State-driven): While a storefront uses middle, full, or hybrid checkout, CMSAds shall own field meaning, validation, product/variant resolution, price/stock/weight, destination, shipping/COD rules, submit-token idempotency, bot boundary, payment qualification, order persistence, Meta event identity, and success/provider state. A headless storefront may select placement, mode, product, variant, and presentation around the handoff, but shall not fork the form state machine or mutation contract.
-- **REQ-91** (Event-driven): When a storefront emits a Meta event, it shall use the canonical numeric D1 product ID string in `content_ids`, preserve approved attribution identifiers, keep the CAPI token server-only, and use one dedicated Purchase event ID for browser/server deduplication. Purchase shall occur only after CMSAds confirms the qualifying persisted COD or authenticated paid order state; page interactions and unqualified requests shall never become Purchase.
-- **REQ-92** (State-driven): While an external storefront needs tenant identity or browser tracking configuration, CMSAds shall provide a public, non-secret bootstrap contract that returns only reviewed tenant/browser fields and never returns CAPI tokens, provider credentials, customer data, payment data, or server secrets.
-- **REQ-93** (State-driven): While an external storefront renders dynamic catalog or product data, CMSAds shall provide a canonical public read contract for active product/variant identity, presentation, price, stock availability, weight, and media needed by the storefront without granting browser authority to mutate commerce facts.
-- **REQ-94** (Event-driven): When a headless gateway or frontend adapter integrates CMSAds checkout, it shall delegate `/hybrid-form`, `/middle-form`, and `/full-form` through a tested route matrix, preserve source page, campaign, product, variant, event, click, and consent context, keep non-operational storefront paths local, provide accessible focus/error return, and receive contract proof for each supported adapter. Existing `/form-hybrid`, `/form-middle`, and `/form-full` links shall remain functional as permanent compatibility redirects that preserve the complete query string.
-- **REQ-95** (State-driven): While optional browser advertising tags are subject to the tenant's applicable consent rule, the storefront shall withhold those tags and events until the rule allows them, preserve consent context across the CMSAds handoff, keep checkout usable regardless of tracking consent, and report consent, browser emission, CMSAds acceptance, Meta acceptance, attribution, and platform reporting as separate states.
-
-### V. Canonical Forms, Tenant Policy, Sample Invariant, and Reusable Handoff
-
-- **REQ-96** (State-driven): While a customer enters checkout, CMSAds shall render `/hybrid-form`, `/middle-form`, and `/full-form` as the canonical routes and shall redirect the corresponding legacy `/form-*` route to its canonical renderer without losing query parameters. Hybrid resolution shall use trusted Cloudflare region code before verified province-name/header fallbacks; a known eligible province shall resolve to middle mode, while a province disabled by store policy or an unknown/unresolved province shall resolve to full mode.
-- **REQ-97** (Ubiquitous): Each tenant store shall own `cod_disabled_province_codes` as a normalized store-level policy distinct from courier/provider exclusions. The admin shall expose all 38 Indonesian provinces, persist only recognized codes, and enforce the same policy in form routing, payment presentation, and server-side COD rejection.
-- **REQ-98** (Event-driven): When schema installation, migration, or tenant provisioning completes, CMSAds shall ensure exactly one immutable canonical sample product: ID `10001`, slug `aussie`, title `Aussie Sample`; variant `20001` (`500ml`, Rp150,000, `600g`) and variant `20002` (`1 Liter`, Rp300,000, `1100g`). Admin and API mutation paths shall reject edits or deletion. The installer shall verify this invariant without importing another tenant's merchant catalog.
-- **REQ-99** (State-driven): While the authenticated admin sidebar is used, only one navigation section shall be expanded at a time, the active section shall open on page load, toggles shall expose accurate accessible expanded state, and the navigation region shall remain independently scrollable in short desktop viewports.
-- **REQ-100** (Ubiquitous): The canonical storefront handoff shall include a reusable AI implementation prompt that is framework-, repository-, domain-, Worker-, binding-, and Cloudflare-account-neutral; preserves service-only tenant isolation and canonical forms; blocks fake or static catalog fallbacks when public bootstrap/catalog contracts are absent; separates local proof from remote/provider acceptance; and requires no animation dependency.
-
-### W. Checkout Payment and Destination Accuracy
-
-- **REQ-101** (Event-driven): When a customer changes the selected variant, every checkout summary price, comparison price, discount, shipping quote, and final total shall immediately represent that variant; stale values from the previous variant shall not remain visible or be submitted.
-- **REQ-102** (Event-driven): When a customer or operator searches an ambiguous Indonesian kecamatan name, CMSAds shall first present district-plus-city choices and shall resolve the selected pair to a real Mengantar destination ID and canonical postal code before quoting or saving shipping. Local discovery IDs shall never be sent to the provider; administrative prefixes, punctuation, spacing, measured historical city names, provider aliases, and verified district splits shall normalize without allowing an identically named district from another city. Resolution shall use bounded deterministic queries. Exact district matches may proceed automatically; same-city provider results shall require an explicit kelurahan/desa choice; a verified split shall expose only kelurahan/desa belonging to the selected current district; and a district absent from provider discovery shall switch checkout into direct provider-area search. Only an explicitly selected provider ID may reach quote or order submission.
-- **REQ-103** (State-driven): While online payment is pending, CMSAds shall present QRIS, Virtual Account, and supported e-wallet channels with channel-specific Indonesian instructions, transparent order amount and provider fee, and token-authorized status polling. Order Management shall normalize `paid`, `settled`, and `success` as `Lunas` while keeping pending, failed, expired, and refunded states visibly distinct.
-- **REQ-104** (Ubiquitous): Customer checkout shall expose only payment channel codes accepted by the active AutoLaris integration. A provider-rejected or administratively disabled channel shall be absent from `GET /api/payment-methods` and rejected by server-side order validation even if a client submits the code manually; historical payment records may remain renderable.
-- **REQ-105** (Event-driven): When an operator explicitly retires a tenant for a clean rebuild, CMSAds shall remove that tenant from the deployable registry only after its exact Worker and isolated storage identities are verified; approved Worker/D1/KV/R2 deletion shall not target sibling tenants, historical identifiers shall remain evidence-only, and future provisioning shall create new isolated resources.
-
-### X. Product Form Links and Lightweight HTML Embed
-
-- **REQ-106** (State-driven): While an authenticated operator views an active, checkout-complete product, the admin shall expose copyable canonical `middle`, `full`, and `hybrid` form URLs for that product and optional canonical D1 variant, plus a copy-ready responsive HTML iframe snippet when the tenant permits embedding. Product creation shall not generate or persist a second form implementation or product-specific JavaScript artifact.
-- **REQ-107** (Ubiquitous): The dedicated form embed renderer shall server-render the existing CMSAds checkout and preserve CMSAds ownership of canonical product/variant identity, live price and stock, destination and shipping resolution, payment/COD policy, submit-token idempotency, bot controls, order persistence, and server tracking. The parent page shall work with plain iframe HTML; an optional height-sync adapter may progressively enhance a usable fixed-height fallback. Only the embed response may omit `X-Frame-Options: DENY`, and it shall emit a tenant-configured CSP `frame-ancestors` allowlist that fails closed for missing or invalid external origins. Admin, API, payment, confirmation, and ordinary storefront responses shall remain non-frameable, and the embed contract shall never expose CAPI tokens, provider credentials, customer data, or copied static form logic.
-- **REQ-108** (State-driven): While an operator integrates a CMSAds checkout into a landing-page builder, the admin shall provide a copy-ready `cmsads-form-widget` snippet that loads the canonical `/embed/form` URL immediately, synchronizes height only from the exact CMSAds origin and iframe window, reacts to product, variant, and mode attributes, and retains a usable fixed-height iframe fallback when parent JavaScript is blocked or delayed. The widget shall not duplicate checkout state, load advertising page-view tags in the embed renderer, or weaken the tenant `frame-ancestors` allowlist.
-- **REQ-109** (State-driven): While an owner or admin manages a tenant, CMSAds shall expose the embed allowlist in authenticated settings as at most 25 exact HTTPS origins, normalize and deduplicate accepted values, distinguish domains from subdomains, reject paths, queries, fragments, credentials, wildcards, and insecure schemes, and apply the saved D1 policy immediately to `/embed/form` CSP without a rebuild. A stored empty list shall allow no external framing; a tenant row that has not completed cutover may fall back to its configured environment allowlist; read or validation failure shall fail closed to `'self'`.
-- **REQ-110** (Event-driven): When an embedded checkout successfully creates an order, CMSAds shall navigate the top-level landing page to the canonical payment page for pending online payments or the canonical thank-you page for COD and completed payments. The iframe shall emit an exact-origin, exact-source redirect message for supported parent adapters and attempt direct top navigation for plain iframe fallback; parent adapters shall accept only CMSAds-origin `/payment` and `/thanks` targets.
-- **REQ-111** (Event-driven): When an operator saves a warehouse whose pickup address ID is missing, stale, or absent from Mengantar, CMSAds shall reconcile against the provider's registered pickup addresses, reuse an exact matching pickup profile, or create a new provider pickup address without a client-invented ID. CMSAds shall persist only the provider-returned or provider-confirmed address ID before enabling dispatch or pickup scheduling.
-- **REQ-112** (State-driven): While a tenant configures AutoLaris checkout fees, CMSAds shall default supported buyer-facing channels to buyer-paid fees, expose one authenticated store-level buyer/seller toggle, calculate each channel from its authoritative fixed or percentage tariff, persist the fee bearer on the order and payment transaction, and present order amount, service fee, and billed total without treating seller-paid fees as customer charges.
-- **REQ-113** (Ubiquitous): Purchase conversion signals sent to Meta Pixel/CAPI, Google Ads, and GTM shall use merchandise value only: selected product unit price multiplied by quantity. Shipping and payment service fees shall remain in the order total but shall not inflate advertising conversion value.
-- **REQ-114** (Event-driven): When Mengantar returns no eligible courier for a resolved destination while same-city provider samples remain available, CMSAds shall expose one internal `ICO` fallback expedition priced at the rounded average of the cheapest eligible same-city quotes. The fallback shall be explicit in checkout, preserve the resolved destination, and refuse to fabricate a zero-price quote when no valid city sample exists.
-- **REQ-115** (State-driven): While a tenant accepts COD, CMSAds shall calculate a service fee equal to 3% of merchandise plus shipping and VAT equal to 11% of that service fee, expose a separate authenticated buyer/seller bearer policy, persist the fee components and bearer on every COD order, include both fees in the customer total only when the buyer bears them, and keep Mengantar's COD collection amount aligned with the resulting customer total.
-- **REQ-116** (Ubiquitous): Customer-facing and authenticated browser surfaces shall describe the shipping integration as `Expedisi Pengiriman` or by the selected courier name and shall never expose the provider brand `Mengantar`, including API errors rendered by those surfaces; internal modules, database fields, credentials, and server logs may retain provider-specific identifiers.
-- **REQ-117** (Event-driven): When a buyer selects a catalog district that has no exact delivery destination, CMSAds shall immediately keep the destination chooser open and present related district or village alternatives from the same city without requiring the buyer to invent a second search term; known administrative migrations such as Jakabaring shall prioritize the related Seberang Ulu destinations and preserve the chosen provider destination ID.
-- **REQ-118** (Ubiquitous): Public checkout payment options shall disclose the applicable fee amount or rate without displaying buyer/seller attribution phrases such as `dibebankan kepada pembeli` or `ditanggung seller`; fee ownership remains visible only to authenticated operators.
-- **REQ-119** (Ubiquitous): Public checkout and payment surfaces shall render approved bank and QRIS image marks instead of simulated text-color badges, map each supported payment channel to the matching local asset, preserve the mark aspect ratio inside a quiet fixed frame, and retain a readable text label when an asset cannot load.
-- **REQ-120** (State-driven): While an owner or admin manages payment settings, CMSAds shall support multiple seller bank accounts with a supported bank code, account holder, account number, active state, and deterministic display order; invalid or duplicate records shall be rejected, at least one account may remain active, and no seller-transfer admin fee shall be applied.
-- **REQ-121** (State-driven): While active seller bank accounts exist, public checkout shall present `Virtual Account` and `Transfer Bank` as separate expandable payment groups, create manual-transfer orders without calling AutoLaris, snapshot the selected seller bank identity on the order, and use the merchandise plus shipping total without an admin fee.
-- **REQ-122** (State-driven): While a manual-transfer order is unpaid, `/payment` shall show the selected seller bank logo, account holder, account number, exact transfer amount, separate copy controls, clear manual-verification expectations, and bank-transfer instructions; automatic polling and automatic-verification claims shall remain limited to provider-backed QRIS and Virtual Account transactions.
-- **REQ-123** (Ubiquitous): Payment checkout, `/payment`, and authenticated payment settings shall provide a restrained mobile-first hierarchy, minimum 44px controls, visible keyboard focus, live loading/error/success feedback, no page-level horizontal overflow at 390px, and a desktop layout that preserves the same decisions without duplicating payment state.
-- **REQ-124** (Ubiquitous): Full checkout shall recompute and display the concrete COD or percentage-based online-payment fee after every variant or shipping change, label the total as including product, shipping, and the applicable fee, and use an explicit pending-shipping message until the quote resolves; middle checkout shall identify its product-only total as an estimate and defer the final admin fee, shipping, and total to Customer Service.
-- **REQ-125** (Ubiquitous): Public payment discovery shall expose compact provider-neutral channel records with a local `3:2` brand asset, payment method, fee basis, fee rate or amount, and active state; the response shall remain free of credentials, account-owner policy, and private provider configuration.
-- **REQ-126** (Ubiquitous): The admin login header shall present only the CMS mark and authentication form without repeating the tenant domain, while authenticated payment settings shall explain how each AutoLaris tariff is calculated and how buyer/seller ownership changes the checkout total or merchant proceeds.
-- **REQ-127** (State-driven): While an owner or admin creates or edits a seller bank account, the authenticated payment settings shall use the canonical shadcn Select, Input, and Button controls; accept only letters and common name punctuation for the account holder; accept only 6–24 digits for the account number; enforce the same rules at the API trust boundary; and present an explicit instruction to cross-check the bank, holder, and number before saving.
-- **REQ-128** (Ubiquitous): Full checkout shall present payment methods in the stable order `QRIS`, `Transfer Bank`, `Virtual Account`, then `COD`, and changing or expanding a method shall update selection state in place without rebuilding the payment list, reloading payment marks, flickering, or shifting layout.
-- **REQ-129** (Ubiquitous): The official vector SVG logo asset, favicon, and admin profile integration shall render flat without frame or border on CMS Login and Admin Header Profile.
-- **REQ-130** (State-driven): While an unauthenticated user or search engine accesses admin or auth routes, CMSAds shall set `<meta name="robots" content="noindex, nofollow" />`.
-- **REQ-131** (State-driven): While rendering `/thanks`, full-form, or hybrid-form order confirmation, direct Middle Form form details remain accessible when location is non-restricted, and `/thanks` automatically fires Meta Purchase Pixel and Google Ads conversion upon order confirmation.
-- **REQ-132** (Event-driven / Scheduled): When a storefront visitor inputs their name and WhatsApp phone number into a checkout form without completing the order, CMSAds shall record an abandoned order draft (`shipping_status = 'abandoned'`). Abandoned orders older than 7 days shall be automatically purged from D1 `orders` and `order_items` during administrative queries to prevent database bloat and cache accumulation.
-- **REQ-133** (Event-driven): The system shall permit authenticated operators to manually delete single or multiple orders from `/admin/orders` via `DELETE /api/admin/orders`, cleanly removing associated D1 order rows, line items, and payment transactions.
-- **REQ-134** (State-driven): While rendering `/admin/orders` or `/admin/orders/[id]`, the system shall display touch-friendly WhatsApp CRM follow-up controls (Welcome, 1-7: COD, Unpaid, Packing, Shipped, Delivered, RTS, Review) on order detail pages and React components (`CrmActionButton`, `CrmActionGroup`), displaying short labels (`W`, `D`, `F1`–`F5`, `P`, `C`, `U`), defaulting to WhatsApp Green (`#25D366`), and turning BLACK upon click to track completed operator follow-ups.
-- **REQ-135** (State-driven): While an operator accesses `/admin/landing-pages` or `/admin/landing-pages/[id]`, the system shall provide a native section-based landing page builder (`LandingPageEditor.tsx`) allowing HTML and Form section creation, drag/reordering, shortcode insertion (`{{product_name}}`, `{{product_price}}`, `{{compare_price}}`, `{{discount_percent}}`, `{{cs_whatsapp}}`), and direct-response 480px interactive WYSIWYG mobile canvas parity matching `/[slug]`.
-- **REQ-136** (State-driven): While an operator creates a new product in `/admin/products/new`, the system shall set default status to active (`is_active = 1`) and automatically synthesize the product into the storefront catalog and iframe embed code generator without requiring secondary manual edits.
-- **REQ-137** (Ubiquitous): The system shall order product catalog list views (`/admin/products`, `/api/admin/products`, `src/lib/catalog.ts`) using `ORDER BY created_at DESC, id DESC` to ensure newly added products immediately rank at the top.
-- **REQ-138** (State-driven): While rendering `/admin/orders`, the system shall present a clean desktop table and mobile card layout: the Invoice column shall omit duplicated product titles and display Order Number, Order Timestamp (WIB), and Traffic Source Badge (`FB Ads`, `Google Ads`, `TikTok Ads`, `Organic/Direct`); the "Produk & Total" column shall render a 3-row hierarchy displaying Product Title, Variant Title, and Total Amount in bold; and `CrmActionGroup` shall render an interactive `WA CRM (X/10)` accordion button expanding to a 2-column desktop / 5-column mobile grid.
-- **REQ-139** (Ubiquitous): The system shall format public order invoice numbers as a 5-digit sequential ID (`INV-10001` upwards derived from `MAX(id)` in D1) instead of verbose UUID strings.
-
-## Technical Stack & Constraints
-
-- **Framework**: Astro v7 (SSR Mode) + Cloudflare Workers.
-- **Database**: One isolated Cloudflare D1 database per tenant (SQLite Edge DB) + Drizzle ORM.
-- **Storage**: One isolated R2 bucket per tenant for product images and one isolated KV namespace per tenant for sessions and upload quotas.
-- **Deployment Topology**: One source repository, one Wrangler environment and independently named Worker per tenant. `CLOUDFLARE_ENV` is selected at Astro dev/build time; the generated build is deployed without switching environments afterward.
-- **Domain Routing**: Each environment explicitly selects `custom-domain` or `service-only` ingress. Exact Cloudflare Custom Domains remain tenant-specific; service-only backends have no public route and are reached through a reviewed Worker gateway.
-- **Isolation Boundary**: Cloudflare bindings, not host-dispatch code. Stable application binding names (`OMS_DB`, `SESSION`, `ASSET_BUCKET`, `AI`) point to tenant-specific resources in each environment.
-- **Tenant Content Boundary**: Shared Astro/React renderers, content schemas, and operational logic remain in Git. Published tenant copy and non-secret generation instructions live in that Worker's D1; media lives in its R2 bucket; KV is not a content source of truth. Missing runtime content renders an honest setup/empty state and never falls back to compiled merchant copy.
-- **Security**: PBKDF2-SHA256 password hashing, HMAC-SHA256 JWT, tenant-isolated KV session revocation, constant-time comparisons, same-origin mutation checks, secure response headers.
-- **Integrations**: Mengantar API (logistics aggregator), AutoLaris API (payment gateway), Meta CAPI, Google Ads. Secrets are configured independently per Cloudflare environment.
-- **UI Components**: Astro for static/shared storefront chrome and React islands only for interactive admin surfaces (AnalyticsDashboard, ShippingOperations, ProductCatalog).
-- **Provisioning Constraint**: Wrangler bindings and vars are non-inheritable; every tenant environment must repeat its complete binding and public-variable set. No global TypeScript or Wrangler installation is required.
-- **Canonical Installation Contract**: [`INSTALLATION.md`](./INSTALLATION.md) owns local bootstrap, new-account preparation, immutable canonical-sample provisioning, merchant onboarding, and release gates.
-- **Canonical Storefront Contract**: [`STOREFRONT_INTEGRATION.md`](./STOREFRONT_INTEGRATION.md) owns custom frontend boundaries, canonical CMSAds forms, province policy, gateway adapters, Meta Ads handoff, and the reusable implementation prompt. Public bootstrap/catalog and executable adapter/consent work remains planned until its unchecked tasks have executable proof.
+| ID | Requirement | Status |
+| --- | --- | --- |
+| REQ-1 | The system shall run as a single Cloudflare Worker with bindings `OMS_DB` (D1), `SESSION` (KV), `ASSET_BUCKET` (R2), `AI`, and `ASSETS`, with binding names identical across every install. | Implemented |
+| REQ-2 | The system shall treat `src/db/migrations/` as the sole schema truth and shall apply the checked-in chain automatically before serving database-backed requests; `wrangler d1 migrations apply` remains an optional operator preflight. | Implemented 2026-08-17 |
+| REQ-3 | The system shall create a bootstrap administrator credential with `must_change_password` set, openable on a fresh install without any environment configuration, and shall confine that session to replacing its own password. | Implemented — **revised 2026-08-16.** This previously required *rejecting* the default password, which made a new install unreachable: the only accepted password came from `BOOTSTRAP_ADMIN_PASSWORD`, which nothing sets on a new Worker. See `PRD-ADMIN-LOGIN.md` |
+| REQ-4 | Where a provider credential exists both in the database and in the environment, the system shall prefer the database value and shall report which source is active. | Implemented |
+| REQ-5 | The system shall never return a stored secret through a browser-facing API; masked previews only. | Implemented |
+| REQ-6 | When the database has not been initialised, the system shall present a first-run install wizard that collects store identity, administrator credentials, and locale, writes them to D1, and refuses to run again once complete. | Implemented 2026-08-16 |
+| REQ-7 | Store identity — name, canonical URL, description, logo, tagline, theme colour, locale, storefront template — shall resolve at runtime from D1 so that changing it requires no rebuild. | Implemented 2026-08-16 for resolution. Six fields have an admin editor at `/admin/settings/store` — name, canonical URL, description, tagline, logo, storefront template. `theme_color`, `locale` and `admin_name` resolve at runtime but have no editor; `theme_color` is not collected by the wizard either |
+| REQ-8 | Before serving a database-backed request, the system shall compare applied history with the code's migration chain, atomically apply a valid missing suffix, and fail closed on invalid, unknown, or ahead history. | Implemented 2026-08-17 — G3 |
+| REQ-9 | A fresh install shall contain no data belonging to any other merchant, and any sample record it ships shall be neutral, clearly labelled, and deletable. | Implemented — and stronger than required: **no sample record ships at all** (ADR-016). Migration `0034` removes the inherited row; the bundled catalogue and its photography were deleted 2026-08-17 |
 
 ---
 
-## DB Schema (D1 Tables)
+## 3. Storefront
 
-| Table                  | Purpose                                                                                                                                                                  |
-| ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `stores`               | Store identity, API keys (Mengantar, AutoLaris), ads config (Meta Pixel/CAPI, Google Ads), WhatsApp, CRM templates                                                       |
-| `admin_credentials`    | Tenant owner/admin/advertiser/customer-service credential hashes, names, email, forced-change state, and revision timestamp                                           |
-| `products`             | Operational product catalog (auto-generated immutable D1 ID, public title/slug/category, active state, image override)                                                   |
-| `product_variants`     | Operational variants (auto-generated immutable D1 ID, internal SKU, title, price, compare price, weight, stock)                                                          |
-| `storefront_content`   | Tenant-scoped AI/manual content drafts and explicitly published structured JSON; never operational price, stock, provider, payment, ads, or order state                  |
-| `warehouses`           | Warehouse config (origin_area_id, pickup_address_id, address, PIC, origin_label)                                                                                         |
-| `courier_rules`        | Courier enable/disable, COD toggle, excluded provinces per courier                                                                                                       |
-| `pickup_schedules`     | Scheduled pickups per warehouse (date, status, shipment count)                                                                                                           |
-| `orders`               | Order records (invoice, customer, address, amounts, payment/shipping status, courier, resi, CMS-derived receiver delivery rate/risk, full receiver performance snapshot) |
-| `payment_transactions` | AutoLaris ledger rows (provider transaction/reference/public token, billed/base amounts, fees, instructions, status, expiry, and paid/failed timestamps)                 |
-| `order_items`          | Line items per order (variant_id, quantity, unit_price)                                                                                                                  |
+| ID | Requirement | Status |
+| --- | --- | --- |
+| REQ-10 | Every route shall be server-rendered; no route is prerendered. | Implemented |
+| REQ-11 | The storefront shall render product identity, price, stock, and weight from D1, never from compiled code or browser state. | Implemented |
+| REQ-12 | A product without published presentation content shall be rendered from its own catalog data — title, category, variants, price — and never with copy belonging to another product or another merchant. | Implemented — note this is the **opposite** of omission. `mergeRuntimeProductContent` drops unpublished products, then `mergeStorefrontCatalog` re-adds every active row with a neutral description derived from that product's own title and category. A merchant who adds a product sees it on the storefront immediately instead of it being invisible until they write copy |
+| REQ-13 | Where published home content is absent, the storefront shall render an explicit setup state and shall not fall back to generated or compiled merchant-facing copy. | Implemented 2026-08-17 — G5, ADR-007 |
+| REQ-14 | The system shall offer selectable storefront templates, and the available set shall be extensible without a rebuild. | Implemented 2026-08-17 — two built-in runtime definitions plus operator-created D1 definitions (G6) |
+| REQ-15 | The system shall emit `sitemap.xml`, `robots.txt`, Google Merchant and Meta catalog feeds, and JSON-LD for Organization, WebSite, Product, ItemList, and Breadcrumb. | Implemented |
+| REQ-16 | The system shall not emit aggregate ratings, review counts, or sold counts that are not derived from real recorded data. | Implemented — the synthetic review, rating, sold-count and compare-price generators were removed on 2026-08-16; these fields are published through `/admin/content` or absent, and consumers already omit the rating block, review section and JSON-LD `aggregateRating` when they are |
+| REQ-17 | Landing pages shall be composed from ordered sections stored in D1, editable in the admin, and reachable at the site root by slug. | Implemented |
+| REQ-18 | Legal and contact pages shall render the installed store's own identity and contact details, never another merchant's. | Implemented |
 
 ---
 
-## Tenant Isolation Invariant
+## 4. Checkout and orders
 
-Each tenant database contains one logical store row and may continue using current `ORDER BY id LIMIT 1` queries safely because the D1 database itself is the isolation boundary. A future shared-D1 or host-routed SaaS model would invalidate that assumption and requires a separate migration that scopes every query, unique constraint, cache key, session, asset key, and provider credential by tenant.
+| ID | Requirement | Status |
+| --- | --- | --- |
+| REQ-20 | The system shall offer hybrid, middle, and full checkout forms, plus a geo-resolved entry and a cross-origin embed. | Implemented |
+| REQ-21 | COD eligibility shall be resolved from trusted edge geo against store-level province exclusions, with courier-level exclusions kept separate. | Implemented |
+| REQ-22 | An unknown or excluded province shall route the visitor to the full form; a known eligible province shall route to the middle form. | Implemented |
+| REQ-23 | Order submission shall persist order, items, and stock reservation atomically, and shall be idempotent under a submission token. | Implemented |
+| REQ-24 | Stock shall never go negative; the constraint shall be enforced by the database. | Implemented |
+| REQ-25 | Checkout shall persist the order and reserve stock without creating a Mengantar shipment. The pending order shall remain visible in Order Management until an operator explicitly chooses Push/Arrange Shipping. | Implemented 2026-08-18 — checkout-to-provider side effects removed and route contracts passed |
+| REQ-26 | An authenticated, idempotent payment confirmation for a non-COD order shall mark payment paid without creating a Mengantar shipment. Confirmation changes dispatch eligibility only; shipping remains pending until explicit operator release. Manual seller-bank transfers are excluded from AutoLaris reconciliation. | Implemented 2026-08-18 — reconciliation and provider-call contracts passed |
+| REQ-27 | A qualified but unsubmitted checkout shall be recorded as a **Pesanan tertinggal** lead, never included in the operational Order list, order summaries, or shipping queues. The dedicated lead workspace shall show the captured product, customer name, WhatsApp number, and follow-up state. | Implemented 2026-08-18 — dedicated queue, authorization, and order-list exclusion contracts passed |
+| REQ-28 | Order submission shall be rate-limited and honeypot-guarded. | Implemented |
+| REQ-29 | A qualified but unsubmitted lead shall be captured at most once for the same normalized name, WhatsApp number, and product/variant selection in one browser session. Successful fingerprints shall remain in the session set so any prior identical combination is suppressed, while a changed qualified combination may capture; a fingerprint shall be added only after capture succeeds, so a failed capture or unavailable browser storage remains retryable and never blocks capture. A storefront checkout or an explicit CS conversion shall promote the lead to one complete pending order instead of creating a duplicate. CS conversion shall require current D1 product/variant, stock, customer, destination, courier, and pricing data; it shall reserve stock exactly once and shall never dispatch to Mengantar. | Implemented 2026-08-18 — guarded ABN-to-INV conversion and concurrency contracts passed |
 
-## Milestones
+---
 
-- [x] **v1.0** Storefront Architecture: 480px container, non-sticky header, frameless product photography, 6 legal routes.
-- [x] **v1.1** Tracking Architecture: Meta Pixel Advanced Matching (SHA-256), D1 CAPI Resolver, dual deduplication.
-- [x] **v1.2** Order & AutoLaris Integration: D1 order insertion, AutoLaris webhook receiver, order-status polling.
-- [x] **v1.3** Storefront Checkout: Hybrid + middle funnel forms, Mengantar address autocomplete, shipping rate estimation, COD province exclusion.
-- [x] **v1.4** Admin Auth & Security: PBKDF2-SHA256 login, HMAC-SHA256 JWT, KV sessions, CSRF protection, upload hardening.
-- [x] **v1.5** Admin OMS: Dashboard analytics, order management with RTS risk, product catalog CRUD, shipping operations.
-- [x] **v1.6** Admin Configuration: Ads tracking (Meta/Google), store/warehouse/CRM settings, payment gateway, WA scoring.
-- [x] **v1.7** Admin Navigation & UX: Grouped sidebar (Operational/Growth/System), split settings routes, responsive mobile drawer.
-- [x] **v1.8** Warehouse Origin Precision: D1-backed origin lookup with Mengantar kecamatan search, origin_label persistence, shipping-rates D1 fallback.
-- [x] **v1.9** Implementation Completion: Configured CRM templates are used by order actions, product photos persist through validated R2 uploads, AutoLaris UI reports honest credential/channel state, and D1 schema migrations cover product images plus warehouse origin labels.
-- [x] **v2.0** Order Integrity: Atomic D1 order/item/stock mutation, durable submit-token idempotency, authoritative variant pricing, persisted `order_pk`, strict Indonesian phone validation, truthful payment availability, and fail-closed status/webhook APIs.
-- [x] **v2.1** Receiver Performance Integrity: Actual Mengantar per-courier history parsing, transparent delivery-rate derivation, D1 snapshots, Cloudflare `waitUntil()` lifecycle, and honest admin order/scoring presentation.
-- [x] **v2.2** Storefront UI/UX Perfection & Design System: Sleek input height `2.6rem` (~41.6px), floating top label anchoring, soft light green filled background `#f0fdf4`, clean 1px gray borders `#cbd5e1`, compact variant option card padding `0.65rem 0.85rem`, order summary padding, elevated district search dropdown, district picked card positioning below search box, removal of redundant form review headers, and canonical `STOREFRONT_DESIGN_SYSTEM.md` specification.
-- [x] **v2.3** Kecamatan Search Precision: Bundled 7,285-kecamatan prefix index, district-only public checkout suggestions, server-side Mengantar area resolution for rates, and a precise two-step kecamatan → kelurahan/desa admin pickup picker.
-- [x] **v3.0** Deployment-per-Tenant Cloudflare Foundation: named Cloudflare environments, isolated bindings, tenant-aware storefront metadata, reproducible install tooling, and guarded tenant lifecycle commands.
-- [x] **v3.1** Dashboard-Managed Meta & Google Tracking: runtime D1 configuration for Meta Pixel/CAPI, GTM, and Google Ads plus validated public CAPI ingress and honest Meta test events.
+## 5. Payments
 
-- [x] **v3.2** Multi-Worker Tenant Templates: typed template selection, distinct storefront shells, tenant-branded admin, strict domain/resource isolation validation, and per-Worker provider configuration proof.
-- [x] **v3.3** Runtime AI Content and Fleet Delivery Foundation: tenant-D1 draft/publish contracts, Worker-scoped AI instructions and binding, runtime content precedence, operations-only admin/order boundary, and same-revision tenant release matrix.
-- [ ] **v3.4** Runtime-Only Content Cutover: publish validated AI content for every active public route in every tenant, verify media ownership in each R2 bucket, and remove the Petani Sejahtera compiled migration fallback.
-- [x] **v3.5** Merchant Provisioning and Role-Based Operations: guarded Cloudflare tenant installer, named owner/admin/advertiser/customer-service access, deny-by-default route permissions, D1/R2 content workbench, runtime-only public content behavior, and explicit single-tenant release dispatch.
+| ID | Requirement | Status |
+| --- | --- | --- |
+| REQ-30 | The system shall support cash on delivery, manual bank transfer against configured seller accounts, and online payment through AutoLaris (QRIS and virtual accounts). Online checkout shall create exactly one AutoLaris provider order through `POST /api/h2h/submit`, use the provider's exact `courir_id` spelling with the operationally assigned value `1`, source shipping/customer/item facts from D1, and fail before the provider request when those facts are incomplete. It shall not call the standalone `/api/h2h/create_payment` path. | Implemented 2026-08-18 — exact mocked outbound contract and D1 orchestration passed |
+| REQ-31 | Fee bearer shall be configurable independently for payment fees and COD fees. | Implemented |
+| REQ-32 | Payment channels shall be individually toggleable by the operator. | Implemented |
+| REQ-33 | The payment instruction page shall show only recorded amounts and instructions, with copy-to-clipboard, expiry countdown, and automatic status polling. | Implemented |
+| REQ-34 | Until AutoLaris publishes an authoritative transaction-inquiry contract, only an authenticated owner/admin may manually confirm an AutoLaris payment after checking the provider dashboard. Confirmation shall require exact re-entry of the recorded billed total and provider reference, explicit acknowledgement, and an operator note; atomically append immutable audit evidence and mark the payment/order paid; reject released-stock, cancelled, refunded, mismatched, or stale objects; remain idempotent under retries; never call a provider or dispatch shipment; and become visible to the buyer's existing status polling so `/payment` redirects to `/thanks`. The pending-verification queue may refresh once per minute and flag overdue records, but no timer or cron may infer `paid`. | Implemented locally 2026-08-18 — awaiting final A17 evidence reconciliation |
+| REQ-35 | The balance view shall present recorded reconciliation only, and shall not claim to be a live or withdrawable provider wallet. | Implemented |
+| REQ-36 | Every submitted non-COD checkout shall persist a normal pending order before payment is completed. Pending, failed, cancelled, or expired VA, QRIS, and bank-transfer payment states shall remain order states and shall never be reclassified as abandoned capture. | Implemented 2026-08-17 — full-funnel regression passed |
 
+---
 
-- [x] **v3.6** Provider-Accepted Shipping Queue and Explicit Mengantar Push: universal Order Management intake, searchable district/subdistrict editing, eligible single/checklist bulk provider push from Order Management, sequential provider calls, per-order partial results, provider-accepted-only transition into Shipping, and no fabricated waybill. Implemented and verified locally; live provider mutation and deployment remain operator-gated.
-- [x] **v3.7** Tenant Storefront Integrity: evidence-only trust and discount signals, D1-grounded homepage AI context, tenant-themed wide-catalog product chrome, factual checkout copy, accurate media semantics, and responsive historical tenant proof.
-- [x] **v3.8** Canonical Documentation and AI-Agent Operations: portable repository entry point, synchronized architecture/provider/gap specifications, exact document ownership, current Worker inventory and orphan-cleanup safeguards, and a responsive visual AI-agent runbook.
-- [x] **v3.10** Native Landing Page Builder, Newest-First Product Catalog, Auto-Active Embed & CRM UI Overhaul: section-based landing page builder with 480px WYSIWYG canvas, `created_at DESC` catalog sorting, default active status for newly added products, CRM `WA CRM (X/10)` step progress accordion with WhatsApp green/black states, clean invoice column without duplicated product titles, 3-row "Produk & Total" cell hierarchy, and short 5-digit invoice sequence (`INV-10001`).
-- [ ] **v4.0** Cloudflare Maximum Acceleration Engine: Server-side Astro SSR data injection for React islands, D1 multi-column performance indexing, `db.batch([...])` single-roundtrip execution, Cloudflare Edge micro-caching, and KV storefront configuration acceleration.
-- [ ] **v4.1** Full-Funnel Ads Engine, SEO, Abandoned Lead Recovery & Mobile Speed Perfection: 100% end-to-end checkout & abandoned lead conversion, multi-platform ads signal deduplication (Meta CAPI, Google Ads, TikTok Ads), JSON-LD schemas, mobile Core Web Vitals optimization (LCP < 1.2s, CLS = 0, INP < 100ms), and automated E2E behavioral smoke testing.
-- [ ] **v4.2** Comprehensive System Precision & Expedient UI/UX Overhaul: 100% precision across all admin & storefront routes, instant inline catalog active toggles, landing page duplication, quick order filter chips, bulk status updates, API key management with copy-to-clipboard, and automated system precision test suite.
-- [ ] **v3.9** Portable Headless Storefront Adapters: public non-secret bootstrap and catalog contracts, locked middle/full/hybrid gateway delegation, framework-neutral adapter proof, and consent-aware Meta handoff.
+## 6. Shipping and fulfilment
+
+| ID | Requirement | Status |
+| --- | --- | --- |
+| REQ-40 | The system shall quote live courier rates for the resolved destination, filtered by courier availability and COD rules. A fresh install shall start with the neutral courier catalogue, while upgrades shall backfill it only for stores whose courier policy is completely empty. | Implemented 2026-08-18 — fresh install and empty-policy repair contracts passed |
+| REQ-41 | Destination resolution shall use a local district index with provider address search as a fallback. | Implemented |
+| REQ-42 | Dispatch shall run sequentially under a single-flight lease and shall return independent per-order results. | Implemented |
+| REQ-43 | Only an accepted provider response shall advance an order to processing; failures shall remain pending and retryable. | Implemented |
+| REQ-44 | Pickup address and pickup schedule shall be synchronised with the provider before being presented as confirmed. | Implemented |
+| REQ-45 | The operator shall be able to recover an accepted but unpaid non-COD shipment. | Partial — transport implemented and tested; no operator UI |
+| REQ-46 | Shipment tracking state shall be synchronised from the provider. | Implemented 2026-08-17 — explicit operator polling by waybill persists raw provider evidence and advances only monotonic local lifecycle states |
+| REQ-47 | One shared server-side dispatch flow shall run only after an explicit authenticated operator action. It shall recheck payment, pending shipping state, warehouse, destination, courier, and the dispatch claim before and after the provider request; suppress duplicates; persist only accepted provider identity/waybill; and never resurrect an order cancelled or edited during the request. | Implemented 2026-08-18 — explicit single/bulk dispatch and concurrency contracts passed |
+| REQ-48 | The Shipping workspace shall expose exactly four count-bearing operational queues named **Semua Pengiriman**, **Perlu Dibuatkan Resi**, **Perlu Pickup**, and **Sampai Tujuan**, each with a distinct accessible icon, the order facts needed for that state, and only state-valid actions on desktop and mobile. **Perlu Dibuatkan Resi** shall include provider-created unpaid drafts that have no cnote; eligible pending orders not yet pushed to Mengantar shall remain visible and retryable from Order Management. Queue visibility does not imply that `/order/pay-unpaid` recovery is implemented. | Implemented 2026-08-17 — queue contracts and Chromium at 390, 768, and 1280 CSS px passed |
+
+---
+
+## 7. Ad signals
+
+| ID | Requirement | Status |
+| --- | --- | --- |
+| REQ-50 | Browser and server Purchase events shall share one per-order event id and the same canonical Product ID so the platform deduplicates them. | Implemented — both legs share the verified `INV-` order number and send the numeric Product ID published by the catalog feeds |
+| REQ-51 | Server-side conversion delivery shall be durable, with retry and attempt accounting, and shall survive a failed outbound call. | Implemented |
+| REQ-52 | CAPI tokens shall remain server-side and shall never reach the browser. | Implemented |
+| REQ-53 | The system shall capture and preserve `gclid`, `gbraid`, `wbraid`, `fbclid`, and `ttclid` from landing through order persistence. | Implemented |
+| REQ-54 | Google Consent Mode shall default to denied in regulated regions before the granted default is applied. | Implemented |
+| REQ-55 | A page interaction or an unqualified order shall never be reported as a Purchase. | Implemented |
+| REQ-56 | Product category taxonomy in the catalog feeds shall resolve to the correct Google product category for each item. | Partial — matching is deterministic and confidence-gated (whole words, 3× name weighting, capped description contribution, unique winner); what remains is a compiled nine-rule set with no merchant-managed mapping or confirmation workflow |
+| REQ-57 | Product ID, public API `content_id`, Meta Pixel/CAPI `content_ids`, Google ecommerce `item_id`, and `<g:id>` in both catalog feeds shall be the same decimal Product ID with at least five digits. | Implemented — one canonical helper governs the feeds, hosted tracking, form config, and Headless product responses |
+| REQ-58 | Each product shall publish exactly one catalog-feed item; variants remain checkout choices addressed by their own `variant_id` and shall not create duplicate feed IDs. | Implemented — feeds use the first sellable variant for item pricing and omit `item_group_id` |
+
+---
+
+## 8. Administration
+
+The primary users are store owners and the scoped `admin`, `advertiser`, and
+`customer_service` operators defined in `src/lib/auth.ts`. The shared shell is
+an operational workspace: it must help each role reach an allowed job, preserve
+context across viewport sizes, and expose recoverable system state. This phase
+does not change order, payment, shipping, or provider lifecycle rules; those
+remain separate correctness work.
+
+| ID | Requirement | Status |
+| --- | --- | --- |
+| REQ-60 | Admin access shall require a signed session validated against both KV and the credential record, with credential rotation invalidating existing sessions. | Implemented |
+| REQ-61 | Admin routes shall be authorised per role, and unsafe admin API methods shall require same-origin. | Implemented |
+| REQ-62 | The admin shall provide catalog CRUD, order management and detail, shipping operations, expedition configuration, payment and reconciliation views, ad configuration, store/warehouse/CRM settings, operator management, and developer API keys. | Implemented |
+| REQ-63 | The content workbench shall support manual drafting and AI-assisted generation from live catalog facts, with publication always explicit. | Implemented |
+| REQ-64 | Generated content shall never overwrite operational truth — price, stock, identifiers, activation, logistics, payment, credentials, or orders. | Implemented |
+| REQ-65 | The admin shell shall be identical across installs; only merchant identity, data, and provider configuration vary. | Implemented |
+| REQ-66 | The shared admin shell shall adapt without horizontal page overflow at 320 px, 390 px, tablet, and desktop widths: bottom navigation and sheets on phones, a compact collapsible rail on tablet, and the full sidebar on desktop, while preserving the current-location indicator and safe-area insets. | Implemented — A-89/A-92; browser overflow delta 0 px at 320/390/768/1280 |
+| REQ-67 | For every authenticated role, the dashboard shall render and request only actions and operational panels that role is authorised to use; a legitimate role shall not receive a broken widget because its backing API is forbidden. Business KPIs shall precede secondary diagnostics, and every displayed metric shall describe the value actually calculated. | Implemented — A-90/A-94; analytics leads the overview, health and action surfaces derive from the deny-by-default route policy, and paid-order ratio is labelled as payment success rather than ad conversion |
+| REQ-68 | Login, dashboard, search, navigation, and shared admin mutations shall expose explicit loading or pending, empty, recoverable error, permission, and success states without discarding usable content or form input. | Implemented for the shared login/dashboard shell — A-91; feature-specific mutation states remain owned by their feature requirements |
+| REQ-69 | The admin shall remain keyboard-operable and readable under text zoom, with logical focus order, visible focus, labelled icon controls, 44 px touch targets, safe-area padding, and no clipped primary action at the supported phone, tablet, and desktop widths. | Implemented — A-92; real Chromium flow covered login, rotation, dashboard, search, mobile menu, and logout |
+
+---
+
+## 9. Headless integration
+
+| ID | Requirement | Status |
+| --- | --- | --- |
+| REQ-70 | The system shall expose a versioned public API for storefront descriptor, product list and detail, district lookup, shipping rates, checkout, and tracking events. | Implemented |
+| REQ-71 | Public API access shall require an issued API key validated against stored key hashes, plus an origin allowlist, with keys revocable from the admin. | Implemented |
+| REQ-72 | An embedded checkout form shall be frameable only by origins the operator has allowed, failing closed on error. | Implemented |
+| REQ-73 | Each Headless operation shall declare one minimum scope, and a key shall be rejected before route work when its stored scope does not cover that operation. | Implemented 2026-08-17 |
+| REQ-74 | Headless API usage limits shall be stored per key and enforced atomically across isolates for minute and daily buckets; successful and rejected requests shall not rely on in-memory counters. | Implemented 2026-08-17 |
+| REQ-75 | Headless write operations shall emit a D1 audit event containing key identity, operation, status code, and timestamp without storing request, order, customer, or payment payloads. | Implemented 2026-08-17 |
+| REQ-76 | A Headless storefront shall be able to read public order status only with the order number plus its unguessable public status token, and the response shall expose no customer PII. | Implemented 2026-08-17 |
+
+---
+
+## 10. Operations
+
+| ID | Requirement | Status |
+| --- | --- | --- |
+| REQ-80 | Merging to the release branch shall deploy production, and this shall be documented as the release action rather than contradicted. | Implemented **in an install repository**. Not true of this one: the product repository deploys nothing and holds no Cloudflare credentials (ADR-012, `RELEASE.md` §1) |
+| REQ-81 | Schema upgrades shall be forward-only, validated against the bundled chain, and applied atomically by the Worker before database-backed requests; operators may run the same migrations explicitly as a pre-deploy check. | Implemented 2026-08-17 |
+| REQ-82 | The system shall emit structured, labelled logs retained by Workers Logs, and shall send deduplicated firing and recovery notifications for actionable schema and CAPI outbox failures when an operator configures an HTTPS webhook. | Implemented 2026-08-17 |
+| REQ-83 | An install shall report its version and applied schema version so an operator can determine what a given deployment is running. | Implemented — `src/pages/api/admin/health.ts`, role-gated, reporting version and applied schema version; surfaced on the dashboard |
+| REQ-84 | Telemetry, if collected across installs, shall never include order, customer, or payment payloads. | Planned — no cross-install telemetry exists |
+| REQ-85 | Operational alert state shall be persisted per install and notifications shall contain only signal identity, transition, timestamp, event id, and bounded reason. | Implemented 2026-08-17 |
+
+---
+
+## 11. Traceability
+
+`TASKS.md` is the execution log. New tasks reference the requirement IDs in this document. Historical tasks reference the superseded scheme described in §0 and are not retro-fitted; their evidence lives in `BUILD-LOG.md`.

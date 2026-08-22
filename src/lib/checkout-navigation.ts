@@ -1,4 +1,4 @@
-export const CHECKOUT_REDIRECT_MESSAGE = "cmsads:checkout-redirect";
+export const CHECKOUT_REDIRECT_MESSAGE = "adsbook:checkout-redirect";
 
 function getParentOrigin() {
   try {
@@ -8,35 +8,21 @@ function getParentOrigin() {
   }
 }
 
-export type CheckoutNavigationOptions = {
-  orderId?: string;
-  total?: number;
-  currency?: string;
-};
 
-export function navigateAfterCheckout(
-  destination: string,
-  options?: CheckoutNavigationOptions,
-) {
+export function navigateAfterCheckout(destination: string) {
   const targetUrl = new URL(destination, window.location.href);
   const isCheckoutCompletion =
     targetUrl.pathname === "/thanks" || targetUrl.pathname === "/payment";
 
   if (isCheckoutCompletion) {
-    const allowedParams: Record<string, true> = {
-      order_id: true,
-      status_token: true,
-    };
-    for (const key of Array.from(targetUrl.searchParams.keys())) {
-      if (!allowedParams[key]) targetUrl.searchParams.delete(key);
-    }
+    targetUrl.search = "";
   }
 
-  // Preserve attribution only for intermediate form navigation. Completion URLs
-  // are deliberately limited to opaque order lookup values to avoid leaking PII.
+  // Completion state stays in same-origin sessionStorage. No order identifiers,
+  // status tokens, customer data, or attribution values belong in completion URLs.
   if (!isCheckoutCompletion) {
     try {
-      const trackingRaw = typeof sessionStorage !== "undefined" ? sessionStorage.getItem("zanoby_click_ids") : null;
+      const trackingRaw = typeof sessionStorage !== "undefined" ? sessionStorage.getItem("adsbook_click_ids") : null;
       const tracking = trackingRaw ? JSON.parse(trackingRaw) : {};
       const currentParams = new URLSearchParams(window.location.search);
       const trackingKeys = [
@@ -57,16 +43,11 @@ export function navigateAfterCheckout(
   if (typeof window !== "undefined" && window.parent !== window) {
     const parentOrigin = getParentOrigin();
     if (parentOrigin) {
-      const payload = {
-        type: CHECKOUT_REDIRECT_MESSAGE,
-        url: target,
-        orderId: options?.orderId,
-        total: options?.total,
-        currency: options?.currency || "IDR",
-      };
-      window.parent.postMessage(payload, parentOrigin);
       window.parent.postMessage(
-        { ...payload, type: "cmsads:order-complete" },
+        {
+          type: CHECKOUT_REDIRECT_MESSAGE,
+          url: target,
+        },
         parentOrigin,
       );
     }

@@ -1,5 +1,15 @@
-const COOKIE_NAME = 'cmsads_session';
+/** Admin session cookie. Exported so every setter, reader, and deleter shares one name. */
+export const SESSION_COOKIE_NAME = 'adsbook_session';
 const JWT_ALGORITHM = { name: 'HMAC', hash: 'SHA-256' } as const;
+
+/**
+ * Cookie security follows the transport the browser is actually using.
+ * `wrangler dev` serves a production build over plain HTTP, so build mode is
+ * not a transport signal and would make the browser discard the session.
+ */
+export function shouldSecureSessionCookie(url: URL) {
+  return url.protocol === 'https:';
+}
 
 export const ADMIN_ROLES = [
   'owner',
@@ -17,10 +27,55 @@ export type AdminSession = {
   exp: number;
 };
 
+const ADMIN_PAGE_ROUTES = [
+  '/admin/dashboard',
+  '/admin/orders',
+  '/admin/products',
+  '/admin/landing-pages',
+  '/admin/content',
+  '/admin/shipping',
+  '/admin/check',
+  '/admin/couriers',
+  '/admin/expeditions',
+  '/admin/payments',
+  '/admin/balance',
+  '/admin/ads',
+  '/admin/profile',
+  '/admin/settings/store',
+  '/admin/settings/developer',
+  '/admin/settings/warehouse',
+  '/admin/settings/crm',
+] as const;
+
+const ADMIN_API_ROUTES = [
+  '/api/admin/analytics',
+  '/api/admin/abandoned-orders',
+  '/api/admin/health',
+  '/api/admin/orders',
+  '/api/admin/products',
+  '/api/admin/landing-pages',
+  '/api/admin/content',
+  '/api/admin/shipping',
+  '/api/admin/check',
+  '/api/admin/ongkir',
+  '/api/admin/expeditions',
+  '/api/admin/rules',
+  '/api/admin/settings/developer',
+  '/api/admin/ads',
+  '/api/admin/media',
+  '/api/admin/upload-r2',
+  '/api/admin/seller-bank-accounts',
+  '/api/admin/payment-reconciliation',
+  '/api/admin/notifications',
+  '/api/admin/profile',
+  '/api/admin/logout',
+] as const;
+
 const ROLE_PAGE_ROUTES: Record<Exclude<AdminRole, 'owner' | 'admin'>, readonly string[]> = {
   advertiser: [
     '/admin/dashboard',
     '/admin/products',
+    '/admin/landing-pages',
     '/admin/content',
     '/admin/ads',
     '/admin/profile',
@@ -38,6 +93,7 @@ const ROLE_API_ROUTES: Record<Exclude<AdminRole, 'owner' | 'admin'>, readonly st
   advertiser: [
     '/api/admin/analytics',
     '/api/admin/products',
+    '/api/admin/landing-pages',
     '/api/admin/content',
     '/api/admin/media',
     '/api/admin/ads',
@@ -47,10 +103,12 @@ const ROLE_API_ROUTES: Record<Exclude<AdminRole, 'owner' | 'admin'>, readonly st
   ],
   customer_service: [
     '/api/admin/analytics',
+    '/api/admin/abandoned-orders',
     '/api/admin/orders',
     '/api/admin/shipping',
     '/api/admin/check',
     '/api/admin/ongkir',
+    '/api/admin/notifications',
     '/api/admin/profile',
     '/api/admin/logout',
   ],
@@ -69,11 +127,24 @@ export function getDefaultAdminRoute(_role: AdminRole) {
 }
 
 export function canAccessAdminRoute(role: AdminRole, pathname: string) {
+  // Default-deny first, so no grant below is reachable by a role that is not an
+  // admin role. This ordering is load-bearing; do not move a grant above it.
+  if (!isAdminRole(role)) return false;
+  // `/admin` renders nothing of its own: both the middleware and the page itself
+  // redirect to the role's default route, which every role may reach.
   if (pathname === '/admin') return true;
   if (role === 'owner') return true;
   if (role === 'admin') {
-    return !matchesRoute(pathname, '/admin/settings/access')
-      && !matchesRoute(pathname, '/api/admin/access');
+    if (
+      pathname === '/admin/settings' ||
+      pathname === '/admin/settings/' ||
+      pathname === '/api/admin/settings' ||
+      pathname === '/api/admin/settings/'
+    ) return true;
+    const routes = pathname.startsWith('/api/admin')
+      ? ADMIN_API_ROUTES
+      : ADMIN_PAGE_ROUTES;
+    return routes.some((route) => matchesRoute(pathname, route));
   }
   const routes = pathname.startsWith('/api/admin')
     ? ROLE_API_ROUTES[role]
@@ -118,7 +189,7 @@ export async function signJwt(payload: { username: string; role: AdminRole }, se
 export async function verifyJwt(rawToken: string, secret: string): Promise<AdminSession | null> {
   try {
     if (secret.length < 32) return null;
-    const parts = decodeURIComponent(rawToken).split('.');
+    const parts = rawToken.split('.');
     if (parts.length !== 3) return null;
 
     const [encodedHeader, encodedPayload, encodedSignature] = parts;
@@ -144,8 +215,12 @@ export async function verifyJwt(rawToken: string, secret: string): Promise<Admin
       !isAdminRole(payload.role) ||
       typeof payload.iat !== 'number' ||
       typeof payload.exp !== 'number' ||
+      !Number.isInteger(payload.iat) ||
+      !Number.isInteger(payload.exp) ||
       payload.iat > now + 60 ||
-      payload.exp <= now
+      payload.exp <= now ||
+      payload.exp <= payload.iat ||
+      payload.exp - payload.iat > 24 * 60 * 60
     ) return null;
 
     return payload as AdminSession;
@@ -192,6 +267,6 @@ export async function verifyPasswordHash(password: string, encodedHash: string) 
 export function getSessionCookie(request: Request): string | null {
   const cookieHeader = request.headers.get('cookie');
   if (!cookieHeader) return null;
-  const match = cookieHeader.match(new RegExp(`(?:^|;\\s*)${COOKIE_NAME}=([^;]+)`));
+  const match = cookieHeader.match(new RegExp(`(?:^|;\\s*)${SESSION_COOKIE_NAME}=([^;]+)`));
   return match ? decodeURIComponent(match[1]) : null;
 }

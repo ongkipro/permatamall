@@ -1,7 +1,6 @@
 import type { APIRoute } from "astro";
 import { getStorefrontProducts } from "../lib/catalog";
 import { listLandingPages } from "../lib/landing-pages";
-import { tenantConfig } from "../lib/tenant";
 
 export const prerender = false;
 
@@ -35,6 +34,7 @@ function escapeXml(value: string) {
 }
 
 export const GET: APIRoute = async ({ locals }) => {
+  const tenantConfig = locals.tenant;
   const origin = tenantConfig.siteUrl.replace(/\/$/, "");
   const lastmod = new Date().toISOString().slice(0, 10);
 
@@ -57,7 +57,11 @@ export const GET: APIRoute = async ({ locals }) => {
   try {
     const pages = await listLandingPages(locals);
     landingEntries = pages
-      .filter((p) => p.is_active)
+      // A page that has taken over its product's page answers `308` on its own
+      // slug, and the product URL is already listed above. Advertising the
+      // redirecting address here would hand Google exactly the duplicate pair
+      // the takeover exists to prevent.
+      .filter((p) => p.is_active && !p.is_product_page)
       .map((p) => ({
         path: `/${p.slug}`,
       }));

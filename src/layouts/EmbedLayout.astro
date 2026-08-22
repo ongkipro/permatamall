@@ -1,10 +1,9 @@
 ---
-import '@fontsource/plus-jakarta-sans/400.css';
-import '@fontsource/plus-jakarta-sans/500.css';
-import '@fontsource/plus-jakarta-sans/600.css';
-import '@fontsource/plus-jakarta-sans/700.css';
-import '@fontsource/plus-jakarta-sans/800.css';
-import '../styles/global.css';
+// No @fontsource import here on purpose. foundation.css declares Inter for `body`; no
+// rule anywhere in the tree ever named Plus Jakarta Sans, so its five weights only
+// ever cost this frame a 25KB render-blocking stylesheet of @font-face rules that
+// matched nothing (unicode-range meant the woff2 were never fetched). See A-32.
+import '../styles/storefront.css';
 
 interface Props {
   title: string;

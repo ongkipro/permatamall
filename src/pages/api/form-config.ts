@@ -1,6 +1,10 @@
 import type { APIRoute } from "astro";
 import { jsonError, jsonOk } from "../../lib/api";
 import {
+  STORE_CONFIG_CACHE_KEY,
+  STORE_CONFIG_CACHE_TTL_SECONDS,
+} from "../../lib/store-config-cache.ts";
+import {
   buildEmbedFormUrl,
   buildEmbedFormUrls,
   buildFormUrl,
@@ -14,13 +18,12 @@ import {
 } from "../../lib/form-mode";
 import { getRuntimeEnv } from "../../lib/env";
 import { getStorefrontProduct } from "../../lib/catalog";
+import { catalogProductId } from "../../lib/catalog-feed";
 
 export const prerender = false;
 
 const PUBLIC_CACHE_CONTROL =
   "public, max-age=60, s-maxage=300, stale-while-revalidate=600";
-const STORE_CONFIG_CACHE_KEY = "store-config:cod-disabled-province-codes:v1";
-const STORE_CONFIG_CACHE_TTL_SECONDS = 300;
 
 async function loadCachedStoreCodDisabledProvinceCodes(
   database: D1Database | undefined,
@@ -107,7 +110,7 @@ export const GET: APIRoute = async ({ request, locals }) => {
     {
       product: {
         id: product.catalogId,
-        content_id: product.productId,
+        content_id: catalogProductId(product.productId),
         slug: product.slug,
         name: product.productName,
         image: product.image,
@@ -116,14 +119,14 @@ export const GET: APIRoute = async ({ request, locals }) => {
       },
       variants: product.variants.map((variant) => ({
         id: variant.catalogId,
-        content_id: variant.id,
+        content_id: catalogProductId(product.productId),
         label: variant.label,
         price: variant.price,
         compare_price: variant.comparePrice ?? variant.price,
       })),
       selected_variant: {
         id: selectedVariant.catalogId,
-        content_id: selectedVariant.id,
+        content_id: catalogProductId(product.productId),
         label: selectedVariant.label,
         price: selectedVariant.price,
         compare_price: selectedVariant.comparePrice ?? selectedVariant.price,

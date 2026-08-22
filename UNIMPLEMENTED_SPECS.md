@@ -1,142 +1,122 @@
-# Master Remaining Work and Blockers
+# AdsBookCMS — Remaining Work and Blockers
 
-This document owns only genuine remaining work, external-contract blockers, merchant inputs, and operator-gated production actions. Implemented behavior belongs in `STATUS.md`; historical work belongs in `BUILD-LOG.md`; accepted behavior belongs in `PRD.md`.
+> Reviewed against disk: 2026-08-18 @ `0af225b` on `feat/admin-access-dashboard`.
 
-Code, migrations, runtime configuration, and executed evidence take precedence over this ledger. A missing provider contract is not permission to infer an endpoint, payload, authentication method, retry policy, or status enum.
+This is the single ledger of work that is **not** done. Implemented behaviour belongs in `STATUS.md`, history in `BUILD-LOG.md`, accepted product behaviour in `PRD.md`, real architecture in `ARCHITECTURE.md`, and constraining decisions in `DECISIONS.md`.
 
-## 1. Current Gap Matrix
+Two rules govern every entry, per ADR-010:
 
-| Subsystem | Remaining work | Status | Verified boundary |
+1. **Disk wins.** Code, migrations, runtime configuration, and executed evidence outrank this file. When they disagree, fix this file.
+2. **A missing contract is not a licence to invent one.** An absent provider specification never justifies inferring an endpoint, payload, authentication method, retry policy, or status enum.
+
+All ten structural gaps in `ARCHITECTURE.md` §10 are closed. This file now owns only audited defects, incomplete product surfaces, documentation debt, and external blockers.
+
+---
+
+## 1. Audited Engineering Gaps
+
+| ID | Severity | Gap | Completion boundary |
 | --- | --- | --- | --- |
-| Mengantar pickup | Synchronize pickup address and pickup schedule with `/address` and `/time` before presenting provider-confirmed state | Pending | Client transport methods exist. Current admin warehouse/pickup rows are local D1 state unless a provider response is explicitly persisted. |
-| Mengantar unpaid draft | Recover an accepted non-COD unpaid draft through `/order/pay-unpaid` | Contract unverified | Sequential shipment creation can preserve `isPaid: false` and an absent `cnote_no`; no recovery action is exposed. |
-| Mengantar tracking | Synchronize shipped/delivered/returned state | Blocked | No canonical authenticated callback or polling contract, retry semantics, or status mapping is available to this repository. |
-| Mengantar wallet | Display live provider balance | Blocked | No canonical balance endpoint and response schema is verified. `/admin/balance` remains an AutoLaris D1 reconciliation ledger. |
-| AutoLaris callback | Replace the configured shared-secret callback contract with the provider's official authentication/signature contract | Blocked | Payment creation, persistence, instructions, and idempotent paid reconciliation work locally; the official signature/header contract is unavailable. |
-| Legacy Petani content | Publish reviewed runtime content and R2 media for every active legacy route, then remove the explicit compiled migration fallback | Merchant input and operator action required | Runtime-managed tenants already fail closed. The legacy `petanisejahtera` content pack remains an intentional compatibility boundary. |
-| Live provider proof | Exercise explicitly approved Mengantar and AutoLaris side effects against the selected tenant | Operator-gated | Recent order/shipping audits deliberately avoided provider, payment, pickup, publish, and order mutations. |
-| Future Cloudflare release | Apply any later required remote migration and deploy one exact selected Worker revision | Operator-gated | Historical releases do not authorize a future migration, deployment, DNS change, or production `petanisejahtera.com` release. |
-| Portable new-account proof | Exercise approved isolated provisioning in a different Cloudflare account without importing tenant data | Operator-gated | The installer and no-side-effect plan are implemented; this documentation change did not authenticate, provision, migrate, or deploy. |
-| Public storefront bootstrap | Return reviewed non-secret tenant identity and browser tracking configuration | Planned | CMSAds-rendered routes resolve configuration server-side; no committed cross-storefront bootstrap endpoint exists. |
-| Public catalog/product read | Supply canonical active D1 product/variant facts to dynamic external storefronts | Planned | Its absence blocks a new dynamic catalog; static or fake fallback is not an acceptable implementation. |
-| Selected headless gateway proof | Delegate the canonical form routes and any promised compatibility paths through a selected private storefront gateway | Planned per gateway | Canonical routes and query-preserving `/form-*` compatibility redirects are implemented in CMSAds; no active reference gateway currently proves private delegation. |
-| Executable storefront adapter | Preserve product, campaign, click, event, attribution, confirmation, error, and focus context without forking commerce logic | Planned | The reusable framework-neutral AI prompt is documented, but no executable adapter package or fully proven reference handoff is committed. |
-| Cross-storefront consent | Define tenant-applicable consent behavior and propagate it through optional tag/form handoff | Blocked on merchant/legal decision; implementation planned | Tracking validation/components exist, but no completed consent/bootstrap adapter exists. |
+| AD3 | Medium | Product-grain Google feed items still map the first variant's merchant-editable internal SKU to MPN while declaring `identifier_exists` as `no`; products with no sellable variant disappear instead of retaining a stable `out_of_stock` item. | Separate internal SKU from standard identifiers, define the product-level price/availability fallback contract, retain stable out-of-stock items when truthful data exists, and cover Google and Meta XML with executable fixtures. |
+| COD1 | Medium | This store computes its COD service fee locally (`payment-fee-policy.ts`: 3% plus 11% VAT, each rounded up) while Mengantar returns its own `codFee` on every quote that asks for it. Measured against the live account on 2026-08-19 the two disagree at every amount sampled — Rp50.000, Rp100.000, Rp199.000, Rp333.333 and Rp1.000.000 all came back exactly **one rupiah below** the local figure. The buyer is billed the local number. | Decide whether the local policy is a deliberate store markup or an attempt to mirror the provider. If it mirrors, take the provider's quoted `codFee` as the billed figure instead of recomputing it, so a provider rate change cannot silently diverge; if it is the store's own price, say so in the policy and stop treating the gap as a rounding bug. This is a pricing decision, not an engineering one, so nothing was changed. |
+| S1 | Medium | `theme_color`, `locale`, and `admin_name` resolve from D1 but have no complete operator editor. | Add validated fields to the existing store settings boundary and verify runtime rendering without a rebuild. |
+| DOC1 | Low | `DESIGN-SYSTEM.md` still describes deleted components, old font/CSS ownership, build-time tenant fallback, and historical gate counts. | Re-extract it from the current component and style tree instead of incrementally restamping stale sections. |
+| SCR1 | Low | The 2026-08-22 full-system screening proved the QRIS create path against AutoLaris but **not a settled payment**: capturing a paid `POST /api/h2h/advice` response means paying a real virtual account, so the confirmation path (`/thanks` replacement, paid-state gating, reconciliation marking an order paid) remains proven only by fixtures and the earlier manual-reconciliation browser smoke. It also did not exercise Mengantar dispatch (`POST /order`), which creates a real shipment and spends wallet balance, nor the Meta/Google outbound legs, which were verified by hand on 2026-08-19. | Prove the settled path once, deliberately, on a store that is ready to pay a small real amount, and record the observed `advice` response so `inquirePayment` can classify it. Dispatch stays a manual, operator-initiated action by design (A11) and should be screened against a provider sandbox if one is ever published. |
+| NOT1 | Low | Operator notifications (A19) have no unread floor and no retention. An operator added to a store that already holds a long notification history sees the entire backlog as unread on first login, and clearing it writes one `notification_reads` row per historical notification; `notification_reads` therefore grows as notifications × operators. Harmless on every current install — the table ships empty and the operator set is small — so no floor table was built for a problem no store has yet. | Record a per-operator floor (the newest notification id at the moment the operator is created) and count unread above it, and prune notifications alongside the existing abandoned-order retention cron rather than keeping them forever. |
 
-## 2. Implemented and Removed from the Backlog
+Closed by the A10 work and 2026-08-18 production hardening recorded in `BUILD-LOG.md`: canonical single/bulk order transitions; exactly-once stock restoration on cancellation/deletion; non-destructive dispatched-order deletion; atomic order numbers; abandoned-order abuse controls and retention; bank-transfer verification; submit-boundary payment policy; canonical Meta Purchase identity and paid-state gates; runtime schema upgrades; fresh-install home fail-closed; runtime storefront definitions; Headless scopes, quotas, final-response audits, and public order status; per-install schema/CAPI alerting; one-time install capability; public provider rate limits with server-owned origin; and migration-owned settings schema.
 
-### A. Explicit order dispatch and sequential shipment creation
+---
 
-- Every checkout order remains in Order Management as `pending`; checkout and paid reconciliation do not dispatch automatically.
-- The order editor resolves district/subdistrict destination data, re-quotes actual public rates, and blocks an incomplete provider Push.
-- Order Management owns explicit single-order and checklist-based bulk Push actions.
-- Mengantar `/order` requests run sequentially and return independent success, unpaid, skipped, or failed results.
-- Only accepted provider responses transition orders to `processing` and expose them in Shipping. Provider failure remains pending, actionable, and retryable.
+## 2. Headless API Deliverables
 
-This replaces the former local-confirmation and Shipping-owned dispatch flow. Historical direct-checkout, confirmation, and paid-callback dispatch entries remain in `BUILD-LOG.md` as superseded implementation history.
+Nine `/api/v1/*` routes ship with hashed developer keys, independent origin policy, minimum per-operation scopes, D1-backed per-key quotas, payload-free write audits, token-scoped public order status, and an authenticated OpenAPI 3.1 document at `/api/v1/openapi.json`. `STOREFRONT_INTEGRATION.md` §4 is the human-readable contract.
 
-### B. First-party runtime content workbench
+| ID | Item | Why it remains |
+| --- | --- | --- |
+| H9 | Cross-storefront consent handoff | No accepted merchant/legal contract defines how consent state crosses an external storefront handoff. Checkout must remain usable when tracking is declined or unavailable. |
 
-- `/admin/content` is committed inside the canonical admin shell.
-- The workbench lists instruction readiness and draft/published state by content key.
-- Authenticated APIs support instruction save, manual draft save, Workers AI generation, explicit publish, and tenant-R2 media upload.
-- Read responses never echo stored instructions, and collaborators remain limited to content/media plus their own profile/logout boundary.
+---
 
-### C. Runtime-managed public content
+## 3. External Provider Blockers
 
-- Shared Git code owns schemas, renderers, checkout logic, and operational behavior.
-- Tenant instructions, draft JSON, and published JSON belong to that Worker's D1; uploaded media belongs to its R2 bucket.
-- AI generation receives operational D1 product facts, validates structured output, saves a draft, and never publishes automatically.
-- Runtime-managed tenants do not inherit another merchant's compiled copy. Missing content renders an honest setup/empty state.
-- Operational IDs, price, stock, payment, logistics, ads configuration, credentials, and orders cannot be overwritten by content JSON.
+These cannot be closed from this repository alone. Each needs canonical provider documentation or an explicitly approved live capture.
 
-### D. Current isolated merchant environment
+| Subsystem | Missing contract | Verified boundary |
+| --- | --- | --- |
+| Mengantar tracking live proof | Accepted, missing, malformed, timeout, and representative shipped/delivered/RTS responses from the active account | Operator-triggered authenticated polling, sequential isolation, raw evidence persistence, and monotonic status mapping are implemented and locally tested. No callback contract is assumed; no live provider read was performed in this change. |
+| Mengantar wallet | Canonical balance endpoint and response schema | `/admin/balance` is an AutoLaris D1 reconciliation ledger, not a provider wallet. |
+| AutoLaris settled-payment shape | The response `POST /api/h2h/advice` returns for a transaction that has actually been paid, plus its expired and failed shapes | Superseded on 2026-08-19. The provider's published H2H collection documents `POST /api/h2h/advice` taking `{ "transaction_id": "..." }`, and it was exercised against the provider's published development key: a freshly created, unpaid transaction returns `{"rc":"02","ket":"PENDING","data":{"awb":""}}`. `AutoLarisClient.inquirePayment` implements that read and classifies **only** `rc: "02"` as `pending`; every other code is `unproven` and cannot move payment state. No settled transaction has been observed, because observing one means paying a real virtual account. Until that shape is captured, owner/admin manual confirmation stays the sole path that marks an AutoLaris payment paid. The transport is ready and tested; the scheduled confirmation workflow is not built. The earlier entry claimed no read-only inquiry endpoint existed at all — it does. It also recorded `POST /api/h2h/submit` as the creation path, which was wrong for this product — `/submit` is the combined shipping-and-payment path and requires AutoLaris' own `id_area` district identifiers, which no order in this repository holds. |
+| AutoLaris production IP allowlist | Which egress addresses an install presents to AutoLaris | The provider's documentation requires production API access to be allowlisted to at most five IP addresses. Cloudflare Workers do not offer a fixed egress address, so no install can be declared AutoLaris-production-ready on this evidence. The development key is unrestricted, which is why every capture above was taken with it. This is an infrastructure decision, not a code change. |
+| Mengantar unpaid recovery | Real insufficient-wallet response plus verified `/order/pay-unpaid` response shape, idempotency, and failure semantics | Automatic `/order/create` dispatch is a separate contract. A provider-created unpaid draft may retain its accepted provider order ID with no cnote and be visible under **Perlu Dibuatkan Resi**, but `MengantarClient.payUnpaidOrder` has no verified internal operator action. No local flow may fabricate or persist a waybill before provider acceptance. |
+| Mengantar pickup proof | Current `/address` and `/time` schemas plus live accepted/rejected/timeout/duplicate evidence | Existing handlers already call provider-before-persist and leave D1 unchanged on provider failure. |
 
-The deployable registry currently contains one validated environment:
+### Closing a blocked contract
 
-- `petanisejahtera-preview` → `cmsads-petanisejahtera-preview` → `custom-domain` at `preview.petanisejahtera.com`.
+1. Obtain the canonical specification or an explicitly approved capture: endpoint, authentication, schemas, status enum, retry/idempotency semantics, and replay window.
+2. Implement inside the existing provider client or admin reconciliation boundary; do not open a second HTTP path.
+3. Persist provider identifiers and confirmed state only after provider acceptance.
+4. Keep local failure actionable; never present an unsynchronized D1 row as provider-confirmed.
+5. Cover accepted, rejected, timeout, and retry paths with a runnable check.
 
-The standalone `petanisejahtera` Worker owns `petanisejahtera.com`; the former CMSAds production Worker and its isolated storage are preserved outside the deployable registry. Headless deployment remains an accepted architecture, not proof that public bootstrap/catalog, selected-gateway form delegation, executable adapter, or consent contracts are implemented.
+---
 
-Historical removed-tenant topology and cleanup evidence remains available in immutable Git history. It is not current inventory and MUST NOT be reused as a resource identifier.
+## 4. Inherited Identity and Account-Coupled Copy
 
-### E. Provider configuration and payment ledger
+One known row remains: `Zanoby Purchase` in `src/pages/admin/ads/google.astro` names a conversion action configured in a Google Ads account. Editing repository copy does not rename that remote conversion action; coordinate the change with the account owner.
 
-- `/admin/profile` replaces masked Mengantar and AutoLaris API keys/base URLs in the selected tenant's D1; blank keys preserve active values.
-- AutoLaris webhook secrets remain server-managed and are never returned through the browser API.
-- Checkout persists one AutoLaris transaction per eligible online order and renders only recorded instructions and amounts.
-- Paid reconciliation updates payment/order eligibility idempotently. It does not bypass Order Management confirmation or Shipping release.
-- `/admin/balance` reports recorded D1 transactions and is not a live provider wallet or withdrawal surface.
+The legacy `zanoby_click_ids` cookie remains a read-only 90-day attribution fallback by deliberate compatibility decision. New writes use `adsbook_click_ids`; remove the fallback only after the upgrade window has elapsed.
 
-### F. Same-revision fleet delivery
+---
 
-- `tenant:list --json` derives targets from the validated registry used by local lifecycle commands.
-- Pull requests validate and dry-run each target without publishing.
-- A release selects one exact tenant through a manual guarded path; a push to `main` does not deploy a Worker.
-- D1 migrations remain separate, exact-tenant, operator-approved operations.
+## 5. Operator-Gated Actions
 
-## 3. Planned Headless Storefront Completion
+These are not engineering gaps. They require an explicit human decision and, where relevant, a rollback plan.
 
-1. Implement the non-secret public bootstrap contract in T174 without exposing server credentials.
-2. Implement the canonical active catalog/product read contract in T175.
-3. Add and test locked middle/full/hybrid service-binding routes in each selected headless gateway under T176.
-4. Complete the framework-neutral handoff/adapter proof in T177 without duplicating form state or product identity.
-5. Prove the Meta browser/CAPI event map and deduplication boundary in T178.
-6. Obtain the tenant's applicable consent decision, then implement and prove T179.
+| Action | Gate |
+| --- | --- |
+| Live Mengantar side effects — order creation, pickup address, pickup schedule, unpaid recovery | Exact side-effect approval |
+| Live AutoLaris side effects — payment creation or payment-state mutation | Exact side-effect approval |
+| Meta test events | Operator-provided test code plus explicit outbound-call approval |
+| Remote D1 preflight (`npm run db:migrate:remote`) | Separate production-data approval; runtime auto-upgrade does not authorize it |
+| Install-repository deployment | Explicit production approval; this product repository itself has no deploy target or credentials |
+| Provisioning another Cloudflare account/install | Explicit infrastructure approval |
+| Scrubbing local or remote warehouse/provider identifiers | Explicit destructive-data approval |
 
-These are accepted planned contracts in REQ-92–REQ-95. Historical headless evidence does not complete these adapters.
-
-## 4. Provider Work That Must Remain Bounded
-
-### A. Pickup address and schedule synchronization
-
-1. Obtain or re-verify the canonical `/address` and `/time` request/response schemas.
-2. Send the provider request sequentially through the existing client boundary.
-3. Persist provider identifiers and confirmed state only after an accepted response.
-4. Preserve an actionable local failure without presenting an unsynchronized D1 row as provider-confirmed.
-5. Cover the accepted, rejected, timeout, and retry paths without duplicating pickup creation.
-
-### B. Non-COD unpaid recovery
-
-1. Capture an explicitly approved real insufficient-wallet response with `isPaid: false` and no `cnote_no`.
-2. Verify `/order/pay-unpaid` authentication, request, response, idempotency, and failure semantics.
-3. Add a recovery action only for the verified state.
-4. Persist returned payment and waybill fields only after provider acceptance.
-
-### C. Blocked contracts
-
-- Tracking synchronization requires an official authenticated callback or polling endpoint, status enum, retry behavior, and reconciliation rules.
-- Live wallet display requires an official balance endpoint, authentication contract, units, and response schema.
-- AutoLaris callback hardening requires the provider's canonical signature/header specification and replay rules.
-
-Unknown or unauthenticated events MUST fail closed.
-
-## 5. Runtime Content and Media Completion
-
-Repository implementation is complete; tenant publication is runtime work:
-
-1. Store a non-secret tenant instruction in the selected Worker's D1.
-2. Generate or save a draft through `/admin/content`.
-3. Review every factual claim, product reference, route, and media reference.
-4. Upload merchant-owned media to the selected tenant's R2 bucket.
-5. Publish each validated home/product record explicitly.
-6. Exercise the selected storefront and metadata in a browser.
-7. For legacy Petani only, remove the compiled migration fallback after every required route has a verified runtime replacement.
-
-Do not seed production merchant instructions, credentials, claims, testimonials, ratings, or customer data in Git.
+---
 
 ## 6. Execution Order
 
-1. Complete T174–T179 and T185 in dependency order for the selected headless storefront and approved tenant; do not expose secrets, invent catalog data, treat the reusable prompt as an executable adapter, or report local route proof as deployment.
-2. Obtain merchant-owned content/media required for the selected tenant.
-3. Complete reviewed runtime publication without changing operational commerce state.
-4. Finish legacy Petani runtime-only cutover after route-by-route parity is proven.
-5. Synchronize pickup addresses and schedules from verified Mengantar contracts.
-6. Implement non-COD unpaid recovery only after capturing the real provider state and contract.
-7. Resolve tracking, wallet, and AutoLaris signature blockers only from canonical provider documentation.
-8. Run live provider scenarios only with exact side-effect approval and a rollback/reconciliation plan.
-9. Apply remote migrations and deploy only the selected tenant with separate explicit approvals.
+1. Keep automatic AutoLaris paid marking disabled until a **settled**
+   `POST /api/h2h/advice` response has been observed and the scheduled Worker
+   path is proven against it. The inquiry transport now exists and is proven
+   for the pending case only; the current accepted production-safe fallback
+   remains owner/admin manual confirmation with immutable audit evidence.
+2. Resolve Mengantar provider blockers only from canonical documentation or
+   approved sandbox/live evidence.
+3. **AD3** define and implement stable, truthful out-of-stock feed behavior and
+   standard-identifier policy.
+4. **S1** complete the runtime store identity editor.
+5. **DOC1** rebuild the design-system record from the current tree.
+6. Implement **H9** only after the consent contract is accepted.
+
+---
 
 ## 7. Completion Rules
 
-A blocker is complete only when its contract, implementation, executable proof, failure behavior, and owning canonical document are updated. A local build is not live-provider evidence. A Worker deployment is not D1 migration evidence. A Custom Domain is not data isolation by itself. A deleted Worker does not authorize deletion of its D1, KV, R2, DNS, or secrets.
+An entry is complete only when its contract, implementation, executable proof, failure behaviour, and owning canonical document are updated together.
+
+- A green build is not evidence a UI works; open it.
+- A local build is not live-provider evidence.
+- Runtime migration success on local D1 is not remote-D1 approval.
+- A Custom Domain is not data isolation by itself.
+- A deleted Worker does not authorize deleting its D1, KV, R2, DNS, or secrets.
+- A documented prompt is not an executable adapter.
+
+Local gates, in CI order:
+
+```bash
+npm run check
+npm test
+npm run build
+```

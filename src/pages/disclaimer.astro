@@ -1,14 +1,14 @@
 ---
-import LegalPage from '../components/shared/LegalPage.astro';
+import LegalPage from '../components/storefront/shared/LegalPage.astro';
 import BaseLayout from '../layouts/BaseLayout.astro';
-import { legalPages } from '../data/legal';
-import { tenantConfig } from '../lib/tenant';
+import { getTenantLegalPage } from '../data/legal';
 
-const page = legalPages.disclaimer;
+const page = getTenantLegalPage('disclaimer', Astro.locals.tenant.name);
+---
 
 <BaseLayout
   shell="storefront"
-  title={`Disclaimer - ${tenantConfig.name}`}
+  title={`Disclaimer - ${Astro.locals.tenant.name}`}
   description={page.description}
   noindex={true}
   breadcrumbs={[

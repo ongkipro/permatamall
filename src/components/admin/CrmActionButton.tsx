@@ -91,7 +91,10 @@ export const CrmActionButton: React.FC<CrmActionButtonProps> = ({
       rel="noopener noreferrer"
       onClick={handleClick}
       title={title}
-      className={`inline-flex h-8 items-center justify-between gap-1 rounded-lg px-2 text-xs font-bold transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-offset-1 ${
+      // h-11 below sm: this is an <a>, so the shell's `min-height: 2.75rem` mobile
+      // rule (which only matches <button> and a.btn-*) never reached it and the ten
+      // CRM steps were 32px tap targets on a phone.
+      className={`inline-flex h-11 sm:h-8 items-center justify-between gap-1 rounded-lg px-2 text-xs font-bold transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-offset-1 ${
         isClicked
           ? 'bg-slate-900 text-white hover:bg-slate-800 focus:ring-slate-900 shadow-xs'
           : 'bg-emerald-800 text-white hover:bg-emerald-900 focus:ring-emerald-800 shadow-xs active:scale-[0.98]'

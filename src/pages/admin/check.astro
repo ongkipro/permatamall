@@ -148,7 +148,7 @@ if (database) {
                 href="#"
                 target="_blank"
                 rel="noopener noreferrer"
-                class="hidden inline-flex items-center gap-1.5 rounded-lg border border-emerald-300 bg-emerald-50 px-3 py-1.5 text-xs font-bold text-emerald-800 hover:bg-emerald-100 transition-colors"
+                class="hidden min-h-11 inline-flex items-center gap-1.5 rounded-lg border border-emerald-300 bg-emerald-50 px-3 py-1.5 text-xs font-bold text-emerald-800 hover:bg-emerald-100 transition-colors"
               >
                 <span>💬 Buka WA Chat</span>
               </a>
@@ -156,7 +156,7 @@ if (database) {
                 id="searchOrderBtn"
                 href="#"
                 target="_blank"
-                class="hidden inline-flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-bold text-slate-700 hover:bg-slate-50 transition-colors"
+                class="hidden min-h-11 inline-flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-bold text-slate-700 hover:bg-slate-50 transition-colors"
               >
                 <span>🔍 Cari Order Nomor Ini</span>
               </a>
@@ -172,7 +172,7 @@ if (database) {
         </div>
 
         <!-- Metrics Grid -->
-        <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
           <article class="rounded-xl border border-slate-200 bg-white p-4 shadow-xs">
             <p class="text-[11px] font-black uppercase tracking-wider text-slate-400">Total Riwayat Selesai</p>
             <p id="totalCount" class="mt-2 font-mono text-2xl font-black text-slate-950">0</p>
@@ -200,13 +200,13 @@ if (database) {
             </div>
             <p class="text-[11px] text-slate-400">Rumus: Terkirim ÷ Total Selesai × 100%</p>
           </div>
-          <div id="courierGrid" class="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3"></div>
+          <div id="courierGrid" class="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3"></div>
         </section>
 
         <div class="rounded-xl border border-slate-200 bg-slate-50 p-4 text-xs leading-5 text-slate-600 flex items-start gap-2">
           <span class="text-base">💡</span>
           <div>
-            <strong class="text-slate-900">Kebijakan Risiko CMSAds:</strong>
+            <strong class="text-slate-900">Kebijakan Risiko AdsBookCMS:</strong>
             <span class="text-emerald-700 font-bold">Rendah (≥70%)</span>, 
             <span class="text-amber-700 font-bold">Sedang (40–69.9%)</span>, 
             <span class="text-rose-700 font-bold">Tinggi (&lt;40%)</span>.
@@ -232,7 +232,7 @@ if (database) {
       </div>
 
       <form id="ongkirForm" class="space-y-4" novalidate>
-        <div class="grid gap-4 md:grid-cols-12 items-end">
+        <div class="grid grid-cols-1 gap-4 md:grid-cols-12 items-end">
           <!-- Kecamatan Asal -->
           <div class="space-y-1.5 relative md:col-span-5">
             <label for="originInput" class="block text-xs font-extrabold uppercase tracking-wider text-slate-700">
@@ -247,7 +247,7 @@ if (database) {
               autocomplete="off"
             />
             <input type="hidden" id="originId" value={warehouseOriginId} />
-            <ul id="originResults" class="absolute z-20 mt-1 max-h-56 w-full overflow-y-auto rounded-lg border border-slate-200 bg-white shadow-lg hidden divide-y divide-slate-100"></ul>
+            <ul id="originResults" class="absolute z-50 mt-1 max-h-56 w-full overflow-y-auto rounded-lg border border-slate-200 bg-white shadow-lg hidden divide-y divide-slate-100"></ul>
           </div>
 
           <!-- Swap Button -->
@@ -255,7 +255,7 @@ if (database) {
             <button
               type="button"
               id="swapLocationBtn"
-              class="min-h-10 w-10 rounded-lg border border-slate-300 bg-slate-50 text-slate-600 hover:bg-slate-100 hover:text-slate-900 flex items-center justify-center transition-colors"
+              class="min-h-11 w-11 rounded-lg border border-slate-300 bg-slate-50 text-slate-600 hover:bg-slate-100 hover:text-slate-900 flex items-center justify-center transition-colors"
               title="Tukar Asal & Tujuan"
             >
               🔄
@@ -275,7 +275,7 @@ if (database) {
               autocomplete="off"
             />
             <input type="hidden" id="destinationId" value="" />
-            <ul id="destinationResults" class="absolute z-20 mt-1 max-h-56 w-full overflow-y-auto rounded-lg border border-slate-200 bg-white shadow-lg hidden divide-y divide-slate-100"></ul>
+            <ul id="destinationResults" class="absolute z-50 mt-1 max-h-56 w-full overflow-y-auto rounded-lg border border-slate-200 bg-white shadow-lg hidden divide-y divide-slate-100"></ul>
           </div>
         </div>
 
@@ -285,14 +285,17 @@ if (database) {
             <label for="weightInput" class="block text-xs font-extrabold uppercase tracking-wider text-slate-700">
               Berat Paket (KG)
             </label>
-            <div class="flex items-center gap-2">
+            <!-- flex-wrap + min-w-0: the number input's intrinsic min-content (~200px)
+                 plus the four non-shrinking preset buttons (~180px) exceeded the 312px
+                 available at 360px, pushing the 5kg preset off-screen. -->
+            <div class="flex flex-wrap items-center gap-2">
               <input
                 type="number"
                 id="weightInput"
                 value="1"
                 min="0.1"
                 step="0.1"
-                class="w-full rounded-lg border border-slate-300 px-3.5 py-2 text-sm font-mono font-bold text-slate-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
+                class="w-full min-w-0 flex-1 rounded-lg border border-slate-300 px-3.5 py-2 text-sm font-mono font-bold text-slate-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
               />
               <div class="flex gap-1" id="weightPresets">
                 <button type="button" data-weight="1" class="preset-btn rounded border border-slate-200 bg-slate-50 px-2 py-1 text-xs font-bold text-slate-700 hover:bg-slate-100">1kg</button>
@@ -303,6 +306,22 @@ if (database) {
             </div>
           </div>
 
+          <div class="space-y-1.5 sm:w-56">
+            <label for="codInput" class="block text-xs font-extrabold uppercase tracking-wider text-slate-700">
+              Nilai COD (opsional)
+            </label>
+            <input
+              type="number"
+              id="codInput"
+              min="0"
+              step="1000"
+              placeholder="0"
+              aria-describedby="codInputHint"
+              class="w-full min-w-0 rounded-lg border border-slate-300 px-3.5 py-2 text-sm font-mono font-bold text-slate-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
+            />
+            <p id="codInputHint" class="text-[11px] text-slate-500">Isi untuk melihat biaya COD yang ditagih provider.</p>
+          </div>
+
           <div class="flex items-center justify-end gap-3 pt-2">
             <button id="checkOngkirBtn" type="submit" class="btn-blue min-h-11 px-7 text-xs font-bold disabled:cursor-wait disabled:opacity-60 flex items-center justify-center gap-2">
               <span>Cek Tarif Kurir</span>
@@ -311,7 +330,7 @@ if (database) {
         </div>
 
         <div class="flex items-center justify-between text-xs text-slate-500">
-          <span>*Lokasi dikirim dari Gudang Utama CMSAds</span>
+          <span>*Lokasi dikirim dari Gudang Utama AdsBookCMS</span>
           <p id="ongkirStatus" class="min-h-5 font-bold text-slate-500" role="status" aria-live="polite"></p>
         </div>
       </form>
@@ -348,13 +367,14 @@ if (database) {
 
         <!-- Rates Table -->
         <div class="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xs">
-          <div class="overflow-x-auto">
+          <div class="overflow-x-auto focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600" role="region" aria-label="Tarif ongkir per kurir" tabindex="0">
             <table class="w-full text-left text-sm text-slate-600">
               <thead class="border-b border-slate-200 bg-slate-50 text-[11px] font-black uppercase tracking-wider text-slate-500">
                 <tr>
                   <th class="px-4 py-3">Ekspedisi</th>
                   <th class="px-4 py-3">Layanan</th>
                   <th class="px-4 py-3 text-right">Tarif Ongkir</th>
+                  <th class="px-4 py-3 text-right">Biaya COD</th>
                   <th class="px-4 py-3 text-center">Estimasi Tiba</th>
                   <th class="px-4 py-3 text-center">Status COD</th>
                 </tr>
@@ -650,7 +670,7 @@ if (database) {
             const { data } = await res.json();
             if (data && data.length > 0 && resultsEl) {
               resultsEl.innerHTML = data.map((item: any) => 
-                `<li class="cursor-pointer px-4 py-2.5 hover:bg-blue-50/70 text-xs border-b border-slate-100 last:border-0 transition-colors" data-id="${item._id}">
+                `<li class="flex min-h-11 cursor-pointer items-center px-4 py-2.5 hover:bg-blue-50/70 text-xs border-b border-slate-100 last:border-0 transition-colors" data-id="${item._id}">
                   <span class="font-bold text-slate-900">${item.SUBDISTRICT_NAME}</span>, <span class="text-slate-600">${item.CITY_NAME}</span>, <span class="text-slate-400">${item.PROVINCE_NAME}</span>
                 </li>`
               ).join('');
@@ -704,7 +724,7 @@ if (database) {
       }
 
       if (filtered.length === 0) {
-        ongkirTableBody.innerHTML = `<tr><td colspan="5" class="px-4 py-8 text-center text-sm text-slate-500">Tidak ada kurir yang sesuai dengan filter.</td></tr>`;
+        ongkirTableBody.innerHTML = `<tr><td colspan="6" class="px-4 py-8 text-center text-sm text-slate-500">Tidak ada kurir yang sesuai dengan filter.</td></tr>`;
         return;
       }
 
@@ -714,12 +734,15 @@ if (database) {
         const isCheapest = rate.price === minPrice;
         return `
           <tr class="hover:bg-blue-50/30 transition-colors">
-            <td class="whitespace-nowrap px-4 py-3.5 font-bold text-slate-900 flex items-center gap-2">
-              <span>${rate.courier_code.toUpperCase()}</span>
-              ${isCheapest ? '<span class="inline-flex rounded bg-emerald-100 px-1.5 py-0.5 text-[9px] font-black text-emerald-800">Termurah</span>' : ''}
+            <td class="whitespace-nowrap px-4 py-3.5 font-bold text-slate-900">
+              <span class="flex items-center gap-2">
+                <span>${rate.courier_code.toUpperCase()}</span>
+                ${isCheapest ? '<span class="inline-flex rounded bg-emerald-100 px-1.5 py-0.5 text-[9px] font-black text-emerald-800">Termurah</span>' : ''}
+              </span>
             </td>
             <td class="whitespace-nowrap px-4 py-3.5 text-xs text-slate-700">${rate.courier_service}</td>
             <td class="whitespace-nowrap px-4 py-3.5 text-right font-mono font-bold text-slate-900">${formatIdr(rate.price)}</td>
+            <td class="whitespace-nowrap px-4 py-3.5 text-right font-mono text-xs text-slate-700">${rate.cod_fee > 0 ? formatIdr(rate.cod_fee) : '-'}</td>
             <td class="whitespace-nowrap px-4 py-3.5 text-center text-xs text-slate-600">${rate.estimated_days ? `${rate.estimated_days} Hari` : '-'}</td>
             <td class="whitespace-nowrap px-4 py-3.5 text-center">
               ${rate.unsupported_cod 
@@ -782,7 +805,9 @@ if (database) {
       }
 
       try {
-        const res = await fetch(`/api/admin/ongkir?action=estimate&origin=${originId}&destination=${destinationId}&weight=${weight}`);
+        const codValue = Number((document.getElementById('codInput') as HTMLInputElement | null)?.value || 0);
+        const codQuery = Number.isFinite(codValue) && codValue > 0 ? `&cod=${Math.round(codValue)}` : '';
+        const res = await fetch(`/api/admin/ongkir?action=estimate&origin=${originId}&destination=${destinationId}&weight=${weight}${codQuery}`);
         const json = await res.json();
         
         if (json.success !== false && json.data) {

@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import { DatabaseSync, type StatementSync } from "node:sqlite";
 import test from "node:test";
 import { enqueueCapiEvent } from "./capi-outbox.ts";
@@ -17,7 +18,9 @@ import {
 } from "./json-ld.ts";
 import { resolveMetaEventId } from "./meta-capi.ts";
 import {
+  allocateOrderNumber,
   persistOrder,
+  purgeExpiredAbandonedOrders,
   recordAbandonedOrder,
   type PersistedOrder,
 } from "./order-persistence.ts";
@@ -170,6 +173,21 @@ class SqliteD1Database {
         unit_price INTEGER NOT NULL
       );
 
+      CREATE TABLE payment_transactions (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        order_id INTEGER NOT NULL REFERENCES orders(id),
+        reference_id TEXT
+      );
+
+      CREATE TABLE order_number_counters (
+        counter_name TEXT PRIMARY KEY,
+        last_value INTEGER NOT NULL,
+        updated_at TEXT NOT NULL
+      );
+
+      INSERT INTO order_number_counters (counter_name, last_value, updated_at)
+      VALUES ('orders', 10000, '2026-08-17T00:00:00.000Z');
+
       CREATE TABLE capi_event_outbox (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         event_id TEXT NOT NULL UNIQUE,
@@ -189,6 +207,15 @@ class SqliteD1Database {
       INSERT INTO product_variants (id, product_id, sku, price, stock)
       VALUES (20001, 10001, 'AUS-500', 150000, 12);
     `);
+    // Loaded from the shipped migration rather than hand-rolled: `persistOrder`
+    // records an order notification, and without the real table that write
+    // fails open and silently proves nothing.
+    this.#database.exec(
+      readFileSync(
+        new URL("../db/migrations/0045_operator_notifications.sql", import.meta.url),
+        "utf8",
+      ).replaceAll("--> statement-breakpoint", ""),
+    );
   }
 
   prepare(sql: string): SqliteD1Statement {
@@ -227,7 +254,6 @@ test("checkout promotes one abandoned lead and queues one attributable Purchase"
   const d1 = asD1(database);
   const customerPhone = "6281234567890";
   let abandonedId = 0;
-  let abandonedOrderNumber = "";
   let clickIds: ClickIds = {};
   let order: PersistedOrder | undefined;
 
@@ -243,7 +269,6 @@ test("checkout promotes one abandoned lead and queues one attributable Purchase"
         variantId: 20001,
       });
       abandonedId = abandoned.id;
-      abandonedOrderNumber = abandoned.orderNumber;
 
       assert.equal(abandoned.action, "created");
       assert.match(abandoned.orderNumber, /^ABN-\d{5}$/);
@@ -287,7 +312,7 @@ test("checkout promotes one abandoned lead and queues one attributable Purchase"
     async () => {
       const landingClickIds = parseClickIdsFromUrl(
         new URL(
-          "https://shop.example/produk/aussie?gclid=google-click_123&_fbp=fb.1.1700000000.111&_fbc=fb.1.1700000000.click-222&ttclid=tiktok-click_333",
+          "https://shop.example/produk/alpha?gclid=google-click_123&_fbp=fb.1.1700000000.111&_fbc=fb.1.1700000000.click-222&ttclid=tiktok-click_333",
         ),
       );
       const submitRequest = new Request("https://shop.example/api/submit-order", {
@@ -386,7 +411,7 @@ test("checkout promotes one abandoned lead and queues one attributable Purchase"
           userAgent: "full-funnel-test",
         },
         customData: {
-          contentName: "Aussie Sample",
+          contentName: "Alpha Sample",
           contentIds: ["10001"],
           contentType: "product",
           value: order.totalAmount,
@@ -442,6 +467,61 @@ test("checkout promotes one abandoned lead and queues one attributable Purchase"
   );
 });
 
+test("non-COD checkout stays pending until payment confirmation", async () => {
+  for (const paymentMethod of ["bank_transfer", "qris"] as const) {
+    const database = new SqliteD1Database();
+    const order = await persistOrder(asD1(database), {
+      submitToken: `submit-${paymentMethod}`,
+      customerName: "Siti Rahayu",
+      customerPhone:
+        paymentMethod === "qris" ? "6281234567891" : "6281234567892",
+      address: "Jl. Melati 10",
+      province: "ID-JI",
+      city: "Surabaya",
+      district: "Wonokromo",
+      postalCode: "60243",
+      variantKey: "20001",
+      quantity: 1,
+      shippingCost: 18000,
+      paymentMethod,
+      destinationAreaId: "area-surabaya",
+      courierCode: "jne",
+      courierService: "REG",
+    });
+    const stored = await readRow<{
+      payment_status: string;
+      shipping_status: string;
+    }>(
+      database,
+      `SELECT payment_status, shipping_status
+       FROM orders WHERE id = ?`,
+      order.id,
+    );
+
+    assert.equal(stored.payment_status, "pending");
+    assert.equal(stored.shipping_status, "pending");
+
+    // The checkout write must actually reach the notification store with the
+    // right subject and copy. Recording is fail-open, so without this the call
+    // site could be silently broken and every other assertion would still pass.
+    const notification = await readRow<{
+      type: string;
+      order_number: string;
+      title: string;
+      body: string;
+    }>(
+      database,
+      "SELECT type, order_number, title, body FROM notifications WHERE order_id = ?",
+      order.id,
+    );
+    assert.equal(notification.type, "order");
+    assert.equal(notification.order_number, order.orderNumber);
+    assert.match(notification.title, /^Order baru /);
+    assert.match(notification.body, /Siti Rahayu/);
+    assert.match(notification.body, /Wonokromo, Surabaya/);
+  }
+});
+
 test("5. product and storefront JSON-LD builders generate complete schema", () => {
   const siteUrl = "https://shop.example/";
   const organization = {
@@ -476,10 +556,10 @@ test("5. product and storefront JSON-LD builders generate complete schema", () =
     siteUrl,
     organization,
     product: {
-      name: "Aussie Sample",
+      name: "Alpha Sample",
       description: "Produk sampel resmi Permata Mall.",
-      image: ["/products/aussie.webp"],
-      url: "/produk/aussie",
+      image: ["/products/alpha.webp"],
+      url: "/produk/alpha",
       sku: "AUS-500",
       category: "Home & Garden",
       offers: [
@@ -502,21 +582,21 @@ test("5. product and storefront JSON-LD builders generate complete schema", () =
     url: string;
   };
   assert.equal(product["@type"], "Product");
-  assert.equal(product.url, "https://shop.example/produk/aussie");
-  assert.deepEqual(product.image, ["https://shop.example/products/aussie.webp"]);
+  assert.equal(product.url, "https://shop.example/produk/alpha");
+  assert.deepEqual(product.image, ["https://shop.example/products/alpha.webp"]);
   assert.equal(product.sku, "AUS-500");
   assert.equal(offer["@type"], "Offer");
   assert.equal(offer.price, 150000);
   assert.equal(offer.priceCurrency, "IDR");
   assert.equal(offer.availability, "https://schema.org/InStock");
   assert.equal(offer.itemCondition, "https://schema.org/NewCondition");
-  assert.equal(offer.url, "https://shop.example/produk/aussie");
+  assert.equal(offer.url, "https://shop.example/produk/alpha");
 
   const breadcrumbs = buildBreadcrumbJsonLd({
     siteUrl,
     breadcrumbs: [
       { name: "Beranda", url: "/" },
-      { name: "Aussie Sample", url: "/produk/aussie" },
+      { name: "Alpha Sample", url: "/produk/alpha" },
     ],
   });
   assert.equal(breadcrumbs["@type"], "BreadcrumbList");
@@ -524,7 +604,7 @@ test("5. product and storefront JSON-LD builders generate complete schema", () =
     breadcrumbs.itemListElement.map(({ position, item }) => ({ position, item })),
     [
       { position: 1, item: "https://shop.example/" },
-      { position: 2, item: "https://shop.example/produk/aussie" },
+      { position: 2, item: "https://shop.example/produk/alpha" },
     ],
   );
 
@@ -542,4 +622,100 @@ test("5. product and storefront JSON-LD builders generate complete schema", () =
     faq.mainEntity[0]?.acceptedAnswer.text,
     "Ya, COD tersedia di wilayah yang didukung.",
   );
+});
+
+test("the D1 counter allocates unique suffixes across concurrent INV and ABN requests", async () => {
+  const database = new SqliteD1Database();
+  const d1 = asD1(database);
+
+  const numbers = await Promise.all(
+    Array.from({ length: 64 }, (_, index) =>
+      allocateOrderNumber(d1, index % 2 === 0 ? "INV" : "ABN"),
+    ),
+  );
+  const suffixes = numbers.map((number) => number.slice(4));
+
+  assert.equal(new Set(numbers).size, numbers.length);
+  assert.equal(new Set(suffixes).size, suffixes.length);
+  assert.ok(numbers.every((number) => /^(?:INV|ABN)-\d{5}$/.test(number)));
+});
+
+test("abandoned retention deletes only unpaid abandoned orders older than seven days", async () => {
+  const database = new SqliteD1Database();
+  const d1 = asD1(database);
+  const now = new Date("2026-08-17T12:00:00.000Z");
+  const insertOrder = async (
+    number: string,
+    paymentStatus: string,
+    shippingStatus: string,
+    createdAt: string,
+  ) => {
+    const result = await database
+      .prepare(
+        `INSERT INTO orders (
+          order_number, store_id, customer_name, customer_phone,
+          address, province, city, district, total_amount,
+          payment_status, shipping_status, created_at
+        ) VALUES (?, 1, 'Retention Test', '628123456789', '', 'ID-JB', '', '', 0, ?, ?, ?)`,
+      )
+      .bind(number, paymentStatus, shippingStatus, createdAt)
+      .run();
+    return result.meta.last_row_id;
+  };
+
+  const expiredId = await insertOrder(
+    "ABN-20001",
+    "unpaid",
+    "abandoned",
+    "2026-08-10T11:59:59.000Z",
+  );
+  const boundaryId = await insertOrder(
+    "ABN-20002",
+    "unpaid",
+    "abandoned",
+    "2026-08-10T12:00:00.000Z",
+  );
+  const paidId = await insertOrder(
+    "ABN-20003",
+    "paid",
+    "abandoned",
+    "2026-08-01T00:00:00.000Z",
+  );
+  const pendingId = await insertOrder(
+    "INV-20004",
+    "unpaid",
+    "pending",
+    "2026-08-01T00:00:00.000Z",
+  );
+  await database
+    .prepare(
+      "INSERT INTO order_items (order_id, variant_id, quantity, unit_price) VALUES (?, 20001, 1, 150000), (?, 20001, 1, 150000)",
+    )
+    .bind(expiredId, boundaryId)
+    .run();
+  await database
+    .prepare(
+      "INSERT INTO payment_transactions (order_id, reference_id) VALUES (?, 'ABN-20001')",
+    )
+    .bind(expiredId)
+    .run();
+
+  assert.equal(await purgeExpiredAbandonedOrders(d1, now), 1);
+  assert.equal(
+    await database.prepare("SELECT id FROM orders WHERE id = ?").bind(expiredId).first(),
+    null,
+  );
+  assert.equal(
+    await database.prepare("SELECT id FROM order_items WHERE order_id = ?").bind(expiredId).first(),
+    null,
+  );
+  assert.equal(
+    await database.prepare("SELECT id FROM payment_transactions WHERE order_id = ?").bind(expiredId).first(),
+    null,
+  );
+  for (const id of [boundaryId, paidId, pendingId]) {
+    assert.ok(
+      await database.prepare("SELECT id FROM orders WHERE id = ?").bind(id).first(),
+    );
+  }
 });

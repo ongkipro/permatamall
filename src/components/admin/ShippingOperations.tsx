@@ -30,10 +30,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from "../ui/select";
+import { ADMIN_CUSTOM_DATE_FILTER } from "../../lib/admin-date-filter";
 import {
-  ADMIN_DATE_FILTER_OPTIONS,
-  getAdminDateFilterLabel,
-} from "../../lib/admin-date-filter";
+  AdminDateRangeFilter,
+  type AdminDateSelection,
+} from "./AdminDateRangeFilter";
+import {
+  matchesShippingQueue,
+  type ShippingQueueId,
+} from "../../lib/shipping-queue";
 
 type Shipment = {
   id: number;
@@ -51,6 +56,9 @@ type Shipment = {
   courierService: string | null;
   cnoteNo: string | null;
   providerOrderId: string | null;
+  providerStatusText: string | null;
+  providerStatusAt: string | null;
+  providerSyncedAt: string | null;
   providerDispatchError: string | null;
   receiverDeliveryRate: number | null;
   receiverRiskLabel: string | null;
@@ -129,6 +137,47 @@ const pickupStatusLabels: Record<string, string> = {
   completed: "Selesai",
   cancelled: "Dibatalkan",
 };
+const shippingQueues: Array<{
+  id: ShippingQueueId;
+  label: string;
+  note: string;
+  icon: typeof PackageCheckIcon;
+  tone: string;
+  activeTone: string;
+}> = [
+  {
+    id: "all",
+    label: "Semua Pengiriman",
+    note: "Seluruh order provider",
+    icon: TruckIcon,
+    tone: "text-slate-700 bg-slate-100",
+    activeTone: "border-slate-900 ring-slate-900/10",
+  },
+  {
+    id: "needs_waybill",
+    label: "Perlu Dibuatkan Resi",
+    note: "Draft provider tanpa resi",
+    icon: AlertTriangleIcon,
+    tone: "text-amber-700 bg-amber-50",
+    activeTone: "border-amber-500 ring-amber-500/10",
+  },
+  {
+    id: "needs_pickup",
+    label: "Perlu Pickup",
+    note: "Berresi, belum terjadwal",
+    icon: CalendarClockIcon,
+    tone: "text-sky-700 bg-sky-50",
+    activeTone: "border-sky-500 ring-sky-500/10",
+  },
+  {
+    id: "delivered",
+    label: "Sampai Tujuan",
+    note: "Pesanan telah diterima",
+    icon: PackageCheckIcon,
+    tone: "text-emerald-700 bg-emerald-50",
+    activeTone: "border-emerald-500 ring-emerald-500/10",
+  },
+];
 
 const currency = formatIdr;
 const dateTime = (value: string) =>
@@ -167,66 +216,6 @@ function StatusBadge({ status }: { status: string }) {
   );
 }
 
-function ShippingStatusSelect({
-  shipment,
-  pending,
-  mobile = false,
-  onChange,
-}: {
-  shipment: Shipment;
-  pending: boolean;
-  mobile?: boolean;
-  onChange: (status: string) => void;
-}) {
-  return (
-    <Select
-      value={shipment.shippingStatus}
-      disabled={pending}
-      onValueChange={(val) => onChange(val ?? "")}
-    >
-      <SelectTrigger
-        aria-label={`Status pengiriman ${shipment.orderNumber}`}
-        aria-busy={pending}
-        size={mobile ? "default" : "sm"}
-        className={`${mobile ? "w-full rounded-xl px-3 text-base data-[size=default]:h-11" : "min-w-[144px] rounded-lg px-2.5 text-[11px] data-[size=sm]:h-9"} border-slate-200 bg-white font-bold text-slate-900 shadow-xs  focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-slate-300`}
-      >
-        {pending ? (
-          <LoaderCircleIcon
-            className="size-3.5 animate-spin text-blue-600"
-            aria-hidden="true"
-          />
-        ) : (
-          <span
-            className={`size-2 rounded-full ${statusStyles[shipment.shippingStatus]?.dot ?? "bg-slate-400"}`}
-            aria-hidden="true"
-          />
-        )}
-        <SelectValue>
-          {statusLabels[shipment.shippingStatus] ?? shipment.shippingStatus}
-        </SelectValue>
-      </SelectTrigger>
-      <SelectContent
-        align="end"
-        sideOffset={6}
-        className="min-w-[190px] rounded-xl border border-slate-200 bg-white p-1.5 shadow-xl ring-1 ring-slate-950/5"
-      >
-        {Object.entries(statusLabels).map(([value, label]) => (
-          <SelectItem
-            key={value}
-            value={value}
-            className="min-h-9 cursor-pointer rounded-lg px-2.5 pr-8 text-xs font-bold focus:bg-blue-50 focus:text-blue-900"
-          >
-            <span
-              className={`size-2 rounded-full ${statusStyles[value].dot}`}
-              aria-hidden="true"
-            />
-            {label}
-          </SelectItem>
-        ))}
-      </SelectContent>
-    </Select>
-  );
-}
 
 function LoadingState() {
   return (
@@ -235,7 +224,7 @@ function LoadingState() {
       aria-label="Memuat data pengiriman"
       aria-busy="true"
     >
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
         {Array.from({ length: 4 }).map((_, index) => (
           <div
             key={index}
@@ -255,8 +244,13 @@ export function ShippingOperations() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [courierFilter, setCourierFilter] = useState("all");
-  const [dateFilter, setDateFilter] = useState("all");
-  const [updatingOrderId, setUpdatingOrderId] = useState<number | null>(null);
+  const [dateSelection, setDateSelection] = useState<AdminDateSelection>({
+    filter: "all",
+    start: "",
+    end: "",
+  });
+  const [activeQueue, setActiveQueue] = useState<ShippingQueueId>("all");
+  const [syncing, setSyncing] = useState(false);
   const [pickupOpen, setPickupOpen] = useState(false);
   const [pickupAt, setPickupAt] = useState(defaultPickupDate);
   const [warehouseId, setWarehouseId] = useState("");
@@ -271,8 +265,13 @@ export function ShippingOperations() {
       setLoadError("");
       try {
         const url = new URL("/api/admin/shipping", window.location.href);
-        if (dateFilter && dateFilter !== "all")
-          url.searchParams.set("date_filter", dateFilter);
+        if (dateSelection.filter && dateSelection.filter !== "all") {
+          url.searchParams.set("date_filter", dateSelection.filter);
+          if (dateSelection.filter === ADMIN_CUSTOM_DATE_FILTER) {
+            url.searchParams.set("date_start", dateSelection.start);
+            url.searchParams.set("date_end", dateSelection.end);
+          }
+        }
         const response = await fetch(url.toString(), {
           headers: { Accept: "application/json" },
         });
@@ -298,7 +297,7 @@ export function ShippingOperations() {
         if (showLoading) setLoading(false);
       }
     },
-    [dateFilter],
+    [dateSelection],
   );
 
   useEffect(() => {
@@ -325,11 +324,12 @@ export function ShippingOperations() {
         .toLowerCase();
       return (
         (!query || searchable.includes(query)) &&
+        matchesShippingQueue(shipment, activeQueue) &&
         (statusFilter === "all" || shipment.shippingStatus === statusFilter) &&
         (courierFilter === "all" || shipment.courierCode === courierFilter)
       );
     });
-  }, [courierFilter, data, search, statusFilter]);
+  }, [activeQueue, courierFilter, data, search, statusFilter]);
 
   const visiblePickupIds = useMemo(() => {
     const eligible = new Set(data?.readyPickupIds ?? []);
@@ -358,21 +358,16 @@ export function ShippingOperations() {
       ? [...new Set([...current, ...visibleIds])]
       : current.filter((id) => !visibleIds.includes(id));
 
-  const metrics = useMemo(() => {
+  const queueCounts = useMemo(() => {
     const shipments = data?.shipments ?? [];
-    return {
-      ready: data?.readyPickupIds.length ?? 0,
-      transit: shipments.filter(
-        (shipment) => shipment.shippingStatus === "shipped",
-      ).length,
-      delivered: shipments.filter(
-        (shipment) => shipment.shippingStatus === "delivered",
-      ).length,
-      attention: shipments.filter(
-        (shipment) =>
-          shipment.shippingStatus === "returned" || !shipment.cnoteNo,
-      ).length,
-    };
+    return Object.fromEntries(
+      shippingQueues.map((queue) => [
+        queue.id,
+        shipments.filter((shipment) =>
+          matchesShippingQueue(shipment, queue.id),
+        ).length,
+      ]),
+    ) as Record<ShippingQueueId, number>;
   }, [data]);
 
   const availableCouriers = useMemo(
@@ -387,8 +382,9 @@ export function ShippingOperations() {
     [data],
   );
   const hasFilters =
+    activeQueue !== "all" ||
     search.trim() !== "" ||
-    dateFilter !== "all" ||
+    dateSelection.filter !== "all" ||
     statusFilter !== "all" ||
     courierFilter !== "all";
 
@@ -407,56 +403,51 @@ export function ShippingOperations() {
     return payload;
   };
 
-  const updateStatus = async (shipment: Shipment, status: string) => {
-    setUpdatingOrderId(shipment.id);
+  const syncProvider = async () => {
+    const ids = filteredShipments
+      .filter(
+        (shipment) =>
+          shipment.providerOrderId &&
+          shipment.cnoteNo &&
+          ["processing", "shipped", "delivered"].includes(
+            shipment.shippingStatus,
+          ),
+      )
+      .map((shipment) => shipment.id)
+      .slice(0, 50);
+
+    if (ids.length === 0) {
+      setNotice({
+        tone: "warning",
+        message: "Tidak ada pengiriman berresi yang dapat disinkronkan.",
+      });
+      return;
+    }
+
+    setSyncing(true);
     setNotice(null);
     try {
       const payload = await mutate({
-        action: "update-status",
-        orderId: shipment.id,
-        status,
+        action: "sync-provider",
+        orderIds: ids,
       });
-      if (status === "cancelled") {
-        setData((current) =>
-          current
-            ? {
-                ...current,
-                shipments: current.shipments.filter((item) => item.id !== shipment.id),
-              }
-            : null,
-        );
-        setNotice({
-          tone: "success",
-          message: `Order ${shipment.orderNumber} dibatalkan dan otomatis dipindahkan ke Order Management.`,
-        });
-      } else {
-        setData((current) =>
-          current
-            ? {
-                ...current,
-                shipments: current.shipments.map((item) =>
-                  item.id === shipment.id
-                    ? { ...item, shippingStatus: status }
-                    : item,
-                ),
-              }
-            : null,
-        );
-        setNotice({
-          tone: "success",
-          message: payload.message || "Status pengiriman berhasil diperbarui.",
-        });
-      }
+      const data = payload.data;
+      setNotice({
+        tone: data.failed > 0 ? "warning" : "success",
+        message: `Sinkronisasi selesai: ${data.updated} diperbarui, ${data.unchanged} tetap, ${data.failed} gagal dari ${data.results?.length ?? ids.length} order.`,
+      });
+      await loadData();
     } catch (error) {
       setNotice({
         tone: "error",
         message:
-          error instanceof Error ? error.message : "Gagal memperbarui status.",
+          error instanceof Error ? error.message : "Gagal sinkronisasi dengan provider.",
       });
     } finally {
-      setUpdatingOrderId(null);
+      setSyncing(false);
     }
   };
+
 
 
   const schedulePickup = async () => {
@@ -529,7 +520,7 @@ export function ShippingOperations() {
         <header className="flex flex-col gap-3 border-b border-slate-200/80 pb-4 sm:flex-row sm:items-end sm:justify-between sm:pb-5">
           <div className="max-w-2xl">
             <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-slate-500">
-              Shipping operations
+              Operasional pengiriman
             </p>
             <h2 className="mt-1 text-2xl font-extrabold tracking-[-0.035em] text-slate-950 md:mt-1.5 md:text-3xl">
               Pengiriman & pickup
@@ -538,20 +529,46 @@ export function ShippingOperations() {
               Order yang sudah diterima Mengantar masuk ke sini untuk pemantauan resi, status pengiriman, dan penjadwalan pickup.
             </p>
           </div>
-          <Button
-            type="button"
-            onClick={() =>
-              pickupOpen ? setPickupOpen(false) : openPickupScheduler()
-            }
-            disabled={data.readyPickupIds.length === 0}
-            size="lg"
-            className="h-11 w-full shadow-sm sm:w-auto"
-          >
-            <CalendarClockIcon className="mr-2 size-4" aria-hidden="true" />
-            {pickupOpen
-              ? "Tutup jadwal"
-              : `Jadwalkan pickup (${data.readyPickupIds.length})`}
-          </Button>
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3 w-full sm:w-auto">
+            <div className="flex gap-2 w-full sm:w-auto">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => void loadData(true)}
+                disabled={loading || syncing}
+                size="lg"
+                className="h-11 px-3 shadow-sm border-slate-200 text-slate-600 bg-white hover:bg-slate-50"
+                aria-label="Refresh data"
+              >
+                <RefreshCwIcon className={`size-4 ${loading ? "animate-spin" : ""}`} aria-hidden="true" />
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={syncProvider}
+                disabled={syncing || loading}
+                size="lg"
+                className="flex-1 sm:flex-none h-11 shadow-sm border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100"
+              >
+                <RefreshCwIcon className={`mr-2 size-4 ${syncing ? "animate-spin" : ""}`} aria-hidden="true" />
+                Sinkronkan status
+              </Button>
+            </div>
+            <Button
+              type="button"
+              onClick={() =>
+                pickupOpen ? setPickupOpen(false) : openPickupScheduler()
+              }
+              disabled={data.readyPickupIds.length === 0 || syncing}
+              size="lg"
+              className="h-11 w-full shadow-sm sm:w-auto"
+            >
+              <CalendarClockIcon className="mr-2 size-4" aria-hidden="true" />
+              {pickupOpen
+                ? "Tutup jadwal"
+                : `Jadwalkan pickup (${data.readyPickupIds.length})`}
+            </Button>
+          </div>
         </header>
         {pickupOpen && (
           <form
@@ -560,7 +577,7 @@ export function ShippingOperations() {
               event.preventDefault();
               void schedulePickup();
             }}
-            className="grid gap-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm lg:grid-cols-[1fr_1fr_1.3fr_auto] lg:items-end"
+            className="grid grid-cols-1 gap-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm lg:grid-cols-[1fr_1fr_1.3fr_auto] lg:items-end"
           >
             <label>
               <span className="mb-1.5 block text-[10px] font-black uppercase tracking-wider text-slate-600">
@@ -632,54 +649,64 @@ export function ShippingOperations() {
       </section>
 
       <section
-        className="grid grid-cols-2 gap-2.5 sm:gap-3 xl:grid-cols-4"
-        aria-label="Ringkasan pengiriman"
+        className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 sm:gap-3 xl:grid-cols-4"
+        aria-label="Antrean operasional pengiriman"
+        role="tablist"
       >
-        {[
-          {
-            label: "Siap pickup",
-            value: metrics.ready,
-            note: "Sudah berresi, belum dijadwalkan",
-            icon: PackageCheckIcon,
-            tone: "text-sky-700 bg-sky-50",
-          },
-          {
-            label: "Dalam perjalanan",
-            value: metrics.transit,
-            note: "Sedang dibawa kurir",
-            icon: TruckIcon,
-            tone: "text-blue-700 bg-blue-50",
-          },
-          {
-            label: "Perlu perhatian",
-            value: metrics.attention,
-            note: "Tanpa resi atau berstatus RTS",
-            icon: AlertTriangleIcon,
-            tone: "text-rose-700 bg-rose-50",
-          },
-        ].map((metric) => (
-          <div
-            key={metric.label}
-            className="min-w-0 rounded-xl border border-slate-200 bg-white p-3 shadow-sm sm:p-4"
-          >
-            <div className="flex items-start justify-between gap-2 sm:gap-3">
-              <div className="min-w-0">
-                <p className="text-[10px] font-black uppercase leading-4 tracking-wider text-slate-500 sm:text-[11px]">
-                  {metric.label}
-                </p>
-                <p className="mt-1.5 text-2xl font-black tracking-tight text-slate-950 sm:mt-2 sm:text-3xl">
-                  {metric.value}
-                </p>
-              </div>
-              <span
-                className={`grid size-8 shrink-0 place-items-center rounded-lg sm:size-10 sm:rounded-xl ${metric.tone}`}
-              >
-                <metric.icon className="size-4 sm:size-5" aria-hidden="true" />
+        {shippingQueues.map((queue, index) => {
+          const selected = activeQueue === queue.id;
+          return (
+            <button
+              id={`shipping-queue-${queue.id}`}
+              key={queue.id}
+              type="button"
+              role="tab"
+              aria-selected={selected}
+              aria-controls="shipping-queue-results"
+              tabIndex={selected ? 0 : -1}
+              onClick={() => setActiveQueue(queue.id)}
+              onKeyDown={(event) => {
+                if (!["ArrowLeft", "ArrowRight"].includes(event.key)) return;
+                event.preventDefault();
+                const offset = event.key === "ArrowRight" ? 1 : -1;
+                const nextIndex =
+                  (index + offset + shippingQueues.length) %
+                  shippingQueues.length;
+                const nextQueue = shippingQueues[nextIndex];
+                setActiveQueue(nextQueue.id);
+                window.requestAnimationFrame(() =>
+                  document
+                    .getElementById(`shipping-queue-${nextQueue.id}`)
+                    ?.focus(),
+                );
+              }}
+              className={`min-h-24 rounded-xl border bg-white p-3 text-left shadow-sm ring-2 ring-transparent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 sm:p-4 ${
+                selected
+                  ? queue.activeTone
+                  : "border-slate-200 hover:border-slate-300"
+              }`}
+            >
+              <span className="flex items-start justify-between gap-3">
+                <span className="min-w-0">
+                  <span className="block text-[10px] font-black uppercase leading-4 tracking-wider text-slate-500 sm:text-[11px]">
+                    {queue.label}
+                  </span>
+                  <span className="mt-1.5 block text-2xl font-black tracking-tight text-slate-950 sm:mt-2 sm:text-3xl">
+                    {queueCounts[queue.id]}
+                  </span>
+                </span>
+                <span
+                  className={`grid size-9 shrink-0 place-items-center rounded-xl sm:size-10 ${queue.tone}`}
+                >
+                  <queue.icon className="size-4 sm:size-5" aria-hidden="true" />
+                </span>
               </span>
-            </div>
-            <p className="mt-1 text-[11px] leading-4 text-slate-500 sm:text-xs">{metric.note}</p>
-          </div>
-        ))}
+              <span className="mt-1 block text-[11px] leading-4 text-slate-500 sm:text-xs">
+                {queue.note}
+              </span>
+            </button>
+          );
+        })}
       </section>
 
       {notice && (
@@ -729,26 +756,11 @@ export function ShippingOperations() {
                 >
                   Periode order
                 </label>
-                <Select
-                  value={dateFilter}
-                  onValueChange={(val) => setDateFilter(val ?? "all")}
-                >
-                  <SelectTrigger
-                    id="shipping-date"
-                    className="h-11 w-full rounded-lg bg-white px-3 text-sm shadow-sm border-slate-200"
-                  >
-                    <SelectValue>
-                      {getAdminDateFilterLabel(dateFilter)}
-                    </SelectValue>
-                  </SelectTrigger>
-                  <SelectContent>
-                    {ADMIN_DATE_FILTER_OPTIONS.map((option) => (
-                      <SelectItem key={option.value} value={option.value}>
-                        {option.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <AdminDateRangeFilter
+                  value={dateSelection}
+                  onChange={setDateSelection}
+                  className="w-full rounded-lg shadow-sm"
+                />
               </div>
 
               <div className="w-full sm:w-[150px]">
@@ -819,8 +831,9 @@ export function ShippingOperations() {
                 onClick={() => {
                   setSearch("");
                   setStatusFilter("all");
+                  setActiveQueue("all");
                   setCourierFilter("all");
-                  setDateFilter("all");
+                  setDateSelection({ filter: "all", start: "", end: "" });
                 }}
                 disabled={!hasFilters}
                 size="xl"
@@ -838,15 +851,16 @@ export function ShippingOperations() {
           </div>
         </div>
 
+        <div id="shipping-queue-results" role="tabpanel" aria-live="polite">
         {filteredShipments.length === 0 ? (
           <div className="p-10 text-center">
             <PackageSearchIcon
               className="mx-auto size-8 text-slate-400"
               aria-hidden="true"
             />
-            <h4 className="mt-3 font-black text-slate-950">
+            <h3 className="mt-3 font-black text-slate-950">
               Pengiriman tidak ditemukan
-            </h4>
+            </h3>
             {hasFilters ? (
               <>
                 <p className="mt-1 text-sm text-slate-500">
@@ -858,8 +872,9 @@ export function ShippingOperations() {
                   onClick={() => {
                     setSearch("");
                     setStatusFilter("all");
+                    setActiveQueue("all");
                     setCourierFilter("all");
-                    setDateFilter("all");
+                    setDateSelection({ filter: "all", start: "", end: "" });
                   }}
                   size="lg"
                   className="mt-4"
@@ -929,8 +944,11 @@ export function ShippingOperations() {
                 )}
               </section>
             )}
+            {/* grid-cols-1 expands to minmax(0, 1fr); without it a card's min-content
+                width widens the implicit column past the viewport and the wrapper clips
+                the right-hand controls out of reach on mobile. */}
             <div
-              className="grid gap-3 py-3 lg:hidden"
+              className="grid grid-cols-1 gap-3 py-3 lg:hidden"
               aria-label="Daftar pengiriman mobile"
             >
             {filteredShipments.map((shipment) => {
@@ -1007,12 +1025,24 @@ export function ShippingOperations() {
                   )}
                   <div className="mt-3 grid grid-cols-[minmax(0,1fr)_auto] gap-2">
                     {shipment.providerOrderId ? (
-                      <ShippingStatusSelect
-                        shipment={shipment}
-                        pending={updatingOrderId === shipment.id}
-                        mobile
-                        onChange={(status) => void updateStatus(shipment, status)}
-                      />
+                      <div className="rounded-md border border-slate-200 bg-slate-50 p-2 text-[10px] leading-tight text-slate-600 min-h-11 flex flex-col justify-center">
+                        <p className="font-bold text-slate-900 line-clamp-1">
+                          {shipment.providerStatusText ||
+                            "Menunggu update provider"}
+                        </p>
+                        <p className="mt-0.5 opacity-80">
+                          Event{" "}
+                          {shipment.providerStatusAt
+                            ? dateTime(shipment.providerStatusAt)
+                            : "belum tersedia"}
+                        </p>
+                        <p className="mt-0.5 opacity-80">
+                          Sinkron{" "}
+                          {shipment.providerSyncedAt
+                            ? dateTime(shipment.providerSyncedAt)
+                            : "belum pernah"}
+                        </p>
+                      </div>
                     ) : (
                       <div className="flex min-h-11 items-center rounded-md border border-slate-200 bg-slate-50 px-3 text-xs font-semibold leading-4 text-slate-500">
                         Menunggu Resi
@@ -1126,8 +1156,28 @@ export function ShippingOperations() {
                           Ongkir {currency(shipment.shippingCost)}
                         </p>
                       </TableCell>
-                      <TableCell className="px-4 py-4">
+                      <TableCell className="px-4 py-4 min-w-[200px]">
                         <StatusBadge status={shipment.shippingStatus} />
+                        {shipment.providerOrderId && (
+                          <div className="mt-2 text-[10px] leading-tight text-slate-500">
+                            <p className="font-bold text-slate-700 line-clamp-1">
+                              {shipment.providerStatusText ||
+                                "Menunggu update provider"}
+                            </p>
+                            <p className="mt-0.5">
+                              Event{" "}
+                              {shipment.providerStatusAt
+                                ? dateTime(shipment.providerStatusAt)
+                                : "belum tersedia"}
+                            </p>
+                            <p className="mt-0.5">
+                              Sinkron{" "}
+                              {shipment.providerSyncedAt
+                                ? dateTime(shipment.providerSyncedAt)
+                                : "belum pernah"}
+                            </p>
+                          </div>
+                        )}
                       </TableCell>
                       <TableCell className="px-4 py-4">
                         {shipment.pickupScheduledAt ? (
@@ -1151,15 +1201,7 @@ export function ShippingOperations() {
                       </TableCell>
                       <TableCell className="px-5 py-4">
                         <div className="flex items-center justify-end gap-2">
-                          {shipment.providerOrderId ? (
-                            <ShippingStatusSelect
-                              shipment={shipment}
-                              pending={updatingOrderId === shipment.id}
-                              onChange={(status) =>
-                                void updateStatus(shipment, status)
-                              }
-                            />
-                          ) : (
+                          {!shipment.providerOrderId && (
                             <span className="inline-flex h-9 items-center rounded-md border border-slate-200 bg-slate-50 px-3 text-[11px] font-semibold text-slate-500">
                               Menunggu Resi
                             </span>
@@ -1180,6 +1222,7 @@ export function ShippingOperations() {
           </div>
           </>
         )}
+        </div>
       </section>
 
       <div>

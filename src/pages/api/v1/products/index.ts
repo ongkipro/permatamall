@@ -1,17 +1,20 @@
 import type { APIRoute } from 'astro';
 import { handleOptions, headlessError, headlessOk, validateHeadlessRequest } from '../../../../lib/headless-api';
 import { getStorefrontProducts } from '../../../../lib/catalog';
+import { catalogProductId } from "../../../../lib/catalog-feed";
 
 export const prerender = false;
 
-const PUBLIC_CACHE_CONTROL =
-  'public, max-age=60, s-maxage=300, stale-while-revalidate=600';
+// Catalog data is identical for every key holder, but a shared cache stores by URL and not
+// by API key, so `public` here would let unauthenticated callers replay the catalog. The
+// longer client-side freshness window this route wants survives; the CDN copy does not.
+const CLIENT_CACHE_CONTROL = 'private, max-age=60, stale-while-revalidate=600';
 
 export const OPTIONS = handleOptions;
 
 export const GET: APIRoute = async ({ request, locals }) => {
-  const validation = await validateHeadlessRequest(request, locals);
-  if (!validation.allowed && validation.errorResponse) {
+  const validation = await validateHeadlessRequest(request, locals, { operation: 'catalogList' });
+  if (!validation.allowed) {
     return validation.errorResponse;
   }
 
@@ -40,7 +43,7 @@ export const GET: APIRoute = async ({ request, locals }) => {
     const total = products.length;
     const paginated = products.slice(offset, offset + limit);
 
-    return headlessOk(
+    return validation.finalize(headlessOk(
       {
         total,
         limit,
@@ -48,7 +51,7 @@ export const GET: APIRoute = async ({ request, locals }) => {
         has_more: offset + limit < total,
         products: paginated.map((product) => ({
           id: product.catalogId,
-          content_id: product.productId,
+          content_id: catalogProductId(product.productId),
           slug: product.slug,
           name: product.productName,
           category: product.category,
@@ -63,28 +66,28 @@ export const GET: APIRoute = async ({ request, locals }) => {
           sold_count: product.soldCount,
           variants: product.variants.map((v) => ({
             id: v.catalogId,
-            content_id: v.id,
+            content_id: catalogProductId(product.productId),
             label: v.label,
             price: v.price,
             compare_price: v.comparePrice ?? v.price,
           })),
           urls: {
             product: `/produk/${product.slug}`,
-            checkout_hybrid: `/api/v1/checkout?product_id=${product.catalogId}`,
-            form_render: `/form-hybrid?product_id=${product.catalogId}`,
+            checkout_hybrid: `/hybrid-form?product_id=${product.catalogId}`,
+            form_render: `/hybrid-form?product_id=${product.catalogId}`,
           },
         })),
       },
       200,
       {
         ...validation.corsHeaders,
-        'cache-control': PUBLIC_CACHE_CONTROL,
+        'cache-control': CLIENT_CACHE_CONTROL,
       }
-    );
+    ));
   } catch (error) {
-    return headlessError('Gagal memuat katalog produk.', 500, {
+    return validation.finalize(headlessError('Gagal memuat katalog produk.', 500, {
       code: 'PRODUCTS_LOAD_ERROR',
       details: error instanceof Error ? error.message : String(error),
-    });
+    }, validation.corsHeaders));
   }
 };

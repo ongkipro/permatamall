@@ -1,11 +1,57 @@
 {
+  // Permata Mall — install of AdsBookCMS, rendered from the product template.
+  //
+  // Its original D1 was deleted at some point before 2026-08-23, which is why
+  // the site was down and why `cmsads-permatamall-d1` here is a new database
+  // rather than the id this file used to carry. The KV namespace and the R2
+  // bucket survived and are the originals.
+  //
+  // Binding NAMES are fixed across every install — OMS_DB, SESSION,
+  // ASSET_BUCKET, AI, ASSETS — because the application resolves them by name.
+  // Only the resource names and ids differ.
   "$schema": "./node_modules/wrangler/config-schema.json",
+
+  // Globally unique within the Cloudflare account. Placeholder values below are
+  // syntactically valid so tooling runs on a fresh clone — they are NOT a target.
   "name": "cmsads-permatamall",
+  "main": "./src/worker.ts",
+
+
   "compatibility_date": "2026-08-01",
   "compatibility_flags": [
     "nodejs_compat"
   ],
+
+  // Runtime credentials cannot safely degrade to placeholders. Declaring the
+  // required names lets Wrangler load only these secrets from process.env in
+  // local development and validate that every deployed Worker defines them.
+  "secrets": {
+    "required": [
+      "AUTH_SECRET",
+      "INSTALL_TOKEN",
+      "MENGANTAR_API_KEY",
+      "MENGANTAR_ORIGIN_AREA_ID",
+      "MENGANTAR_PICKUP_ADDRESS_ID",
+      "AUTOLARIS_API_KEY"
+    ]
+  },
+
+  // Keep false so an install never gets an unreviewed *.workers.dev endpoint.
   "workers_dev": false,
+  // Hourly evaluation catches a stalled conversion outbox even when no operator
+  // opens the dashboard. Alert transitions are deduplicated in the install's KV.
+  //
+  // Not registered here: the account is on Workers Free, which caps cron
+  // triggers at five per account, and all five are taken (carukesi,
+  // petanisejahtera, taniniaga, zvarashop, zanobyshop). This store has no
+  // traffic and no outbox yet, so it is one of the two that can wait — the
+  // other is skincarebpom, which released its slot the same way. Restoring it
+  // after a Workers Paid upgrade is uncommenting one line; note that wrangler
+  // only updates the triggers it is given, so a previously registered schedule
+  // also has to be cleared through the schedules API.
+  // "triggers": { "crons": ["7 * * * *"] },
+
+
   "assets": {
     "binding": "ASSETS"
   },
@@ -19,7 +65,7 @@
     {
       "binding": "OMS_DB",
       "database_name": "cmsads-permatamall-d1",
-      "database_id": "054f2261-b8e9-4811-aeb2-5a580928fdc3",
+      "database_id": "7c390b85-cd51-4d0a-b6fc-007b2ea00977",
       "migrations_dir": "src/db/migrations"
     }
   ],
@@ -32,6 +78,15 @@
   "ai": {
     "binding": "AI"
   },
+
+  // Without this, Workers Logs are off and the ~76 labelled console.error
+  // calls in src/ are unqueryable — a failing install cannot be diagnosed
+  // after the fact. See OBSERVABILITY.md.
+  "observability": {
+    "enabled": true,
+    "head_sampling_rate": 1
+  },
+
   "routes": [
     {
       "pattern": "permatamall.shop",
@@ -42,17 +97,40 @@
       "custom_domain": true
     }
   ],
+
+  // These are read at BUILD time through import.meta.env, not at runtime, so a
+  // change here only takes effect after `npm run build`. Redeploying an already
+  // built bundle with new vars changes nothing. See ARCHITECTURE.md §5.
   "vars": {
-    "PUBLIC_COD_DISABLED_PROVINCES": "papua,papua barat,papua barat daya,papua tengah,papua pegunungan,papua selatan,maluku,maluku utara,nusa tenggara timur,kalimantan utara,sulawesi barat,gorontalo,kepulauan riau,aceh,bengkulu",
     "PUBLIC_SITE_NAME": "Permata Mall",
     "PUBLIC_SITE_URL": "https://permatamall.shop",
-    "PUBLIC_EMBED_ALLOWED_ORIGINS": "https://permatamall.shop",
+    // Deliberately empty, like the tagline below. A placeholder here becomes
+    // the meta description Google prints under the store, and the second half
+    // of the home page <title>.
     "PUBLIC_SITE_DESCRIPTION": "Solusi Belanja Online Praktis & Terpercaya.",
-    "PUBLIC_SITE_LOGO": "/images/logo.webp",
+    // Deliberately empty. A non-empty default here becomes the second half of
+    // every unconfigured store's <title>, which is how a fresh install came to
+    // announce itself as "Toko Anda — Belum Dikonfigurasi".
     "PUBLIC_SITE_TAGLINE": "Pusat Belanja Online Pilihan",
-    "PUBLIC_SITE_THEME_COLOR": "#0F172A",
+    "PUBLIC_ADMIN_NAME": "Permata Mall Ops",
+    "PUBLIC_EMBED_ALLOWED_ORIGINS": "https://permatamall.shop",
+
+    // Root-relative or absolute. Replace the placeholder wordmark in
+    // public/images/ with the store's own brand assets.
+    "PUBLIC_SITE_LOGO": "/images/logo.webp",
+
+    // Must match #rrggbb or the code falls back to its own default.
+    "PUBLIC_SITE_THEME_COLOR": "#111111",
+
+    // Drives <html lang> and the Open Graph locale.
     "PUBLIC_SITE_LOCALE": "id-ID",
+
+    // compact-market. wide-catalog was retired in ADR-018 and migration 0044;
+    // an unknown value takes the home page to its unavailable state (503).
     "PUBLIC_STOREFRONT_TEMPLATE": "compact-market",
-    "PUBLIC_ADMIN_NAME": "Permata Mall Ops"
+
+    // Provinces excluded from cash on delivery, comma separated, lowercase.
+    // This is the shipped Indonesian default; adjust per store.
+    "PUBLIC_COD_DISABLED_PROVINCES": "papua,papua barat,papua barat daya,papua tengah,papua pegunungan,papua selatan,maluku,maluku utara,nusa tenggara timur,kalimantan utara,sulawesi barat,gorontalo,kepulauan riau,aceh,bengkulu"
   }
 }

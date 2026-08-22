@@ -97,7 +97,7 @@ export function renderCrmMessage(template: string, ctx: CrmOrderContext): string
   const fmtPrice = (val?: number) =>
     val != null && val > 0 ? `Rp ${Math.round(val).toLocaleString('id-ID')}` : 'Rp 0';
 
-  const seller = ctx.sellerName || ctx.storeName || 'Petani Sejahtera';
+  const seller = ctx.sellerName || ctx.storeName || 'Toko Kami';
 
   const rawProductPrice =
     ctx.productPrice && ctx.productPrice > 0

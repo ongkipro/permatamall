@@ -1,192 +1,143 @@
-# AGENTS.md — CMSAds Repository Contract
+# AGENTS.md — Working Agreement for AdsBookCMS
 
-This file is the entry point for AI coding agents working in CMSAds. Read it before changing code or documentation.
+> Verified against disk: 2026-08-17 @ `5cb1d32` + current A13 working tree
 
-## 1. Repository Purpose
+This file is the contract for any AI coding agent or contributor working in this repository. Read it before the first edit.
 
-CMSAds is an Astro 7 SSR commerce and merchant OMS backend running on Cloudflare Workers. It may also render an integrated public storefront, while a headless tenant may use a separately deployed storefront Worker and keep CMSAds service-only. React islands provide interactive admin surfaces. Cloudflare D1 stores operational data, KV stores sessions and quotas, and R2 stores tenant assets.
+**The product is AdsBookCMS (single):** a direct-response commerce CMS installed onto Cloudflare Workers, where **1 installer = 1 Worker = 1 store**. `permatamall.shop` is the reference instance, not the product name.
 
-The repository uses deployment-per-tenant isolation:
+---
 
-- one shared source repository;
-- one named Cloudflare environment and independently built Worker per tenant;
-- one isolated D1, KV, and R2 resource set plus one Workers AI binding per tenant;
-- stable application binding names: `OMS_DB`, `SESSION`, `ASSET_BUCKET`, and `AI`;
-- no runtime hostname-to-database dispatch.
+## 1. First principles
 
-Read [`CLOUDFLARE_MULTI_TENANT.md`](./CLOUDFLARE_MULTI_TENANT.md) before changing tenant configuration, bindings, content selection, migrations, or deployment commands.
-Read [`INSTALLATION.md`](./INSTALLATION.md) for portable local bootstrap, new-account provisioning, no-data-import onboarding, and integrated versus headless setup. Read [`STOREFRONT_INTEGRATION.md`](./STOREFRONT_INTEGRATION.md) before changing public storefront, form, gateway, or Meta Ads behavior.
-Read [`COLLABORATOR_GUIDE.md`](./COLLABORATOR_GUIDE.md) for merchant collaborator guidelines, core CMS locking rules, and allowed storefront visual customizations.
+1. **The code wins.** When documentation and the tree disagree, the tree is right and the document is a bug to be fixed. This repository was forked from an upstream engine and its documentation described that other repository for months; assume nothing you have not verified.
+2. **Never claim something works without running it.** `npm test`, `npm run check`, `npm run build`. For anything browser-visible, open the page — an unterminated `.astro` frontmatter block once produced a live 404 while every static check stayed green.
+3. **State what you did not do.** Skipped verification, deferred scope, and unproven assumptions get named explicitly.
+4. **This repository deploys nothing.** It is the product; CI runs check, test and build only. A live store deploys from its own install repository, against its own resources. Never add a deploy step or Cloudflare credentials here.
 
-### 1.1 Collaborator & AI Customization Rules (Core Lock vs Tenant Customization)
+---
 
-- **Owner-Only Core Engine**: CMS Ads engine core (`src/pages/api/`, `src/db/`, `src/components/admin/`, `src/lib/order-persistence.ts`, `src/lib/mengantar-client.ts`, `src/lib/autolaris-client.ts`, `src/lib/rts-scoring.ts`) is strictly owned by **Paduka Ongki (Core Owner)**. Only the Core Owner is authorized to push commits to the core repository.
-- **Collaborator & Merchant AIs**: Merchant collaborators and external AI customization agents MUST NOT push core commits or modify backend CMS engine code. They pull upstream CMS updates, configure tenant bindings, and deploy tenant Worker builds.
-- **Locked Checkout Forms**: Checkout form structures (`form-hybrid`, `form-middle`, `form-full`) are locked. Collaborators and external AI agents MUST NOT modify form input names, validation scripts (`form-hybrid.ts`, `form-middle.ts`), state resolution, or payment/shipping handling. Visual color styling, typography, and container padding MAY be adjusted via CSS tokens.
-## 2. Mandatory Documentation Protocol (AI AGENT MANDATE: ALWAYS UPDATE .MD FILES)
+## 2. Document ownership
 
-**CRITICAL RULE FOR ALL AI CODING AGENTS**: Any code modification, bug fix, feature addition, DB migration, UI tweak, or production deployment MUST be documented in the repository's Markdown files before completing a task or handing off to the user.
+Exactly one document owns each subject. Do not restate another document's truth; link to it.
 
-### Required Markdown Files Updates per Task:
-1. **`BUILD-LOG.md` (Append-Only Chronological History)**:
-   - MUST append a new section for every completed task or deployment (`## Feature / Fix Title — YYYY-MM-DD`).
-   - MUST state: Root cause / problem, key improvements & code changes, verification proof (`node --test`, build status), and deployment status (`wrangler deploy` worker commit hash).
-2. **`STATUS.md` (Live Project State)**:
-   - MUST update `Last Updated` date to current date (`YYYY-MM-DD`).
-   - MUST reflect the latest feature availability, live worker deployment status, and verified active contracts.
-3. **`TASKS.md` (Task Traceability)**:
-   - MUST check off completed task items (`- [x] TXXX`) or append a new task item under the appropriate phase.
-   - Ensure all requirement dependencies and acceptance criteria trace accurately.
-4. **`PRD.md` & `README.md` (Product & Repository Ownership)**:
-   - MUST update requirements, platform capabilities, or setup guidelines whenever system boundaries, endpoints, or features expand.
+| Document | Owns |
+| --- | --- |
+| `README.md` | Repository entry point and orientation. Owns nothing else — it links |
+| `AGENTS.md` | Working rules for anyone editing this repository, including this table |
+| `ARCHITECTURE.md` | System structure, data layer, config resolution, gap register §10 |
+| `DECISIONS.md` | Architecture decisions (ADR). Append-only |
+| `RELEASE.md` | Deploy, migrations, versioning, rollback, approval boundary |
+| `OBSERVABILITY.md` | Logging, failure visibility, what to enable |
+| `INSTALLATION.md` | Standing up a new install |
+| `STATUS.md` | Current state of the running system |
+| `UNIMPLEMENTED_SPECS.md` | Remaining work and external blockers |
+| `PRD.md` | Product requirements |
+| `TASKS.md` | Execution log |
+| `BUILD-LOG.md` | Chronological history. Append-only |
+| `DESIGN-SYSTEM.md` | Visual contract |
+| `STOREFRONT_INTEGRATION.md` | Headless `/api/v1/*` contract |
+| `MENGANTAR_INTEGRATION_SPEC.md` | Courier provider boundary |
+| `TRACKING_SPECS.md` | Ad signal contract |
+| `PRD-ADMIN-LOGIN.md` | Admin login, first-run access, session |
+| `docs/GOOGLE_ADS_SETUP.md` | Google Ads / Merchant Center setup |
+| `docs/LANDING-PAGES.md` | Building a landing page, CMS or native Astro |
+| `docs/AUDIT-<date>.md` | Point-in-time audit report. Findings only; every fix is owned by the document or issue it names. Never a source of truth, never maintained after its date |
 
-### Document Source Matrix
-Use disk state, not model memory. Read only the documents relevant to the task:
+Every document carries a `> Verified against disk: <date> @ <sha>` line, this one
+included. If you change what a document describes, update that line or the
+document is lying about its own freshness. A rewritten history orphans every SHA
+those headers cite, so re-stamp them all when `main` is re-founded — sixteen
+documents were left pointing at commits reachable only from
+`backup/pre-history-rewrite`.
 
-| Need | Source |
-|---|---|
-| Repository orientation and supported workflows | [`README.md`](./README.md) |
-| Core CMS version registry, UI version badge, and deployment runbook | [`VERSION.md`](./VERSION.md) |
-| Automated CI/CD, tenant batch deploy (`npm run tenant:deploy:all`), and auto-update guide | [`AUTO_UPDATE_DEPLOY.md`](./AUTO_UPDATE_DEPLOY.md) |
-| Chronological implementation evidence (MANDATORY APPEND) | [`BUILD-LOG.md`](./BUILD-LOG.md) |
-| Requirements (MUST STAY ACCURATE) | [`PRD.md`](./PRD.md) |
-| Architecture and ownership decisions | [`PLAN.md`](./PLAN.md) |
-| Traceable implementation backlog (MUST MARK DONE) | [`TASKS.md`](./TASKS.md) |
-| Live project state & evidence (MUST UPDATE DATE & STATE) | [`STATUS.md`](./STATUS.md) |
-| Cloudflare tenant topology, inventory, cleanup, and commands | [`CLOUDFLARE_MULTI_TENANT.md`](./CLOUDFLARE_MULTI_TENANT.md) |
-| Portable installation, new-account onboarding, and no-data-import provisioning | [`INSTALLATION.md`](./INSTALLATION.md) |
-| Headless storefront, locked forms, gateway, and Meta Ads integration | [`STOREFRONT_INTEGRATION.md`](./STOREFRONT_INTEGRATION.md) |
-| Mengantar behavior and known gaps | [`MENGANTAR_INTEGRATION_SPEC.md`](./MENGANTAR_INTEGRATION_SPEC.md) |
-| Tracking contracts | [`TRACKING_SPECS.md`](./TRACKING_SPECS.md) |
-| Storefront UI rules | [`STOREFRONT_DESIGN_SYSTEM.md`](./STOREFRONT_DESIGN_SYSTEM.md) and [`design-tokens.md`](./design-tokens.md) |
-| Genuine remaining work and blockers | [`UNIMPLEMENTED_SPECS.md`](./UNIMPLEMENTED_SPECS.md) |
-| Indonesian visual handoff | [`doc/preview/index.html`](./doc/preview/index.html) |
+**This table is the only copy.** `README.md` links to it rather than repeating
+it; the two drifted apart the last time both carried a list, which is the exact
+failure mode this section exists to prevent.
 
-When documentation and code disagree, code and executable evidence win. Update the stale document in the same change.
-## 3. First-Time Local Setup
+---
 
-Requirements:
+## 3. Invariants — do not break these
 
-- Node.js 22 or newer;
-- npm 10 or newer;
-- POSIX shell;
-- no globally installed TypeScript, Astro, or Wrangler is required.
+**Commerce**
+- Checkout never dispatches to a courier. Orders land as `pending`; an operator releases them explicitly from `/admin/orders`.
+- Paid status changes dispatch *eligibility*, never dispatch itself.
+- Price, stock, weight, and identity come from D1. Browser state is never pricing authority.
+- Stock non-negativity and exactly-once restoration are enforced through the shared order lifecycle. All single/bulk status changes and deletions must use `src/lib/order-lifecycle.ts`; never write order status or delete reserved items around it.
 
-From the repository root:
+**Config**
+- Binding names are fixed: `OMS_DB`, `SESSION`, `ASSET_BUCKET`, `AI`, `ASSETS`.
+- Provider credentials are D1-first, env-fallback. Never echo a stored credential back through a browser API.
+- Meta CAPI tokens are server-only. Browser and server Purchase share one per-order `event_id`.
+- Every Headless route is registered in `HEADLESS_OPERATIONS` with one minimum scope. API-key usage quotas and write audit events are D1-backed and part of the request boundary, not UI-only policy.
 
-```bash
-./scripts/install.sh
-```
+**Content**
+- Product presentation does **not** fail closed, and that is deliberate: an active product with no published content still renders, described from its own title, category and variants. What must never happen is copy belonging to a different product or a different merchant reaching it — that is the invariant, not omission.
+- No merchant's content, brand, contact details, or media may ship for a different merchant. This has gone wrong before and reached production.
 
-The installer performs the supported bootstrap sequence:
+**Data**
+- `src/db/migrations/` is the only description of the schema. There is no `schema.ts` and no generator.
+- Migrations are hand-authored.
+- Never edit an applied migration in place. Corrections are new forward migrations. The single documented exception is `0017`, which had to be edited because it aborted the chain on a fresh database — read its header before considering another.
+- The Worker applies the checked-in migration chain on the first database-backed request after a deploy. Claim rows in `d1_migrations` and their schema statements run in one D1 batch; do not split that atomic boundary.
 
-1. verifies Node.js and npm versions;
-2. runs `npm ci` using the committed lockfile;
-3. validates tenant configuration;
-4. generates Cloudflare binding types for `petanisejahtera-preview`, or for the registered profile selected by `CMSADS_DEFAULT_TENANT`;
-5. runs Astro and TypeScript static validation.
+---
 
-Do not replace this with `npm install`, install project tools globally, or modify the lockfile unless dependency work is explicitly required.
-
-This local installer does not authenticate Cloudflare, create resources, migrate remote D1, deploy, configure DNS or secrets, or import merchant data. See [`INSTALLATION.md`](./INSTALLATION.md) before preparing a new Cloudflare account or tenant.
-
-## 4. Local Tenant Workflow
-
-List and validate known tenant profiles:
+## 4. Verification
 
 ```bash
-npm run tenant:list
-npm run tenant:validate
+npm test          # node --test over src/lib/*.test.ts
+npm run check     # astro check && tsc --noEmit
+npm run build     # astro build
 ```
 
-Prepare the selected tenant's local secrets in `.dev.vars.<tenant>`. Never print, commit, copy into documentation, or place secrets in public Wrangler variables.
+On a fresh clone, run `npm run check` rather than bare `npx tsc --noEmit`. `astro check` generates `.astro/types.d.ts` first; without it `tsc` reports phantom errors such as `Property 'env' does not exist on type 'ImportMeta'`.
 
-Run exactly one tenant:
+Current verified working-tree baseline: **310 passing**, 0 type errors, `astro check` 0 errors / 0 warnings / 0 hints. A change that reduces this baseline is not done.
 
-```bash
-npm run tenant:migrate:local -- petanisejahtera
-npm run tenant:dev -- petanisejahtera
-```
+New non-trivial logic — a branch, a parser, a money or auth path — leaves one runnable check behind. Trivial one-liners do not need a test.
 
-Build and validate exactly one tenant:
+`src/lib/auth.ts` is covered by `src/lib/auth.test.ts` (15 tests, mutation-verified). That suite asserts security *properties* — a tampered signature is rejected, a rotated credential closes the session, a role never reaches a route it should not. Keep it that way: a test that merely asserts a valid token is valid buys nothing.
 
-```bash
-npm run tenant:types -- petanisejahtera
-npm run tenant:build -- petanisejahtera
-npm run tenant:dry-run -- petanisejahtera
-```
+---
 
-Use `petanisejahtera-preview` only for isolated preview verification. It is not a separate merchant content pack.
+## 5. Approval gates
 
-## 5. Required Engineering Invariants
+Ask before: `wrangler deploy` or any `--remote` D1 command — both act on a real install and neither belongs to this repository; creating or deleting Cloudflare resources; anything that mutates provider state at Mengantar or AutoLaris; reading or printing secrets; deleting data; pushing to a branch that an install deploys from.
 
-- Reuse existing helpers, schemas, route patterns, and UI primitives before adding code or dependencies.
-- Keep Astro for SSR and shared/static surfaces. Use React islands only where browser interactivity requires them.
-- Keep operational prices, stock, products, orders, credentials, provider state, tenant instructions, drafts, and publications in the selected tenant's D1 or Worker environment—not MDX or a committed merchant content pack.
-- Reserve MDX for optional editorial long-form content. Runtime-managed merchants use D1 content and R2 media; missing content must fail closed instead of falling back to another merchant.
-- Treat provisioning as an isolated bootstrap with one immutable canonical sample. A new tenant receives isolated D1/KV/R2/AI resources, schema, one store row, one forced-rotation owner credential, product `10001` (`aussie`, `Aussie Sample`), and variants `20001` (`500ml`, Rp150,000, `600g`) and `20002` (`1 Liter`, Rp300,000, `1100g`). It never imports another tenant's merchant products, content, media, customers, orders, provider configuration, tracking credentials, sessions, or secrets. Admin/API mutation must not alter or delete the sample.
-- Preserve the ingress topology selected before provisioning: `custom-domain` lets CMSAds own the integrated public origin; `service-only` gives CMSAds no public route and requires a separately owned storefront Worker with a reviewed private service-binding gateway.
-- A custom headless frontend may own layout, routes, motion, and copy presentation, but it may not fork catalog identity, price, stock, shipping, payment, order persistence, operator lifecycle, or tracking identity.
-- CMSAds owns the middle/full/hybrid form state and mutation contracts at `/middle-form`, `/full-form`, and `/hybrid-form`; never add legacy `/form-*` aliases. Known eligible province resolves middle, while store-disabled or unknown geo resolves full. Keep store-level `cod_disabled_province_codes` distinct from courier/provider exclusions. Public bootstrap/catalog APIs, an executable framework-neutral adapter, and cross-storefront consent remain planned until their owning tasks have proof.
-- Keep Meta CAPI tokens server-only. Browser and server Purchase must share the dedicated per-order event ID and canonical D1 product ID; a page interaction or unqualified order is never Purchase.
-- Preserve the distinction between payment status and shipping status. Checkout and payment reconciliation change order/payment state but never bypass explicit operator confirmation and Shipping release.
-- Never expose raw API keys, tokens, password hashes, webhook secrets, customer records, payment data, or authentication sessions.
-- Never fire concurrent Mengantar `POST /order` requests. Single and bulk Push actions belong only in Shipping and must use the shared sequential queue with per-order results.
-- Persist provider identity and `cnote_no` only from an accepted response. A provider failure remains retryable in `processing`; an accepted unpaid draft may have no waybill.
-- Workers AI may create only a validated draft from the selected tenant's instruction and D1 facts. Publication remains an explicit authenticated action, and evidence-backed trust fields remain manual.
-- Do not claim provider behavior was live-verified when only local stubs, validation paths, credential-missing responses, or selection-only UI were exercised.
-- Do not create a shared-D1 tenancy path or choose a database from request host/input.
-- Do not modify storefront conversion structure or design tokens incidentally during admin/backend work.
+Pushing to `main` **here** deploys nothing (ADR-012), so it is ordinary work — but adding a deploy step or Cloudflare credentials to this repository is not, and must never be done.
 
-## 6. Validation Contract
+Local work — tests, typecheck, build, local D1, reading code — needs no approval.
 
-Use the smallest executable proof for the changed behavior, then run the project checks appropriate to the change.
+A permitted command is not an approved one. The tooling here runs with broad permissions; the boundary is behavioural.
 
-```bash
-npm test
-npm run check
-npm run build
-```
+---
 
-Additional requirements:
+## 6. Code discipline
 
-- UI changes: run the built or development Worker and exercise the changed route in a browser, including 390px mobile behavior when responsive UI is affected.
-- Performance & Latency contract: ALWAYS check CMS Admin panel and public Front-End speed/responsiveness. Read APIs (`GET`) MUST be 100% side-effect free and read-only without blocking `DELETE`/`UPDATE` write locks. Ensure D1 queries are indexed (`orders(shipping_status, created_at)`) and UI pagination remains bounded (20 items/page).
-- D1 schema changes: run `npm run db:generate`, inspect the generated SQL, and apply it only to the selected local tenant before testing.
-- Tenant configuration changes: run `npm run tenant:validate`, tenant type generation, the tenant build, and `tenant:dry-run`.
-- Documentation-only changes: validate Markdown and HTML links, fragments, duplicate IDs, visual-guide navigation, portable paths, and `git diff --check`; do not run unrelated application builds.
+Smallest change that is correct. Reuse what exists before adding; the codebase already has 70 non-test lib modules and duplicating one is the most common failure mode.
 
-Record material implementation, remote-resource, or verification changes in `STATUS.md` and append one factual entry to `BUILD-LOG.md`. Update `PRD.md` and `TASKS.md` only when requirements, acceptance criteria, traceability, or backlog state actually change.
+Before adding a dependency, check whether the platform already provides it. Two headless UI libraries already ship side by side (`radix-ui` and `@base-ui/react`) — do not add a third.
 
-## 7. Approval-Gated Operations
+Fix root causes, not symptoms. Grep every caller before editing a shared function: one guard in the shared path is a smaller diff than one guard per call site, and patching only the path in front of you leaves siblings broken.
 
-Do not perform any of the following without explicit operator approval in the current conversation:
+Deliberate corner-cuts get a `// lazy:` comment naming the ceiling and the upgrade path.
 
-- reading or printing secret files, credential values, or authentication sessions;
-- remote D1 migrations or writes;
-- Cloudflare deployment, DNS, Custom Domain, secret, KV, R2, or Worker mutations;
-- Worker deletion and D1/KV/R2 deletion, which are separate approvals and must never be bundled implicitly;
-- destructive database or filesystem operations;
-- package upgrades or new dependencies outside the requested scope;
-- commits or pushes unless explicitly requested.
+---
 
-Remote commands are intentionally guarded:
+## 7. Things that are wrong on purpose right now
 
-```bash
-CF_D1_REMOTE=1 npm run tenant:migrate:remote -- <tenant>
-CF_DEPLOY_REMOTE=1 npm run tenant:deploy -- <tenant>
-```
+Do not "fix" these silently or treat them as bugs to be surprised by — they are known, tracked, and have decisions attached:
 
-The flags are necessary but do not replace operator approval. Never loop over all tenants for remote operations. Before deleting an orphan Worker, prove that it has no Custom Domain, route, or enabled `workers.dev` endpoint; name the exact Worker in the approval; and retain shared D1/KV/R2 resources unless their deletion is separately approved.
+- Missing published home content renders the explicit setup state. Do not restore generated or compiled merchant-facing fallback copy.
+- `theme_color`, `locale` and `admin_name` are stored per install but have no admin editor yet.
+- Storefront template definitions live in `storefront_templates`. Built-in `compact-market` and `wide-catalog` are seeded only as editable D1 definitions; adding a definition must not require a rebuild.
+- The admin session cookie is `adsbook_session`, declared once as `SESSION_COOKIE_NAME` in `src/lib/auth.ts`. Never write the literal string; a writer and reader that disagree is a silent lockout.
+- The click cookie is `adsbook_click_ids`. The former `zanoby_click_ids` is still **read** as a fallback so an upgrading install does not lose 90 days of in-flight attribution. Never write the legacy name; it ages out on its own.
+- Newly issued developer API keys carry `adsbook_live_`. Keys issued as `cmsads_live_` still validate — the stored value is a SHA-256 digest, so the prefix never took part in matching, and rewriting it would have broken them. The legacy prefix survives only in `maskApiKeySecret` so an old key still renders a coherent preview.
 
-## 8. Handoff Standard
+---
 
-A completed handoff states:
+## 8. Language
 
-- exact files and contracts changed;
-- exact verification commands or browser/API scenarios exercised;
-- observed results and any credential-gated limits;
-- migration or deployment status;
-- whether the worktree is clean and whether commits remain local.
-
-Never report scaffolding, placeholders, or an unverified subset as complete.
+Repository artifacts — documentation, code comments, commit messages — are written in **English**. User-facing product copy is Indonesian. Do not translate quoted UI strings or third-party interface labels.

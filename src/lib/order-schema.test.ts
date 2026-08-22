@@ -59,6 +59,16 @@ test('online checkout requires a matching AutoLaris channel and no longer requir
     payment_method: 'bank_transfer',
     payment_channel: 'DANA',
   }).success, false);
+  const locked = orderSubmitSchema.safeParse({
+    ...validOrder,
+    payment_method: 'bank_transfer',
+    payment_channel: 'VABSI',
+  });
+  assert.equal(locked.success, false);
+  assert.equal(
+    locked.error?.issues.some((issue) => issue.message === 'Channel pembayaran tidak aktif di provider'),
+    true,
+  );
 });
 
 test('manual transfer requires a selected seller bank account', () => {
@@ -86,7 +96,7 @@ test('CRM rendering replaces order variables and produces an encoded WhatsApp UR
     district: 'Krembangan',
     province: 'Jawa Timur',
     orderNumber: 'INV-1',
-    productName: 'Aussie',
+    productName: 'Alpha',
     totalAmount: 183000,
     courierCode: 'SiCepat',
   });

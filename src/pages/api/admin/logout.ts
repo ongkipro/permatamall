@@ -1,5 +1,5 @@
 import type { APIRoute } from 'astro';
-import { getSessionCookie, verifyJwt } from '../../../lib/auth';
+import { SESSION_COOKIE_NAME, getSessionCookie, verifyJwt } from '../../../lib/auth';
 import { getEnvValue, getRuntimeEnv } from '../../../lib/env';
 
 export const prerender = false;
@@ -13,6 +13,6 @@ export const POST: APIRoute = async ({ request, locals, cookies, redirect }) => 
   if (sessions && session) {
     await sessions.delete(`admin-session:${session.jti}`);
   }
-  cookies.delete('cmsads_session', { path: '/' });
+  cookies.delete(SESSION_COOKIE_NAME, { path: '/' });
   return redirect('/hello', 303);
 };

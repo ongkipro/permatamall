@@ -28,7 +28,8 @@ export type Product = {
   seoTitle: string;
   seoDescription: string;
   price: number;
-  comparePrice: number;
+  /** Merchant-set strike-through price. Absent when the merchant has not set one. */
+  comparePrice?: number;
   image: string;
   heroImage: string;
   images?: string[];
@@ -48,25 +49,3 @@ export type Product = {
   reviews: ProductReview[];
   variants: ProductVariant[];
 };
-
-const baseProducts: Product[] = [];
-
-export const editorialProducts: Product[] = baseProducts;
-
-export const products: Product[] = baseProducts;
-
-export function getProductSelectionByVariantId(variantId: string) {
-  for (const product of products) {
-    const variant = product.variants.find((candidate) => candidate.id === variantId);
-    if (variant) return { product, variant };
-  }
-  return null;
-}
-
-export function formatRp(value: number) {
-  return `Rp${Math.round(value).toLocaleString('id-ID').replace(/,/g, '.')}`;
-}
-
-export function getProductBySlug(slug: string) {
-  return products.find((product) => product.slug === slug);
-}

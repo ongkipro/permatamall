@@ -11,9 +11,13 @@
  */
 
 export interface AdTaxonomy {
-  googleCategoryId: number;
-  googleCategoryName: string;
-  metaCategoryName: string;
+  /**
+   * Absent when no rule was confident enough. A feed omits the category rather
+   * than asserting one — see DEFAULT_TAXONOMY.
+   */
+  googleCategoryId?: number;
+  googleCategoryName?: string;
+  metaCategoryName?: string;
   productType: string;
 }
 
@@ -103,12 +107,67 @@ const TAXONOMY_RULES: TaxonomyRule[] = [
   },
 ];
 
+/**
+ * No category at all, deliberately.
+ *
+ * This used to default to Handbags (`6551`), justified in the note below as "at
+ * least a category this catalog sells" — true while the product shipped a
+ * bundled handbag catalogue. That catalogue is gone: an install starts empty and
+ * sells whatever its merchant sells. Keeping the default would have submitted
+ * every unclassified product in every store to Merchant Center as a handbag,
+ * which is precisely the misrepresentation the note warns about.
+ *
+ * `google_product_category` and `fb_product_category` are optional on both
+ * platforms, and Google auto-classifies what a feed omits. Saying nothing is
+ * strictly safer than saying something wrong.
+ */
 const DEFAULT_TAXONOMY: AdTaxonomy = {
-  googleCategoryId: 6551,
-  googleCategoryName: "Apparel & Accessories > Handbags, Wallets & Cases > Handbags",
-  metaCategoryName: "Apparel & Accessories > Handbags, Wallets & Cases > Handbags",
-  productType: "Fashion Wanita > Tas & Aksesori",
+  productType: "Umum",
 };
+
+/**
+ * Scoring — deliberately conservative.
+ *
+ * A wrong category in a Merchant Center feed is grounds for a misrepresentation
+ * suspension, and there is no catalogue to make a default safe. So a rule has to
+ * earn the win, and an unconfident match emits no category at all:
+ *
+ * 1. Keywords match whole words, never substrings. "sebuah" used to count as a
+ *    fertilizer hit ("buah"), "kertas" and "bagus" as handbag hits ("tas", "bag").
+ * 2. Category and title decide. A hit there is worth NAME_HIT_WEIGHT.
+ * 3. The description only breaks ties: its distinct hits are capped below the
+ *    weight of a single name hit, so a long description mentioning foreign words
+ *    can never outvote the words that actually name the product.
+ * 4. A rule must reach MIN_SCORE — one name hit — and be the sole top scorer.
+ *    Ties and under-confidence both fall through to the default.
+ */
+const NAME_HIT_WEIGHT = 3;
+const DESCRIPTION_HIT_CAP = 2;
+const MIN_SCORE = NAME_HIT_WEIGHT;
+
+const keywordPatterns = new Map<string, RegExp>();
+
+function matchesKeyword(text: string, keyword: string): boolean {
+  if (!text) return false;
+  let pattern = keywordPatterns.get(keyword);
+  if (!pattern) {
+    const escaped = keyword.toLowerCase().replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    pattern = new RegExp(`(?<![a-z0-9])${escaped}(?![a-z0-9])`);
+    keywordPatterns.set(keyword, pattern);
+  }
+  return pattern.test(text);
+}
+
+function scoreRule(rule: TaxonomyRule, name: string, description: string): number {
+  let nameHits = 0;
+  let descriptionHits = 0;
+  for (const keyword of rule.keywords) {
+    // A keyword counts once, in the strongest field it appears in.
+    if (matchesKeyword(name, keyword)) nameHits += 1;
+    else if (matchesKeyword(description, keyword)) descriptionHits += 1;
+  }
+  return nameHits * NAME_HIT_WEIGHT + Math.min(descriptionHits, DESCRIPTION_HIT_CAP);
+}
 
 /**
  * Derives Google & Meta Product Taxonomy automatically from product metadata.
@@ -118,32 +177,30 @@ export function getAdTaxonomy(
   title?: string | null,
   description?: string | null
 ): AdTaxonomy {
-  const combinedText = [category, title, description]
-    .filter(Boolean)
-    .join(" ")
-    .toLowerCase();
+  const name = [category, title].filter(Boolean).join(" ").toLowerCase().trim();
+  const body = (description || "").toLowerCase().trim();
 
-  if (!combinedText.trim()) {
+  if (!name && !body) {
     return DEFAULT_TAXONOMY;
   }
 
   let bestRule: TaxonomyRule | null = null;
-  let maxMatchCount = 0;
+  let bestScore = 0;
+  let tied = false;
 
   for (const rule of TAXONOMY_RULES) {
-    let matchCount = 0;
-    for (const keyword of rule.keywords) {
-      if (combinedText.includes(keyword.toLowerCase())) {
-        matchCount++;
-      }
-    }
-    if (matchCount > maxMatchCount) {
-      maxMatchCount = matchCount;
+    const score = scoreRule(rule, name, body);
+    if (score < MIN_SCORE) continue;
+    if (score > bestScore) {
+      bestScore = score;
       bestRule = rule;
+      tied = false;
+    } else if (score === bestScore) {
+      tied = true;
     }
   }
 
-  if (bestRule) {
+  if (bestRule && !tied) {
     return {
       googleCategoryId: bestRule.id,
       googleCategoryName: bestRule.googlePath,
@@ -152,7 +209,8 @@ export function getAdTaxonomy(
     };
   }
 
-  // Fallback cleanly using category name if available
+  // Under-confident or ambiguous: fall back cleanly, keeping the merchant's own
+  // category label as the product type when there is one.
   const cleanCategory = (category || "").trim();
   return {
     ...DEFAULT_TAXONOMY,

@@ -20,7 +20,7 @@ import {
 } from "lucide-react";
 
 
-/** Stable ADScms visual identity. Storefront tenant theming must not alter admin UI. */
+/** Stable AdsBookCMS visual identity. Storefront tenant theming must not alter admin UI. */
 export const ADMIN_ACCENT = "#2563eb";
 
 export type AdminNavItem = {
@@ -60,7 +60,7 @@ export const adminNavGroups: AdminNavGroup[] = [
         icon: ShoppingBag,
         keywords: "orders pesanan transaksi pelanggan terbengkalai abandoned leads",
         children: [
-          { href: "/admin/orders?status=abandoned", label: "Pesanan Terbengkalai", icon: UserX },
+          { href: "/admin/orders/abandoned", label: "Pesanan tertinggal", icon: UserX },
         ],
       },
       {
@@ -81,15 +81,6 @@ export const adminNavGroups: AdminNavGroup[] = [
         children: [
           { href: "/admin/landing-pages", label: "Landing Pages", icon: FilePenLine },
         ],
-      },
-      {
-        id: "content",
-        href: "/admin/content",
-        label: "Konten Storefront",
-        shortLabel: "Konten",
-        description: "Copy dan aset toko",
-        icon: FilePenLine,
-        keywords: "content storefront ai draft publish media",
       },
     ],
   },
@@ -175,12 +166,25 @@ export const profileNavItem: AdminNavItem = {
   keywords: "profile akun password mengantar autolaris api domain",
 };
 
+export function isAdminNavHrefActive(currentPath: string, href: string) {
+  const base = "https://admin.local";
+  const current = new URL(currentPath, base);
+  const target = new URL(href, base);
+  if (current.pathname !== target.pathname) return false;
+  for (const [key, value] of target.searchParams) {
+    if (current.searchParams.get(key) !== value) return false;
+  }
+  return true;
+}
+
 export function getVisibleNavGroups(role: AdminRole) {
   if (role === "owner") return adminNavGroups;
   const visibleIds = role === "admin"
     ? new Set(adminNavGroups.flatMap((group) => group.items.map((item) => item.id)))
     : role === "advertiser"
-      ? new Set(["dashboard", "products", "content", "ads"])
+      // "content" was here too, but no group defines that id any more - the page is
+      // deliberately off the menu and reached from Pengaturan > Toko.
+      ? new Set(["dashboard", "products", "ads"])
       : new Set(["dashboard", "orders", "shipping", "scoring"]);
   return adminNavGroups
     .map((group) => ({

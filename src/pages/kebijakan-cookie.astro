@@ -1,18 +1,17 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
-import LegalPage from '../components/shared/LegalPage.astro';
-import { tenantConfig } from '../lib/tenant';
+import LegalPage from '../components/storefront/shared/LegalPage.astro';
 const page = {
   badge: 'Cookie & Iklan',
   title: 'Kebijakan Cookie dan Iklan',
   description:
-    'Informasi penggunaan cookie, analitik, Google Ads, Meta Ads, dan preferensi iklan di website Pesantren.',
+    `Informasi penggunaan cookie, analitik, Google Ads, Meta Ads, dan preferensi iklan di website ${Astro.locals.tenant.name}.`,
   sections: [
     {
       title: 'Apa Itu Cookie',
       paragraphs: [
         'Cookie adalah file kecil atau teknologi serupa yang dapat digunakan website untuk mengingat preferensi, membaca interaksi, dan membantu peningkatan pengalaman pengguna.',
-        'Pesantren dapat menggunakan cookie untuk memahami halaman yang dibuka, tombol yang diklik, sumber kunjungan, serta performa konten dan iklan.',
+        `${Astro.locals.tenant.name} dapat menggunakan cookie untuk memahami halaman yang dibuka, tombol yang diklik, sumber kunjungan, serta performa konten dan iklan.`,
       ],
     },
     {
@@ -25,7 +24,7 @@ const page = {
     {
       title: 'Google Ads dan Google Analytics',
       paragraphs: [
-        'Pesantren dapat menggunakan Google Ads, Google Tag, Google Analytics, atau layanan Google lain untuk mengukur performa iklan, kunjungan halaman, klik, dan konversi.',
+        `${Astro.locals.tenant.name} dapat menggunakan Google Ads, Google Tag, Google Analytics, atau layanan Google lain untuk mengukur performa iklan, kunjungan halaman, klik, dan konversi.`,
         'Saat tracking diaktifkan, interaksi seperti membuka halaman produk, klik tombol, mengisi formulir, atau menyelesaikan pesanan dapat digunakan sebagai sinyal pengukuran iklan.',
         'Pengguna dapat mengatur preferensi iklan Google melalui pengaturan akun Google, Ads Settings, atau pilihan privasi pada browser/perangkat masing-masing.',
       ],
@@ -49,7 +48,7 @@ const page = {
 ---
 <BaseLayout
   shell="storefront"
-  title={`Kebijakan Cookie dan Iklan - ${tenantConfig.name}`}
+  title={`Kebijakan Cookie dan Iklan - ${Astro.locals.tenant.name}`}
   description={page.description}
   noindex={true}
   breadcrumbs={[

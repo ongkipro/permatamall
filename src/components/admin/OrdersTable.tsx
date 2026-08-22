@@ -8,10 +8,11 @@ import {
   defaultCrmTemplates,
   renderCrmMessage,
 } from "../../lib/crm-template";
+import { ADMIN_CUSTOM_DATE_FILTER } from "../../lib/admin-date-filter";
 import {
-  ADMIN_DATE_FILTER_OPTIONS,
-  getAdminDateFilterLabel,
-} from "../../lib/admin-date-filter";
+  AdminDateRangeFilter,
+  type AdminDateSelection,
+} from "./AdminDateRangeFilter";
 import { Input } from "../ui/input";
 import { Button } from "../ui/button";
 import { Checkbox } from "../ui/checkbox";
@@ -50,14 +51,12 @@ import {
 import {
   MoreHorizontal,
   ChevronDown,
-  ChevronUp,
   Eye,
   Truck,
   Trash2,
   AlertCircle,
   CheckCircle2,
   ShieldAlert,
-  RefreshCw,
 } from "lucide-react";
 
 type RiskLevel = "LOW" | "MEDIUM" | "HIGH" | "UNKNOWN";
@@ -192,7 +191,6 @@ const mapOrder = (row: OrderRow): OrderItem => ({
 });
 
 const shippingLabels: Record<string, string> = {
-  abandoned: "Terbengkalai",
   pending: "Menunggu",
   processing: "Diproses",
   shipped: "Dikirim",
@@ -202,7 +200,6 @@ const shippingLabels: Record<string, string> = {
 };
 
 const shippingStatusStyles: Record<string, string> = {
-  abandoned: "bg-rose-500",
   pending: "bg-amber-500",
   processing: "bg-sky-500",
   shipped: "bg-blue-600",
@@ -211,19 +208,9 @@ const shippingStatusStyles: Record<string, string> = {
   cancelled: "bg-slate-500",
 };
 
-const shippingStatusContainerStyles: Record<string, string> = {
-  abandoned: "bg-rose-50/90 border-rose-200/80 text-rose-900 hover:bg-rose-100",
-  pending: "bg-amber-50/90 border-amber-200/80 text-amber-900 hover:bg-amber-100",
-  processing: "bg-sky-50/90 border-sky-200/80 text-sky-900 hover:bg-sky-100",
-  shipped: "bg-blue-50/90 border-blue-200/80 text-blue-900 hover:bg-blue-100",
-  delivered: "bg-emerald-50/90 border-emerald-200/80 text-emerald-900 hover:bg-emerald-100",
-  returned: "bg-rose-100/90 border-rose-300/80 text-rose-950 hover:bg-rose-200",
-  cancelled: "bg-slate-100 border-slate-200 text-slate-700 hover:bg-slate-200",
-};
 
 const quickStatusFilters = [
   { value: "all", label: "Semua" },
-  { value: "abandoned", label: "Terbengkalai" },
   { value: "pending", label: "Menunggu" },
   { value: "processing", label: "Diproses" },
   { value: "shipped", label: "Dikirim" },
@@ -257,70 +244,6 @@ function HighlightSearchMatch({
   );
 }
 
-function ShippingStatusSelect({
-  order,
-  disabled,
-  mobile = false,
-  onValueChange,
-}: {
-  order: OrderItem;
-  disabled: boolean;
-  mobile?: boolean;
-  onValueChange: (value: string) => void;
-}) {
-  const label = shippingLabels[order.shippingStatus] || order.shippingStatus;
-  const containerStyle =
-    shippingStatusContainerStyles[order.shippingStatus] ||
-    "border-slate-200 bg-white text-slate-900 hover:bg-slate-50";
-
-  return (
-    <Select
-      value={order.shippingStatus}
-      disabled={disabled}
-      onValueChange={(val) => onValueChange(val ?? "")}
-    >
-      <SelectTrigger
-        aria-label={`Status pengiriman ${order.orderNumber}`}
-        size={mobile ? "default" : "sm"}
-        aria-busy={disabled}
-        title="Ubah status pengiriman"
-        className={`${mobile ? "w-full rounded-xl px-3 text-base data-[size=default]:h-11" : "min-w-[116px] rounded-lg px-2.5 text-[11px] data-[size=sm]:h-9"} border font-bold shadow-xs transition-colors ${containerStyle} focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-slate-300 disabled:cursor-wait`}
-      >
-        {disabled ? (
-          <span
-            className="size-3.5 shrink-0 animate-spin rounded-full border-2 border-emerald-200 border-t-emerald-600"
-            aria-hidden="true"
-          />
-        ) : (
-          <span
-            className={`size-2 shrink-0 rounded-full ${shippingStatusStyles[order.shippingStatus] || "bg-slate-400"}`}
-            aria-hidden="true"
-          />
-        )}
-        <SelectValue>{label}</SelectValue>
-      </SelectTrigger>
-      <SelectContent
-        align={mobile ? "start" : "end"}
-        sideOffset={6}
-        className="min-w-[172px] rounded-xl border border-slate-200 bg-white p-1.5 text-slate-900 shadow-xl ring-1 ring-slate-950/5"
-      >
-        {Object.entries(shippingLabels).map(([value, itemLabel]) => (
-          <SelectItem
-            key={value}
-            value={value}
-            className="min-h-9 cursor-pointer rounded-lg px-2.5 pr-8 text-xs font-bold focus:bg-emerald-50 focus:text-emerald-900"
-          >
-            <span
-              className={`size-2 shrink-0 rounded-full ${shippingStatusStyles[value]}`}
-              aria-hidden="true"
-            />
-            {itemLabel}
-          </SelectItem>
-        ))}
-      </SelectContent>
-    </Select>
-  );
-}
 function OrderActionMenu({
   order,
   updatingOrderId,
@@ -468,18 +391,6 @@ const formatDateTime = (value: string) => {
   }).format(date)} WIB`;
 };
 const crmSteps = ["welcome", "1", "2", "3", "4", "5", "6", "7", "8", "9"] as const;
-const crmStepActionList = [
-  { key: "welcome", label: "Welcome", title: "1. Welcome: Detail pesanan & alamat" },
-  { key: "1", label: "Detail", title: "2. Order Detail: Tanya kendala" },
-  { key: "2", label: "FU 1", title: "3. Follow-up 1: Ringkasan & payment link" },
-  { key: "3", label: "FU 2", title: "4. Follow-up 2: Stok terbatas" },
-  { key: "4", label: "FU 3", title: "5. Follow-up 3: Opsi transfer / link" },
-  { key: "5", label: "FU 4", title: "6. Follow-up 4: Pengingat terakhir" },
-  { key: "6", label: "FU 5", title: "7. Follow-up 5: Bantuan CS" },
-  { key: "7", label: "Proses", title: "8. Processing: Order diproses & dikemas" },
-  { key: "8", label: "Resi", title: "9. Completed: Paket dikirim & resi" },
-  { key: "9", label: "UpSell", title: "10. UpSelling: Promo khusus" },
-] as const;
 
 function RiskBadge({
   level,
@@ -602,7 +513,11 @@ export function OrdersTable({ initialOrders }: { initialOrders?: OrderItem[] }) 
     return params.get("status") || params.get("shipping_status") || "all";
   });
   const [paymentFilter, setPaymentFilter] = useState("all");
-  const [dateFilter, setDateFilter] = useState("all");
+  const [dateSelection, setDateSelection] = useState<AdminDateSelection>({
+    filter: "all",
+    start: "",
+    end: "",
+  });
   const [sourceFilter, setSourceFilter] = useState("all");
   const [page, setPage] = useState(1);
   const [pagination, setPagination] = useState<OrdersPagination>({
@@ -631,7 +546,6 @@ export function OrdersTable({ initialOrders }: { initialOrders?: OrderItem[] }) 
   const [bulkStatusTarget, setBulkStatusTarget] = useState("");
   const [statusCounts, setStatusCounts] = useState<StatusCounts>({
     all: 0,
-    abandoned: 0,
     pending: 0,
     processing: 0,
     shipped: 0,
@@ -657,7 +571,13 @@ export function OrdersTable({ initialOrders }: { initialOrders?: OrderItem[] }) 
         if (shippingFilter !== "all")
           query.set("shipping_status", shippingFilter);
         if (paymentFilter !== "all") query.set("payment_status", paymentFilter);
-        if (dateFilter !== "all") query.set("date_filter", dateFilter);
+        if (dateSelection.filter !== "all") {
+          query.set("date_filter", dateSelection.filter);
+          if (dateSelection.filter === ADMIN_CUSTOM_DATE_FILTER) {
+            query.set("date_start", dateSelection.start);
+            query.set("date_end", dateSelection.end);
+          }
+        }
         if (sourceFilter !== "all") query.set("source", sourceFilter);
         const response = await fetch(`/api/admin/orders?${query}`, {
           headers: { Accept: "application/json" },
@@ -695,7 +615,6 @@ export function OrdersTable({ initialOrders }: { initialOrders?: OrderItem[] }) 
         });
         setStatusCounts({
           all: Number(payload.status_counts?.all) || 0,
-          abandoned: Number(payload.status_counts?.abandoned) || 0,
           pending: Number(payload.status_counts?.pending) || 0,
           processing: Number(payload.status_counts?.processing) || 0,
           shipped: Number(payload.status_counts?.shipped) || 0,
@@ -727,7 +646,7 @@ export function OrdersTable({ initialOrders }: { initialOrders?: OrderItem[] }) 
     requestVersion,
     searchTerm,
     shippingFilter,
-    dateFilter,
+    dateSelection,
     sourceFilter,
   ]);
 
@@ -742,7 +661,7 @@ export function OrdersTable({ initialOrders }: { initialOrders?: OrderItem[] }) 
       : firstVisibleOrder + filteredOrders.length - 1;
   const hasFilters =
     searchTerm.trim() !== "" ||
-    dateFilter !== "all" ||
+    dateSelection.filter !== "all" ||
     shippingFilter !== "all" ||
     paymentFilter !== "all" ||
     sourceFilter !== "all";
@@ -969,7 +888,7 @@ export function OrdersTable({ initialOrders }: { initialOrders?: OrderItem[] }) 
     setSearchTerm("");
     setShippingFilter("all");
     setPaymentFilter("all");
-    setDateFilter("all");
+    setDateSelection({ filter: "all", start: "", end: "" });
     setSourceFilter("all");
     setPage(1);
   };
@@ -1294,29 +1213,14 @@ export function OrdersTable({ initialOrders }: { initialOrders?: OrderItem[] }) 
                 >
                   Periode order
                 </label>
-                <Select
-                  value={dateFilter}
-                  onValueChange={(val) => {
-                    setDateFilter(val ?? "all");
+                <AdminDateRangeFilter
+                  value={dateSelection}
+                  onChange={(next) => {
+                    setDateSelection(next);
                     setPage(1);
                   }}
-                >
-                  <SelectTrigger
-                    id="filter-date"
-                    className="h-11 w-full rounded-lg bg-white shadow-sm border-slate-200"
-                  >
-                    <SelectValue>
-                      {getAdminDateFilterLabel(dateFilter)}
-                    </SelectValue>
-                  </SelectTrigger>
-                  <SelectContent>
-                    {ADMIN_DATE_FILTER_OPTIONS.map((option) => (
-                      <SelectItem key={option.value} value={option.value}>
-                        {option.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                  className="w-full rounded-lg shadow-sm"
+                />
               </div>
 
               <div className="w-full sm:w-[150px]">
@@ -1345,7 +1249,6 @@ export function OrdersTable({ initialOrders }: { initialOrders?: OrderItem[] }) 
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">Semua status</SelectItem>
-                    <SelectItem value="abandoned">Terbengkalai</SelectItem>
                     <SelectItem value="pending">Menunggu</SelectItem>
                     <SelectItem value="processing">Diproses</SelectItem>
                     <SelectItem value="shipped">Dikirim</SelectItem>
@@ -1458,7 +1361,10 @@ export function OrdersTable({ initialOrders }: { initialOrders?: OrderItem[] }) 
         </div>
 
 
-        <div className="grid gap-3 py-3 lg:hidden" aria-label="Daftar order mobile">
+        {/* grid-cols-1 expands to minmax(0, 1fr); without it a card's min-content
+            width widens the implicit column past the viewport and the wrapper clips
+            the right-hand controls out of reach on mobile. */}
+        <div className="grid grid-cols-1 gap-3 py-3 lg:hidden" aria-label="Daftar order mobile">
             {filteredOrders.map((order) => {
               const selected = selectedOrderIds.includes(order.id);
               return (

@@ -1,14 +1,12 @@
 ---
-import PageIntro from '../components/shared/PageIntro.astro';
+import PageIntro from '../components/storefront/shared/PageIntro.astro';
 import BaseLayout from '../layouts/BaseLayout.astro';
-import Icon from '../components/shared/Icon.astro';
-import { aboutProfile } from '../data/content';
 ---
 
 <BaseLayout
   shell="storefront"
-  title="Tentang Pesantren.shop - Toko Online COD Indonesia"
-  description="Tentang Pesantren.shop, toko online dengan produk praktis pilihan yang bisa dibayar di tempat (COD) ke seluruh Indonesia."
+  title={`Tentang ${Astro.locals.tenant.name}`}
+  description={`Profil dan informasi tentang ${Astro.locals.tenant.name}.`}
   breadcrumbs={[
     { name: 'Beranda', url: '/' },
     { name: 'Tentang Kami', url: '/tentang' },
@@ -17,57 +15,24 @@ import { aboutProfile } from '../data/content';
   <main id="konten-utama" class="min-h-screen bg-[#FAFAFA] text-[#16191F]">
     <PageIntro
       badge="Tentang Kami"
-      title={aboutProfile.title}
-      description={aboutProfile.intro}
+      title={`Tentang ${Astro.locals.tenant.name}`}
+      description={Astro.locals.tenant.description}
       breadcrumbs={[{ label: 'Beranda', href: '/' }, { label: 'Tentang Kami' }]}
     />
 
-    <section class="mx-auto max-w-[800px] px-5 py-8">
+    <section class="mx-auto max-w-[480px] px-5 py-8">
       <div class="border-b border-[#EAEDED] pb-6">
-        <p class="text-[11px] font-medium uppercase tracking-[0.12em] text-[#232F3E]">Profil platform</p>
+        <p class="text-[11px] font-normal uppercase tracking-[0.12em] text-[#232F3E]">Profil Toko</p>
         <h2 class="mt-2 text-[22px] font-semibold tracking-[-0.02em] text-[#16191F]">
-          Belanja online yang sederhana dan bisa dipercaya
+          Selamat datang di {Astro.locals.tenant.name}
         </h2>
         <div class="mt-4 space-y-4 text-[14px] leading-7 text-[#545B64]">
-          {aboutProfile.story.map((paragraph: string) => <p>{paragraph}</p>)}
-        </div>
-      </div>
-
-      <div class="border-b border-[#EAEDED] py-6">
-        <p class="text-[11px] font-medium uppercase tracking-[0.12em] text-[#232F3E]">Arah brand</p>
-        <div class="mt-4 grid grid-cols-2 gap-y-3 gap-x-0 text-center">
-          <div class="border-r border-[#EAEDED] px-3">
-            <p class="text-[24px] font-semibold leading-none text-[#232F3E]">40%</p>
-            <p class="mt-1 text-[11px] leading-4 text-[#545B64]">Produk pilihan</p>
-          </div>
-          <div class="px-3">
-            <p class="text-[24px] font-semibold leading-none text-[#232F3E]">30%</p>
-            <p class="mt-1 text-[11px] leading-4 text-[#545B64]">Layanan pembeli</p>
-          </div>
-          <div class="border-r border-[#EAEDED] px-3 pt-3">
-            <p class="text-[24px] font-semibold leading-none text-[#232F3E]">20%</p>
-            <p class="mt-1 text-[11px] leading-4 text-[#545B64]">Pengiriman</p>
-          </div>
-          <div class="px-3 pt-3">
-            <p class="text-[24px] font-semibold leading-none text-[#232F3E]">10%</p>
-            <p class="mt-1 text-[11px] leading-4 text-[#545B64]">Teknologi</p>
-          </div>
-        </div>
-      </div>
-
-      <div class="pt-6">
-        <h2 class="text-[20px] font-semibold tracking-[-0.02em] text-[#16191F]">Yang Kami Utamakan</h2>
-        <div class="mt-4 divide-y divide-[#EAEDED]">
-          {
-            aboutProfile.highlights.map((item: string) => (
-              <div class="grid grid-cols-[22px_1fr] gap-3 py-3 first:pt-0 last:pb-0">
-                <span class="mt-0.5 flex h-[22px] w-[22px] items-center justify-center rounded-full bg-[#FFF5E5] text-[#232F3E]">
-                  <Icon name="lucide:check" class="h-3.5 w-3.5" aria-hidden="true" />
-                </span>
-                <p class="text-[14px] leading-6 text-[#545B64]">{item}</p>
-              </div>
-            ))
-          }
+          <p>
+            {Astro.locals.tenant.description}
+          </p>
+          <p>
+            Jelajahi katalog kami untuk menemukan produk yang Anda butuhkan.
+          </p>
         </div>
       </div>
     </section>

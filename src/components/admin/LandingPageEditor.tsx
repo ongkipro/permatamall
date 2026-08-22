@@ -77,32 +77,118 @@ function escapeHtml(value: string) {
   })[character] ?? character);
 }
 
-function sanitizePreviewHtml(value: string) {
+export function sanitizePreviewHtml(value: string) {
   if (typeof DOMParser === "undefined") return escapeHtml(value);
 
-  const document = new DOMParser().parseFromString(value, "text/html");
-  document
-    .querySelectorAll("script, iframe, object, embed, link, meta, base")
+  const parsedDocument = new DOMParser().parseFromString(value, "text/html");
+  parsedDocument
+    .querySelectorAll(
+      "script, style, template, iframe, object, embed, link, meta, base, form, input, button, select, textarea",
+    )
     .forEach((element) => element.remove());
 
-  for (const element of document.body.querySelectorAll("*")) {
+  const allowedTags: Record<string, true> = {
+    a: true,
+    abbr: true,
+    b: true,
+    blockquote: true,
+    br: true,
+    div: true,
+    em: true,
+    figcaption: true,
+    figure: true,
+    h1: true,
+    h2: true,
+    h3: true,
+    h4: true,
+    h5: true,
+    h6: true,
+    hr: true,
+    i: true,
+    img: true,
+    li: true,
+    ol: true,
+    p: true,
+    section: true,
+    small: true,
+    span: true,
+    strong: true,
+    sub: true,
+    sup: true,
+    table: true,
+    tbody: true,
+    td: true,
+    th: true,
+    thead: true,
+    tr: true,
+    u: true,
+    ul: true,
+  };
+  const commonAttributes: Record<string, true> = {
+    class: true,
+    role: true,
+    title: true,
+  };
+  const attributesByTag: Record<string, Record<string, true>> = {
+    a: { href: true },
+    img: {
+      alt: true,
+      decoding: true,
+      height: true,
+      loading: true,
+      src: true,
+      width: true,
+    },
+    td: { colspan: true, rowspan: true },
+    th: { colspan: true, rowspan: true, scope: true },
+  };
+
+  for (const element of Array.from(parsedDocument.body.querySelectorAll("*"))) {
+    const tag = element.tagName.toLowerCase();
+    if (!allowedTags[tag]) {
+      element.replaceWith(...Array.from(element.childNodes));
+      continue;
+    }
+
     for (const attribute of Array.from(element.attributes)) {
       const name = attribute.name.toLowerCase();
-      const normalizedValue = attribute.value.replace(/[\u0000-\u0020]+/g, "").toLowerCase();
-      const isEventHandler = name.startsWith("on");
-      const isExecutableUrl =
-        ["href", "src", "xlink:href", "action", "formaction"].includes(name) &&
-        /^(?:javascript|vbscript|data:text\/html|data:image\/svg\+xml):/.test(normalizedValue);
-      const isExecutableStyle =
-        name === "style" && /(?:expression\s*\(|url\s*\(\s*['"]?\s*javascript:)/i.test(attribute.value);
-      if (isEventHandler || name === "srcdoc" || isExecutableUrl || isExecutableStyle) {
-        element.removeAttribute(attribute.name);
+      const allowed =
+        commonAttributes[name] ||
+        name.startsWith("aria-") ||
+        attributesByTag[tag]?.[name];
+      if (!allowed) element.removeAttribute(attribute.name);
+    }
+
+    if (tag === "a" || tag === "img") {
+      const urlAttribute = tag === "a" ? "href" : "src";
+      const rawUrl = element.getAttribute(urlAttribute);
+      if (rawUrl) {
+        try {
+          const url = new URL(rawUrl, window.location.href);
+          if (!["http:", "https:"].includes(url.protocol)) {
+            element.removeAttribute(urlAttribute);
+          }
+        } catch {
+          element.removeAttribute(urlAttribute);
+        }
       }
+    }
+
+    if (tag === "a" && element.hasAttribute("href")) {
+      element.setAttribute("target", "_blank");
+      element.setAttribute("rel", "noopener noreferrer");
     }
   }
 
-  return document.body.innerHTML;
+  return parsedDocument.body.innerHTML;
 }
+
+// Both preview strips spelled out the reference store's domain, so an operator
+// was shown a URL that belongs to someone else's shop. This island is mounted
+// `client:only`, so it already runs on the store's own origin — no prop needs
+// threading through two pages to say so.
+const previewOrigin =
+  typeof window === "undefined" ? "" : window.location.origin;
 
 export default function LandingPageEditor({ landingPageId }: Props) {
   const [loading, setLoading] = useState(false);
@@ -279,7 +365,7 @@ export default function LandingPageEditor({ landingPageId }: Props) {
             480
           </div>
           <div>
-            <h1 className="text-lg font-bold tracking-tight text-slate-900 flex items-center gap-2">
+            <h2 className="text-lg font-bold tracking-tight text-slate-900 flex items-center gap-2">
               {title || (landingPageId ? "Edit Landing Page" : "Buat Landing Page Baru")}
               {isActive ? (
                 <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-200 text-[10px] px-2 py-0.5">
@@ -288,9 +374,9 @@ export default function LandingPageEditor({ landingPageId }: Props) {
               ) : (
                 <Badge variant="secondary" className="text-[10px] px-2 py-0.5">Draft</Badge>
               )}
-            </h1>
+            </h2>
             <p className="text-xs text-slate-500 font-mono mt-0.5">
-              {slug ? `https://permatamall.shop/${slug}` : "Lengkapi konfigurasi judul & produk di panel kiri"}
+              {slug ? `${previewOrigin}/${slug}` : "Lengkapi konfigurasi judul & produk di panel kiri"}
             </p>
           </div>
         </div>
@@ -522,7 +608,7 @@ export default function LandingPageEditor({ landingPageId }: Props) {
               {/* Device Header Bar */}
               <div className="bg-slate-900 px-4 py-2 text-white flex items-center justify-between text-[11px] font-mono">
                 <span className="truncate max-w-[300px] text-slate-300">
-                  https://permatamall.shop/{slug || "preview"}
+                  {previewOrigin}/{slug || "preview"}
                 </span>
                 <Badge variant="outline" className="text-[9px] px-1.5 py-0 bg-slate-800 text-slate-200 border-slate-700">
                   480px Storefront

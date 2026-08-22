@@ -1,11 +1,9 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { deleteCatalogProduct } from "./product-mutation.ts";
 import {
-  CANONICAL_SAMPLE_PRODUCT,
-  getSampleProductMutationError,
-  SAMPLE_PRODUCT_MUTATION_ERROR,
-} from "./sample-product.ts";
+  deleteCatalogProduct,
+  parseProductMutationPayload,
+} from "./product-mutation.ts";
 
 type MockStatement = {
   sql: string;
@@ -49,57 +47,19 @@ function createDatabase(options: { exists: boolean; referenceCount: number }) {
   return { database, batches };
 }
 
-test("canonical sample product keeps the approved identity and variants", () => {
-  assert.deepEqual(
-    {
-      id: CANONICAL_SAMPLE_PRODUCT.id,
-      slug: CANONICAL_SAMPLE_PRODUCT.slug,
-      variants: CANONICAL_SAMPLE_PRODUCT.variants.map((variant) => ({
-        title: variant.title,
-        price: variant.price,
-        weightGrams: variant.weightGrams,
-      })),
-    },
-    {
-      id: 10001,
-      slug: "asahan-portable",
-      variants: [
-        { title: "Beli 1 Pcs", price: 79000, weightGrams: 300 },
-        { title: "Beli 2 Pcs (Hemat)", price: 119000, weightGrams: 600 },
-      ],
-    },
-  );
+test("no product id is exempt from deletion", async () => {
+  // 10001 used to be an un-deletable "canonical sample". It is an ordinary
+  // product now: the same delete path and the same order-reference guard apply.
+  const { database, batches } = createDatabase({
+    exists: true,
+    referenceCount: 0,
+  });
+
+  assert.deepEqual(await deleteCatalogProduct(database, 10001), {
+    status: "deleted",
+  });
+  assert.equal(batches.length, 1);
 });
-
-test("sample product mutation guard rejects the canonical ID only", () => {
-  assert.equal(
-    getSampleProductMutationError(CANONICAL_SAMPLE_PRODUCT.id),
-    SAMPLE_PRODUCT_MUTATION_ERROR,
-  );
-  assert.equal(
-    getSampleProductMutationError(String(CANONICAL_SAMPLE_PRODUCT.id)),
-    SAMPLE_PRODUCT_MUTATION_ERROR,
-  );
-  assert.equal(getSampleProductMutationError(10002), null);
-});
-
-test("sample product deletion is protected without touching D1", async () => {
-  let databaseTouched = false;
-  const database = {
-    prepare() {
-      databaseTouched = true;
-      throw new Error("D1 must not be called for the sample product");
-    },
-  } as unknown as D1Database;
-
-  assert.deepEqual(
-    await deleteCatalogProduct(database, CANONICAL_SAMPLE_PRODUCT.id),
-    { status: "protected" },
-  );
-  assert.equal(databaseTouched, false);
-});
-
-
 
 test("product deletion rejects products referenced by orders", async () => {
   const { database, batches } = createDatabase({
@@ -127,9 +87,11 @@ test("product deletion removes variants before an unreferenced product", async (
   assert.equal(batches.length, 1);
   assert.match(batches[0][0].sql, /DELETE FROM product_variants/);
   assert.match(batches[0][1].sql, /DELETE FROM products/);
+  assert.match(batches[0][2].sql, /DELETE FROM storefront_content/);
   assert.deepEqual(batches[0].map((statement) => statement.args), [
     [10002, 10002],
     [10002, 10002],
+    ["product:10002", 10002],
   ]);
 });
 
@@ -143,4 +105,93 @@ test("product deletion reports a missing product without writes", async () => {
     status: "not_found",
   });
   assert.equal(batches.length, 0);
+});
+
+function validMutationPayload(overrides: Record<string, unknown> = {}) {
+  return {
+    title: "Produk Merchant",
+    slug: "produk-merchant",
+    image_url: "/assets/uploads/produk-merchant.webp",
+    is_active: true,
+    variants: [
+      {
+        sku: "MERCHANT-1",
+        title: "1 Liter",
+        price: 125000,
+        weight_grams: 1000,
+        stock: 12,
+      },
+    ],
+    ...overrides,
+  };
+}
+
+test("active product validation accepts complete merchant-owned data", () => {
+  const parsed = parseProductMutationPayload(validMutationPayload(), false);
+  assert.ok("value" in parsed);
+  if ("value" in parsed) {
+    assert.equal(parsed.value.title, "Produk Merchant");
+    assert.equal(parsed.value.slug, "produk-merchant");
+    assert.equal(
+      parsed.value.image_url,
+      "/assets/uploads/produk-merchant.webp",
+    );
+    assert.equal(parsed.value.variants[0].stock, 12);
+  }
+});
+
+test("active product validation rejects a missing image", () => {
+  assert.deepEqual(
+    parseProductMutationPayload(
+      validMutationPayload({ image_url: "" }),
+      false,
+    ),
+    { error: "Produk aktif wajib memiliki gambar." },
+  );
+});
+
+test("active product validation rejects a catalog with no in-stock variant", () => {
+  assert.deepEqual(
+    parseProductMutationPayload(
+      validMutationPayload({
+        variants: [
+          {
+            sku: "MERCHANT-1",
+            title: "1 Liter",
+            price: 125000,
+            weight_grams: 1000,
+            stock: 0,
+          },
+        ],
+      }),
+      false,
+    ),
+    {
+      error:
+        "Produk aktif wajib memiliki minimal 1 varian valid dan tersedia.",
+    },
+  );
+});
+
+test("product validation never synthesizes a missing slug or stock", () => {
+  assert.deepEqual(
+    parseProductMutationPayload(validMutationPayload({ slug: "" }), false),
+    { error: "Judul dan slug produk wajib diisi." },
+  );
+  assert.deepEqual(
+    parseProductMutationPayload(
+      validMutationPayload({
+        variants: [
+          {
+            sku: "MERCHANT-1",
+            title: "1 Liter",
+            price: 125000,
+            weight_grams: 1000,
+          },
+        ],
+      }),
+      false,
+    ),
+    { error: "Stok varian MERCHANT-1 harus integer nol atau lebih." },
+  );
 });

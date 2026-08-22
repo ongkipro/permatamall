@@ -6,7 +6,6 @@ import {
   Eye,
   EyeOff,
   KeyRound,
-  Lock,
   Minus,
   Pencil,
   RefreshCw,
@@ -23,7 +22,6 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
 import type { AdminRole } from "../../lib/auth";
 
 type AssignableRole = Exclude<AdminRole, "owner">;
@@ -38,12 +36,6 @@ type AccessUser = {
   updated_at: string;
 };
 
-const ROLE_LABELS: Record<AdminRole, string> = {
-  owner: "Owner (Pemilik Toko)",
-  admin: "Admin Ops",
-  advertiser: "Operator Ads",
-  customer_service: "Operator CS",
-};
 
 const ROLE_SHORT_LABELS: Record<AdminRole, string> = {
   owner: "Owner",
@@ -245,7 +237,7 @@ export function AccessManager() {
     };
   }, [users]);
 
-  const create = async (event: React.FormEvent) => {
+  const create = async (event: React.SubmitEvent<HTMLFormElement>) => {
     event.preventDefault();
     setSaving(true);
     try {
@@ -285,7 +277,7 @@ export function AccessManager() {
     });
   };
 
-  const saveUserEdit = async (event: React.FormEvent) => {
+  const saveUserEdit = async (event: React.SubmitEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!editingUser) return;
     setSaving(true);
@@ -323,7 +315,7 @@ export function AccessManager() {
     setNewPasswordValue(generateRandomPassword());
   };
 
-  const savePasswordReset = async (event: React.FormEvent) => {
+  const savePasswordReset = async (event: React.SubmitEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!resetUser || !newPasswordValue) return;
     setSaving(true);
@@ -422,7 +414,7 @@ export function AccessManager() {
       </section>
 
       {/* Main Grid: User List & Add Form */}
-      <div className="grid min-w-0 gap-6 xl:grid-cols-[minmax(0,1fr)_400px]">
+      <div className="grid grid-cols-1 min-w-0 gap-6 xl:grid-cols-[minmax(0,1fr)_400px]">
         {/* Left Column: User Directory */}
         <Card className="min-w-0 rounded-2xl border-slate-200 shadow-xs">
           <CardHeader className="border-b border-slate-100 pb-4">
@@ -735,7 +727,7 @@ export function AccessManager() {
       {/* Edit User Modal Dialog */}
       {editingUser && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 backdrop-blur-xs p-4">
-          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl ring-1 ring-slate-950/10 animate-in fade-in zoom-in-95 duration-150">
+          <div className="max-h-[calc(100dvh-2rem)] w-full max-w-md overflow-y-auto rounded-2xl bg-white p-6 shadow-2xl ring-1 ring-slate-950/10 animate-in fade-in zoom-in-95 duration-150">
             <h3 className="text-base font-black text-slate-950">
               Edit Profil & Peran Pengguna
             </h3>
@@ -811,7 +803,7 @@ export function AccessManager() {
       {/* Reset Password Modal Dialog */}
       {resetUser && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 backdrop-blur-xs p-4">
-          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl ring-1 ring-slate-950/10 animate-in fade-in zoom-in-95 duration-150">
+          <div className="max-h-[calc(100dvh-2rem)] w-full max-w-md overflow-y-auto rounded-2xl bg-white p-6 shadow-2xl ring-1 ring-slate-950/10 animate-in fade-in zoom-in-95 duration-150">
             <div className="flex items-center gap-2 text-amber-700">
               <KeyRound className="size-5" />
               <h3 className="text-base font-black text-slate-950">
@@ -885,8 +877,13 @@ export function AccessManager() {
           </p>
         </CardHeader>
         <CardContent className="p-4">
-          {/* Mobile view */}
-          <div className="grid gap-3 md:hidden">
+          {/* Mobile view.
+              grid-cols-1 is load-bearing: it expands to minmax(0, 1fr). Without it the
+              implicit column is sized `auto`, so the card's min-content width — the two
+              role cells side by side, neither of which can wrap below its longest word —
+              widened the track past the viewport, and Card's own `overflow-hidden`
+              clipped the right-hand role column off the screen. */}
+          <div className="grid grid-cols-1 gap-3 md:hidden">
             {PERMISSION_ROWS.map((row) => (
               <section
                 key={row.capability}
@@ -894,7 +891,7 @@ export function AccessManager() {
               >
                 <h3 className="font-extrabold text-slate-950">{row.capability}</h3>
                 <p className="mt-0.5 text-xs text-slate-500">{row.description}</p>
-                <div className="mt-3 grid grid-cols-2 gap-2">
+                <div className="mt-3 grid grid-cols-1 gap-2 min-[420px]:grid-cols-2">
                   {PERMISSION_COLUMNS.map((column) => {
                     const level = row.access[column.role];
                     const allowed = level === "full";

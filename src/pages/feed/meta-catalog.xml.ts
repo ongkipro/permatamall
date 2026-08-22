@@ -1,13 +1,13 @@
 import type { APIRoute } from "astro";
 import { getStorefrontProducts } from "../../lib/catalog";
-import { tenantConfig } from "../../lib/tenant";
 import { generateMetaCatalogXml } from "../../lib/catalog-feed";
 
 export const prerender = false;
 
 export const GET: APIRoute = async ({ locals }) => {
+  const tenantConfig = locals.tenant;
   const origin = tenantConfig.siteUrl.replace(/\/$/, "");
-  const siteTitle = tenantConfig.name || "CMSAds Merchant Store";
+  const siteTitle = tenantConfig.name || "AdsBookCMS Merchant Store";
   const siteDescription = tenantConfig.description || tenantConfig.tagline || "Solusi Produk Berkualitas";
 
   try {

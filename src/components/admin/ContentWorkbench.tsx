@@ -171,16 +171,16 @@ export function ContentWorkbench() {
   }
 
   return (
-    <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_340px]">
+    <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_340px]">
       <Card>
         <CardHeader className="border-b border-slate-100">
-          <CardTitle className="text-base font-black">Draft Storefront</CardTitle>
+          <CardTitle as="h3" className="text-base font-black">Draft Storefront</CardTitle>
           <p className="text-xs leading-5 text-slate-500">
             D1 adalah source of truth. Generate membuat draft; publish adalah aksi terpisah.
           </p>
         </CardHeader>
         <CardContent className="space-y-4 p-5">
-          <label className="grid gap-2 text-xs font-bold text-slate-700">
+          <label className="grid-cols-1 grid gap-2 text-xs font-bold text-slate-700">
             Target konten
             <select
               value={selectedKey}
@@ -201,7 +201,7 @@ export function ContentWorkbench() {
             <span>{record?.generated_by || "belum ada draft"}</span>
             {record?.published_at && <span>· Published {record.published_at}</span>}
           </div>
-          <label className="grid gap-2 text-xs font-bold text-slate-700">
+          <label className="grid-cols-1 grid gap-2 text-xs font-bold text-slate-700">
             Draft JSON
             <textarea
               value={editor}
@@ -210,7 +210,7 @@ export function ContentWorkbench() {
               className="admin-input-flat min-h-[30rem] resize-y bg-slate-950 p-4 font-mono text-xs leading-5 text-slate-100"
             />
           </label>
-          <div className="grid gap-2 sm:grid-cols-3">
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
             <Button type="button" variant="outline" disabled={saving} onClick={() => void mutate("generate")}>
               Generate Workers AI
             </Button>
@@ -227,7 +227,7 @@ export function ContentWorkbench() {
       <div className="space-y-6">
         <Card>
           <CardHeader>
-            <CardTitle className="text-sm font-black">Batas Operasional</CardTitle>
+            <CardTitle as="h3" className="text-sm font-black">Batas Operasional</CardTitle>
           </CardHeader>
           <CardContent className="text-xs leading-6 text-slate-600">
             AI hanya mengubah copy dan media reference. Harga, stok, SKU, variant ID, domain,
@@ -236,7 +236,7 @@ export function ContentWorkbench() {
         </Card>
         <Card>
           <CardHeader>
-            <CardTitle className="text-sm font-black">Media Tenant</CardTitle>
+            <CardTitle as="h3" className="text-sm font-black">Media Tenant</CardTitle>
             <p className="text-xs leading-5 text-slate-500">
               Upload gambar ke R2 tenant, lalu gunakan URL hasilnya pada field image di draft JSON.
             </p>
@@ -272,7 +272,7 @@ export function ContentWorkbench() {
         {index?.canManageInstructions && (
           <Card>
             <CardHeader>
-              <CardTitle className="text-sm font-black">Instruksi Tenant</CardTitle>
+              <CardTitle as="h3" className="text-sm font-black">Instruksi Tenant</CardTitle>
               <p className="text-xs leading-5 text-slate-500">
                 Guardrail dasar berasal dari repository. Isian ini hanya menambah aturan tenant dan tidak pernah ditampilkan kembali.
               </p>

@@ -2,12 +2,15 @@
 /// <reference types="@astrojs/cloudflare" />
 type KVNamespace = import("@cloudflare/workers-types/index.ts").KVNamespace;
 type D1Database = import("@cloudflare/workers-types/index.ts").D1Database;
+type D1PreparedStatement =
+  import("@cloudflare/workers-types/index.ts").D1PreparedStatement;
+type D1Result<T = unknown> =
+  import("@cloudflare/workers-types/index.ts").D1Result<T>;
 type R2Bucket = import("@cloudflare/workers-types/index.ts").R2Bucket;
 type Ai = import("@cloudflare/workers-types/index.ts").Ai;
 
 interface SharedEnvVars {
   PUBLIC_COD_DISABLED_PROVINCES?: string;
-  PUBLIC_TENANT_SLUG?: string;
   PUBLIC_SITE_NAME?: string;
   PUBLIC_SITE_URL?: string;
   PUBLIC_SITE_DESCRIPTION?: string;
@@ -15,18 +18,20 @@ interface SharedEnvVars {
   PUBLIC_SITE_TAGLINE?: string;
   PUBLIC_SITE_THEME_COLOR?: string;
   PUBLIC_SITE_LOCALE?: string;
-  PUBLIC_CONTENT_PACK?: string;
   PUBLIC_STOREFRONT_TEMPLATE?: string;
   PUBLIC_ADMIN_NAME?: string;
   PUBLIC_EMBED_ALLOWED_ORIGINS?: string;
+  PUBLIC_HEADLESS_ALLOWED_ORIGINS?: string;
   MENGANTAR_API_KEY?: string;
   AUTH_SECRET?: string;
+  INSTALL_TOKEN?: string;
+  /** Optional per-install HTTPS endpoint for redacted operational alerts. */
+  OPS_ALERT_WEBHOOK_URL?: string;
   BOOTSTRAP_ADMIN_PASSWORD?: string;
   MENGANTAR_ORIGIN_AREA_ID?: string;
   MENGANTAR_PICKUP_ADDRESS_ID?: string;
   AUTOLARIS_API_KEY?: string;
   AUTOLARIS_BASE_URL?: string;
-  AUTOLARIS_WEBHOOK_SECRET?: string;
   META_PIXEL_ID?: string;
   META_CAPI_ACCESS_TOKEN?: string;
   META_CAPI_TOKEN?: string;
@@ -59,9 +64,16 @@ declare module "cloudflare:workers" {
 declare namespace App {
   interface Locals {
     runtimeEnv?: Record<string, unknown>;
+    /**
+     * Store identity, resolved once per request in middleware from the `stores`
+     * row with environment fallback. Read this instead of importing a
+     * build-time constant — see DECISIONS.md ADR-003.
+     */
+    tenant: import("./lib/tenant").PublicTenantConfig;
     admin?: {
       username: string;
       role: import("./lib/auth").AdminRole;
+      mustChangePassword: boolean;
     };
   }
 }

@@ -5,6 +5,7 @@ import {
   updateAdminCredential,
 } from '../../../lib/admin-credentials';
 import { jsonError, jsonOk } from '../../../lib/api';
+import { SESSION_COOKIE_NAME } from '../../../lib/auth';
 import { getRuntimeEnv } from '../../../lib/env';
 
 export const prerender = false;
@@ -74,7 +75,7 @@ export const PUT: APIRoute = async ({ request, locals, cookies }) => {
     if (!result.ok) return jsonError(result.error, 400);
 
     await revokeAdminSessions(sessions, actorUsername);
-    cookies.delete('cmsads_session', { path: '/' });
+    cookies.delete(SESSION_COOKIE_NAME, { path: '/' });
     return jsonOk({
       message: 'Profil admin diperbarui. Silakan login kembali.',
       data: { username: result.username, reauthenticate: true },

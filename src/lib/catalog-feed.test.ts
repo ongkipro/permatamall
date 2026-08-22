@@ -1,40 +1,33 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {
-  formatContentId,
-  formatCatalogItemId,
+  catalogProductId,
+  defaultCatalogContentId,
   generateGoogleCatalogXml,
   generateMetaCatalogXml,
   type CatalogProduct,
 } from "./catalog-feed.ts";
 
-test("formatContentId enforces minimum 5-digit pattern lock", () => {
-  assert.equal(formatContentId(1), "10001");
-  assert.equal(formatContentId("10001"), "10001");
-  assert.equal(formatContentId(4001), "14001");
-  assert.equal(formatContentId(434683), "434683");
-  assert.equal(formatContentId("abc"), "00abc");
+test("catalog identity is the numeric Product ID with a five-digit minimum", () => {
+  assert.equal(catalogProductId(10000), "10000");
+  assert.equal(catalogProductId("434683"), "434683");
+  for (const invalid of [9999, "010000", "p10000", "product-slug", Number.MAX_SAFE_INTEGER + 1]) {
+    assert.throws(() => catalogProductId(invalid), /minimal 5 digit/i);
+  }
 });
 
-test("formatCatalogItemId returns product ID as itemId for single-variant products even if SKU exists", () => {
-  const result = formatCatalogItemId("434683", { id: 101, label: "Default", price: 50000, sku: "variant_NO8meDAONBXBZr4lawMCaFOp" }, 0, 1);
-  assert.equal(result.itemId, "434683");
-  assert.equal(result.itemGroupId, undefined);
+test("a page with a sellable variant points at its Product ID, or at nothing", () => {
+  assert.equal(
+    defaultCatalogContentId({ productId: 10007, variants: [{ id: 21 }, { id: 22 }] }),
+    "10007",
+  );
+  // No variants means no catalog item. Sending an id that matches nothing is
+  // worse than sending none: Meta reports it as a match the merchant cannot act on.
+  assert.equal(defaultCatalogContentId({ productId: 7, variants: [] }), undefined);
+  assert.equal(defaultCatalogContentId({ productId: 7 }), undefined);
 });
 
-test("formatCatalogItemId returns product ID for first variant of multi-variant products", () => {
-  const result = formatCatalogItemId("14001", { id: 10, label: "Paket 1", price: 85000 }, 0, 2);
-  assert.equal(result.itemId, "14001");
-  assert.equal(result.itemGroupId, undefined);
-});
-
-test("formatCatalogItemId returns indexed suffix and itemGroupId for secondary variants", () => {
-  const result = formatCatalogItemId("14001", { id: 11, label: "Paket 2", price: 150000 }, 1, 2);
-  assert.equal(result.itemId, "14001_v2");
-  assert.equal(result.itemGroupId, "14001");
-});
-
-test("generateGoogleCatalogXml emits valid g:id matching content_id and g:item_group_id", () => {
+test("Google feed emits one product-grain item with g:id matching Product ID", () => {
   const mockProducts: CatalogProduct[] = [
     {
       productId: 14001,
@@ -49,11 +42,11 @@ test("generateGoogleCatalogXml emits valid g:id matching content_id and g:item_g
     },
   ];
 
-  const xml = generateGoogleCatalogXml(mockProducts, "https://permatamall.shop");
-  assert.ok(xml.includes("<g:id>14001</g:id>"));
-  assert.ok(xml.includes("<g:id>14001_v2</g:id>"));
-  assert.ok(xml.includes("<g:item_group_id>14001</g:item_group_id>"));
-  assert.ok(xml.includes("<g:link>https://permatamall.shop/produk/bibit-sirsak</g:link>"));
+  const xml = generateGoogleCatalogXml(mockProducts, "https://toko-uji.example");
+  assert.deepEqual([...xml.matchAll(/<g:id>([^<]+)<\/g:id>/g)].map((match) => match[1]), ["14001"]);
+  assert.ok(!xml.includes("<g:item_group_id>"));
+  assert.ok(!xml.includes("<g:size>"));
+  assert.ok(xml.includes("<g:link>https://toko-uji.example/produk/bibit-sirsak</g:link>"));
   assert.ok(xml.includes("<g:price>85000 IDR</g:price>"));
 });
 
@@ -71,7 +64,7 @@ test("generateGoogleCatalogXml emits g:sale_price when comparePrice is greater t
     },
   ];
 
-  const xml = generateGoogleCatalogXml(mockProducts, "https://permatamall.shop");
+  const xml = generateGoogleCatalogXml(mockProducts, "https://toko-uji.example");
   assert.ok(xml.includes("<g:price>300000 IDR</g:price>"));
   assert.ok(xml.includes("<g:sale_price>128500 IDR</g:sale_price>"));
   assert.ok(xml.includes("<g:google_product_category>6551</g:google_product_category>"));
@@ -89,9 +82,42 @@ test("generateMetaCatalogXml emits valid fb_product_category and matching conten
     },
   ];
 
-  const xml = generateMetaCatalogXml(mockProducts, "https://permatamall.shop");
+  const xml = generateMetaCatalogXml(mockProducts, "https://toko-uji.example");
   assert.ok(xml.includes("<g:id>15005</g:id>"));
   assert.ok(!xml.includes("<g:item_group_id>"));
   assert.ok(xml.includes("<g:fb_product_category>"));
   assert.ok(xml.includes("<g:image_link>https://r2.example.com/pompa.jpg</g:image_link>"));
+});
+
+test("a feed omits the ad category it cannot determine", () => {
+  // Both platforms treat the category as optional and Google auto-classifies
+  // what is missing. Asserting a wrong one is grounds for a Merchant Center
+  // misrepresentation suspension — which is what shipping every unclassified
+  // product as a handbag would have been, once the bundled handbag catalogue
+  // that justified that default was removed.
+  const unclassifiable: CatalogProduct[] = [
+    {
+      productId: 10003,
+      slug: "barang-baru",
+      productName: "Barang Baru",
+      category: "Kategori Sendiri",
+      heroImage: "/images/adsbook-mark.webp",
+      variants: [{ id: 9, label: "Standar", price: 50000 }],
+    },
+  ];
+
+  const google = generateGoogleCatalogXml(unclassifiable, "https://toko-uji.example");
+  const meta = generateMetaCatalogXml(unclassifiable, "https://toko-uji.example");
+
+  assert.ok(!google.includes("<g:google_product_category>"));
+  assert.ok(!meta.includes("<g:google_product_category>"));
+  assert.ok(!meta.includes("<g:fb_product_category>"));
+  // The merchant's own free-text axis is still worth sending.
+  assert.ok(google.includes("<g:product_type>Umum &gt; Kategori Sendiri</g:product_type>"));
+  // And a product the rules *can* place still carries its category.
+  const known = generateGoogleCatalogXml(
+    [{ ...unclassifiable[0], category: "Tas Wanita", productName: "Tas Selempang Kulit" }],
+    "https://toko-uji.example",
+  );
+  assert.ok(known.includes("<g:google_product_category>"));
 });
