@@ -40,8 +40,8 @@ const seoTitle = 'Ken+total Minuman Serbuk Pria Dewasa — Stamina Kuat, Keras &
 const seoDescription =
   'Ken+total formula herbal BPOM resmi (MD272882000100292) dengan ekstrak Ginseng Korea & Blackcurrant. Reaksi cepat, bikin stamina perkasa, ereksi kokoh, dan tahan lama tanpa efek berdebar. Bisa COD & Privasi 100% Aman.';
 
-const sectionTitle = 'text-[24px] font-extrabold leading-[1.15] tracking-tight text-slate-950';
-const body = 'text-[15px] leading-relaxed text-slate-700';
+const sectionTitle = 'text-[clamp(1.25rem,5.2vw,1.55rem)] font-black leading-[1.2] tracking-tight text-slate-950 text-balance';
+const body = 'text-[clamp(0.875rem,3.8vw,0.95rem)] leading-relaxed text-slate-700';
 const dangerIcon = 'mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center text-[#DC2626]';
 
 const cheapest = [...product.variants].sort((a, b) => a.price - b.price)[0] ?? null;
@@ -76,7 +76,7 @@ const maleBuyers = [
   hideHeader={true}
   hideFooter={true}
 >
-  <main class="mx-auto min-h-screen w-full max-w-[480px] bg-white text-slate-950 pb-24 font-sans antialiased selection:bg-red-500 selection:text-white">
+  <main class="mx-auto min-h-screen w-full max-w-[480px] bg-white text-slate-950 pb-28 font-sans antialiased selection:bg-red-500 selection:text-white overflow-x-hidden">
     <MetaLandingTracker
       slug={SLUG}
       contentId={defaultCatalogContentId(product)}
@@ -86,7 +86,7 @@ const maleBuyers = [
 
     <!-- ═══ 1. TOP ANNOUNCEMENT / URGENCY STRIP ═══ -->
     <div class="sticky top-0 z-30 bg-gradient-to-r from-red-950 via-neutral-950 to-red-950 px-3 py-2 text-center text-white shadow-md">
-      <p class="text-[12px] font-bold tracking-wide flex items-center justify-center gap-1.5">
+      <p class="text-[clamp(0.7rem,3vw,0.775rem)] font-bold tracking-wide flex items-center justify-center gap-1.5 flex-wrap">
         <span class="inline-block animate-pulse text-amber-300">🔥 PROMO DISKON S/D 50%</span>
         <span class="text-slate-400">|</span>
         <span class="text-white">BAYAR DI TEMPAT <span class="bg-amber-400 text-black px-1.5 py-0.5 rounded text-[10px] uppercase font-black">BISA COD</span></span>
@@ -95,26 +95,26 @@ const maleBuyers = [
 
     <!-- ═══ 2. HERO SECTION (HIGH-CONVERTING HOOK) ═══ -->
     <section id="landing-hero" data-hero-section class="bg-white pb-6 text-left text-slate-950">
-      <div class="px-5 pt-6">
+      <div class="px-4 sm:px-5 pt-5 sm:pt-6">
         <!-- BPOM & Authentic Trust Badge -->
-        <div class="flex items-center gap-2 mb-3">
-          <span class="inline-flex items-center gap-1 rounded-md bg-red-100 border border-red-300 px-2.5 py-1 text-[11px] font-extrabold uppercase tracking-wider text-red-950">
+        <div class="flex flex-wrap items-center gap-1.5 sm:gap-2 mb-3">
+          <span class="inline-flex items-center gap-1 rounded-md bg-red-100 border border-red-300 px-2 sm:px-2.5 py-0.5 sm:py-1 text-[clamp(0.65rem,2.7vw,0.725rem)] font-extrabold uppercase tracking-wider text-red-950">
             <span class="h-2 w-2 rounded-full bg-red-600 animate-ping"></span>
             BPOM RI MD272882000100292
           </span>
-          <span class="inline-flex items-center rounded-md bg-emerald-100 border border-emerald-300 px-2 py-1 text-[11px] font-extrabold text-emerald-950">
+          <span class="inline-flex items-center rounded-md bg-emerald-100 border border-emerald-300 px-2 py-0.5 sm:py-1 text-[clamp(0.65rem,2.7vw,0.725rem)] font-extrabold text-emerald-950">
             100% HERBAL ASLI
           </span>
         </div>
 
-        <h1 class="text-[28px] font-black leading-[1.15] tracking-tight text-slate-950">
+        <h1 class="text-[clamp(1.35rem,5.8vw,1.75rem)] font-black leading-[1.18] tracking-tight text-slate-950 text-balance">
           Sering Loyo, Cepat Keluar &amp; Kurang Keras? <span
             class="box-decoration-clone px-1 text-white bg-gradient-to-r from-red-700 via-red-800 to-red-900 rounded"
             >Ken+total: Sekali Seduh Bikin Stamina Perkasa &amp; On Terus Tanpa Kendor!</span
           >
         </h1>
 
-        <p class="mt-4 text-[15px] font-semibold leading-relaxed text-slate-800">
+        <p class="mt-3.5 text-[clamp(0.875rem,3.8vw,0.975rem)] font-semibold leading-relaxed text-slate-800">
           Ekstrak <strong class="text-red-700 font-bold underline">Ginseng Merah Korea &amp; Blackcurrant Segar</strong> — melancarkan peredaran darah, mendongkrak ketegasan ereksi, dan bikin tahan lama beronde-ronde <span class="bg-amber-200 px-1 text-slate-950 font-bold">tanpa bikin jantung berdebar atau kepala pusing.</span>
         </p>
       </div>
@@ -136,16 +136,16 @@ const maleBuyers = [
 
         <!-- Floating Glassmorphic Benefit Card -->
         <div
-          class="relative z-20 mx-auto -mt-6 w-[92%] rounded-2xl border-2 border-red-300 bg-white/95 p-4 text-left shadow-[0_14px_34px_rgba(185,28,28,0.2)] backdrop-blur-md"
+          class="relative z-20 mx-auto -mt-6 w-[92%] rounded-2xl border-2 border-red-300 bg-white/95 p-3.5 sm:p-4 text-left shadow-[0_14px_34px_rgba(185,28,28,0.2)] backdrop-blur-md"
         >
-          <div class="flex gap-3">
+          <div class="flex gap-2.5 sm:gap-3">
             <span class="relative mt-1 flex h-4 w-4 shrink-0">
               <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-600 opacity-75"></span>
               <span class="relative inline-flex h-4 w-4 rounded-full bg-red-600 shadow-[0_0_0_6px_rgba(220,38,38,0.2)]"></span>
             </span>
             <div>
-              <h2 class="text-[16px] font-black leading-tight text-slate-950">Reaksi Cepat, Alami &amp; Aman di Jantung!</h2>
-              <p class="mt-1 text-[13px] font-medium leading-relaxed text-slate-700">
+              <h2 class="text-[clamp(0.95rem,4vw,1.05rem)] font-black leading-tight text-slate-950">Reaksi Cepat, Alami &amp; Aman di Jantung!</h2>
+              <p class="mt-1 text-[clamp(0.775rem,3.2vw,0.85rem)] font-medium leading-relaxed text-slate-700">
                 Formula herbal terdaftar BPOM. <strong class="text-red-700">Bebas Bahan Kimia Obat (BKO), tidak bikin ketergantungan dan aman diminum berkala.</strong>
               </p>
             </div>
@@ -153,31 +153,31 @@ const maleBuyers = [
         </div>
 
         <!-- Trust Features Grid -->
-        <div class="mt-5 grid grid-cols-3 divide-x divide-slate-200 px-4 text-center">
-          <div class="px-2">
-            <span class="block text-[18px]">🚚</span>
-            <span class="text-[12px] font-extrabold text-slate-900">Bisa COD</span>
-            <p class="text-[10.5px] text-slate-500 font-medium">Bayar di Tempat</p>
+        <div class="mt-5 grid grid-cols-3 divide-x divide-slate-200 px-2 sm:px-4 text-center">
+          <div class="px-1.5 sm:px-2">
+            <span class="block text-[16px] sm:text-[18px]">🚚</span>
+            <span class="text-[clamp(0.7rem,3vw,0.775rem)] font-extrabold text-slate-900">Bisa COD</span>
+            <p class="text-[clamp(0.6rem,2.5vw,0.675rem)] text-slate-500 font-medium">Bayar di Tempat</p>
           </div>
-          <div class="px-2">
-            <span class="block text-[18px]">🔒</span>
-            <span class="text-[12px] font-extrabold text-slate-900">Privasi Rapat</span>
-            <p class="text-[10.5px] text-slate-500 font-medium">Paket Polos Tertutup</p>
+          <div class="px-1.5 sm:px-2">
+            <span class="block text-[16px] sm:text-[18px]">🔒</span>
+            <span class="text-[clamp(0.7rem,3vw,0.775rem)] font-extrabold text-slate-900">Privasi Rapat</span>
+            <p class="text-[clamp(0.6rem,2.5vw,0.675rem)] text-slate-500 font-medium">Paket Polos Tertutup</p>
           </div>
-          <div class="px-2">
-            <span class="block text-[18px]">⭐</span>
-            <span class="text-[12px] font-extrabold text-slate-900">Rating 4.9/5</span>
-            <p class="text-[10.5px] text-slate-500 font-medium">4.200+ Box Terjual</p>
+          <div class="px-1.5 sm:px-2">
+            <span class="block text-[16px] sm:text-[18px]">⭐</span>
+            <span class="text-[clamp(0.7rem,3vw,0.775rem)] font-extrabold text-slate-900">Rating 4.9/5</span>
+            <p class="text-[clamp(0.6rem,2.5vw,0.675rem)] text-slate-500 font-medium">4.200+ Box Terjual</p>
           </div>
         </div>
       </div>
     </section>
 
     <!-- ═══ 3. FAST CTA BUTTON ═══ -->
-    <div class="px-5 py-2 text-center">
+    <div class="px-4 sm:px-5 py-2 text-center">
       <a
         href="#form-pemesanan"
-        class="flex w-full min-h-[54px] items-center justify-center rounded-2xl bg-gradient-to-r from-red-600 via-red-700 to-red-800 text-[16px] font-black uppercase tracking-wider text-white shadow-[0_10px_25px_rgba(220,38,38,0.4)] transition-all hover:scale-[1.02] active:scale-[0.98] animate-pulse"
+        class="flex w-full min-h-[50px] sm:min-h-[54px] items-center justify-center rounded-2xl bg-gradient-to-r from-red-600 via-red-700 to-red-800 text-[clamp(0.9rem,4vw,1rem)] font-black uppercase tracking-wider text-white shadow-[0_10px_25px_rgba(220,38,38,0.4)] transition-all hover:scale-[1.02] active:scale-[0.98] animate-pulse"
       >
         👉 PESAN SEKARANG (BISA COD)
       </a>
@@ -185,51 +185,51 @@ const maleBuyers = [
     </div>
 
     <!-- ═══ 4. AGITATION / DANGER SIGNS (MASALAH UTAMA PRIA) ═══ -->
-    <section class="border-t-2 border-red-200 bg-[#FFF7ED] px-5 py-9">
-      <span class="inline-block rounded-md bg-red-600 px-2.5 py-1 text-[11px] font-extrabold uppercase tracking-widest text-white mb-2">
+    <section class="border-t-2 border-red-200 bg-[#FFF7ED] px-4 sm:px-5 py-7 sm:py-9">
+      <span class="inline-block rounded-md bg-red-600 px-2.5 py-1 text-[clamp(0.65rem,2.7vw,0.725rem)] font-extrabold uppercase tracking-widest text-white mb-2">
         ⚠️ Waspada Penurunan Performa Pria
       </span>
       <h2 class={sectionTitle}>
         Pernahkah Anda Mengalami <span class="text-red-700 underline decoration-amber-400 decoration-4 underline-offset-4">Hal Memalukan Ini di Depan Pasangan?</span>
       </h2>
-      <div class="mt-5 grid gap-3.5">
-        <div class="flex gap-3 bg-white p-3.5 rounded-xl border border-red-200 shadow-sm">
+      <div class="mt-5 grid gap-3 sm:gap-3.5">
+        <div class="flex gap-2.5 sm:gap-3 bg-white p-3 sm:p-3.5 rounded-xl border border-red-200 shadow-sm">
           <span class={dangerIcon}><Icon name="triangle-alert" class="h-5 w-5" aria-hidden="true" /></span>
           <p class={body}>
-            <strong class="text-slate-950 block text-[15px]">Cepat Loyo &amp; Durasi Singkat:</strong> Baru mulai sebentar tapi nafas sudah ngos-ngosan dan cepat keluar sebelum pasangan terpuaskan.
+            <strong class="text-slate-950 block text-[clamp(0.875rem,3.8vw,0.95rem)]">Cepat Loyo &amp; Durasi Singkat:</strong> Baru mulai sebentar tapi nafas sudah ngos-ngosan dan cepat keluar sebelum pasangan terpuaskan.
           </p>
         </div>
-        <div class="flex gap-3 bg-white p-3.5 rounded-xl border border-red-200 shadow-sm">
+        <div class="flex gap-2.5 sm:gap-3 bg-white p-3 sm:p-3.5 rounded-xl border border-red-200 shadow-sm">
           <span class={dangerIcon}><Icon name="triangle-alert" class="h-5 w-5" aria-hidden="true" /></span>
           <p class={body}>
-            <strong class="text-slate-950 block text-[15px]">Kurang Keras &amp; Susah Bangkit:</strong> Aliran darah kurang lancar membuat senjata sulit tegang maksimal dan gampang layu di tengah jalan.
+            <strong class="text-slate-950 block text-[clamp(0.875rem,3.8vw,0.95rem)]">Kurang Keras &amp; Susah Bangkit:</strong> Aliran darah kurang lancar membuat senjata sulit tegang maksimal dan gampang layu di tengah jalan.
           </p>
         </div>
-        <div class="flex gap-3 bg-white p-3.5 rounded-xl border border-red-200 shadow-sm">
+        <div class="flex gap-2.5 sm:gap-3 bg-white p-3 sm:p-3.5 rounded-xl border border-red-200 shadow-sm">
           <span class={dangerIcon}><Icon name="triangle-alert" class="h-5 w-5" aria-hidden="true" /></span>
           <p class={body}>
-            <strong class="text-slate-950 block text-[15px]">Capek Kerja Seharian &amp; Gairah Menurun:</strong> Beban kerja dan stres bikin badan lemas sehingga tidak ada mood melayani istri tercinta.
+            <strong class="text-slate-950 block text-[clamp(0.875rem,3.8vw,0.95rem)]">Capek Kerja Seharian &amp; Gairah Menurun:</strong> Beban kerja dan stres bikin badan lemas sehingga tidak ada mood melayani istri tercinta.
           </p>
         </div>
-        <div class="flex gap-3 bg-red-100/70 p-3.5 rounded-xl border-2 border-red-400 shadow-sm">
+        <div class="flex gap-2.5 sm:gap-3 bg-red-100/70 p-3 sm:p-3.5 rounded-xl border-2 border-red-400 shadow-sm">
           <span class={dangerIcon}><Icon name="triangle-alert" class="h-5 w-5" aria-hidden="true" /></span>
           <p class={body}>
-            <strong class="text-red-950 block text-[15px]">Bahaya Obat Kuat Kimia Palsu:</strong> Mengonsumsi obat kimia tanpa BPOM berisiko tinggi memicu jantung berdebar keras, pusing kepala, kebutaan mendadak, hingga gagal ginjal!
+            <strong class="text-red-950 block text-[clamp(0.875rem,3.8vw,0.95rem)]">Bahaya Obat Kuat Kimia Palsu:</strong> Mengonsumsi obat kimia tanpa BPOM berisiko tinggi memicu jantung berdebar keras, pusing kepala, kebutaan mendadak, hingga gagal ginjal!
           </p>
         </div>
       </div>
     </section>
 
     <!-- ═══ 5. BEFORE VS AFTER COMPARISON (TRANSFORMASI NYATA) ═══ -->
-    <section class="border-t-2 border-slate-900 bg-slate-950 px-5 py-9 text-white">
-      <div class="text-center mb-6">
-        <span class="inline-block rounded-full bg-amber-400 px-3.5 py-1 text-[11px] font-black uppercase tracking-wider text-black mb-2">
+    <section class="border-t-2 border-slate-900 bg-slate-950 px-4 sm:px-5 py-7 sm:py-9 text-white">
+      <div class="text-center mb-5 sm:mb-6">
+        <span class="inline-block rounded-full bg-amber-400 px-3 py-1 text-[clamp(0.65rem,2.7vw,0.725rem)] font-black uppercase tracking-wider text-black mb-2">
           ⚡ PERBANDINGAN NYATA
         </span>
-        <h2 class="text-[25px] font-black leading-tight text-white">
+        <h2 class="text-[clamp(1.25rem,5.2vw,1.55rem)] font-black leading-tight text-white text-balance">
           SEBELUM vs SESUDAH MINUM KEN+TOTAL
         </h2>
-        <p class="mt-1.5 text-[13.5px] text-slate-300">
+        <p class="mt-1.5 text-[clamp(0.8rem,3.4vw,0.875rem)] text-slate-300">
           Rasakan lonjakan energi seketika dan perubahan stamina yang luar biasa:
         </p>
       </div>
@@ -248,26 +248,26 @@ const maleBuyers = [
       </div>
 
       <!-- Comparative Breakdown Cards -->
-      <div class="mt-5 grid grid-cols-2 gap-3">
+      <div class="mt-5 grid grid-cols-2 gap-2 sm:gap-3">
         <!-- SEBELUM -->
-        <div class="rounded-xl border border-red-900/60 bg-red-950/40 p-3.5 text-left">
-          <div class="flex items-center gap-1.5 text-red-400 font-extrabold text-[13px] mb-2">
+        <div class="rounded-xl border border-red-900/60 bg-red-950/40 p-2.5 sm:p-3.5 text-left">
+          <div class="flex items-center gap-1 text-red-400 font-extrabold text-[clamp(0.75rem,3.2vw,0.85rem)] mb-1.5 sm:mb-2">
             <span>❌</span> SEBELUM
           </div>
-          <ul class="space-y-2 text-[12px] text-slate-300">
-            <li class="flex items-start gap-1.5">
+          <ul class="space-y-1.5 sm:space-y-2 text-[clamp(0.675rem,2.8vw,0.75rem)] sm:text-[12px] text-slate-300">
+            <li class="flex items-start gap-1">
               <span class="text-red-400 font-bold">•</span>
               <span>Baru main 2-3 menit sudah cepat keluar.</span>
             </li>
-            <li class="flex items-start gap-1.5">
+            <li class="flex items-start gap-1">
               <span class="text-red-400 font-bold">•</span>
               <span>Ereksi lembek &amp; gampang kendor di tengah jalan.</span>
             </li>
-            <li class="flex items-start gap-1.5">
+            <li class="flex items-start gap-1">
               <span class="text-red-400 font-bold">•</span>
               <span>Bangun tidur badan pegal &amp; lemas.</span>
             </li>
-            <li class="flex items-start gap-1.5">
+            <li class="flex items-start gap-1">
               <span class="text-red-400 font-bold">•</span>
               <span>Istri sering kecewa &amp; hubungan dingin.</span>
             </li>
@@ -275,24 +275,24 @@ const maleBuyers = [
         </div>
 
         <!-- SESUDAH -->
-        <div class="rounded-xl border-2 border-emerald-500 bg-emerald-950/40 p-3.5 text-left shadow-[0_0_15px_rgba(16,185,129,0.15)]">
-          <div class="flex items-center gap-1.5 text-emerald-400 font-extrabold text-[13px] mb-2">
+        <div class="rounded-xl border-2 border-emerald-500 bg-emerald-950/40 p-2.5 sm:p-3.5 text-left shadow-[0_0_15px_rgba(16,185,129,0.15)]">
+          <div class="flex items-center gap-1 text-emerald-400 font-extrabold text-[clamp(0.75rem,3.2vw,0.85rem)] mb-1.5 sm:mb-2">
             <span>✅</span> SESUDAH
           </div>
-          <ul class="space-y-2 text-[12px] text-emerald-100">
-            <li class="flex items-start gap-1.5">
+          <ul class="space-y-1.5 sm:space-y-2 text-[clamp(0.675rem,2.8vw,0.75rem)] sm:text-[12px] text-emerald-100">
+            <li class="flex items-start gap-1">
               <span class="text-emerald-400 font-bold">•</span>
               <span><strong>Tahan lama 30-45 menit</strong> full power!</span>
             </li>
-            <li class="flex items-start gap-1.5">
+            <li class="flex items-start gap-1">
               <span class="text-emerald-400 font-bold">•</span>
               <span><strong>Ereksi keras maksimal</strong> &amp; kokoh perkasa.</span>
             </li>
-            <li class="flex items-start gap-1.5">
+            <li class="flex items-start gap-1">
               <span class="text-emerald-400 font-bold">•</span>
               <span>Badan segar bugar tanpa efek berdebar.</span>
             </li>
-            <li class="flex items-start gap-1.5">
+            <li class="flex items-start gap-1">
               <span class="text-emerald-400 font-bold">•</span>
               <span><strong>Istri puas, tersenyum</strong> &amp; makin nempel!</span>
             </li>
@@ -302,19 +302,19 @@ const maleBuyers = [
     </section>
 
     <!-- ═══ 6. REAL UNBOXING & EVIDENCE GALLERY (FOTO ASLI PRODUK) ═══ -->
-    <section class="border-t-2 border-slate-200 bg-slate-900 px-5 py-9 text-white">
-      <div class="text-center mb-6">
-        <span class="inline-block rounded-full bg-amber-400 px-3 py-1 text-[11px] font-black uppercase tracking-wider text-black mb-2">
+    <section class="border-t-2 border-slate-200 bg-slate-900 px-4 sm:px-5 py-7 sm:py-9 text-white">
+      <div class="text-center mb-5 sm:mb-6">
+        <span class="inline-block rounded-full bg-amber-400 px-3 py-1 text-[clamp(0.65rem,2.7vw,0.725rem)] font-black uppercase tracking-wider text-black mb-2">
           📸 BUKTI FOTO ASLI PRODUK
         </span>
-        <h2 class="text-[25px] font-black leading-tight text-white">100% REAL PICTURE &amp; BERKUALITAS TINGGI</h2>
-        <p class="mt-1.5 text-[13.5px] text-slate-300">
+        <h2 class="text-[clamp(1.25rem,5.2vw,1.55rem)] font-black leading-tight text-white text-balance">100% REAL PICTURE &amp; BERKUALITAS TINGGI</h2>
+        <p class="mt-1.5 text-[clamp(0.8rem,3.4vw,0.875rem)] text-slate-300">
           Produk asli bersegel rapi, lengkap dengan kode BPOM dan tanggal kadaluarsa resmi.
         </p>
       </div>
 
       <!-- Real Product Grid Gallery -->
-      <div class="grid grid-cols-2 gap-3">
+      <div class="grid grid-cols-2 gap-2.5 sm:gap-3">
         <div class="overflow-hidden rounded-xl border border-slate-700 bg-neutral-900">
           <img
             src="/assets/landing/ken-total/real-box-duo.webp"
@@ -325,7 +325,7 @@ const maleBuyers = [
             loading="lazy"
             decoding="async"
           />
-          <p class="p-2 text-center text-[11px] font-bold text-slate-200 bg-neutral-900/90 border-t border-slate-800">
+          <p class="p-2 text-center text-[clamp(0.65rem,2.7vw,0.725rem)] sm:text-[11px] font-bold text-slate-200 bg-neutral-900/90 border-t border-slate-800">
             Kemasan Box Ken+total
           </p>
         </div>
@@ -340,7 +340,7 @@ const maleBuyers = [
             loading="lazy"
             decoding="async"
           />
-          <p class="p-2 text-center text-[11px] font-bold text-slate-200 bg-neutral-900/90 border-t border-slate-800">
+          <p class="p-2 text-center text-[clamp(0.65rem,2.7vw,0.725rem)] sm:text-[11px] font-bold text-slate-200 bg-neutral-900/90 border-t border-slate-800">
             Isi 5 Sachet Per Box
           </p>
         </div>
@@ -355,7 +355,7 @@ const maleBuyers = [
             loading="lazy"
             decoding="async"
           />
-          <p class="p-2 text-center text-[11px] font-bold text-slate-200 bg-neutral-900/90 border-t border-slate-800">
+          <p class="p-2 text-center text-[clamp(0.65rem,2.7vw,0.725rem)] sm:text-[11px] font-bold text-slate-200 bg-neutral-900/90 border-t border-slate-800">
             Sachet 15gr Praktis Higienis
           </p>
         </div>
@@ -370,28 +370,28 @@ const maleBuyers = [
             loading="lazy"
             decoding="async"
           />
-          <p class="p-2 text-center text-[11px] font-bold text-slate-200 bg-neutral-900/90 border-t border-slate-800">
+          <p class="p-2 text-center text-[clamp(0.65rem,2.7vw,0.725rem)] sm:text-[11px] font-bold text-slate-200 bg-neutral-900/90 border-t border-slate-800">
             Segel Original Pabrik
           </p>
         </div>
       </div>
 
       <!-- BPOM Callout Box -->
-      <div class="mt-5 rounded-xl border border-amber-400/40 bg-neutral-900/90 p-3.5 text-center">
-        <p class="text-[13px] font-extrabold text-amber-300">
+      <div class="mt-4 sm:mt-5 rounded-xl border border-amber-400/40 bg-neutral-900/90 p-3 sm:p-3.5 text-center">
+        <p class="text-[clamp(0.775rem,3.2vw,0.85rem)] font-extrabold text-amber-300">
           🛡️ Terdaftar Resmi BPOM RI: MD 272882000100292
         </p>
-        <p class="text-[11.5px] text-slate-400 mt-0.5">
+        <p class="text-[clamp(0.675rem,2.8vw,0.75rem)] text-slate-400 mt-0.5">
           Diproduksi oleh: CV. Nusadayana, Bandung - Indonesia
         </p>
       </div>
     </section>
 
     <!-- ═══ 7. INFOGRAPHIC KANDUNGAN & BUKTI KEHARMONISAN ═══ -->
-    <section class="border-t border-slate-100 bg-[#F8FAFC] px-4 py-8 space-y-4">
+    <section class="border-t border-slate-100 bg-[#F8FAFC] px-4 py-7 sm:py-8 space-y-4">
       <div class="text-center mb-2">
         <h2 class={sectionTitle}>Kandungan Alami &amp; Rasa Nikmat</h2>
-        <p class="text-[13.5px] text-slate-600 mt-1">Perpaduan Ginseng Korea, Blackcurrant, &amp; Madu Hutan</p>
+        <p class="text-[clamp(0.8rem,3.4vw,0.875rem)] text-slate-600 mt-1">Perpaduan Ginseng Korea, Blackcurrant, &amp; Madu Hutan</p>
       </div>
 
       <div class="rounded-2xl overflow-hidden border border-slate-200 shadow-md bg-black">
@@ -430,7 +430,7 @@ const maleBuyers = [
           decoding="async"
         />
         <figcaption
-          class="absolute left-3 top-3 rounded-md bg-red-700 px-3 py-1 text-[12px] font-extrabold uppercase tracking-wide text-white shadow-md"
+          class="absolute left-3 top-3 rounded-md bg-red-700 px-2.5 sm:px-3 py-1 text-[clamp(0.65rem,2.7vw,0.75rem)] font-extrabold uppercase tracking-wide text-white shadow-md"
         >
           ❤️ Istri Makin Sayang &amp; Puas
         </figcaption>
@@ -438,21 +438,21 @@ const maleBuyers = [
     </section>
 
     <!-- ═══ 8. AUTO-SLIDING WHATSAPP CHAT TESTIMONIALS (5 DETIK PER SLIDE) ═══ -->
-    <section class="border-t border-slate-200 bg-white px-5 py-9">
-      <div class="text-center mb-6">
-        <span class="inline-block rounded-md bg-emerald-100 px-2.5 py-1 text-[11px] font-extrabold uppercase tracking-widest text-emerald-950 mb-1.5">
+    <section class="border-t border-slate-200 bg-white px-4 sm:px-5 py-7 sm:py-9">
+      <div class="text-center mb-5 sm:mb-6">
+        <span class="inline-block rounded-md bg-emerald-100 px-2.5 py-1 text-[clamp(0.65rem,2.7vw,0.725rem)] font-extrabold uppercase tracking-widest text-emerald-950 mb-1.5">
           💬 BUKTI CHAT WHATSAPP ASLI
         </span>
         <h2 class={sectionTitle}>
           Bukan Janji, Tapi Bukti Nyata dari Pelanggan!
         </h2>
-        <p class="text-[13.5px] text-slate-600 mt-1">
+        <p class="text-[clamp(0.8rem,3.4vw,0.875rem)] text-slate-600 mt-1 text-balance">
           Tangkapan layar chat asli dari para pembeli yang puas dan repeat order:
         </p>
       </div>
 
       <!-- Interactive Carousel with 5-Second Interval & Progress Bar -->
-      <div class="relative mx-auto max-w-[360px]" id="wa-slider-container">
+      <div class="relative mx-auto max-w-[360px] px-1 sm:px-0" id="wa-slider-container">
         <!-- 5-Second Active Timer Bar -->
         <div class="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden mb-3 border border-slate-200">
           <div id="wa-progress-bar" class="h-full bg-gradient-to-r from-red-600 to-emerald-500 w-0 transition-all duration-100"></div>
@@ -478,10 +478,10 @@ const maleBuyers = [
               />
             </div>
             <div class="mt-2.5 rounded-xl bg-emerald-50 border border-emerald-200 p-2.5 text-center">
-              <p class="text-[13px] font-extrabold text-emerald-950">
+              <p class="text-[clamp(0.775rem,3.2vw,0.85rem)] font-extrabold text-emerald-950">
                 💬 Bukti 1: Pak Gunawan (Jakarta Selatan)
               </p>
-              <p class="text-[12px] font-medium text-emerald-800 mt-0.5">
+              <p class="text-[clamp(0.7rem,2.8vw,0.75rem)] font-medium text-emerald-800 mt-0.5">
                 "Stamina prima, istri puas, langsung repeat order 2 box!"
               </p>
             </div>
@@ -496,15 +496,15 @@ const maleBuyers = [
                 class="w-full h-auto block"
                 width="600"
                 height="800"
-                loading="eager"
+                loading="lazy"
                 decoding="async"
               />
             </div>
             <div class="mt-2.5 rounded-xl bg-emerald-50 border border-emerald-200 p-2.5 text-center">
-              <p class="text-[13px] font-extrabold text-emerald-950">
+              <p class="text-[clamp(0.775rem,3.2vw,0.85rem)] font-extrabold text-emerald-950">
                 💬 Bukti 2: Pak Bambang (Surabaya, Jatim)
               </p>
-              <p class="text-[12px] font-medium text-emerald-800 mt-0.5">
+              <p class="text-[clamp(0.7rem,2.8vw,0.75rem)] font-medium text-emerald-800 mt-0.5">
                 "Durasi nambah gahar, gak gampang lemas, ambil paket COD 2 box!"
               </p>
             </div>
@@ -519,37 +519,37 @@ const maleBuyers = [
                 class="w-full h-auto block"
                 width="600"
                 height="800"
-                loading="eager"
+                loading="lazy"
                 decoding="async"
               />
             </div>
             <div class="mt-2.5 rounded-xl bg-emerald-50 border border-emerald-200 p-2.5 text-center">
-              <p class="text-[13px] font-extrabold text-emerald-950">
+              <p class="text-[clamp(0.775rem,3.2vw,0.85rem)] font-extrabold text-emerald-950">
                 💬 Bukti 3: Mas Rizky (Semarang, Jateng)
               </p>
-              <p class="text-[12px] font-medium text-emerald-800 mt-0.5">
+              <p class="text-[clamp(0.7rem,2.8vw,0.75rem)] font-medium text-emerald-800 mt-0.5">
                 "Senjata kokoh tegak maksimal tahan 40 menit, rasa seger enak bgt!"
               </p>
             </div>
           </div>
         </div>
 
-        <!-- Navigation Arrows -->
+        <!-- Navigation Arrows (Smart Responsive Inline & Touch) -->
         <button
           id="wa-slide-prev"
           type="button"
           aria-label="Slide Sebelumnya"
-          class="absolute -left-3 top-[38%] -translate-y-1/2 flex h-10 w-10 items-center justify-center rounded-full bg-white/95 text-slate-900 shadow-xl border border-slate-300 hover:bg-white active:scale-95 transition-all z-10 cursor-pointer"
+          class="absolute left-1 sm:-left-3 top-[38%] -translate-y-1/2 flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-full bg-white/95 text-slate-900 shadow-xl border border-slate-300 hover:bg-white active:scale-95 transition-all z-10 cursor-pointer"
         >
-          <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"/></svg>
+          <svg class="h-4 w-4 sm:h-5 sm:w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"/></svg>
         </button>
         <button
           id="wa-slide-next"
           type="button"
           aria-label="Slide Selanjutnya"
-          class="absolute -right-3 top-[38%] -translate-y-1/2 flex h-10 w-10 items-center justify-center rounded-full bg-white/95 text-slate-900 shadow-xl border border-slate-300 hover:bg-white active:scale-95 transition-all z-10 cursor-pointer"
+          class="absolute right-1 sm:-right-3 top-[38%] -translate-y-1/2 flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-full bg-white/95 text-slate-900 shadow-xl border border-slate-300 hover:bg-white active:scale-95 transition-all z-10 cursor-pointer"
         >
-          <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/></svg>
+          <svg class="h-4 w-4 sm:h-5 sm:w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/></svg>
         </button>
 
         <!-- Slider Dots Indicators -->
@@ -559,16 +559,16 @@ const maleBuyers = [
           <button type="button" class="wa-dot h-2.5 w-2.5 rounded-full bg-slate-300 transition-all duration-300 cursor-pointer" data-index="2" aria-label="Go to slide 3"></button>
         </div>
 
-        <p class="mt-2 text-center text-[11px] font-semibold text-slate-500">
+        <p class="mt-2 text-center text-[10.5px] sm:text-[11px] font-semibold text-slate-500">
           ⏱️ Slide otomatis setiap 5 detik • Geser layar untuk memilih
         </p>
       </div>
     </section>
 
-    <!-- ═══ 9. ALL-MALE CUSTOMER TESTIMONIALS (6 VERIFIED REVIEWS) ═══ -->
-    <section class="border-t border-slate-200 px-5 py-9 bg-slate-50">
-      <div class="mb-6">
-        <span class="inline-block rounded-md bg-red-100 px-2.5 py-1 text-[11px] font-extrabold uppercase tracking-widest text-red-950 mb-2">
+    <!-- ═══ 9. ALL-MALE CUSTOMER TESTIMONIALS (4 VERIFIED REVIEWS) ═══ -->
+    <section class="border-t border-slate-200 px-4 sm:px-5 py-7 sm:py-9 bg-slate-50">
+      <div class="mb-5 sm:mb-6">
+        <span class="inline-block rounded-md bg-red-100 px-2.5 py-1 text-[clamp(0.65rem,2.7vw,0.725rem)] font-extrabold uppercase tracking-widest text-red-950 mb-2">
           ⭐ Cerita Jujur Para Suami
         </span>
         <h2 class={sectionTitle}>
@@ -579,7 +579,7 @@ const maleBuyers = [
         </p>
       </div>
 
-      <div class="space-y-5">
+      <div class="space-y-4 sm:space-y-5">
         {
           [
             {
@@ -619,47 +619,47 @@ const maleBuyers = [
               takeaway: 'Badan enteng bertenaga & pengiriman COD cepat.',
             },
           ].map((item) => (
-            <div class="space-y-3 p-4 rounded-2xl border border-slate-200 bg-white shadow-sm">
+            <div class="space-y-2.5 sm:space-y-3 p-3.5 sm:p-4 rounded-2xl border border-slate-200 bg-white shadow-sm">
               <!-- Customer Header -->
-              <div class="flex items-start justify-between gap-3">
-                <div class="flex items-center gap-3">
+              <div class="flex items-start justify-between gap-2.5 sm:gap-3">
+                <div class="flex items-center gap-2.5 sm:gap-3">
                   <img
                     src={item.avatar}
                     alt={`Foto ${item.name}`}
-                    class="h-12 w-12 rounded-full object-cover ring-2 ring-red-200 shrink-0"
+                    class="h-11 w-11 sm:h-12 sm:w-12 rounded-full object-cover ring-2 ring-red-200 shrink-0"
                     width="48"
                     height="48"
                     loading="lazy"
                     decoding="async"
                   />
                   <div>
-                    <div class="flex items-center gap-1.5">
-                      <h3 class="text-[15.5px] font-bold text-slate-950">{item.name}</h3>
+                    <div class="flex items-center gap-1 sm:gap-1.5">
+                      <h3 class="text-[clamp(0.9rem,3.8vw,0.975rem)] font-bold text-slate-950">{item.name}</h3>
                       <span class="flex h-4 w-4 items-center justify-center text-blue-600">
                         <Icon name="badge-check" class="h-4 w-4" aria-hidden="true" />
                       </span>
                     </div>
-                    <p class="text-[12px] font-medium text-slate-500">{item.location}</p>
+                    <p class="text-[clamp(0.7rem,2.8vw,0.75rem)] font-medium text-slate-500">{item.location}</p>
                   </div>
                 </div>
-                <div class="shrink-0 text-[13px] text-[#FBBF24]" role="img" aria-label="5 dari 5 bintang">
+                <div class="shrink-0 text-[12px] sm:text-[13px] text-[#FBBF24]" role="img" aria-label="5 dari 5 bintang">
                   ★★★★★
                 </div>
               </div>
 
               <!-- Problem Pill -->
-              <div class="inline-block rounded-md px-2.5 py-0.5 text-[11px] font-semibold border border-slate-300/80 bg-slate-50 text-slate-700">
+              <div class="inline-block rounded-md px-2 sm:px-2.5 py-0.5 text-[clamp(0.65rem,2.6vw,0.7rem)] font-semibold border border-slate-300/80 bg-slate-50 text-slate-700">
                 {item.problem}
               </div>
 
               <!-- Quote with Highlighted Spans -->
               <p
-                class="border-l-2 border-red-700 pl-3 text-[14.5px] leading-relaxed text-slate-700 italic"
+                class="border-l-2 border-red-700 pl-3 text-[clamp(0.85rem,3.6vw,0.925rem)] leading-relaxed text-slate-700 italic"
                 set:html={`“${item.review}”`}
               />
 
               <!-- Key Takeaway Box -->
-              <div class="flex items-center gap-2 rounded-lg bg-red-100/70 px-2.5 py-1.5 text-[12px] font-bold text-red-950">
+              <div class="flex items-center gap-2 rounded-lg bg-red-100/70 px-2.5 py-1.5 text-[clamp(0.7rem,2.8vw,0.75rem)] font-bold text-red-950">
                 <span>📌</span>
                 <span>{item.takeaway}</span>
               </div>
@@ -670,40 +670,40 @@ const maleBuyers = [
     </section>
 
     <!-- ═══ 10. JAMINAN PRIVASI & BELANJA AMAN ═══ -->
-    <section class="border-t border-[#0F2942] bg-[#0F2942] px-5 py-9 text-center text-white">
-      <div class="mx-auto mb-4 flex h-14 w-14 items-center justify-center text-[#FBBF24]">
-        <Icon name="shield-check" class="h-12 w-12" aria-hidden="true" />
+    <section class="border-t border-[#0F2942] bg-[#0F2942] px-4 sm:px-5 py-7 sm:py-9 text-center text-white">
+      <div class="mx-auto mb-3 sm:mb-4 flex h-12 w-12 sm:h-14 sm:w-14 items-center justify-center text-[#FBBF24]">
+        <Icon name="shield-check" class="h-10 w-10 sm:h-12 sm:w-12" aria-hidden="true" />
       </div>
-      <p class="mb-1 text-[11px] font-bold uppercase tracking-widest text-[#93C5FD]">Garansi Belanja Bebas Resiko</p>
-      <h2 class="text-[26px] font-black leading-tight text-white">BELANJA AMAN &amp; PRIVASI 100% TERJAGA</h2>
-      <p class="mx-auto mt-2 max-w-[340px] text-[14.5px] leading-relaxed text-blue-100/90">
+      <p class="mb-1 text-[clamp(0.65rem,2.7vw,0.7rem)] font-bold uppercase tracking-widest text-[#93C5FD]">Garansi Belanja Bebas Resiko</p>
+      <h2 class="text-[clamp(1.25rem,5.5vw,1.65rem)] font-black leading-tight text-white text-balance">BELANJA AMAN &amp; PRIVASI 100% TERJAGA</h2>
+      <p class="mx-auto mt-2 max-w-[340px] text-[clamp(0.825rem,3.5vw,0.925rem)] leading-relaxed text-blue-100/90 text-balance">
         Pesan sekarang dengan tenang, bayar tunai saat barang sampai di tangan Anda (COD)!
       </p>
 
-      <div class="mt-6 grid gap-3.5 text-left">
-        <div class="flex items-start gap-3.5 rounded-2xl border border-white/15 bg-white p-4 shadow-sm">
-          <span class="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center text-red-700">
+      <div class="mt-5 sm:mt-6 grid gap-3 sm:gap-3.5 text-left">
+        <div class="flex items-start gap-3 sm:gap-3.5 rounded-2xl border border-white/15 bg-white p-3.5 sm:p-4 shadow-sm">
+          <span class="mt-0.5 flex h-5 w-5 sm:h-6 sm:w-6 shrink-0 items-center justify-center text-red-700">
             <Icon name="lock-keyhole" class="h-5 w-5" aria-hidden="true" />
           </span>
-          <p class="text-[14.5px] leading-relaxed text-slate-700">
+          <p class="text-[clamp(0.85rem,3.6vw,0.925rem)] leading-relaxed text-slate-700">
             <strong class="mb-0.5 block text-slate-950 font-bold">100% Privasi Sangat Terjaga.</strong> Paket dibungkus rapat dengan bubble wrap tebal tanpa tulisan nama produk di resi kurir demi kenyamanan Anda.
           </p>
         </div>
 
-        <div class="flex items-start gap-3.5 rounded-2xl border border-white/15 bg-white p-4 shadow-sm">
-          <span class="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center text-red-700">
+        <div class="flex items-start gap-3 sm:gap-3.5 rounded-2xl border border-white/15 bg-white p-3.5 sm:p-4 shadow-sm">
+          <span class="mt-0.5 flex h-5 w-5 sm:h-6 sm:w-6 shrink-0 items-center justify-center text-red-700">
             <Icon name="truck" class="h-5 w-5" aria-hidden="true" />
           </span>
-          <p class="text-[14.5px] leading-relaxed text-slate-700">
+          <p class="text-[clamp(0.85rem,3.6vw,0.925rem)] leading-relaxed text-slate-700">
             <strong class="mb-0.5 block text-slate-950 font-bold">Bisa Bayar di Tempat (COD).</strong> Bayar tunai langsung ke kurir saat paket tiba di alamat rumah Anda tanpa perlu transfer dulu.
           </p>
         </div>
 
-        <div class="flex items-start gap-3.5 rounded-2xl border border-white/15 bg-white p-4 shadow-sm">
-          <span class="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center text-red-700">
+        <div class="flex items-start gap-3 sm:gap-3.5 rounded-2xl border border-white/15 bg-white p-3.5 sm:p-4 shadow-sm">
+          <span class="mt-0.5 flex h-5 w-5 sm:h-6 sm:w-6 shrink-0 items-center justify-center text-red-700">
             <Icon name="badge-check" class="h-5 w-5" aria-hidden="true" />
           </span>
-          <p class="text-[14.5px] leading-relaxed text-slate-700">
+          <p class="text-[clamp(0.85rem,3.6vw,0.925rem)] leading-relaxed text-slate-700">
             <strong class="mb-0.5 block text-slate-950 font-bold">Produk 100% Original BPOM.</strong> Jaminan barang asli bersegel dengan tanggal kadaluarsa panjang. Garansi uang kembali jika palsu!
           </p>
         </div>
@@ -711,29 +711,29 @@ const maleBuyers = [
     </section>
 
     <!-- ═══ 11. NATIVE HYBRID CHECKOUT FORM (FAST ORDER ENGINE) ═══ -->
-    <section id="form-pemesanan" class="mt-4 scroll-mt-6 overflow-hidden rounded-none bg-white p-2">
+    <section id="form-pemesanan" class="mt-4 scroll-mt-6 overflow-hidden rounded-none bg-white p-1 sm:p-2">
       <!-- Price Offer Box Anchor -->
-      <div class="mx-3 mt-4 mb-3 rounded-2xl border-2 border-red-500 bg-gradient-to-br from-red-50 to-amber-50 p-4 text-center shadow-md">
-        <span class="inline-block rounded-full bg-red-600 px-3 py-1 text-[11px] font-black uppercase tracking-wider text-white mb-2">
+      <div class="mx-2 sm:mx-3 mt-3 sm:mt-4 mb-3 rounded-2xl border-2 border-red-500 bg-gradient-to-br from-red-50 to-amber-50 p-3.5 sm:p-4 text-center shadow-md">
+        <span class="inline-block rounded-full bg-red-600 px-3 py-1 text-[clamp(0.65rem,2.7vw,0.725rem)] font-black uppercase tracking-wider text-white mb-2">
           ⚡ PROMO HEMAT SPESIAL HARI INI
         </span>
         <div class="flex items-baseline justify-center gap-2">
-          <span class="text-[14px] text-slate-400 line-through">Rp199.000</span>
-          <span class="text-[32px] font-black text-red-700">Rp98.500</span>
+          <span class="text-[clamp(0.8rem,3.5vw,0.9rem)] text-slate-400 line-through">Rp199.000</span>
+          <span class="text-[clamp(1.75rem,7.5vw,2rem)] font-black text-red-700">Rp98.500</span>
         </div>
-        <p class="text-[12px] font-bold text-slate-800 mt-0.5">
+        <p class="text-[clamp(0.725rem,3vw,0.775rem)] font-bold text-slate-800 mt-0.5">
           🔥 Diskon s/d 50% + Beli 2 Box Lebih Hemat Hanya Rp 148.500!
         </p>
       </div>
 
-      <div class="px-3 pt-4 pb-2 text-center">
-        <p class="text-[11px] font-extrabold uppercase tracking-widest text-red-800">
+      <div class="px-3 pt-3 sm:pt-4 pb-2 text-center">
+        <p class="text-[clamp(0.65rem,2.7vw,0.725rem)] font-extrabold uppercase tracking-widest text-red-800">
           Formulir Pemesanan Resmi
         </p>
-        <h2 class="mt-1 text-[24px] font-black text-slate-950">
+        <h2 class="mt-1 text-[clamp(1.25rem,5.2vw,1.55rem)] font-black text-slate-950">
           Lengkapi Data Pengiriman
         </h2>
-        <p class="mt-1 text-[13px] font-medium text-slate-600">
+        <p class="mt-1 text-[clamp(0.775rem,3.2vw,0.85rem)] font-medium text-slate-600 text-balance">
           Pilih paket promo di bawah dan isi alamat tujuan. Bayar saat pesanan tiba di rumah (COD).
         </p>
       </div>
@@ -749,16 +749,16 @@ const maleBuyers = [
     <!-- ═══ 12. STICKY PURCHASE BAR & REALTIME SOCIAL PROOF ═══ -->
     <div
       id="sticky-purchase-bar"
-      class="fixed inset-x-0 bottom-0 z-40 mx-auto flex w-full max-w-[480px] items-center justify-between border-t-2 border-red-200 bg-white/95 px-5 py-3 shadow-[0_-8px_24px_rgba(220,38,38,0.15)] backdrop-blur-md transition-all duration-300"
+      class="fixed inset-x-0 bottom-0 z-40 mx-auto flex w-full max-w-[480px] items-center justify-between border-t-2 border-red-200 bg-white/95 px-4 sm:px-5 py-2.5 sm:py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] shadow-[0_-8px_24px_rgba(220,38,38,0.15)] backdrop-blur-md transition-all duration-300"
       style="transform: translateY(100%); opacity: 0; pointer-events: none;"
     >
       <div>
-        <p class="text-[9.5px] font-bold uppercase tracking-[0.12em] text-[#555555]">Harga Promo</p>
-        <p class="text-[18px] font-black text-red-700">Rp{Math.round(price).toLocaleString('id-ID')}</p>
+        <p class="text-[9px] sm:text-[9.5px] font-bold uppercase tracking-[0.12em] text-[#555555]">Harga Promo</p>
+        <p class="text-[clamp(1rem,4.5vw,1.15rem)] font-black text-red-700">Rp{Math.round(price).toLocaleString('id-ID')}</p>
       </div>
       <a
         href="#form-pemesanan"
-        class="inline-flex min-h-[44px] items-center justify-center rounded-xl bg-gradient-to-r from-red-600 to-red-800 px-6 text-[12px] font-black uppercase tracking-[0.1em] text-white shadow-lg transition-transform hover:scale-105 active:scale-[0.98]"
+        class="inline-flex min-h-[44px] items-center justify-center rounded-xl bg-gradient-to-r from-red-600 to-red-800 px-4 sm:px-6 text-[clamp(0.7rem,2.8vw,0.775rem)] font-black uppercase tracking-[0.08em] text-white shadow-lg transition-transform hover:scale-105 active:scale-[0.98]"
       >
         Pesan Sekarang (COD)
       </a>
