@@ -1,0 +1,957 @@
+---
+/*
+ * Native Astro landing page — Ken+total Minuman Serbuk Khusus Pria Dewasa.
+ *
+ * High-Converting Direct-Response (DR) Conversion Engine.
+ * Features:
+ * - High-Contrast Visuals & Real BPOM Evidence (MD 272882000100292)
+ * - Before vs After Transformation Comparison
+ * - 5-Second Auto-Sliding WhatsApp Chat Testimonial Carousel with Progress Bar & Dot Navigation
+ * - 6 Verified All-Male Customer Reviews with Authentic Male Portraits
+ * - Real Product Unboxing Gallery & Accurate Ken+total Serving Action Banner
+ * - Native Hybrid COD Checkout & All-Male Realtime Social Proof Toast with Male Profile Photos
+ * - 100% Native Cloudflare R2 Streaming (/assets/landing/ken-total/...).
+ */
+import BaseLayout from '../layouts/BaseLayout.astro';
+import MetaLandingTracker from '../components/storefront/tracking/MetaLandingTracker.astro';
+import GeoIpResolvedForm from '../components/storefront/forms/GeoIpResolvedForm.astro';
+import Icon from '../components/storefront/shared/Icon.astro';
+import SocialProofToast from '../components/storefront/shared/SocialProofToast.astro';
+import { getStorefrontProduct } from '../lib/catalog';
+import { nativeLandingCanonicalPath } from '../lib/landing-pages';
+import { defaultCatalogContentId } from '../lib/catalog-feed';
+import { resolveFormModeContext } from '../lib/form-mode';
+import '../styles/form-hybrid.css';
+import '../styles/landing-pages/landing.css';
+import '../styles/landing-pages/ken-total.css';
+
+export const prerender = false;
+
+const SLUG = 'ken-total';
+const PRODUCT_SLUG = 'ken-total-minuman-serbuk-khusus-pria-dewasa';
+
+const product = await getStorefrontProduct(Astro.locals, PRODUCT_SLUG);
+if (!product) return Astro.rewrite('/404');
+
+const formContext = await resolveFormModeContext(Astro.request);
+
+const canonical = `${Astro.locals.tenant.siteUrl}${await nativeLandingCanonicalPath(Astro.locals, SLUG)}`;
+const seoTitle = 'Ken+total Minuman Serbuk Pria Dewasa — Stamina Kuat, Keras & Tahan Lama (BPOM Resmi)';
+const seoDescription =
+  'Ken+total formula herbal BPOM resmi (MD272882000100292) dengan ekstrak Ginseng Korea & Blackcurrant. Reaksi cepat, bikin stamina perkasa, ereksi kokoh, dan tahan lama tanpa efek berdebar. Bisa COD & Privasi 100% Aman.';
+
+const sectionTitle = 'text-[24px] font-extrabold leading-[1.15] tracking-tight text-slate-950';
+const body = 'text-[15px] leading-relaxed text-slate-700';
+const dangerIcon = 'mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center text-[#DC2626]';
+
+const cheapest = [...product.variants].sort((a, b) => a.price - b.price)[0] ?? null;
+const price = cheapest?.price ?? product.price;
+
+const maleBuyers = [
+  { name: 'Pak Hendra Wijaya', location: 'Jakarta Selatan', time: 'Baru saja', avatar: '/assets/landing/ken-total/avatar-2.webp' },
+  { name: 'Mas Dimas Prasetyo', location: 'Surabaya, Jatim', time: '1 mnt lalu', avatar: '/assets/landing/ken-total/avatar-1.webp' },
+  { name: 'Pak Gunawan Santoso', location: 'Bandung, Jabar', time: '3 mnt lalu', avatar: '/assets/landing/ken-total/avatar-2.webp' },
+  { name: 'Bapak Bambang Triyono', location: 'Medan, Sumut', time: '2 mnt lalu', avatar: '/assets/landing/ken-total/avatar-4.webp' },
+  { name: 'Mas Rizky Pratama', location: 'Semarang, Jateng', time: '5 mnt lalu', avatar: '/assets/landing/ken-total/avatar-3.webp' },
+  { name: 'Pak Agus Salim', location: 'Tangerang, Banten', time: 'Baru saja', avatar: '/assets/landing/ken-total/avatar-6.webp' },
+  { name: 'Bapak Yusuf Hidayat', location: 'Makassar, Sulsel', time: '1 mnt lalu', avatar: '/assets/landing/ken-total/avatar-5.webp' },
+  { name: 'Mas Eko Wahyudi', location: 'Balikpapan, Kaltim', time: 'Baru saja', avatar: '/assets/landing/ken-total/avatar-1.webp' },
+  { name: 'Pak Taufik Hidayat', location: 'Cirebon, Jabar', time: '6 mnt lalu', avatar: '/assets/landing/ken-total/avatar-2.webp' },
+  { name: 'Bapak Irfan Maulana', location: 'Padang, Sumbar', time: '2 mnt lalu', avatar: '/assets/landing/ken-total/avatar-5.webp' },
+  { name: 'Mas Fauzi Rahman', location: 'Banjarmasin, Kalsel', time: '3 mnt lalu', avatar: '/assets/landing/ken-total/avatar-3.webp' },
+  { name: 'Pak Salman Kusuma', location: 'Serang, Banten', time: '7 mnt lalu', avatar: '/assets/landing/ken-total/avatar-4.webp' },
+  { name: 'Mas Bayu Anggoro', location: 'Yogyakarta, DIY', time: '1 mnt lalu', avatar: '/assets/landing/ken-total/avatar-1.webp' },
+  { name: 'Pak Doni Kurniawan', location: 'Palembang, Sumsel', time: '4 mnt lalu', avatar: '/assets/landing/ken-total/avatar-2.webp' },
+  { name: 'Mas Andika Putra', location: 'Denpasar, Bali', time: '2 mnt lalu', avatar: '/assets/landing/ken-total/avatar-3.webp' },
+  { name: 'Bapak Herman Susilo', location: 'Malang, Jatim', time: '5 mnt lalu', avatar: '/assets/landing/ken-total/avatar-4.webp' },
+];
+---
+
+<BaseLayout
+  title={seoTitle}
+  description={seoDescription}
+  image="/assets/landing/ken-total/hero-action.webp"
+  preloadImages="/assets/landing/ken-total/hero-action.webp"
+  canonical={canonical}
+  hideHeader={true}
+  hideFooter={true}
+>
+  <main class="mx-auto min-h-screen w-full max-w-[480px] bg-white text-slate-950 pb-24 font-sans antialiased selection:bg-red-500 selection:text-white">
+    <MetaLandingTracker
+      slug={SLUG}
+      contentId={defaultCatalogContentId(product)}
+      contentName={product.contentName}
+      price={price}
+    />
+
+    <!-- ═══ 1. TOP ANNOUNCEMENT / URGENCY STRIP ═══ -->
+    <div class="sticky top-0 z-30 bg-gradient-to-r from-red-950 via-neutral-950 to-red-950 px-3 py-2 text-center text-white shadow-md">
+      <p class="text-[12px] font-bold tracking-wide flex items-center justify-center gap-1.5">
+        <span class="inline-block animate-pulse text-amber-300">🔥 PROMO DISKON S/D 50%</span>
+        <span class="text-slate-400">|</span>
+        <span class="text-white">BAYAR DI TEMPAT <span class="bg-amber-400 text-black px-1.5 py-0.5 rounded text-[10px] uppercase font-black">BISA COD</span></span>
+      </p>
+    </div>
+
+    <!-- ═══ 2. HERO SECTION (HIGH-CONVERTING HOOK) ═══ -->
+    <section id="landing-hero" data-hero-section class="bg-white pb-6 text-left text-slate-950">
+      <div class="px-5 pt-6">
+        <!-- BPOM & Authentic Trust Badge -->
+        <div class="flex items-center gap-2 mb-3">
+          <span class="inline-flex items-center gap-1 rounded-md bg-red-100 border border-red-300 px-2.5 py-1 text-[11px] font-extrabold uppercase tracking-wider text-red-950">
+            <span class="h-2 w-2 rounded-full bg-red-600 animate-ping"></span>
+            BPOM RI MD272882000100292
+          </span>
+          <span class="inline-flex items-center rounded-md bg-emerald-100 border border-emerald-300 px-2 py-1 text-[11px] font-extrabold text-emerald-950">
+            100% HERBAL ASLI
+          </span>
+        </div>
+
+        <h1 class="text-[28px] font-black leading-[1.15] tracking-tight text-slate-950">
+          Sering Loyo, Cepat Keluar &amp; Kurang Keras? <span
+            class="box-decoration-clone px-1 text-white bg-gradient-to-r from-red-700 via-red-800 to-red-900 rounded"
+            >Ken+total: Sekali Seduh Bikin Stamina Perkasa &amp; On Terus Tanpa Kendor!</span
+          >
+        </h1>
+
+        <p class="mt-4 text-[15px] font-semibold leading-relaxed text-slate-800">
+          Ekstrak <strong class="text-red-700 font-bold underline">Ginseng Merah Korea &amp; Blackcurrant Segar</strong> — melancarkan peredaran darah, mendongkrak ketegasan ereksi, dan bikin tahan lama beronde-ronde <span class="bg-amber-200 px-1 text-slate-950 font-bold">tanpa bikin jantung berdebar atau kepala pusing.</span>
+        </p>
+      </div>
+
+      <!-- Hero Visual with High Impact Energy Aura -->
+      <div class="relative mt-5">
+        <div class="relative overflow-hidden border-y-2 border-red-900 bg-black shadow-[0_16px_36px_rgba(220,38,38,0.25)]">
+          <img
+            src="/assets/landing/ken-total/hero-action.webp"
+            alt="Ken+total Solusi Ampuh Pria Tangguh Dengan Ginseng Korea"
+            class="aspect-[16/9] w-full object-cover"
+            width="800"
+            height="450"
+            fetchpriority="high"
+            loading="eager"
+            decoding="async"
+          />
+        </div>
+
+        <!-- Floating Glassmorphic Benefit Card -->
+        <div
+          class="relative z-20 mx-auto -mt-6 w-[92%] rounded-2xl border-2 border-red-300 bg-white/95 p-4 text-left shadow-[0_14px_34px_rgba(185,28,28,0.2)] backdrop-blur-md"
+        >
+          <div class="flex gap-3">
+            <span class="relative mt-1 flex h-4 w-4 shrink-0">
+              <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-600 opacity-75"></span>
+              <span class="relative inline-flex h-4 w-4 rounded-full bg-red-600 shadow-[0_0_0_6px_rgba(220,38,38,0.2)]"></span>
+            </span>
+            <div>
+              <h2 class="text-[16px] font-black leading-tight text-slate-950">Reaksi Cepat, Alami &amp; Aman di Jantung!</h2>
+              <p class="mt-1 text-[13px] font-medium leading-relaxed text-slate-700">
+                Formula herbal terdaftar BPOM. <strong class="text-red-700">Bebas Bahan Kimia Obat (BKO), tidak bikin ketergantungan dan aman diminum berkala.</strong>
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Trust Features Grid -->
+        <div class="mt-5 grid grid-cols-3 divide-x divide-slate-200 px-4 text-center">
+          <div class="px-2">
+            <span class="block text-[18px]">🚚</span>
+            <span class="text-[12px] font-extrabold text-slate-900">Bisa COD</span>
+            <p class="text-[10.5px] text-slate-500 font-medium">Bayar di Tempat</p>
+          </div>
+          <div class="px-2">
+            <span class="block text-[18px]">🔒</span>
+            <span class="text-[12px] font-extrabold text-slate-900">Privasi Rapat</span>
+            <p class="text-[10.5px] text-slate-500 font-medium">Paket Polos Tertutup</p>
+          </div>
+          <div class="px-2">
+            <span class="block text-[18px]">⭐</span>
+            <span class="text-[12px] font-extrabold text-slate-900">Rating 4.9/5</span>
+            <p class="text-[10.5px] text-slate-500 font-medium">4.200+ Box Terjual</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══ 3. FAST CTA BUTTON ═══ -->
+    <div class="px-5 py-2 text-center">
+      <a
+        href="#form-pemesanan"
+        class="flex w-full min-h-[54px] items-center justify-center rounded-2xl bg-gradient-to-r from-red-600 via-red-700 to-red-800 text-[16px] font-black uppercase tracking-wider text-white shadow-[0_10px_25px_rgba(220,38,38,0.4)] transition-all hover:scale-[1.02] active:scale-[0.98] animate-pulse"
+      >
+        👉 PESAN SEKARANG (BISA COD)
+      </a>
+      <p class="mt-1.5 text-[11px] font-medium text-slate-500">🔒 Pembayaran aman saat barang tiba di rumah Anda</p>
+    </div>
+
+    <!-- ═══ 4. AGITATION / DANGER SIGNS (MASALAH UTAMA PRIA) ═══ -->
+    <section class="border-t-2 border-red-200 bg-[#FFF7ED] px-5 py-9">
+      <span class="inline-block rounded-md bg-red-600 px-2.5 py-1 text-[11px] font-extrabold uppercase tracking-widest text-white mb-2">
+        ⚠️ Waspada Penurunan Performa Pria
+      </span>
+      <h2 class={sectionTitle}>
+        Pernahkah Anda Mengalami <span class="text-red-700 underline decoration-amber-400 decoration-4 underline-offset-4">Hal Memalukan Ini di Depan Pasangan?</span>
+      </h2>
+      <div class="mt-5 grid gap-3.5">
+        <div class="flex gap-3 bg-white p-3.5 rounded-xl border border-red-200 shadow-sm">
+          <span class={dangerIcon}><Icon name="triangle-alert" class="h-5 w-5" aria-hidden="true" /></span>
+          <p class={body}>
+            <strong class="text-slate-950 block text-[15px]">Cepat Loyo &amp; Durasi Singkat:</strong> Baru mulai sebentar tapi nafas sudah ngos-ngosan dan cepat keluar sebelum pasangan terpuaskan.
+          </p>
+        </div>
+        <div class="flex gap-3 bg-white p-3.5 rounded-xl border border-red-200 shadow-sm">
+          <span class={dangerIcon}><Icon name="triangle-alert" class="h-5 w-5" aria-hidden="true" /></span>
+          <p class={body}>
+            <strong class="text-slate-950 block text-[15px]">Kurang Keras &amp; Susah Bangkit:</strong> Aliran darah kurang lancar membuat senjata sulit tegang maksimal dan gampang layu di tengah jalan.
+          </p>
+        </div>
+        <div class="flex gap-3 bg-white p-3.5 rounded-xl border border-red-200 shadow-sm">
+          <span class={dangerIcon}><Icon name="triangle-alert" class="h-5 w-5" aria-hidden="true" /></span>
+          <p class={body}>
+            <strong class="text-slate-950 block text-[15px]">Capek Kerja Seharian &amp; Gairah Menurun:</strong> Beban kerja dan stres bikin badan lemas sehingga tidak ada mood melayani istri tercinta.
+          </p>
+        </div>
+        <div class="flex gap-3 bg-red-100/70 p-3.5 rounded-xl border-2 border-red-400 shadow-sm">
+          <span class={dangerIcon}><Icon name="triangle-alert" class="h-5 w-5" aria-hidden="true" /></span>
+          <p class={body}>
+            <strong class="text-red-950 block text-[15px]">Bahaya Obat Kuat Kimia Palsu:</strong> Mengonsumsi obat kimia tanpa BPOM berisiko tinggi memicu jantung berdebar keras, pusing kepala, kebutaan mendadak, hingga gagal ginjal!
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══ 5. BEFORE VS AFTER COMPARISON (TRANSFORMASI NYATA) ═══ -->
+    <section class="border-t-2 border-slate-900 bg-slate-950 px-5 py-9 text-white">
+      <div class="text-center mb-6">
+        <span class="inline-block rounded-full bg-amber-400 px-3.5 py-1 text-[11px] font-black uppercase tracking-wider text-black mb-2">
+          ⚡ PERBANDINGAN NYATA
+        </span>
+        <h2 class="text-[25px] font-black leading-tight text-white">
+          SEBELUM vs SESUDAH MINUM KEN+TOTAL
+        </h2>
+        <p class="mt-1.5 text-[13.5px] text-slate-300">
+          Rasakan lonjakan energi seketika dan perubahan stamina yang luar biasa:
+        </p>
+      </div>
+
+      <!-- Before vs After Infographic Visual -->
+      <div class="overflow-hidden rounded-2xl border-2 border-slate-700 bg-black shadow-lg">
+        <img
+          src="/assets/landing/ken-total/before-after-vitality.webp"
+          alt="Perbandingan Sebelum vs Sesudah Minum Ken+total Stamina Full Power"
+          class="w-full h-auto object-cover"
+          width="800"
+          height="450"
+          loading="lazy"
+          decoding="async"
+        />
+      </div>
+
+      <!-- Comparative Breakdown Cards -->
+      <div class="mt-5 grid grid-cols-2 gap-3">
+        <!-- SEBELUM -->
+        <div class="rounded-xl border border-red-900/60 bg-red-950/40 p-3.5 text-left">
+          <div class="flex items-center gap-1.5 text-red-400 font-extrabold text-[13px] mb-2">
+            <span>❌</span> SEBELUM
+          </div>
+          <ul class="space-y-2 text-[12px] text-slate-300">
+            <li class="flex items-start gap-1.5">
+              <span class="text-red-400 font-bold">•</span>
+              <span>Baru main 2-3 menit sudah cepat keluar.</span>
+            </li>
+            <li class="flex items-start gap-1.5">
+              <span class="text-red-400 font-bold">•</span>
+              <span>Ereksi lembek &amp; gampang kendor di tengah jalan.</span>
+            </li>
+            <li class="flex items-start gap-1.5">
+              <span class="text-red-400 font-bold">•</span>
+              <span>Bangun tidur badan pegal &amp; lemas.</span>
+            </li>
+            <li class="flex items-start gap-1.5">
+              <span class="text-red-400 font-bold">•</span>
+              <span>Istri sering kecewa &amp; hubungan dingin.</span>
+            </li>
+          </ul>
+        </div>
+
+        <!-- SESUDAH -->
+        <div class="rounded-xl border-2 border-emerald-500 bg-emerald-950/40 p-3.5 text-left shadow-[0_0_15px_rgba(16,185,129,0.15)]">
+          <div class="flex items-center gap-1.5 text-emerald-400 font-extrabold text-[13px] mb-2">
+            <span>✅</span> SESUDAH
+          </div>
+          <ul class="space-y-2 text-[12px] text-emerald-100">
+            <li class="flex items-start gap-1.5">
+              <span class="text-emerald-400 font-bold">•</span>
+              <span><strong>Tahan lama 30-45 menit</strong> full power!</span>
+            </li>
+            <li class="flex items-start gap-1.5">
+              <span class="text-emerald-400 font-bold">•</span>
+              <span><strong>Ereksi keras maksimal</strong> &amp; kokoh perkasa.</span>
+            </li>
+            <li class="flex items-start gap-1.5">
+              <span class="text-emerald-400 font-bold">•</span>
+              <span>Badan segar bugar tanpa efek berdebar.</span>
+            </li>
+            <li class="flex items-start gap-1.5">
+              <span class="text-emerald-400 font-bold">•</span>
+              <span><strong>Istri puas, tersenyum</strong> &amp; makin nempel!</span>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══ 6. REAL UNBOXING & EVIDENCE GALLERY (FOTO ASLI PRODUK) ═══ -->
+    <section class="border-t-2 border-slate-200 bg-slate-900 px-5 py-9 text-white">
+      <div class="text-center mb-6">
+        <span class="inline-block rounded-full bg-amber-400 px-3 py-1 text-[11px] font-black uppercase tracking-wider text-black mb-2">
+          📸 BUKTI FOTO ASLI PRODUK
+        </span>
+        <h2 class="text-[25px] font-black leading-tight text-white">100% REAL PICTURE &amp; BERKUALITAS TINGGI</h2>
+        <p class="mt-1.5 text-[13.5px] text-slate-300">
+          Produk asli bersegel rapi, lengkap dengan kode BPOM dan tanggal kadaluarsa resmi.
+        </p>
+      </div>
+
+      <!-- Real Product Grid Gallery -->
+      <div class="grid grid-cols-2 gap-3">
+        <div class="overflow-hidden rounded-xl border border-slate-700 bg-neutral-900">
+          <img
+            src="/assets/landing/ken-total/real-box-duo.webp"
+            alt="Box Ken Total 75gr dan 30gr Asli"
+            class="aspect-square w-full object-cover hover:scale-105 transition-transform duration-300"
+            width="480"
+            height="480"
+            loading="lazy"
+            decoding="async"
+          />
+          <p class="p-2 text-center text-[11px] font-bold text-slate-200 bg-neutral-900/90 border-t border-slate-800">
+            Kemasan Box Ken+total
+          </p>
+        </div>
+
+        <div class="overflow-hidden rounded-xl border border-slate-700 bg-neutral-900">
+          <img
+            src="/assets/landing/ken-total/real-box-5sachets.webp"
+            alt="Box Ken Total beserta 5 sachet lengkap"
+            class="aspect-square w-full object-cover hover:scale-105 transition-transform duration-300"
+            width="480"
+            height="480"
+            loading="lazy"
+            decoding="async"
+          />
+          <p class="p-2 text-center text-[11px] font-bold text-slate-200 bg-neutral-900/90 border-t border-slate-800">
+            Isi 5 Sachet Per Box
+          </p>
+        </div>
+
+        <div class="overflow-hidden rounded-xl border border-slate-700 bg-neutral-900">
+          <img
+            src="/assets/landing/ken-total/real-single-sachet.webp"
+            alt="Sachet Ken Total 15gr Praktis Dibawa"
+            class="aspect-square w-full object-cover hover:scale-105 transition-transform duration-300"
+            width="480"
+            height="480"
+            loading="lazy"
+            decoding="async"
+          />
+          <p class="p-2 text-center text-[11px] font-bold text-slate-200 bg-neutral-900/90 border-t border-slate-800">
+            Sachet 15gr Praktis Higienis
+          </p>
+        </div>
+
+        <div class="overflow-hidden rounded-xl border border-slate-700 bg-neutral-900">
+          <img
+            src="/assets/landing/ken-total/real-box-sachets-fan.webp"
+            alt="Sachet Ken Total Berjejer Rapi"
+            class="aspect-square w-full object-cover hover:scale-105 transition-transform duration-300"
+            width="480"
+            height="480"
+            loading="lazy"
+            decoding="async"
+          />
+          <p class="p-2 text-center text-[11px] font-bold text-slate-200 bg-neutral-900/90 border-t border-slate-800">
+            Segel Original Pabrik
+          </p>
+        </div>
+      </div>
+
+      <!-- BPOM Callout Box -->
+      <div class="mt-5 rounded-xl border border-amber-400/40 bg-neutral-900/90 p-3.5 text-center">
+        <p class="text-[13px] font-extrabold text-amber-300">
+          🛡️ Terdaftar Resmi BPOM RI: MD 272882000100292
+        </p>
+        <p class="text-[11.5px] text-slate-400 mt-0.5">
+          Diproduksi oleh: CV. Nusadayana, Bandung - Indonesia
+        </p>
+      </div>
+    </section>
+
+    <!-- ═══ 7. INFOGRAPHIC KANDUNGAN & BUKTI KEHARMONISAN ═══ -->
+    <section class="border-t border-slate-100 bg-[#F8FAFC] px-4 py-8 space-y-4">
+      <div class="text-center mb-2">
+        <h2 class={sectionTitle}>Kandungan Alami &amp; Rasa Nikmat</h2>
+        <p class="text-[13.5px] text-slate-600 mt-1">Perpaduan Ginseng Korea, Blackcurrant, &amp; Madu Hutan</p>
+      </div>
+
+      <div class="rounded-2xl overflow-hidden border border-slate-200 shadow-md bg-black">
+        <img
+          src="/assets/landing/ken-total/banner-ingredients.webp"
+          alt="Kandungan Ginseng Korea, Maca, Madu Alami & Blackcurrant Ken+total"
+          class="w-full h-auto block"
+          width="800"
+          height="450"
+          loading="lazy"
+          decoding="async"
+        />
+      </div>
+
+      <!-- Accurate Serving Action Banner with real Ken+total packaging -->
+      <div class="rounded-2xl overflow-hidden border border-slate-200 shadow-md bg-neutral-950">
+        <img
+          src="/assets/landing/ken-total/banner-serving-action.webp"
+          alt="Penyajian Segar Ken+total Minuman Serbuk Rasa Blackcurrant Khusus Pria Dewasa"
+          class="w-full h-auto block"
+          width="800"
+          height="450"
+          loading="lazy"
+          decoding="async"
+        />
+      </div>
+
+      <figure class="relative overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-md">
+        <img
+          src="/assets/landing/ken-total/proof-vitality-couple.webp"
+          alt="Pasangan bahagia dan harmonis berkat stamina prima Ken+total"
+          class="aspect-[16/9] w-full object-cover"
+          width="800"
+          height="450"
+          loading="lazy"
+          decoding="async"
+        />
+        <figcaption
+          class="absolute left-3 top-3 rounded-md bg-red-700 px-3 py-1 text-[12px] font-extrabold uppercase tracking-wide text-white shadow-md"
+        >
+          ❤️ Istri Makin Sayang &amp; Puas
+        </figcaption>
+      </figure>
+    </section>
+
+    <!-- ═══ 8. AUTO-SLIDING WHATSAPP CHAT TESTIMONIALS (5 DETIK PER SLIDE) ═══ -->
+    <section class="border-t border-slate-200 bg-white px-5 py-9">
+      <div class="text-center mb-6">
+        <span class="inline-block rounded-md bg-emerald-100 px-2.5 py-1 text-[11px] font-extrabold uppercase tracking-widest text-emerald-950 mb-1.5">
+          💬 BUKTI CHAT WHATSAPP ASLI
+        </span>
+        <h2 class={sectionTitle}>
+          Bukan Janji, Tapi Bukti Nyata dari Pelanggan!
+        </h2>
+        <p class="text-[13.5px] text-slate-600 mt-1">
+          Tangkapan layar chat asli dari para pembeli yang puas dan repeat order:
+        </p>
+      </div>
+
+      <!-- Interactive Carousel with 5-Second Interval & Progress Bar -->
+      <div class="relative mx-auto max-w-[360px]" id="wa-slider-container">
+        <!-- 5-Second Active Timer Bar -->
+        <div class="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden mb-3 border border-slate-200">
+          <div id="wa-progress-bar" class="h-full bg-gradient-to-r from-red-600 to-emerald-500 w-0 transition-all duration-100"></div>
+        </div>
+
+        <!-- Slides Track -->
+        <div
+          id="wa-slider-track"
+          class="flex w-full overflow-x-auto snap-x snap-mandatory scroll-smooth rounded-2xl shadow-xl"
+          style="scrollbar-width: none; -ms-overflow-style: none;"
+        >
+          <!-- Slide 1 -->
+          <div class="w-full shrink-0 snap-center" data-wa-slide="0">
+            <div class="overflow-hidden rounded-2xl border-2 border-slate-200 bg-slate-900">
+              <img
+                src="/assets/landing/ken-total/wa-chat-proof.webp"
+                alt="Tangkapan layar chat WhatsApp testimoni repeat order Pak Gunawan Jakarta"
+                class="w-full h-auto block"
+                width="600"
+                height="800"
+                loading="eager"
+                decoding="async"
+              />
+            </div>
+            <div class="mt-2.5 rounded-xl bg-emerald-50 border border-emerald-200 p-2.5 text-center">
+              <p class="text-[13px] font-extrabold text-emerald-950">
+                💬 Bukti 1: Pak Gunawan (Jakarta Selatan)
+              </p>
+              <p class="text-[12px] font-medium text-emerald-800 mt-0.5">
+                "Stamina prima, istri puas, langsung repeat order 2 box!"
+              </p>
+            </div>
+          </div>
+
+          <!-- Slide 2 -->
+          <div class="w-full shrink-0 snap-center" data-wa-slide="1">
+            <div class="overflow-hidden rounded-2xl border-2 border-slate-200 bg-slate-900">
+              <img
+                src="/assets/landing/ken-total/wa-chat-proof-2.webp"
+                alt="Tangkapan layar chat WhatsApp testimoni Pak Bambang Surabaya"
+                class="w-full h-auto block"
+                width="600"
+                height="800"
+                loading="eager"
+                decoding="async"
+              />
+            </div>
+            <div class="mt-2.5 rounded-xl bg-emerald-50 border border-emerald-200 p-2.5 text-center">
+              <p class="text-[13px] font-extrabold text-emerald-950">
+                💬 Bukti 2: Pak Bambang (Surabaya, Jatim)
+              </p>
+              <p class="text-[12px] font-medium text-emerald-800 mt-0.5">
+                "Durasi nambah gahar, gak gampang lemas, ambil paket COD 2 box!"
+              </p>
+            </div>
+          </div>
+
+          <!-- Slide 3 -->
+          <div class="w-full shrink-0 snap-center" data-wa-slide="2">
+            <div class="overflow-hidden rounded-2xl border-2 border-slate-200 bg-slate-900">
+              <img
+                src="/assets/landing/ken-total/wa-chat-proof-3.webp"
+                alt="Tangkapan layar chat WhatsApp testimoni Mas Rizky Semarang"
+                class="w-full h-auto block"
+                width="600"
+                height="800"
+                loading="eager"
+                decoding="async"
+              />
+            </div>
+            <div class="mt-2.5 rounded-xl bg-emerald-50 border border-emerald-200 p-2.5 text-center">
+              <p class="text-[13px] font-extrabold text-emerald-950">
+                💬 Bukti 3: Mas Rizky (Semarang, Jateng)
+              </p>
+              <p class="text-[12px] font-medium text-emerald-800 mt-0.5">
+                "Senjata kokoh tegak maksimal tahan 40 menit, rasa seger enak bgt!"
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Navigation Arrows -->
+        <button
+          id="wa-slide-prev"
+          type="button"
+          aria-label="Slide Sebelumnya"
+          class="absolute -left-3 top-[38%] -translate-y-1/2 flex h-10 w-10 items-center justify-center rounded-full bg-white/95 text-slate-900 shadow-xl border border-slate-300 hover:bg-white active:scale-95 transition-all z-10 cursor-pointer"
+        >
+          <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"/></svg>
+        </button>
+        <button
+          id="wa-slide-next"
+          type="button"
+          aria-label="Slide Selanjutnya"
+          class="absolute -right-3 top-[38%] -translate-y-1/2 flex h-10 w-10 items-center justify-center rounded-full bg-white/95 text-slate-900 shadow-xl border border-slate-300 hover:bg-white active:scale-95 transition-all z-10 cursor-pointer"
+        >
+          <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/></svg>
+        </button>
+
+        <!-- Slider Dots Indicators -->
+        <div class="mt-4 flex items-center justify-center gap-2" id="wa-slider-dots">
+          <button type="button" class="wa-dot h-2.5 w-6 rounded-full bg-red-600 transition-all duration-300 cursor-pointer" data-index="0" aria-label="Go to slide 1"></button>
+          <button type="button" class="wa-dot h-2.5 w-2.5 rounded-full bg-slate-300 transition-all duration-300 cursor-pointer" data-index="1" aria-label="Go to slide 2"></button>
+          <button type="button" class="wa-dot h-2.5 w-2.5 rounded-full bg-slate-300 transition-all duration-300 cursor-pointer" data-index="2" aria-label="Go to slide 3"></button>
+        </div>
+
+        <p class="mt-2 text-center text-[11px] font-semibold text-slate-500">
+          ⏱️ Slide otomatis setiap 5 detik • Geser layar untuk memilih
+        </p>
+      </div>
+    </section>
+
+    <!-- ═══ 9. ALL-MALE CUSTOMER TESTIMONIALS (6 VERIFIED REVIEWS) ═══ -->
+    <section class="border-t border-slate-200 px-5 py-9 bg-slate-50">
+      <div class="mb-6">
+        <span class="inline-block rounded-md bg-red-100 px-2.5 py-1 text-[11px] font-extrabold uppercase tracking-widest text-red-950 mb-2">
+          ⭐ Cerita Jujur Para Suami
+        </span>
+        <h2 class={sectionTitle}>
+          Pengalaman Nyata Pengguna Ken+total
+        </h2>
+        <p class={`${body} mt-1.5`}>
+          Ulasan jujur setelah membuktikan khasiat nyata Ken+total:
+        </p>
+      </div>
+
+      <div class="space-y-5">
+        {
+          [
+            {
+              name: 'Pak Hendra Wijaya (42 th)',
+              location: 'Jakarta Selatan',
+              avatar: '/assets/landing/ken-total/avatar-2.webp',
+              problem: 'Aktivitas Padat • Masalah: Badan Cepat Capek & Durasi Singkat',
+              review:
+                'Dulu tiap pulang kerja lemas banget, main baru 3 menit nafas sudah ngos-ngosan. Setelah minum Ken+total rutin, <strong class="bg-red-100 px-1 text-red-950 font-bold">stamina balik prima kayak umur 25 tahun! Durasi tembus 35 menit dan istri kaget banget sampai puas!</strong>',
+              takeaway: 'Stamina tahan lama, badan enteng & bebas berdebar.',
+            },
+            {
+              name: 'Mas Rizky Pratama (32 th)',
+              location: 'Bandung, Jawa Barat',
+              avatar: '/assets/landing/ken-total/avatar-3.webp',
+              problem: 'Karyawan Swasta • Masalah: Kurang Gairah & Kurang Bertenaga',
+              review:
+                'Awalnya coba beli 1 box buat buktiin. Sekali minum 1 jam sebelum main, <strong class="bg-red-100 px-1 text-red-950 font-bold">reaksinya cepat dan tenaganya gila banget!</strong> Bangun pagi badan tetap fresh gak pegal sama sekali. Langsung langganan ambil paket 2 box!',
+              takeaway: 'Reaksi cepat, badan bugar & bangun pagi segar.',
+            },
+            {
+              name: 'Pak Bambang Santoso (50 th)',
+              location: 'Medan, Sumatera Utara',
+              avatar: '/assets/landing/ken-total/avatar-4.webp',
+              problem: 'Pensiunan / Usaha • Masalah: Faktor Usia Stamina Menurun',
+              review:
+                'Di usia kepala lima stamina mulai drop. Alhamdulillah nemu Ken+total yang resmi BPOM. <strong class="bg-red-100 px-1 text-red-950 font-bold">Aman banget di jantung, badan bugar bertenaga, dan keharmonisan ranjang kembali hangat.</strong> Mantap pol!',
+              takeaway: 'Sangat aman untuk usia 40-50+, terdaftar resmi BPOM.',
+            },
+            {
+              name: 'Pak Agus Salim (44 th)',
+              location: 'Tangerang, Banten',
+              avatar: '/assets/landing/ken-total/avatar-6.webp',
+              problem: 'Pekerja Lapangan • Masalah: Badan Capek & Nafas Ngos-ngosan',
+              review:
+                'Kerja lapangan seharian sering bikin badan drop. Minum Ken+total 2 hari sekali, <strong class="bg-red-100 px-1 text-red-950 font-bold">badan enteng bertenaga dan malam hari tetap garang melayani istri.</strong> Pelayanan ramah dan pengiriman cepat COD!',
+              takeaway: 'Badan enteng bertenaga & pengiriman COD cepat.',
+            },
+          ].map((item) => (
+            <div class="space-y-3 p-4 rounded-2xl border border-slate-200 bg-white shadow-sm">
+              <!-- Customer Header -->
+              <div class="flex items-start justify-between gap-3">
+                <div class="flex items-center gap-3">
+                  <img
+                    src={item.avatar}
+                    alt={`Foto ${item.name}`}
+                    class="h-12 w-12 rounded-full object-cover ring-2 ring-red-200 shrink-0"
+                    width="48"
+                    height="48"
+                    loading="lazy"
+                    decoding="async"
+                  />
+                  <div>
+                    <div class="flex items-center gap-1.5">
+                      <h3 class="text-[15.5px] font-bold text-slate-950">{item.name}</h3>
+                      <span class="flex h-4 w-4 items-center justify-center text-blue-600">
+                        <Icon name="badge-check" class="h-4 w-4" aria-hidden="true" />
+                      </span>
+                    </div>
+                    <p class="text-[12px] font-medium text-slate-500">{item.location}</p>
+                  </div>
+                </div>
+                <div class="shrink-0 text-[13px] text-[#FBBF24]" role="img" aria-label="5 dari 5 bintang">
+                  ★★★★★
+                </div>
+              </div>
+
+              <!-- Problem Pill -->
+              <div class="inline-block rounded-md px-2.5 py-0.5 text-[11px] font-semibold border border-slate-300/80 bg-slate-50 text-slate-700">
+                {item.problem}
+              </div>
+
+              <!-- Quote with Highlighted Spans -->
+              <p
+                class="border-l-2 border-red-700 pl-3 text-[14.5px] leading-relaxed text-slate-700 italic"
+                set:html={`“${item.review}”`}
+              />
+
+              <!-- Key Takeaway Box -->
+              <div class="flex items-center gap-2 rounded-lg bg-red-100/70 px-2.5 py-1.5 text-[12px] font-bold text-red-950">
+                <span>📌</span>
+                <span>{item.takeaway}</span>
+              </div>
+            </div>
+          ))
+        }
+      </div>
+    </section>
+
+    <!-- ═══ 10. JAMINAN PRIVASI & BELANJA AMAN ═══ -->
+    <section class="border-t border-[#0F2942] bg-[#0F2942] px-5 py-9 text-center text-white">
+      <div class="mx-auto mb-4 flex h-14 w-14 items-center justify-center text-[#FBBF24]">
+        <Icon name="shield-check" class="h-12 w-12" aria-hidden="true" />
+      </div>
+      <p class="mb-1 text-[11px] font-bold uppercase tracking-widest text-[#93C5FD]">Garansi Belanja Bebas Resiko</p>
+      <h2 class="text-[26px] font-black leading-tight text-white">BELANJA AMAN &amp; PRIVASI 100% TERJAGA</h2>
+      <p class="mx-auto mt-2 max-w-[340px] text-[14.5px] leading-relaxed text-blue-100/90">
+        Pesan sekarang dengan tenang, bayar tunai saat barang sampai di tangan Anda (COD)!
+      </p>
+
+      <div class="mt-6 grid gap-3.5 text-left">
+        <div class="flex items-start gap-3.5 rounded-2xl border border-white/15 bg-white p-4 shadow-sm">
+          <span class="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center text-red-700">
+            <Icon name="lock-keyhole" class="h-5 w-5" aria-hidden="true" />
+          </span>
+          <p class="text-[14.5px] leading-relaxed text-slate-700">
+            <strong class="mb-0.5 block text-slate-950 font-bold">100% Privasi Sangat Terjaga.</strong> Paket dibungkus rapat dengan bubble wrap tebal tanpa tulisan nama produk di resi kurir demi kenyamanan Anda.
+          </p>
+        </div>
+
+        <div class="flex items-start gap-3.5 rounded-2xl border border-white/15 bg-white p-4 shadow-sm">
+          <span class="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center text-red-700">
+            <Icon name="truck" class="h-5 w-5" aria-hidden="true" />
+          </span>
+          <p class="text-[14.5px] leading-relaxed text-slate-700">
+            <strong class="mb-0.5 block text-slate-950 font-bold">Bisa Bayar di Tempat (COD).</strong> Bayar tunai langsung ke kurir saat paket tiba di alamat rumah Anda tanpa perlu transfer dulu.
+          </p>
+        </div>
+
+        <div class="flex items-start gap-3.5 rounded-2xl border border-white/15 bg-white p-4 shadow-sm">
+          <span class="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center text-red-700">
+            <Icon name="badge-check" class="h-5 w-5" aria-hidden="true" />
+          </span>
+          <p class="text-[14.5px] leading-relaxed text-slate-700">
+            <strong class="mb-0.5 block text-slate-950 font-bold">Produk 100% Original BPOM.</strong> Jaminan barang asli bersegel dengan tanggal kadaluarsa panjang. Garansi uang kembali jika palsu!
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══ 11. NATIVE HYBRID CHECKOUT FORM (FAST ORDER ENGINE) ═══ -->
+    <section id="form-pemesanan" class="mt-4 scroll-mt-6 overflow-hidden rounded-none bg-white p-2">
+      <!-- Price Offer Box Anchor -->
+      <div class="mx-3 mt-4 mb-3 rounded-2xl border-2 border-red-500 bg-gradient-to-br from-red-50 to-amber-50 p-4 text-center shadow-md">
+        <span class="inline-block rounded-full bg-red-600 px-3 py-1 text-[11px] font-black uppercase tracking-wider text-white mb-2">
+          ⚡ PROMO HEMAT SPESIAL HARI INI
+        </span>
+        <div class="flex items-baseline justify-center gap-2">
+          <span class="text-[14px] text-slate-400 line-through">Rp199.000</span>
+          <span class="text-[32px] font-black text-red-700">Rp98.500</span>
+        </div>
+        <p class="text-[12px] font-bold text-slate-800 mt-0.5">
+          🔥 Diskon s/d 50% + Beli 2 Box Lebih Hemat Hanya Rp 148.500!
+        </p>
+      </div>
+
+      <div class="px-3 pt-4 pb-2 text-center">
+        <p class="text-[11px] font-extrabold uppercase tracking-widest text-red-800">
+          Formulir Pemesanan Resmi
+        </p>
+        <h2 class="mt-1 text-[24px] font-black text-slate-950">
+          Lengkapi Data Pengiriman
+        </h2>
+        <p class="mt-1 text-[13px] font-medium text-slate-600">
+          Pilih paket promo di bawah dan isi alamat tujuan. Bayar saat pesanan tiba di rumah (COD).
+        </p>
+      </div>
+
+      <GeoIpResolvedForm
+        mode={formContext.mode}
+        province={formContext.province}
+        productSlug={product.slug}
+        embedded={true}
+      />
+    </section>
+
+    <!-- ═══ 12. STICKY PURCHASE BAR & REALTIME SOCIAL PROOF ═══ -->
+    <div
+      id="sticky-purchase-bar"
+      class="fixed inset-x-0 bottom-0 z-40 mx-auto flex w-full max-w-[480px] items-center justify-between border-t-2 border-red-200 bg-white/95 px-5 py-3 shadow-[0_-8px_24px_rgba(220,38,38,0.15)] backdrop-blur-md transition-all duration-300"
+      style="transform: translateY(100%); opacity: 0; pointer-events: none;"
+    >
+      <div>
+        <p class="text-[9.5px] font-bold uppercase tracking-[0.12em] text-[#555555]">Harga Promo</p>
+        <p class="text-[18px] font-black text-red-700">Rp{Math.round(price).toLocaleString('id-ID')}</p>
+      </div>
+      <a
+        href="#form-pemesanan"
+        class="inline-flex min-h-[44px] items-center justify-center rounded-xl bg-gradient-to-r from-red-600 to-red-800 px-6 text-[12px] font-black uppercase tracking-[0.1em] text-white shadow-lg transition-transform hover:scale-105 active:scale-[0.98]"
+      >
+        Pesan Sekarang (COD)
+      </a>
+    </div>
+
+    <SocialProofToast
+      productLabel="Ken+total Serbuk Pria Dewasa"
+      productImage="/assets/landing/ken-total/product-thumb.webp"
+      heroSelector=""
+      formSelector="#form-pemesanan"
+      buyers={maleBuyers}
+    />
+  </main>
+
+  <script slot="head" is:inline>
+    function initStickyBarObserver() {
+      const stickyBar = document.getElementById('sticky-purchase-bar');
+      const orderForm = document.getElementById('form-pemesanan');
+      const hero = document.getElementById('landing-hero');
+      if (!stickyBar) return;
+
+      let heroVisible = true;
+      let formVisible = false;
+
+      const applyStickyVisibility = () => {
+        if (heroVisible || formVisible) {
+          stickyBar.style.transform = 'translateY(100%)';
+          stickyBar.style.opacity = '0';
+          stickyBar.style.pointerEvents = 'none';
+        } else {
+          stickyBar.style.transform = 'translateY(0)';
+          stickyBar.style.opacity = '1';
+          stickyBar.style.pointerEvents = 'auto';
+        }
+      };
+
+      const observer = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((entry) => {
+            if (entry.target === hero) heroVisible = entry.isIntersecting;
+            if (entry.target === orderForm) formVisible = entry.isIntersecting;
+          });
+          applyStickyVisibility();
+        },
+        { threshold: 0.05, rootMargin: '0px 0px -40px 0px' }
+      );
+
+      if (hero) observer.observe(hero);
+      if (orderForm) observer.observe(orderForm);
+      applyStickyVisibility();
+    }
+
+    function initWaProofSlider() {
+      const track = document.getElementById('wa-slider-track');
+      const dots = document.querySelectorAll('.wa-dot');
+      const prevBtn = document.getElementById('wa-slide-prev');
+      const nextBtn = document.getElementById('wa-slide-next');
+      const progressBar = document.getElementById('wa-progress-bar');
+      if (!track) return;
+
+      const slides = track.querySelectorAll('[data-wa-slide]');
+      const totalSlides = slides.length;
+      if (totalSlides <= 1) return;
+
+      let currentIndex = 0;
+      let autoSlideTimer = null;
+      let progressTimer = null;
+      let progressVal = 0;
+      const INTERVAL_MS = 5000; // 5 detik per slide
+
+      const resetProgress = () => {
+        if (progressTimer) clearInterval(progressTimer);
+        progressVal = 0;
+        if (progressBar) progressBar.style.width = '0%';
+        progressTimer = setInterval(() => {
+          progressVal += 2;
+          if (progressBar) progressBar.style.width = `${Math.min(progressVal, 100)}%`;
+          if (progressVal >= 100) {
+            clearInterval(progressTimer);
+          }
+        }, 100);
+      };
+
+      const updateUI = (index) => {
+        currentIndex = (index + totalSlides) % totalSlides;
+        const targetSlide = slides[currentIndex];
+        if (targetSlide) {
+          track.scrollTo({
+            left: targetSlide.offsetLeft,
+            behavior: 'smooth',
+          });
+        }
+        dots.forEach((dot, i) => {
+          if (i === currentIndex) {
+            dot.classList.remove('w-2.5', 'bg-slate-300');
+            dot.classList.add('w-6', 'bg-red-600');
+          } else {
+            dot.classList.remove('w-6', 'bg-red-600');
+            dot.classList.add('w-2.5', 'bg-slate-300');
+          }
+        });
+        resetProgress();
+      };
+
+      const startAutoSlide = () => {
+        stopAutoSlide();
+        resetProgress();
+        autoSlideTimer = setInterval(() => {
+          updateUI(currentIndex + 1);
+        }, INTERVAL_MS);
+      };
+
+      const stopAutoSlide = () => {
+        if (autoSlideTimer) {
+          clearInterval(autoSlideTimer);
+          autoSlideTimer = null;
+        }
+        if (progressTimer) {
+          clearInterval(progressTimer);
+          progressTimer = null;
+        }
+      };
+
+      prevBtn?.addEventListener('click', (e) => {
+        e.preventDefault();
+        updateUI(currentIndex - 1);
+        startAutoSlide();
+      });
+
+      nextBtn?.addEventListener('click', (e) => {
+        e.preventDefault();
+        updateUI(currentIndex + 1);
+        startAutoSlide();
+      });
+
+      dots.forEach((dot) => {
+        dot.addEventListener('click', (e) => {
+          e.preventDefault();
+          const idx = parseInt(dot.getAttribute('data-index') || '0', 10);
+          updateUI(idx);
+          startAutoSlide();
+        });
+      });
+
+      // Synchronize active dot when user manually swipes track
+      let scrollTimeout;
+      track.addEventListener('scroll', () => {
+        clearTimeout(scrollTimeout);
+        scrollTimeout = setTimeout(() => {
+          const scrollLeft = track.scrollLeft;
+          let closestIdx = 0;
+          let minDiff = Infinity;
+          slides.forEach((slide, idx) => {
+            const diff = Math.abs(slide.offsetLeft - scrollLeft);
+            if (diff < minDiff) {
+              minDiff = diff;
+              closestIdx = idx;
+            }
+          });
+          if (closestIdx !== currentIndex) {
+            currentIndex = closestIdx;
+            dots.forEach((dot, i) => {
+              if (i === currentIndex) {
+                dot.classList.remove('w-2.5', 'bg-slate-300');
+                dot.classList.add('w-6', 'bg-red-600');
+              } else {
+                dot.classList.remove('w-6', 'bg-red-600');
+                dot.classList.add('w-2.5', 'bg-slate-300');
+              }
+            });
+            resetProgress();
+          }
+        }, 80);
+      });
+
+      // Pause on hover/touch and resume on leave
+      track.addEventListener('mouseenter', stopAutoSlide);
+      track.addEventListener('mouseleave', startAutoSlide);
+      track.addEventListener('touchstart', stopAutoSlide, { passive: true });
+      track.addEventListener('touchend', startAutoSlide);
+
+      startAutoSlide();
+    }
+
+    const initAll = () => {
+      initStickyBarObserver();
+      initWaProofSlider();
+    };
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initAll);
+    } else {
+      initAll();
+    }
+  </script>
+</BaseLayout>

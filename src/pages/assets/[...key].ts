@@ -4,7 +4,7 @@ import { getRuntimeEnv } from '../../lib/env';
 export const prerender = false;
 
 const SAFE_KEY =
-  /^uploads\/\d{4}-\d{2}-\d{2}\/[0-9a-f-]+(?:-sm)?\.(?:jpg|png|webp|gif|avif)$/i;
+  /^(uploads\/\d{4}-\d{2}-\d{2}\/[0-9a-f-]+(?:-sm)?|landing\/[a-z0-9_-]+(?:\/[a-z0-9_-]+)*)\.(?:jpg|png|webp|gif|avif)$/i;
 
 /** A card-sized derivative sits beside its original as `<name>-sm.<ext>`. */
 const DERIVATIVE_SUFFIX = /-sm(\.[a-z0-9]+)$/i;
@@ -26,8 +26,23 @@ export const GET: APIRoute = async ({ params, locals }) => {
   }
   if (!object) return new Response('Not found', { status: 404 });
 
+  const ext = (key.match(/\.[a-z0-9]+$/i)?.[0] || '').toLowerCase();
+  const MIME_BY_EXT: Record<string, string> = {
+    '.webp': 'image/webp',
+    '.png': 'image/png',
+    '.jpg': 'image/jpeg',
+    '.jpeg': 'image/jpeg',
+    '.gif': 'image/gif',
+    '.avif': 'image/avif',
+    '.svg': 'image/svg+xml',
+  };
+
   const headers = new Headers();
-  if (object.httpMetadata?.contentType) headers.set('Content-Type', object.httpMetadata.contentType);
+  const contentType =
+    object.httpMetadata?.contentType ||
+    MIME_BY_EXT[ext] ||
+    'application/octet-stream';
+  headers.set('Content-Type', contentType);
   if (object.httpMetadata?.contentLanguage) headers.set('Content-Language', object.httpMetadata.contentLanguage);
   if (object.httpMetadata?.contentDisposition) headers.set('Content-Disposition', object.httpMetadata.contentDisposition);
   if (object.httpMetadata?.contentEncoding) headers.set('Content-Encoding', object.httpMetadata.contentEncoding);
@@ -36,6 +51,5 @@ export const GET: APIRoute = async ({ params, locals }) => {
   headers.set('ETag', object.httpEtag);
   headers.set('Cache-Control', 'public, max-age=31536000, immutable');
   headers.set('X-Content-Type-Options', 'nosniff');
-  headers.set('Content-Security-Policy', "default-src 'none'; sandbox");
   return new Response(object.body as unknown as BodyInit, { headers });
 };

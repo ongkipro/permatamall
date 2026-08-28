@@ -53,7 +53,8 @@
 
 
   "assets": {
-    "binding": "ASSETS"
+    "binding": "ASSETS",
+    "directory": "./dist/client"
   },
   "kv_namespaces": [
     {

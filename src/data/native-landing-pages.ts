@@ -35,11 +35,11 @@ export type NativeLandingPage = {
 };
 
 export const nativeLandingPages: NativeLandingPage[] = [
-  // Example, and the only entry that ships with the product:
-  // {
-  //   slug: 'promo-lebaran',
-  //   title: 'Promo Lebaran',
-  //   productSlug: 'pupuk-organik-cair',
-  //   description: 'Landing khusus kampanye Lebaran.',
-  // },
+  {
+    slug: 'ken-total',
+    title: 'Ken+total Minuman Serbuk Khusus Pria Dewasa',
+    productSlug: 'ken-total-minuman-serbuk-khusus-pria-dewasa',
+    description: 'Landing page konversi untuk kampanye Ken+total Minuman Serbuk Stamina & Vitalitas Pria Dewasa.',
+    isActive: true,
+  },
 ];

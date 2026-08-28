@@ -33,6 +33,8 @@ interface Props {
   heroSelector?: string;
   /** Selector for the order-form section that blocks the toast. */
   formSelector?: string;
+  /** Custom list of buyers for niche-specific landing pages (e.g. men vitality). */
+  buyers?: Array<{ name: string; location: string; time: string; avatar?: string }>;
 }
 
 const {
@@ -40,6 +42,7 @@ const {
   productImage,
   heroSelector = '[data-gallery]',
   formSelector = '#form-pemesanan',
+  buyers: customBuyers,
 } = Astro.props;
 ---
 
@@ -47,6 +50,8 @@ const {
   data-social-proof
   data-hero-selector={heroSelector}
   data-form-selector={formSelector}
+  data-buyers={customBuyers ? JSON.stringify(customBuyers) : undefined}
+  data-default-image={productImage}
   aria-hidden="true"
   class="pointer-events-none fixed left-1/2 top-4 z-40 w-[calc(100%-2rem)] max-w-[360px] -translate-x-1/2 -translate-y-16 scale-95 opacity-0"
 >
@@ -64,6 +69,7 @@ const {
         class="h-full w-full object-cover"
         loading="lazy"
         decoding="async"
+        data-toast-avatar
       />
     </div>
 
@@ -126,7 +132,14 @@ const {
     const hero = findBlocker(toast.dataset.heroSelector);
     const formSection = findBlocker(toast.dataset.formSelector);
 
-    const buyers = [
+    interface ToastBuyer {
+      name: string;
+      location: string;
+      time: string;
+      avatar?: string;
+    }
+
+    const defaultBuyers: ToastBuyer[] = [
       { name: 'Ibu Ratna', location: 'Bekasi, Jawa Barat', time: 'Baru saja' },
       { name: 'Bapak Hendra', location: 'Medan, Sumut', time: '2 mnt lalu' },
       { name: 'Ibu Sari', location: 'Tangerang, Banten', time: '1 mnt lalu' },
@@ -149,6 +162,16 @@ const {
       { name: 'Bapak Salman', location: 'Serang, Banten', time: '5 mnt lalu' },
     ];
 
+    let buyers: ToastBuyer[] = defaultBuyers;
+    if (toast.dataset.buyers) {
+      try {
+        const parsed = JSON.parse(toast.dataset.buyers);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          buyers = parsed;
+        }
+      } catch {}
+    }
+
     const shuffled = shuffleBuyers(buyers);
 
     let currentIndex = 0;
@@ -169,6 +192,8 @@ const {
     const nameEl = toast.querySelector('[data-buyer-name]');
     const locEl = toast.querySelector('[data-buyer-location]');
     const timeEl = toast.querySelector('[data-buyer-time]');
+    const avatarEl = toast.querySelector<HTMLImageElement>('[data-toast-avatar]');
+    const defaultImage = toast.dataset.defaultImage || '';
 
     const clearTimer = () => {
       if (timerId) clearTimeout(timerId);
@@ -201,6 +226,9 @@ const {
       if (nameEl) nameEl.textContent = buyer.name;
       if (locEl) locEl.textContent = ` • ${buyer.location}`;
       if (timeEl) timeEl.textContent = buyer.time;
+      if (avatarEl) {
+        avatarEl.src = buyer.avatar || defaultImage;
+      }
 
       toast.classList.remove('opacity-0', '-translate-y-16', 'scale-95');
       toast.classList.add('opacity-100', 'translate-y-0', 'scale-100');
