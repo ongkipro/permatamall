@@ -4609,3 +4609,19 @@ again returned `200`.
   `npm run check` 399 files clean and a Cloudflare build. Local `wrangler dev`
   against a seeded store whose only variant carries `stock = 0`: the product
   page renders and offers it.
+
+### Entry 89: High-Converting Native DR Landing Page Pattern (Ken+total)
+
+**Date:** 2026-08-28 · **Release:** 1.4.0 · **Target:** `src/pages/ken-total.astro` · **Docs:** `docs/NATIVE_LANDING_PAGE_SPEC.md`
+
+- **Why.** Modern high-converting direct-response ecommerce landing pages require clean mobile-first visual hierarchies, flat design patterns (avoiding AI-slop card-in-card nesting), natural customer testimonial evidence with authentic packaging validation, and seamless canonical product-form locking.
+- **Changed.**
+  1. **Hero Structure:** Top urgency bar $\rightarrow$ Centered brutal overclaim headline $\rightarrow$ Short centered subheadline $\rightarrow$ Immediate edge-to-edge compact hero banner $\rightarrow$ Point-to-point Lucide checklist $\rightarrow$ 3-Column Trust Strip (Bisa COD, Privasi Rapat, Resmi BPOM). Removed early hero CTA for uninterrupted persuasive narrative.
+  2. **100% Pure Lucide Icons:** Zero unicode emojis/emoticons across all sections.
+  3. **Flat Sebelum vs Sesudah Pattern:** High-contrast typographic marker highlights (`bg-red-50 text-red-950 font-bold px-1` / `bg-emerald-200/80 text-emerald-950 font-black px-1`) and colored underlines.
+  4. **Natural Customer Testimonial Proof:** Generated candid Indonesian customer selfie photos holding the exact physical product packaging (box + stick sachet validated against factory reference photos) + 5-star filled golden ratings.
+  5. **Auto-Sliding WhatsApp Proof Carousel:** 5-second interval timer, live progress bar, touch/swipe support, and dot synchronization.
+  6. **Full-Width Flat Offering & Urgency Strip:** 15-minute countdown (`MM : SS` with `sessionStorage`), flat price hierarchy (`Rp199.000` $\rightarrow$ `Rp98.500` $\rightarrow$ upsell 2 box `Rp148.500`), and live discount stock urgency progress line. Zero card-in-card bloat.
+  7. **Canonical Form Locking:** Form container locked with default product page padding `p-2` (8px), matching `/produk/[slug].astro`.
+  8. **Core Web Vitals & PageSpeed:** LCP hero preload in `<head>`, explicit image dimensions (CLS = 0), all assets WebP compressed in R2 with immutable caching.
+- **Evidence.** `npm test` 590/590 passing, `npm run check` 402 files clean with 0 errors/0 warnings/0 hints, `npm run build` server bundle built in ~8s, and Cloudflare Workers production deploy verified live at `https://permatamall.shop/ken-total`.

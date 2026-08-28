@@ -769,7 +769,7 @@ const maleBuyers = [
 
     <!-- ═══ 9. JAMINAN PRIVASI & BELANJA AMAN (CLEAN TRUST POINTS) ═══ -->
     <section class="border-t border-slate-200 bg-slate-50 px-4 py-5">
-      <div class="text-center mb-3">
+      <div class="text-center mb-3.5">
         <div class="inline-flex items-center gap-1 text-[11px] font-extrabold uppercase tracking-wide text-blue-900 mb-0.5">
           <Icon name="lock-keyhole" class="h-3.5 w-3.5" />
           <span>Garansi Belanja Aman</span>
@@ -803,30 +803,65 @@ const maleBuyers = [
       </div>
     </section>
 
-    <!-- ═══ 10. FORMULIR PEMESANAN RESMI (FOCUSED ORDER ENGINE) ═══ -->
-    <section id="form-pemesanan" class="border-t border-slate-200 bg-white px-3 pt-5 pb-2 scroll-mt-6">
-      <!-- High-Urgency Price Callout -->
-      <div class="mb-3 rounded border border-red-200 bg-red-50 p-3 text-center">
-        <span class="inline-block rounded bg-red-600 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-white mb-1">
-          PROMO HEMAT HARI INI
-        </span>
-        <div class="flex items-baseline justify-center gap-2">
-          <span class="text-[12.5px] text-slate-400 line-through">Rp199.000</span>
-          <span class="text-[24px] font-black text-red-700 leading-none">Rp98.500</span>
+    <!-- ═══ 10. PENAWARAN KHUSUS & URGENCY PROMO ═══ -->
+    <section class="bg-white pt-0 pb-0">
+      <!-- Full-Width Flat Urgency & Promo Strip (Balanced Vertical Breathing Room) -->
+      <div class="w-full border-y border-red-300 bg-red-50/90 px-4 py-4 text-center">
+        <!-- Top: 15-Minute Flat Countdown -->
+        <div class="flex items-center justify-between border-b border-red-200 pb-2.5 mb-1">
+          <div class="flex items-center gap-1.5 text-[11px] font-black uppercase tracking-wider text-red-900">
+            <Icon name="clock" class="h-3.5 w-3.5 text-red-600 shrink-0" />
+            <span>Promo Berakhir Dalam:</span>
+          </div>
+          <div class="flex items-center gap-1 font-mono font-black text-[13px] text-white">
+            <span id="countdown-minutes" class="bg-red-700 px-1.5 py-0.5 rounded-xs min-w-[24px] text-center">14</span>
+            <span class="text-red-700 font-bold">:</span>
+            <span id="countdown-seconds" class="bg-red-700 px-1.5 py-0.5 rounded-xs min-w-[24px] text-center">59</span>
+          </div>
         </div>
-        <p class="text-[11.5px] font-bold text-slate-800 mt-1">
-          Diskon 50% • Beli 2 Box Lebih Hemat Hanya Rp 148.500!
-        </p>
-      </div>
 
-      <div class="text-center mb-2">
-        <p class="text-[10.5px] font-extrabold uppercase tracking-widest text-red-700">
-          Formulir Pemesanan Resmi
-        </p>
-        <h2 class="mt-0.5 text-[18px] font-black text-slate-950">
+        <!-- Middle: Price & Discount Hierarchy (Flat & Crisp Spacing) -->
+        <div class="py-3">
+          <div class="inline-block bg-red-600 text-white text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-xs mb-1.5">
+            DISKON 50% HARI INI
+          </div>
+          <div class="flex items-baseline justify-center gap-2">
+            <span class="text-[13.5px] font-semibold text-slate-400 line-through">Rp199.000</span>
+            <span class="text-[28px] font-black text-red-700 leading-none tracking-tight">Rp98.500</span>
+          </div>
+          <p class="mt-2 text-[11.5px] font-extrabold text-amber-950">
+            <span class="bg-amber-200/90 px-2 py-0.5 rounded-xs">Beli 2 Box Lebih Hemat Hanya Rp 148.500!</span>
+          </p>
+        </div>
+
+        <!-- Bottom: Urgency Stock Indicator (Flat Full Width Line) -->
+        <div class="border-t border-red-200 pt-2.5 mt-1">
+          <div class="flex items-center justify-between text-[11px] font-bold text-slate-800 mb-1.5">
+            <span class="flex items-center gap-1 text-red-800">
+              <span class="h-2 w-2 rounded-full bg-red-600 animate-pulse"></span>
+              <span>Sisa Kuota Diskon Hari Ini:</span>
+            </span>
+            <span class="font-extrabold text-red-800 font-mono">Tersisa 7 Box Lagi</span>
+          </div>
+          <div class="w-full bg-red-200/70 h-1.5 rounded-full overflow-hidden">
+            <div class="bg-red-600 h-full rounded-full w-[82%]"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══ 11. FORMULIR PEMESANAN RESMI (DEDICATED PRODUCT PAGE CONTAINER) ═══ -->
+    <section id="form-pemesanan" class="mt-2 scroll-mt-6 overflow-hidden rounded-none bg-white p-2">
+      <!-- Form Header -->
+      <div class="px-2 pt-4 pb-2 text-center">
+        <div class="inline-flex items-center gap-1 text-[11px] font-extrabold uppercase tracking-wide text-red-700 mb-1">
+          <Icon name="package" class="h-3.5 w-3.5" />
+          <span>Formulir Pemesanan Resmi</span>
+        </div>
+        <h2 class="text-[20px] font-black tracking-tight text-slate-950">
           Lengkapi Data Pengiriman
         </h2>
-        <p class="text-[12px] text-slate-600 mt-0.5">
+        <p class="text-[12px] text-slate-600 mt-1 max-w-[360px] mx-auto leading-relaxed">
           Pilih paket promo di bawah dan isi alamat tujuan. Bayar saat barang tiba di rumah (COD).
         </p>
       </div>
@@ -1037,9 +1072,46 @@ const maleBuyers = [
       startAutoSlide();
     }
 
+    function initCountdownTimer() {
+      const minEl = document.getElementById('countdown-minutes');
+      const secEl = document.getElementById('countdown-seconds');
+      if (!minEl || !secEl) return;
+
+      const STORAGE_KEY = 'kt_promo_countdown_target';
+      let targetTime = parseInt(sessionStorage.getItem(STORAGE_KEY) || '0', 10);
+      const now = Date.now();
+
+      // If no valid stored target or target has passed, initialize fresh 15-minute countdown (900 seconds)
+      if (!targetTime || targetTime <= now || targetTime - now > 15 * 60 * 1000) {
+        targetTime = now + 15 * 60 * 1000;
+        sessionStorage.setItem(STORAGE_KEY, targetTime.toString());
+      }
+
+      const updateTimer = () => {
+        const remainingMs = Math.max(0, targetTime - Date.now());
+        const totalSeconds = Math.floor(remainingMs / 1000);
+
+        if (totalSeconds <= 0) {
+          // Reset to fresh 15 minutes
+          targetTime = Date.now() + 15 * 60 * 1000;
+          sessionStorage.setItem(STORAGE_KEY, targetTime.toString());
+        }
+
+        const mins = Math.floor(totalSeconds / 60);
+        const secs = totalSeconds % 60;
+
+        minEl.textContent = String(mins).padStart(2, '0');
+        secEl.textContent = String(secs).padStart(2, '0');
+      };
+
+      updateTimer();
+      setInterval(updateTimer, 1000);
+    }
+
     const initAll = () => {
       initStickyBarObserver();
       initWaProofSlider();
+      initCountdownTimer();
     };
 
     if (document.readyState === 'loading') {
