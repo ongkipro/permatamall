@@ -1,0 +1,752 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import MetaLandingTracker from '../components/storefront/tracking/MetaLandingTracker.astro';
+import GeoIpResolvedForm from '../components/storefront/forms/GeoIpResolvedForm.astro';
+import SocialProofToast from '../components/storefront/shared/SocialProofToast.astro';
+import Icon from '../components/storefront/shared/Icon.astro';
+import { getStorefrontProduct } from '../lib/catalog';
+import { nativeLandingCanonicalPath } from '../lib/landing-pages';
+import { defaultCatalogContentId } from '../lib/catalog-feed';
+import {
+  loadStoreCodDisabledProvinceCodes,
+  resolveFormModeContext,
+} from '../lib/form-mode';
+import { getRuntimeEnv } from '../lib/env';
+import '../styles/form-hybrid.css';
+import '../styles/landing-pages/landing.css';
+
+export const prerender = false;
+
+const SLUG = 'carukesi-asam-urat-bengkak';
+const PRODUCT_SLUG = 'soothing-gristle-gel-cream-perawatan-cream-pijat-otot-sendi';
+
+const product = await getStorefrontProduct(Astro.locals, PRODUCT_SLUG);
+if (!product) return Astro.rewrite('/404');
+
+const database = getRuntimeEnv(Astro.locals)?.OMS_DB as D1Database | undefined;
+const codDisabledProvinceCodes = await loadStoreCodDisabledProvinceCodes(database);
+const formContext = await resolveFormModeContext(
+  Astro.request,
+  codDisabledProvinceCodes,
+);
+
+const cheapest = [...product.variants].sort((a, b) => a.price - b.price)[0] ?? null;
+const price = cheapest?.price ?? product.price;
+const comparePrice = cheapest?.comparePrice ?? product.comparePrice ?? 199000;
+const discount = comparePrice > price ? Math.round((1 - price / comparePrice) * 100) : 50;
+
+const canonical = `${Astro.locals.tenant.siteUrl}${await nativeLandingCanonicalPath(Astro.locals, SLUG)}`;
+
+const goutBuyers = [
+  { name: 'Pak Mulyono', location: 'Semarang', time: '1 menit lalu' },
+  { name: 'Ibu Sulastri', location: 'Surakarta', time: '4 menit lalu' },
+  { name: 'Pak Hendro', location: 'Malang', time: '7 menit lalu' },
+  { name: 'H. Darmanto', location: 'Kediri', time: '11 menit lalu' },
+  { name: 'Ibu Ratna', location: 'Madiun', time: '16 menit lalu' },
+];
+
+const sectionTitle = 'text-[clamp(22px,6.8vw,26px)] font-black text-slate-950 tracking-tight leading-[1.2]';
+const sectionLead = 'text-[13.5px] text-slate-600 leading-relaxed mt-2 max-w-[420px] mx-auto';
+---
+
+<BaseLayout
+  title="Carukési Relaxing Gel — Solusi Asam Urat Kumat & Sendi Bengkak"
+  description="Asam urat kumat, jempol bengkak merah & sendi menusuk tajam? Oles Carukési Gel: hangat meresap, redakan tusukan kristal asam urat dalam 10 detik."
+  canonical={canonical}
+  hideHeader={true}
+  hideFooter={true}
+  image="/images/landing/carukesi-asam-urat-bengkak/hero-asam-urat.webp"
+  preloadImages="/images/landing/carukesi-asam-urat-bengkak/hero-asam-urat.webp"
+>
+  <MetaLandingTracker
+    slug={SLUG}
+    contentId={defaultCatalogContentId(product)}
+    contentName={product.contentName}
+    price={price}
+  />
+
+  <main class="mx-auto min-h-screen w-full max-w-[480px] bg-white pb-6 font-sans text-slate-900 shadow-2xl selection:bg-blue-600 selection:text-white antialiased">
+    <!-- ═══ 1. URGENCY ANNOUNCEMENT BAR (TOP NON-STICKY) ═══ -->
+    <header class="flex items-center justify-between border-b border-blue-950 bg-[#0B1E40] px-4 py-2.5 text-white shadow-md">
+      <div class="flex items-center gap-1.5 text-[11px] font-extrabold tracking-wide">
+        <span class="flex h-2 w-2 relative">
+          <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+          <span class="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
+        </span>
+        <span class="text-amber-300 font-black uppercase">PROMO HARI INI:</span>
+        <span class="text-slate-100">DISKON {discount}%</span>
+      </div>
+      <div class="flex items-center gap-1 text-[10.5px] font-bold text-white bg-blue-800/90 px-2.5 py-0.5 rounded-full border border-blue-600/60 shadow-xs">
+        <Icon name="truck" class="h-3 w-3 text-amber-300" />
+        <span>BISA COD</span>
+      </div>
+    </header>
+
+    <!-- ═══ 2. HERO SECTION (FULL WIDTH HERO IMAGE & FLUID ICONS) ═══ -->
+    <section id="landing-hero" class="bg-white text-center pb-8">
+      <div class="px-5 pt-6">
+        <!-- Main Brutal Headline -->
+        <h1 class="mx-auto max-w-[440px] text-[clamp(24px,7.2vw,28px)] font-black leading-[1.18] tracking-tight text-slate-950">
+          Asam Urat Kumat, Jempol Kaki Bengkak &amp; <span class="box-decoration-clone rounded-[0.18em] bg-[#0B1E40] px-2 py-0.5 text-white">Sendi Menusuk Tajam?</span>
+        </h1>
+
+        <!-- Subtitle -->
+        <p class="mx-auto mt-3 max-w-[410px] text-[15px] font-semibold leading-relaxed text-slate-700">
+          <strong class="text-red-700 font-bold">Sekali Oles Hangat Meresap:</strong> Sensasi hangat melarutkan ketegangan kristal asam urat, redakan cenat-cenut seketika &amp; bebas injak lantai tanpa tersiksa!
+        </p>
+
+        <!-- Star Rating Social Proof -->
+        <div class="mt-3.5 flex items-center justify-center gap-1.5 text-[12.5px] font-extrabold text-slate-800">
+          <div class="flex items-center gap-0.5" aria-label="Rating 5 dari 5 bintang">
+            <svg class="h-4 w-4 fill-amber-400 text-amber-400" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+            <svg class="h-4 w-4 fill-amber-400 text-amber-400" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+            <svg class="h-4 w-4 fill-amber-400 text-amber-400" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+            <svg class="h-4 w-4 fill-amber-400 text-amber-400" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+            <svg class="h-4 w-4 fill-amber-400 text-amber-400" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+          </div>
+          <span class="text-slate-900 font-bold">4.9 / 5.0</span>
+          <span class="text-slate-400">•</span>
+          <span class="text-slate-600 font-medium">(1.960+ Penderita Asam Urat)</span>
+        </div>
+      </div>
+
+      <!-- Hero Visual (100% FULL WIDTH EDGE-TO-EDGE) -->
+      <div class="mt-5 relative w-full overflow-hidden bg-slate-900 aspect-[5/4]">
+        <img
+          src="/images/landing/carukesi-asam-urat-bengkak/hero-asam-urat.webp"
+          alt="Carukési Relaxing Gel Solusi Asam Urat Kumat"
+          class="h-full w-full object-cover block"
+          loading="eager"
+          decoding="async"
+          width="480"
+          height="480"
+        />
+        <div class="absolute bottom-0 left-0 right-0 bg-slate-950/85 px-4 py-2.5 text-center backdrop-blur-xs">
+          <p class="text-[12.5px] font-bold text-amber-300 flex items-center justify-center gap-1.5">
+            <Icon name="sparkles" class="h-4 w-4 text-amber-300 shrink-0" />
+            <span>Sensasi Hangat Melarutkan Ketegangan Sendi Dalam 10 Detik</span>
+          </p>
+        </div>
+      </div>
+
+      <!-- Horizontal Trust Row -->
+      <div class="mt-5 flex justify-center gap-4 px-4 text-slate-700">
+        <span class="inline-flex items-center gap-1.5 text-[12px] font-bold text-slate-800">
+          <Icon name="truck" class="h-4 w-4 text-[#0B1E40]" />
+          Bisa COD
+        </span>
+        <span class="inline-flex items-center gap-1.5 text-[12px] font-bold text-slate-800">
+          <Icon name="lock-keyhole" class="h-4 w-4 text-[#0B1E40]" />
+          Privasi 100%
+        </span>
+        <span class="inline-flex items-center gap-1.5 text-[12px] font-bold text-slate-800">
+          <Icon name="shield-check" class="h-4 w-4 text-[#0B1E40]" />
+          Resmi BPOM
+        </span>
+      </div>
+
+      <!-- 4 Key Value Checkmarks (Fluid Minimalist List) -->
+      <div class="mt-6 px-5 text-left space-y-3.5">
+        <div class="flex items-start gap-3">
+          <span class="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-700 mt-0.5">
+            <Icon name="check" class="h-3.5 w-3.5" />
+          </span>
+          <div>
+            <h3 class="text-[14.5px] font-bold text-slate-950">Meredakan Nyeri Tusuk Seperti Jarum</h3>
+            <p class="text-[13px] text-slate-600 mt-0.5 leading-relaxed">Kehangatan aktif menembus kantung sendi meredakan peradangan kristal asam urat.</p>
+          </div>
+        </div>
+
+        <div class="flex items-start gap-3">
+          <span class="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-700 mt-0.5">
+            <Icon name="check" class="h-3.5 w-3.5" />
+          </span>
+          <div>
+            <h3 class="text-[14.5px] font-bold text-slate-950">Kempeskan Bengkak Merah &amp; Cenat-Cenut</h3>
+            <p class="text-[13px] text-slate-600 mt-0.5 leading-relaxed">Melancarkan aliran darah agar pembengkakan di jempol dan mata kaki cepat menyusut.</p>
+          </div>
+        </div>
+
+        <div class="flex items-start gap-3">
+          <span class="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-700 mt-0.5">
+            <Icon name="check" class="h-3.5 w-3.5" />
+          </span>
+          <div>
+            <h3 class="text-[14.5px] font-bold text-slate-950">Kaki Bisa Menapak Lantai Tanpa Terkilir</h3>
+            <p class="text-[13px] text-slate-600 mt-0.5 leading-relaxed">Bisa langsung jalan normal tanpa harus berpegangan tembok atau pincang menahan sakit.</p>
+          </div>
+        </div>
+
+        <div class="flex items-start gap-3">
+          <span class="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-700 mt-0.5">
+            <Icon name="check" class="h-3.5 w-3.5" />
+          </span>
+          <div>
+            <h3 class="text-[14.5px] font-bold text-slate-950">100% Bebas Lengket &amp; Dingin-Hangat Pas</h3>
+            <p class="text-[13px] text-slate-600 mt-0.5 leading-relaxed">Gel bening tidak membuat kulit terbakar, tidak mengotori kaos kaki atau sarung.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══ 3. PROBLEM AGITATION SECTION (FLUID LIST) ═══ -->
+    <section class="border-t border-slate-100 bg-red-50/35 px-5 py-10">
+      <span class="mb-2 block text-[11px] font-bold uppercase tracking-[0.2em] text-red-600">Bahaya Krisis Asam Urat</span>
+      <h2 class={`${sectionTitle} mt-1`}>
+        Apakah Asam Urat Anda Mengalami <span class="box-decoration-clone rounded-[0.18em] bg-[#0B1E40] px-2 py-0.5 text-white">Gejala Mencekam Ini?</span>
+      </h2>
+      <p class={`${sectionLead} text-left`}>
+        Salah makan emping, kacang, jeroan atau daging sedikit saja, jempol langsung bengkak panas dan tidak bisa tidur semalaman!
+      </p>
+
+      <div class="mt-7 space-y-4">
+        <div class="flex gap-3.5 items-start">
+          <span class="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-red-100 text-red-700 mt-0.5">
+            <Icon name="x" class="h-3.5 w-3.5" />
+          </span>
+          <div>
+            <h3 class="text-[15px] font-bold text-slate-900">Jempol Kaki Membengkak &amp; Merah Membara</h3>
+            <p class="text-[13.5px] text-slate-600 mt-0.5 leading-relaxed">Disentuh selimut tipis saja rasa sakitnya menjerit seperti ditusuk ribuan jarum tajam.</p>
+          </div>
+        </div>
+
+        <div class="flex gap-3.5 items-start">
+          <span class="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-red-100 text-red-700 mt-0.5">
+            <Icon name="x" class="h-3.5 w-3.5" />
+          </span>
+          <div>
+            <h3 class="text-[15px] font-bold text-slate-900">Mata Kaki &amp; Tumit Terkunci Tidak Bisa Menapak</h3>
+            <p class="text-[13.5px] text-slate-600 mt-0.5 leading-relaxed">Mau ke kamar mandi harus merangkak atau dipapah keluarga karena telapak kaki ngilu luar biasa.</p>
+          </div>
+        </div>
+
+        <div class="flex gap-3.5 items-start">
+          <span class="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-red-100 text-red-700 mt-0.5">
+            <Icon name="x" class="h-3.5 w-3.5" />
+          </span>
+          <div>
+            <h3 class="text-[15px] font-bold text-slate-900">Takut Benjolan Keras Menahun (*Tophi*)</h3>
+            <p class="text-[13.5px] text-slate-600 mt-0.5 leading-relaxed">Kristal purin yang menumpuk bertahun-tahun bisa mengeras merusak bentuk sendi secara permanen.</p>
+          </div>
+        </div>
+
+        <div class="flex gap-3.5 items-start">
+          <span class="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-red-100 text-red-700 mt-0.5">
+            <Icon name="x" class="h-3.5 w-3.5" />
+          </span>
+          <div>
+            <h3 class="text-[15px] font-bold text-slate-900">Ketergantungan Obat Kimia Penurun Asam Urat</h3>
+            <p class="text-[13.5px] text-slate-600 mt-0.5 leading-relaxed">Terlalu sering minum obat keras tablet yang membebani kerja ginjal dan bikin lambung perih.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Warning Callout -->
+      <div class="mt-6 border-l-2 border-red-600 pl-4 text-left">
+        <h3 class="text-[14.5px] font-bold text-slate-950">Solusi Target Langsung:</h3>
+        <p class="text-[13px] leading-relaxed text-slate-600 mt-0.5">
+          Terapi oles gel herbal langsung pada kantung sendi meredakan peradangan lokal tanpa harus merusak organ lambung dan ginjal Anda!
+        </p>
+      </div>
+    </section>
+
+    <!-- ═══ 4. THE SOLUTION & MECHANISM ═══ -->
+    <section class="border-t border-slate-100 bg-white px-5 py-10 text-center">
+      <span class="mb-2 block text-[11px] font-bold uppercase tracking-[0.2em] text-[#0B1E40]">Mekanisme Kerja</span>
+      <h2 class={`${sectionTitle} mt-1`}>
+        Bagaimana Carukési Meredakan Serangan Asam Urat?
+      </h2>
+      <p class={`${sectionLead} text-center`}>
+        Formula gel mikro transparan menyerap (*Fast Absorbing*) langsung melonggarkan peradangan di dalam kapsul sendi.
+      </p>
+
+      <div class="mt-8 space-y-6 text-left">
+        <div class="flex items-start gap-4">
+          <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#0B1E40] text-white font-black text-[14px]">
+            01
+          </span>
+          <div>
+            <h3 class="text-[15px] font-bold text-slate-950">Meredakan Respon Nyeri 10 Detik</h3>
+            <p class="text-[13.5px] text-slate-600 mt-1 leading-relaxed">
+              Zat aktif alami menghantarkan sensasi hangat menenangkan yang memblokade sinyal nyeri berdenyut di ujung saraf sendi.
+            </p>
+          </div>
+        </div>
+
+        <div class="h-px bg-slate-100 w-full" />
+
+        <div class="flex items-start gap-4">
+          <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#0B1E40] text-white font-black text-[14px]">
+            02
+          </span>
+          <div>
+            <h3 class="text-[15px] font-bold text-slate-950">Memperlancar Drainase Cairan Sendi</h3>
+            <p class="text-[13.5px] text-slate-600 mt-1 leading-relaxed">
+              Mempercepat sirkulasi mikro sehingga cairan radang dan asam laktat di sekitar sendi bengkak segera terserap dan kempes.
+            </p>
+          </div>
+        </div>
+
+        <div class="h-px bg-slate-100 w-full" />
+
+        <div class="flex items-start gap-4">
+          <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#0B1E40] text-white font-black text-[14px]">
+            03
+          </span>
+          <div>
+            <h3 class="text-[15px] font-bold text-slate-950">Kembalikan Kelenturan Jari &amp; Kaki</h3>
+            <p class="text-[13.5px] text-slate-600 mt-1 leading-relaxed">
+              Sendi tidak lagi kaku membatu. Jari jemari dan telapak kaki kembali nyaman menapak, melangkah, dan beraktivitas normal.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══ 5. CARA PEMAKAIAN (FULL WIDTH BANNER) ═══ -->
+    <section class="border-t border-slate-100 bg-slate-50/50 pt-10 pb-10 text-center">
+      <div class="px-5">
+        <span class="mb-2 block text-[11px] font-bold uppercase tracking-[0.2em] text-emerald-800">Petunjuk Penggunaan</span>
+        <h2 class={`${sectionTitle} mt-1`}>
+          3 Langkah Redakan Nyeri Asam Urat
+        </h2>
+      </div>
+
+      <div class="mt-6 w-full overflow-hidden">
+        <img
+          src="/images/landing/carukesi-asam-urat-bengkak/cara-pakai-asam-urat.webp"
+          alt="Cara Pemakaian Carukési Gel Pada Sendi Asam Urat"
+          class="w-full h-auto block"
+          loading="lazy"
+          decoding="async"
+        />
+      </div>
+
+      <div class="mt-5 px-5">
+        <div class="border-l-2 border-emerald-600 pl-4 text-left">
+          <p class="text-[13px] font-semibold text-slate-800 leading-relaxed">
+            💡 <strong>Anjuran Pakai:</strong> Oleskan tipis merata pada jempol, pergelangan, atau mata kaki yang meradang 2–3 kali sehari. Hindari menekan terlalu keras pada titik bengkak akut.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══ 6. SEBELUM VS SESUDAH (PERBANDINGAN VISUAL MENYATU) ═══ -->
+    <section class="border-t border-slate-100 bg-white pt-10 pb-10 text-center">
+      <div class="px-5">
+        <span class="mb-2 block text-[11px] font-bold uppercase tracking-[0.2em] text-amber-800">Hasil Nyata</span>
+        <h2 class={`${sectionTitle} mt-1`}>
+          Perbedaan Nyata Pada Sendi Anda
+        </h2>
+      </div>
+
+      <div class="mt-6 w-full overflow-hidden mb-6">
+        <img
+          src="/images/landing/carukesi-asam-urat-bengkak/before-after-asam-urat.webp"
+          alt="Sebelum vs Sesudah Menggunakan Carukési Gel Pada Asam Urat"
+          class="w-full h-auto block"
+          loading="lazy"
+          decoding="async"
+        />
+      </div>
+
+      <!-- Integrated Comparison Rows -->
+      <div class="px-5 grid grid-cols-2 gap-3 text-left text-[12.5px]">
+        <div class="p-3.5 rounded-lg bg-red-50/60 border-l-2 border-red-500">
+          <p class="font-bold text-red-700 uppercase tracking-wider mb-2">❌ SEBELUM OLES</p>
+          <ul class="space-y-1.5 text-slate-700 leading-relaxed font-medium">
+            <li>• Jempol bengkak &amp; cenat-cenut</li>
+            <li>• Tersiksa disentuh kain selimut</li>
+            <li>• Kaki tidak bisa menapak lantai</li>
+            <li>• Begadang menahan nyeri semalam</li>
+          </ul>
+        </div>
+        <div class="p-3.5 rounded-lg bg-emerald-50/70 border-l-2 border-emerald-600">
+          <p class="font-bold text-emerald-800 uppercase tracking-wider mb-2">✅ SETELAH OLES</p>
+          <ul class="space-y-1.5 text-slate-900 font-bold leading-relaxed">
+            <li>• Bengkak kempes &amp; rasa sejuk-hangat</li>
+            <li>• Bebas disentuh tanpa ngilu</li>
+            <li>• Langsung bisa menapak &amp; jalan</li>
+            <li>• Tidur pulas nyenyak sampai pagi</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══ 7. REAL UNBOXING PRODUCT SHOWCASE (FULL WIDTH) ═══ -->
+    <section class="border-t border-slate-100 bg-slate-50/50 pt-10 pb-10 text-center">
+      <div class="px-5">
+        <span class="mb-2 block text-[11px] font-bold uppercase tracking-[0.2em] text-[#0B1E40]">Kemasan Asli</span>
+        <h2 class={`${sectionTitle} mt-1`}>
+          Kemasan Tube 50g Bersegel Resmi BPOM
+        </h2>
+        <p class={`${sectionLead} text-center`}>
+          Kemasan tube higienis dengan segel resmi. Sangat praktis disimpan di kamar tidur sebagai pertolongan pertama saat asam urat kumat tengah malam.
+        </p>
+      </div>
+
+      <div class="mt-6 w-full overflow-hidden">
+        <img
+          src="/images/landing/carukesi-asam-urat-bengkak/real-duo.webp"
+          alt="Foto Asli Kemasan Carukési Relaxing Gel"
+          class="w-full h-auto block"
+          loading="lazy"
+          decoding="async"
+        />
+      </div>
+    </section>
+
+    <!-- ═══ 8. VERIFIED USER TESTIMONIALS (MIN 3 ULASAN + BANNER TESTIMONI) ═══ -->
+    <section class="border-t border-slate-100 bg-white px-5 py-10 text-center">
+      <span class="mb-2 block text-[11px] font-bold uppercase tracking-[0.2em] text-[#0B1E40]">Ulasan Pelanggan</span>
+      <h2 class={`${sectionTitle} mt-1`}>
+        Pengalaman Nyata Penderita Asam Urat
+      </h2>
+      <p class={`${sectionLead} text-center mb-6`}>
+        Kisah jujur mereka yang sendinya kembali normal, bengkak kempes, dan bisa makan enak tanpa takut asam urat kumat.
+      </p>
+
+      <!-- Lifestyle Testimonial Banner -->
+      <div class="w-full overflow-hidden rounded-xl mb-8 shadow-xs">
+        <img
+          src="/images/landing/carukesi-asam-urat-bengkak/banner-testi-asam-urat.webp"
+          alt="Kebahagiaan Keluarga Menikmati Makan Bersama Bebas Asam Urat"
+          class="w-full h-auto block"
+          loading="lazy"
+        />
+        <div class="bg-[#0B1E40] px-4 py-2.5 text-center text-white">
+          <p class="text-[12px] font-bold text-amber-300">
+            "Alhamdulillah, kumpul keluarga &amp; makan enak kembali ceria tanpa khawatir sendi cenat-cenut."
+          </p>
+        </div>
+      </div>
+
+      <div class="space-y-8 text-left">
+        <!-- Review 1 -->
+        <div class="space-y-3">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2.5">
+              <img
+                src="/images/landing/carukesi-asam-urat-bengkak/testi-mulyono.webp"
+                alt="Pak Mulyono Pedagang Pasar"
+                class="h-11 w-11 rounded-full object-cover border-2 border-[#0B1E40] shrink-0"
+                loading="lazy"
+              />
+              <div>
+                <div class="flex items-center gap-1.5">
+                  <h3 class="text-[15px] font-bold text-slate-950">Pak Mulyono (54 th)</h3>
+                  <Icon name="badge-check" class="h-4 w-4 fill-blue-600 text-white" />
+                </div>
+                <p class="text-[11px] text-slate-500">Semarang, Jawa Tengah • Pedagang Pasar</p>
+              </div>
+            </div>
+
+            <!-- 5 Filled Gold Stars -->
+            <div class="flex items-center gap-0.5" aria-label="Rating 5 dari 5 bintang">
+              <svg class="h-4 w-4 fill-amber-400 text-amber-400" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+              <svg class="h-4 w-4 fill-amber-400 text-amber-400" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+              <svg class="h-4 w-4 fill-amber-400 text-amber-400" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+              <svg class="h-4 w-4 fill-amber-400 text-amber-400" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+              <svg class="h-4 w-4 fill-amber-400 text-amber-400" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+            </div>
+          </div>
+
+          <p class="border-l-2 border-[#0B1E40]/30 pl-3.5 text-[14px] leading-relaxed text-slate-700 italic">
+            "Kemarin malam salah makan emping dan sate kambing, jam 2 subuh jempol kaki langsung bengkak merah cenat-cenut gak karuan. Langsung saya oles Carukesi Gel tebal-tebal, <strong class="text-slate-950 font-bold not-italic">15 menit kemudian rasa menusuknya hilang dan bengkaknya kempes.</strong> Pagi jam 5 sudah bisa jalan ke pasar jualan lagi!"
+          </p>
+        </div>
+
+        <div class="h-px bg-slate-200" />
+
+        <!-- Review 2 -->
+        <div class="space-y-3">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2.5">
+              <img
+                src="/images/landing/carukesi-asam-urat-bengkak/testi-sulastri.webp"
+                alt="Ibu Sulastri Ibu Rumah Tangga"
+                class="h-11 w-11 rounded-full object-cover border-2 border-[#0B1E40] shrink-0"
+                loading="lazy"
+              />
+              <div>
+                <div class="flex items-center gap-1.5">
+                  <h3 class="text-[15px] font-bold text-slate-950">Ibu Sulastri (51 th)</h3>
+                  <Icon name="badge-check" class="h-4 w-4 fill-blue-600 text-white" />
+                </div>
+                <p class="text-[11px] text-slate-500">Surakarta, Jawa Tengah • Ibu Rumah Tangga</p>
+              </div>
+            </div>
+
+            <!-- 5 Filled Gold Stars -->
+            <div class="flex items-center gap-0.5" aria-label="Rating 5 dari 5 bintang">
+              <svg class="h-4 w-4 fill-amber-400 text-amber-400" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+              <svg class="h-4 w-4 fill-amber-400 text-amber-400" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+              <svg class="h-4 w-4 fill-amber-400 text-amber-400" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+              <svg class="h-4 w-4 fill-amber-400 text-amber-400" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+              <svg class="h-4 w-4 fill-amber-400 text-amber-400" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+            </div>
+          </div>
+
+          <p class="border-l-2 border-[#0B1E40]/30 pl-3.5 text-[14px] leading-relaxed text-slate-700 italic">
+            "Mata kaki sering bengkak kalau dingin atau kecapekan masak di dapur. Dulu sering minum obat penahan nyeri dari warung sampai lambung perih. Sekarang cukup oles Carukesi, <strong class="text-slate-950 font-bold not-italic">gelnya dingin dulu terus hangat meresap enak banget.</strong> Kaki gak kaku lagi!"
+          </p>
+        </div>
+
+        <div class="h-px bg-slate-200" />
+
+        <!-- Review 3 -->
+        <div class="space-y-3">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2.5">
+              <img
+                src="/images/landing/carukesi-asam-urat-bengkak/testi-hendro.webp"
+                alt="Pak Hendro Pensiunan"
+                class="h-11 w-11 rounded-full object-cover border-2 border-[#0B1E40] shrink-0"
+                loading="lazy"
+              />
+              <div>
+                <div class="flex items-center gap-1.5">
+                  <h3 class="text-[15px] font-bold text-slate-950">Pak Hendro (57 th)</h3>
+                  <Icon name="badge-check" class="h-4 w-4 fill-blue-600 text-white" />
+                </div>
+                <p class="text-[11px] text-slate-500">Malang, Jawa Timur • Pensiunan</p>
+              </div>
+            </div>
+
+            <!-- 5 Filled Gold Stars -->
+            <div class="flex items-center gap-0.5" aria-label="Rating 5 dari 5 bintang">
+              <svg class="h-4 w-4 fill-amber-400 text-amber-400" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+              <svg class="h-4 w-4 fill-amber-400 text-amber-400" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+              <svg class="h-4 w-4 fill-amber-400 text-amber-400" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+              <svg class="h-4 w-4 fill-amber-400 text-amber-400" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+              <svg class="h-4 w-4 fill-amber-400 text-amber-400" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+            </div>
+          </div>
+
+          <p class="border-l-2 border-[#0B1E40]/30 pl-3.5 text-[14px] leading-relaxed text-slate-700 italic">
+            "Saya sedia tube Carukesi ini di samping tempat tidur. Kalau malam tiba-tiba jempol cenat-cenut langsung oles. <strong class="text-slate-950 font-bold not-italic">Rasa hangatnya meredakan ngilu dalam hitungan detik.</strong> Sangat membantu untuk orang tua seperti saya."
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══ 9. JAMINAN PRIVASI & BELANJA AMAN ═══ -->
+    <section class="border-t border-slate-100 bg-slate-50/60 px-5 py-10 text-center">
+      <span class="mb-2 block text-[11px] font-bold uppercase tracking-[0.2em] text-[#0B1E40]">Garansi Pelayanan</span>
+      <h2 class={`${sectionTitle} mt-1`}>
+        Privasi 100% Terjaga &amp; Bebas Risiko
+      </h2>
+
+      <div class="mt-8 space-y-4 text-left">
+        <div class="flex items-start gap-3.5">
+          <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-[#0B1E40] mt-0.5">
+            <Icon name="lock-keyhole" class="h-4.5 w-4.5" />
+          </span>
+          <div>
+            <h3 class="text-[15px] font-bold text-slate-950">100% Privasi Sangat Terjaga</h3>
+            <p class="text-[13.5px] text-slate-600 mt-0.5 leading-relaxed">Paket dibungkus kardus tebal polos tanpa nama produk pada label resi.</p>
+          </div>
+        </div>
+
+        <div class="flex items-start gap-3.5">
+          <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-[#0B1E40] mt-0.5">
+            <Icon name="truck" class="h-4.5 w-4.5" />
+          </span>
+          <div>
+            <h3 class="text-[15px] font-bold text-slate-950">Bisa Bayar di Tempat (COD)</h3>
+            <p class="text-[13.5px] text-slate-600 mt-0.5 leading-relaxed">Bayar uang tunai langsung ke kurir saat barang tiba dengan aman di rumah Anda.</p>
+          </div>
+        </div>
+
+        <div class="flex items-start gap-3.5">
+          <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-[#0B1E40] mt-0.5">
+            <Icon name="shield-check" class="h-4.5 w-4.5" />
+          </span>
+          <div>
+            <h3 class="text-[15px] font-bold text-slate-950">Jaminan 100% Original BPOM</h3>
+            <p class="text-[13.5px] text-slate-600 mt-0.5 leading-relaxed">Produk resmi bersegel dengan tanggal kedaluwarsa panjang. Garansi uang kembali jika palsu.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══ 10. PENAWARAN KHUSUS & URGENCY PROMO (FULL WIDTH) ═══ -->
+    <section class="w-full border-y-2 border-red-500 bg-red-50/95 px-5 py-7 text-center">
+      <!-- Top: 15-Minute Countdown Bar -->
+      <div class="flex items-center justify-between border-b border-red-200/80 pb-3.5 mb-2 max-w-[440px] mx-auto">
+        <div class="flex items-center gap-1.5 text-[12px] font-black uppercase tracking-wider text-red-950">
+          <Icon name="clock" class="h-4 w-4 text-red-600 shrink-0" />
+          <span>Promo Berakhir Dalam:</span>
+        </div>
+        <div class="flex items-center gap-1 font-mono font-black text-[15px] text-white">
+          <span id="countdown-minutes" class="bg-red-700 px-2 py-0.5 rounded shadow-xs">14</span>
+          <span class="text-red-700 font-bold">:</span>
+          <span id="countdown-seconds" class="bg-red-700 px-2 py-0.5 rounded shadow-xs">59</span>
+        </div>
+      </div>
+
+      <!-- Price & Discount Display -->
+      <div class="py-3 max-w-[440px] mx-auto">
+        <div class="inline-block bg-red-600 text-white text-[11px] font-black uppercase tracking-widest px-3.5 py-1 rounded-full mb-2.5 shadow-xs">
+          DISKON {discount}% HARI INI
+        </div>
+        <div class="flex items-baseline justify-center gap-3">
+          <span class="text-[16px] font-semibold text-slate-400 line-through">Rp{comparePrice.toLocaleString('id-ID')}</span>
+          <span class="text-[34px] font-black text-red-700 leading-none tracking-tight">Rp{Math.round(price).toLocaleString('id-ID')}</span>
+        </div>
+        <p class="mt-2.5 text-[13px] font-black text-amber-950">
+          <span class="bg-amber-200/90 px-3.5 py-1 rounded-full border border-amber-300 shadow-2xs">Beli 2 Tube Lebih Hemat Hanya Rp 148.500!</span>
+        </p>
+      </div>
+
+      <!-- Urgency Live Stock Indicator -->
+      <div class="border-t border-red-200/80 pt-3.5 mt-1 max-w-[440px] mx-auto">
+        <div class="flex items-center justify-between text-[12px] font-extrabold text-slate-800 mb-2">
+          <span class="flex items-center gap-1.5 text-red-900">
+            <span class="h-2.5 w-2.5 rounded-full bg-red-600 animate-pulse"></span>
+            <span>Sisa Kuota Promo Hari Ini:</span>
+          </span>
+          <span class="font-black text-red-800 font-mono">Tersisa 7 Tube Lagi</span>
+        </div>
+        <div class="w-full bg-red-200 h-2.5 rounded-full overflow-hidden">
+          <div class="bg-red-600 h-full rounded-full w-[82%]"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══ 11. FORMULIR PEMESANAN RESMI (CHECKOUT) ═══ -->
+    <section id="form-pemesanan" class="bg-white px-4 pt-8 pb-4 scroll-mt-6">
+      <div class="px-2 pb-3 text-center">
+        <div class="inline-flex items-center gap-1 text-[11px] font-extrabold uppercase tracking-wide text-[#0B1E40] mb-1">
+          <Icon name="package" class="h-4 w-4" />
+          <span>Formulir Pemesanan Resmi</span>
+        </div>
+        <h2 class="text-[22px] font-black tracking-tight text-slate-950">
+          Lengkapi Data Pengiriman
+        </h2>
+        <p class="text-[13px] text-slate-600 mt-1 max-w-[360px] mx-auto leading-relaxed">
+          Pilih paket promo di bawah dan isi alamat tujuan. Bayar uang tunai saat kurir tiba di rumah (COD).
+        </p>
+      </div>
+
+      <GeoIpResolvedForm
+        mode={formContext.mode}
+        province={formContext.province}
+        productSlug={product.slug}
+        embedded={true}
+      />
+    </section>
+
+    <!-- ═══ 12. STICKY PURCHASE BAR (MOBILE BOTTOM) ═══ -->
+    <div
+      id="sticky-purchase-bar"
+      class="fixed inset-x-0 bottom-0 z-40 mx-auto flex w-full max-w-[480px] items-center justify-between border-t border-slate-200 bg-white/95 backdrop-blur-md px-5 py-2.5 pb-[max(0.6rem,env(safe-area-inset-bottom))] shadow-2xl transition-all duration-300"
+      style="transform: translateY(100%); opacity: 0; pointer-events: none;"
+    >
+      <div>
+        <p class="text-[9.5px] font-bold uppercase tracking-wider text-slate-500">Harga Promo</p>
+        <p class="text-[16px] font-black text-red-700 leading-none">Rp{Math.round(price).toLocaleString('id-ID')}</p>
+      </div>
+      <a
+        href="#form-pemesanan"
+        class="inline-flex min-h-[40px] items-center justify-center rounded-xl bg-red-600 hover:bg-red-700 px-5 text-[12px] font-black uppercase tracking-wider text-white shadow-md transition-all active:scale-[0.98]"
+      >
+        <span>Pesan Sekarang (COD)</span>
+        <Icon name="arrow-right" class="h-4 w-4 ml-1.5" />
+      </a>
+    </div>
+
+    <!-- Realtime Social Proof Toast -->
+    <SocialProofToast
+      productLabel="Carukési Relaxing Gel 50g"
+      productImage="/images/landing/carukesi-asam-urat-bengkak/product-thumb.webp"
+      heroSelector="#landing-hero"
+      formSelector="#form-pemesanan"
+      buyers={goutBuyers}
+    />
+  </main>
+
+  <script slot="head" is:inline>
+    function initStickyBarObserver() {
+      const stickyBar = document.getElementById('sticky-purchase-bar');
+      const orderForm = document.getElementById('form-pemesanan');
+      const hero = document.getElementById('landing-hero');
+      if (!stickyBar) return;
+
+      let heroVisible = true;
+      let formVisible = false;
+
+      const applyStickyVisibility = () => {
+        if (heroVisible || formVisible) {
+          stickyBar.style.transform = 'translateY(100%)';
+          stickyBar.style.opacity = '0';
+          stickyBar.style.pointerEvents = 'none';
+        } else {
+          stickyBar.style.transform = 'translateY(0)';
+          stickyBar.style.opacity = '1';
+          stickyBar.style.pointerEvents = 'auto';
+        }
+      };
+
+      const observer = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((entry) => {
+            if (entry.target === hero) heroVisible = entry.isIntersecting;
+            if (entry.target === orderForm) formVisible = entry.isIntersecting;
+          });
+          applyStickyVisibility();
+        },
+        { threshold: 0.05, rootMargin: '0px 0px -40px 0px' }
+      );
+
+      if (hero) observer.observe(hero);
+      if (orderForm) observer.observe(orderForm);
+      applyStickyVisibility();
+    }
+
+    function initCountdownTimer() {
+      const minEl = document.getElementById('countdown-minutes');
+      const secEl = document.getElementById('countdown-seconds');
+      if (!minEl || !secEl) return;
+
+      const STORAGE_KEY = 'carukesi_promo_countdown_target';
+      let targetTime = parseInt(sessionStorage.getItem(STORAGE_KEY) || '0', 10);
+      const now = Date.now();
+
+      if (!targetTime || targetTime <= now || targetTime - now > 15 * 60 * 1000) {
+        targetTime = now + 15 * 60 * 1000;
+        sessionStorage.setItem(STORAGE_KEY, targetTime.toString());
+      }
+
+      const updateTimer = () => {
+        const remainingMs = Math.max(0, targetTime - Date.now());
+        const totalSeconds = Math.floor(remainingMs / 1000);
+
+        if (totalSeconds <= 0) {
+          targetTime = Date.now() + 15 * 60 * 1000;
+          sessionStorage.setItem(STORAGE_KEY, targetTime.toString());
+        }
+
+        const mins = Math.floor(totalSeconds / 60);
+        const secs = totalSeconds % 60;
+
+        minEl.textContent = String(mins).padStart(2, '0');
+        secEl.textContent = String(secs).padStart(2, '0');
+      };
+
+      updateTimer();
+      setInterval(updateTimer, 1000);
+    }
+
+    const initAll = () => {
+      initStickyBarObserver();
+      initCountdownTimer();
+    };
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initAll);
+    } else {
+      initAll();
+    }
+  </script>
+</BaseLayout>

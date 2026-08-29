@@ -155,3 +155,55 @@
   font-size: 12px;
   color: #71717a;
 }
+
+/* ═════ GLOBAL NATIVE LANDING PAGE MICRO-INTERACTIONS & ANIMATIONS ═════ */
+html {
+  scroll-behavior: smooth;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Fluid responsive adjustments for ultra-compact mobile screens (<= 360px) */
+@media (max-width: 360px) {
+  .lp-section {
+    padding-inline: 12px;
+    padding-block: 20px;
+    font-size: 14px;
+  }
+}
+
+/* Micro-animations for high-converting urgency & conversion elements */
+@keyframes urgency-glow {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 0 6px rgba(220, 38, 38, 0);
+  }
+}
+
+@keyframes live-dot-ping {
+  0% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  75%, 100% {
+    transform: scale(2.2);
+    opacity: 0;
+  }
+}
+
+.animate-urgency-glow {
+  animation: urgency-glow 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+.animate-live-ping {
+  animation: live-dot-ping 1.5s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+
+/* Universal compact tap feedback */
+button,
+a,
+summary {
+  touch-action: manipulation;
+}
+
