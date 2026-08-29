@@ -300,6 +300,58 @@ const feedUrl = `${Astro.locals.tenant.siteUrl.replace(/\/$/, '')}/feed/google-c
             </div>
           </div>
 
+          <!-- Step 3B: GTM container build-out -->
+          <div class="relative pl-8 before:absolute before:left-3.5 before:top-8 before:bottom-0 before:w-0.5 before:bg-slate-200">
+            <span class="absolute left-0 top-0 flex h-7 w-7 items-center justify-center rounded-full bg-indigo-600 text-xs font-black text-white">🎯</span>
+            <div class="rounded-xl border border-indigo-200 bg-indigo-50/50 p-4">
+              <div class="flex items-center justify-between">
+                <h4 class="text-sm font-black text-slate-900">Bonus: Bangun Container GTM dari Nol</h4>
+                <span class="rounded bg-indigo-100 px-2 py-0.5 font-mono text-[10px] font-bold text-indigo-700">Opsional</span>
+              </div>
+              <p class="mt-1 text-xs text-slate-600">
+                Kalau memilih jalur GTM (bukan Google Tag langsung), mengisi field <strong class="text-slate-900">GTM Container ID</strong> di atas hanya memuat container-nya — tag &amp; trigger di dalamnya harus dibuat sendiri di <a href="https://tagmanager.google.com" target="_blank" rel="noopener noreferrer" class="font-bold text-indigo-600 underline">tagmanager.google.com</a>. Toko ini sudah push <code class="bg-white px-1 font-mono">dataLayer</code> ecommerce standar GA4, jadi container tinggal membaca, bukan menghitung ulang.
+              </p>
+
+              <ol class="mt-3 list-decimal space-y-2 pl-4 text-xs text-slate-700">
+                <li>
+                  <strong class="text-slate-900">Buat container Web</strong> baru di GTM, salin <code class="bg-white px-1 font-mono">GTM-XXXXXXX</code>-nya ke field di atas.
+                </li>
+                <li>
+                  <strong class="text-slate-900">Tag GA4 Configuration</strong> — Tag type <code class="bg-white px-1 font-mono">Google Analytics: GA4 Configuration</code>, Measurement ID dari GA4 property, Trigger: <code class="bg-white px-1 font-mono">All Pages</code>.
+                </li>
+                <li>
+                  <strong class="text-slate-900">4 trigger Custom Event</strong>, satu per nama event yang sudah di-push toko ke <code class="bg-white px-1 font-mono">dataLayer</code> — persis nama ini, tanpa awalan:
+                  <div class="mt-2 overflow-x-auto rounded-lg border border-indigo-200 bg-white">
+                    <table class="w-full text-left text-xs">
+                      <thead class="bg-indigo-50 text-slate-700">
+                        <tr>
+                          <th class="p-2 font-bold">Custom Event Name (trigger)</th>
+                          <th class="p-2 font-bold">Kapan terpicu</th>
+                        </tr>
+                      </thead>
+                      <tbody class="divide-y divide-slate-100 font-mono text-[11px]">
+                        <tr><td class="p-2 text-indigo-700 font-bold">view_item</td><td class="p-2 font-sans text-slate-600">Halaman produk dibuka</td></tr>
+                        <tr><td class="p-2 text-indigo-700 font-bold">add_to_cart</td><td class="p-2 font-sans text-slate-600">Form checkout diisi, niat beli jelas</td></tr>
+                        <tr><td class="p-2 text-indigo-700 font-bold">begin_checkout</td><td class="p-2 font-sans text-slate-600">Submit checkout dimulai</td></tr>
+                        <tr><td class="p-2 text-indigo-700 font-bold">purchase</td><td class="p-2 font-sans text-slate-600">Order tervalidasi/terbayar (halaman thanks)</td></tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </li>
+                <li>
+                  <strong class="text-slate-900">4 tag GA4 Event</strong> (satu per trigger di atas) — Tag type <code class="bg-white px-1 font-mono">Google Analytics: GA4 Event</code>, Configuration Tag: tag dari langkah 2, Event Name diisi manual sama seperti nama trigger-nya (<code class="bg-white px-1 font-mono">view_item</code>, dst). Di bagian <strong>Event Parameters</strong>, aktifkan <strong class="text-slate-900">"Send Ecommerce Data"</strong> / gunakan Data Layer Variable <code class="bg-white px-1 font-mono">ecommerce</code> — jangan mapping field satu-satu, objek <code class="bg-white px-1 font-mono">ecommerce</code> yang di-push toko sudah berisi <code class="bg-white px-1 font-mono">currency</code>, <code class="bg-white px-1 font-mono">value</code>, <code class="bg-white px-1 font-mono">transaction_id</code>, dan <code class="bg-white px-1 font-mono">items[]</code> siap pakai.
+                </li>
+                <li>
+                  <strong class="text-slate-900">Preview mode</strong> di GTM, coba alur produk → checkout → thanks, pastikan 4 event di atas muncul di panel Tag Assistant dengan <code class="bg-white px-1 font-mono">ecommerce</code> terisi (bukan <code class="bg-white px-1 font-mono">null</code>) — lalu <strong class="text-slate-900">Submit &amp; Publish</strong> container.
+                </li>
+              </ol>
+
+              <p class="mt-3 text-[11px] text-slate-500">
+                Catatan: kalau field <strong>Google Ads Conversion ID</strong> &amp; <strong>Label</strong> di atas juga diisi, Purchase Google Ads dikirim langsung oleh Google Tag — jangan buat lagi konversi Ads dari dalam GTM untuk event yang sama, satu conversion action cukup satu pengirim.
+              </p>
+            </div>
+          </div>
+
           <!-- Step 4 -->
           <div class="relative pl-8 before:absolute before:left-3.5 before:top-8 before:bottom-0 before:w-0.5 before:bg-slate-200">
             <span class="absolute left-0 top-0 flex h-7 w-7 items-center justify-center rounded-full bg-blue-600 text-xs font-black text-white">4</span>
