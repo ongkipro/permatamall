@@ -41,15 +41,11 @@
   // Hourly evaluation catches a stalled conversion outbox even when no operator
   // opens the dashboard. Alert transitions are deduplicated in the install's KV.
   //
-  // Not registered here: the account is on Workers Free, which caps cron
-  // triggers at five per account, and all five are taken (carukesi,
-  // petanisejahtera, taniniaga, zvarashop, zanobyshop). This store has no
-  // traffic and no outbox yet, so it is one of the two that can wait — the
-  // other is skincarebpom, which released its slot the same way. Restoring it
-  // after a Workers Paid upgrade is uncommenting one line; note that wrangler
-  // only updates the triggers it is given, so a previously registered schedule
-  // also has to be cleared through the schedules API.
-  // "triggers": { "crons": ["7 * * * *"] },
+  // Registered 2026-08-29, using the slot taniniaga released — this store has
+  // live COD orders that were stuck undispatched with maintenance dormant.
+  // Account is still on Workers Free (5-cron cap): carukesi, petanisejahtera,
+  // zvarashop, zanobyshop, and now permatamall hold the five slots.
+  "triggers": { "crons": ["7 * * * *"] },
 
 
   "assets": {
