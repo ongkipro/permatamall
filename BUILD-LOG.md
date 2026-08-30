@@ -4625,3 +4625,69 @@ again returned `200`.
   7. **Canonical Form Locking:** Form container locked with default product page padding `p-2` (8px), matching `/produk/[slug].astro`.
   8. **Core Web Vitals & PageSpeed:** LCP hero preload in `<head>`, explicit image dimensions (CLS = 0), all assets WebP compressed in R2 with immutable caching.
 - **Evidence.** `npm test` 590/590 passing, `npm run check` 402 files clean with 0 errors/0 warnings/0 hints, `npm run build` server bundle built in ~8s, and Cloudflare Workers production deploy verified live at `https://permatamall.shop/ken-total`.
+
+### Entry 90: CAPI outbox 97.6% failure diagnosed to a wrong token, and the browser Purchase signal loss it was masking
+
+**Date:** 2026-08-31 · **Release:** 1.4.0 · **Tasks:** none logged upstream (adopted from product `92ffde1`, A-182..A-209)
+
+- **Why.** The operator saw a CAPI failure indicator in the dashboard. `capi_event_outbox`
+  held 334 rows: 131 `failed`, 195 `pending` (up to 12 retries each, cron now
+  hourly), 8 `sent`. Every failure carried the same Meta Graph API error:
+  `(#100) Object with ID '511101804635811' does not exist, cannot be loaded due
+  to missing permissions...`.
+- **Diagnosed, not guessed.** Read-only `debug_token` and pixel-info calls
+  against the stored `meta_capi_token` (value never printed or persisted
+  anywhere outside the store's own D1) showed the token's only scope is
+  `read_ads_dataset_quality` — a diagnostic, read-only permission that cannot
+  write events to any pixel — and its `granular_scopes.target_ids` never
+  included `511101804635811`. The token was generated through Meta's
+  "Conversions API Application" quick-connect app rather than
+  Events Manager → the pixel's own Settings → Conversions API → Generate
+  access token. A replacement token from the operator reproduced the identical
+  failure (different `issued_at`, same wrong scope and target set) — the
+  generation method, not the specific token, is the defect. Unresolved: the
+  operator still needs to generate a token the correct way.
+- **Found while auditing the tracking chain the ticket also asked about.**
+  Comparing against `product/main` (5 commits ahead of what this install last
+  adopted at 1.4.0/`6130a2d`) surfaced a real, upstream-fixed, upstream-tested
+  browser-side signal loss independent of the token problem: `fbq('init', id,
+  advancedMatching)` is honoured exactly once per pixel id by `fbevents.js` —
+  every later call is discarded in silence, not merged. `MetaThanksTracker`,
+  `form-hybrid.ts` and `form-middle.ts` each called `fbq('init')` a second time
+  once they knew the buyer's phone/name/address, behind `MetaPixelBase`'s own
+  bootstrap init. Verified upstream against the live library: the browser
+  Purchase matched on one key (`external_id`) where the server CAPI leg matched
+  on eight. Three more real losses were bundled in the same upstream fix:
+  the headless `/api/v1/tracking/events` Purchase never reached Meta at all
+  (`resolveMetaEventId` needs `customData.orderNumber`, the route never set it,
+  so every call failed closed while answering `200 { queued: true }`); a bare
+  `?utm_source=` link overwrote a stored `gclid` instead of merging, erasing
+  attribution for a COD sale confirmed days later; and `getStorefrontProduct`
+  ran the throwing `catalogProductId` inside a `.find` over every product, so
+  one legacy-format row would 500 the product page, every landing page, every
+  form route, `/api/form-config` and `/api/v1/products/<slug>` — not just its
+  own page. Both catalog feeds had the same throw-kills-everything shape.
+- **Adopted, not reinvented.** Pulled the verified fix set for exactly this
+  surface from `product/main` (28 files: the tracking components, both form
+  scripts, `/thanks`, `/full-form`, `/hybrid-form`, `/middle-form`,
+  `/produk/[slug]`, `submit-order`, `/api/meta-event` (now rate-limited,
+  60/min/IP — it was the one public POST with none), `/api/v1/tracking/events`,
+  `/api/form-config`, `catalog.ts`, `catalog-feed.ts`, `click-ids.ts`,
+  `middleware.ts`, `autolaris-payment.ts`, the new `meta-purchase-order.ts`,
+  `paid-order-purchase.ts`, `env.ts` (`maskSecretValue` no longer discloses
+  most of a short secret), `ProductForm.tsx`, plus their tests). Deliberately
+  **not** adopted: migration `0051` and the typed-landing-section editor
+  feature the same upstream commit carries — unrelated to this ticket and out
+  of scope for a same-day fix while ads are live. `src/lib/system-precision.test.ts`
+  was reverted to this install's own version for that reason (it asserts a
+  `content_config` field only the unadopted feature defines).
+- **Evidence.** `npm test` 604/604 (591 baseline + 13 from the adopted files,
+  `system-precision.test.ts` kept at its pre-adoption content), `npm run check`
+  417 files / 0 errors, `npm run build` complete, Cloudflare deploy verified
+  (`888703e0`). Live smoke after deploy: all 10 Carukési landing pages,
+  `ken-total`, `/thanks`, `/payment`, `/hybrid-form`, `/middle-form`,
+  `/full-form`, `/produk/<slug>`, `/api/form-config`, and both catalog feeds
+  answered 200 with the expected body shape. Not verified: no live Meta event
+  was sent end-to-end, because the CAPI token is still the wrong grant —
+  browser/CAPI matching-quality improvement is real in the code but unobserved
+  in Meta's own reporting until the operator replaces the token correctly.
