@@ -89,6 +89,8 @@ export type OrderItem = {
    * cope rather than trusting a field that may not be there.
    */
   paymentInstructionStatus?: string;
+  /** Latest AutoLaris `channel_code` (e.g. "VABCA", "QRIS") — absent for COD. */
+  paymentChannelCode?: string;
   shippingStatus: string;
   courierCode: string;
   cnoteNo: string;
@@ -122,6 +124,7 @@ type OrderRow = {
   payment_method: string;
   payment_status: string;
   payment_instruction_status?: string | null;
+  payment_channel_code?: string | null;
   shipping_status: string;
   courier_code: string | null;
   cnote_no: string | null;
@@ -179,6 +182,7 @@ const mapOrder = (row: OrderRow): OrderItem => ({
   paymentMethod: row.payment_method,
   paymentStatus: row.payment_status,
   paymentInstructionStatus: row.payment_instruction_status || "",
+  paymentChannelCode: row.payment_channel_code || "",
   shippingStatus: row.shipping_status,
   courierCode: row.courier_code || "",
   cnoteNo: row.cnote_no || "",
@@ -393,6 +397,32 @@ const paymentMethodLabels: Record<string, string> = {
   qris: "QRIS",
   invoice: "Pembayaran online",
 };
+
+// AutoLaris `channel_code` — more specific than payment_method (e.g. which
+// bank's VA), so it wins over the generic label whenever it is present.
+const paymentChannelLabels: Record<string, string> = {
+  QRIS: "QRIS",
+  VABCA: "VA BCA",
+  VAMANDIRI: "VA Mandiri",
+  VABNI: "VA BNI",
+  VABRI: "VA BRI",
+  VAPERMATA: "VA Permata",
+  VABSI: "VA BSI",
+  VACIMB: "VA CIMB",
+  VADANAMON: "VA Danamon",
+};
+
+function paymentMethodWord(order: {
+  paymentMethod: string;
+  paymentChannelCode?: string;
+}): string {
+  if (order.paymentChannelCode) {
+    return (
+      paymentChannelLabels[order.paymentChannelCode] || order.paymentChannelCode
+    );
+  }
+  return paymentMethodLabels[order.paymentMethod] || order.paymentMethod;
+}
 
 const formatCurrency = formatIdr;
 const formatDateTime = (value: string) => {
@@ -1463,6 +1493,9 @@ export function OrdersTable({ initialOrders }: { initialOrders?: OrderItem[] }) 
                       <PaymentBadge status={order.paymentStatus} />
                       <InstructionHint order={order} />
                     </div>
+                    <p className="mt-1 text-[11px] font-bold text-slate-500">
+                      {paymentMethodWord(order)}
+                    </p>
                   </div>
                   <div>
                     <p className="text-slate-500">Pengiriman</p>
@@ -1638,8 +1671,7 @@ export function OrdersTable({ initialOrders }: { initialOrders?: OrderItem[] }) 
                         <PaymentBadge status={order.paymentStatus} />
                         <InstructionHint order={order} />
                         <span className="text-[10px] font-bold text-slate-500">
-                          {paymentMethodLabels[order.paymentMethod] ||
-                            order.paymentMethod}
+                          {paymentMethodWord(order)}
                         </span>
                       </div>
                       <p className="mt-2 font-black text-slate-900">

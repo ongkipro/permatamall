@@ -96,6 +96,13 @@ if (database?.prepare) {
             ORDER BY pt.id DESC
             LIMIT 1
           ), '') AS paymentInstructionStatus,
+          COALESCE((
+            SELECT channel_code
+            FROM payment_transactions
+            WHERE payment_transactions.order_id = orders.id
+            ORDER BY payment_transactions.id DESC
+            LIMIT 1
+          ), '') AS paymentChannelCode,
           COALESCE(orders.receiver_rts_score, -1) AS receiverDeliveryRate,
           CASE
             WHEN UPPER(COALESCE(orders.rts_risk_label, '')) LIKE '%HIGH%' THEN 'HIGH'
