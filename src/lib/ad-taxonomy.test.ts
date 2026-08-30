@@ -26,6 +26,17 @@ test("automatically classifies herbal stamina products to Google Category ID 642
   assert.equal(result.productType, "Kesehatan > Suplemen Herbal");
 });
 
+test("automatically classifies a topical muscle/joint relief gel to Google Category ID 5848, not Skin Care", () => {
+  const result = getAdTaxonomy("Umum", "Carukési Relaxing Gel 50g", "Gel pereda nyeri otot dan sendi, sensasi hangat");
+  assert.equal(result.googleCategoryId, 5848);
+  assert.equal(
+    result.googleCategoryName,
+    "Health & Beauty > Health Care > First Aid > Hot & Cold Therapies > Heat Rubs",
+  );
+  assert.equal(result.metaCategoryName, "Health & Beauty > Health Care > First Aid > Hot & Cold Therapies");
+  assert.equal(result.productType, "Kesehatan > Pereda Nyeri Otot & Sendi");
+});
+
 test("automatically classifies kitchen sharpening tools to Google Category ID 1630", () => {
   const result = getAdTaxonomy("Perkakas", "Pengasah Pisau Portable", "Alat asahan pisau dapur serbaguna");
   assert.equal(result.googleCategoryId, 1630);

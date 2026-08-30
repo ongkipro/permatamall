@@ -85,6 +85,17 @@ const TAXONOMY_RULES: TaxonomyRule[] = [
     ],
   },
   {
+    id: 5848,
+    googlePath: "Health & Beauty > Health Care > First Aid > Hot & Cold Therapies > Heat Rubs",
+    metaPath: "Health & Beauty > Health Care > First Aid > Hot & Cold Therapies",
+    productType: "Kesehatan > Pereda Nyeri Otot & Sendi",
+    keywords: [
+      "relaxing gel", "gel pereda nyeri", "pereda nyeri", "pegal linu", "otot dan sendi",
+      "nyeri otot", "nyeri sendi", "pegal otot", "balsem", "counterpain", "sensasi hangat",
+      "asam urat", "rematik", "keseleo", "kesemutan", "linu"
+    ],
+  },
+  {
     id: 1604,
     googlePath: "Apparel & Accessories > Clothing",
     metaPath: "Apparel & Accessories > Clothing",
