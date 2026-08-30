@@ -12,6 +12,7 @@ import {
   resolveFormModeContext,
 } from '../lib/form-mode';
 import { getRuntimeEnv } from '../lib/env';
+import { getTestimonialsForLanding } from '../data/carukesi-testimonials';
 import '../styles/form-hybrid.css';
 import '../styles/landing-pages/landing.css';
 
@@ -45,6 +46,7 @@ const tidurBuyers = [
   { name: 'Pak Sukardi', location: 'Malang', time: '17 menit lalu' },
 ];
 
+const testimonials = getTestimonialsForLanding(['faridah', 'harun', 'yanto']);
 const sectionTitle = 'text-[clamp(22px,6.8vw,26px)] font-black text-slate-950 tracking-tight leading-[1.2]';
 const sectionLead = 'text-[13.5px] text-slate-600 leading-relaxed mt-2 max-w-[420px] mx-auto';
 ---
@@ -77,7 +79,7 @@ const sectionLead = 'text-[13.5px] text-slate-600 leading-relaxed mt-2 max-w-[42
         <span class="text-slate-100">DISKON {discount}%</span>
       </div>
       <div class="flex items-center gap-1 text-[10.5px] font-bold text-white bg-blue-800/90 px-2.5 py-0.5 rounded-full border border-blue-600/60 shadow-xs">
-        <Icon name="truck" class="h-3 w-3 text-amber-300" />
+        <Icon name="truck" class="h-3 w-3 text-amber-300 shrink-0" />
         <span>BISA COD</span>
       </div>
     </header>
@@ -96,17 +98,17 @@ const sectionLead = 'text-[13.5px] text-slate-600 leading-relaxed mt-2 max-w-[42
         </p>
 
         <!-- Star Rating Social Proof -->
-        <div class="mt-3.5 flex items-center justify-center gap-1.5 text-[12.5px] font-extrabold text-slate-800">
-          <div class="flex items-center gap-0.5" aria-label="Rating 5 dari 5 bintang">
-            <svg class="h-4 w-4 fill-amber-400 text-amber-400" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
-            <svg class="h-4 w-4 fill-amber-400 text-amber-400" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
-            <svg class="h-4 w-4 fill-amber-400 text-amber-400" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
-            <svg class="h-4 w-4 fill-amber-400 text-amber-400" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
-            <svg class="h-4 w-4 fill-amber-400 text-amber-400" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+        <div class="mt-3.5 flex flex-wrap items-center justify-center gap-x-2 gap-y-1 text-[12px] sm:text-[12.5px] font-extrabold text-slate-800">
+          <div class="flex items-center gap-0.5 shrink-0" aria-label="Rating 5 dari 5 bintang">
+            <svg class="h-3.5 w-3.5 sm:h-4 sm:w-4 fill-amber-400 text-amber-400 shrink-0" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+            <svg class="h-3.5 w-3.5 sm:h-4 sm:w-4 fill-amber-400 text-amber-400 shrink-0" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+            <svg class="h-3.5 w-3.5 sm:h-4 sm:w-4 fill-amber-400 text-amber-400 shrink-0" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+            <svg class="h-3.5 w-3.5 sm:h-4 sm:w-4 fill-amber-400 text-amber-400 shrink-0" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+            <svg class="h-3.5 w-3.5 sm:h-4 sm:w-4 fill-amber-400 text-amber-400 shrink-0" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
           </div>
-          <span class="text-slate-900 font-bold">4.9 / 5.0</span>
-          <span class="text-slate-400">•</span>
-          <span class="text-slate-600 font-medium">(2.580+ Pria &amp; Wanita Tidur Nyenyak)</span>
+          <span class="text-slate-900 font-bold whitespace-nowrap">4.9 / 5.0</span>
+          <span class="text-slate-400 shrink-0">•</span>
+          <span class="text-slate-600 font-medium whitespace-nowrap text-center">(2.580+ Pria &amp; Wanita Tidur Nyenyak)</span>
         </div>
       </div>
 
@@ -117,30 +119,31 @@ const sectionLead = 'text-[13.5px] text-slate-600 leading-relaxed mt-2 max-w-[42
           alt="Carukési Relaxing Gel Solusi Tidur Nyenyak Bebas Nyeri Sendi"
           class="h-full w-full object-cover block"
           loading="eager"
+          fetchpriority="high"
           decoding="async"
           width="480"
-          height="480"
+          height="384"
         />
-        <div class="absolute bottom-0 left-0 right-0 bg-slate-950/85 px-4 py-2.5 text-center backdrop-blur-xs">
-          <p class="text-[12.5px] font-bold text-amber-300 flex items-center justify-center gap-1.5">
-            <Icon name="sparkles" class="h-4 w-4 text-amber-300 shrink-0" />
-            <span>Kehangatan Menenangkan Untuk Tidur Pulas Sampai Pagi</span>
+        <div class="absolute bottom-0 inset-x-0 bg-gradient-to-t from-slate-950/95 via-slate-950/80 to-transparent px-3 pt-6 pb-2.5 text-center backdrop-blur-xs">
+          <p class="text-[11.5px] sm:text-[12.5px] font-extrabold text-amber-300 flex items-center justify-center gap-1.5 leading-snug px-1">
+            <Icon name="sparkles" class="h-3.5 w-3.5 sm:h-4 sm:w-4 text-amber-300 shrink-0" />
+            <span class="text-center">Kehangatan Menenangkan Untuk Tidur Pulas Sampai Pagi</span>
           </p>
         </div>
       </div>
 
       <!-- Horizontal Trust Row -->
-      <div class="mt-5 flex justify-center gap-4 px-4 text-slate-700">
-        <span class="inline-flex items-center gap-1.5 text-[12px] font-bold text-slate-800">
-          <Icon name="truck" class="h-4 w-4 text-[#0B1E40]" />
+      <div class="mt-5 flex flex-wrap items-center justify-center gap-x-4 gap-y-2 px-3 text-slate-700">
+        <span class="inline-flex items-center gap-1.5 text-[11.5px] sm:text-[12px] font-bold text-slate-800 whitespace-nowrap">
+          <Icon name="truck" class="h-4 w-4 text-[#0B1E40] shrink-0" />
           Bisa COD
         </span>
-        <span class="inline-flex items-center gap-1.5 text-[12px] font-bold text-slate-800">
-          <Icon name="lock-keyhole" class="h-4 w-4 text-[#0B1E40]" />
+        <span class="inline-flex items-center gap-1.5 text-[11.5px] sm:text-[12px] font-bold text-slate-800 whitespace-nowrap">
+          <Icon name="lock-keyhole" class="h-4 w-4 text-[#0B1E40] shrink-0" />
           Privasi 100%
         </span>
-        <span class="inline-flex items-center gap-1.5 text-[12px] font-bold text-slate-800">
-          <Icon name="shield-check" class="h-4 w-4 text-[#0B1E40]" />
+        <span class="inline-flex items-center gap-1.5 text-[11.5px] sm:text-[12px] font-bold text-slate-800 whitespace-nowrap">
+          <Icon name="shield-check" class="h-4 w-4 text-[#0B1E40] shrink-0" />
           Resmi BPOM
         </span>
       </div>
@@ -149,7 +152,7 @@ const sectionLead = 'text-[13.5px] text-slate-600 leading-relaxed mt-2 max-w-[42
       <div class="mt-6 px-5 text-left space-y-3.5">
         <div class="flex items-start gap-3">
           <span class="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-700 mt-0.5">
-            <Icon name="check" class="h-3.5 w-3.5" />
+            <Icon name="check" class="h-3.5 w-3.5 shrink-0" />
           </span>
           <div>
             <h3 class="text-[14.5px] font-bold text-slate-950">Tidur Pulas Tanpa Sekalipun Terbangun</h3>
@@ -159,7 +162,7 @@ const sectionLead = 'text-[13.5px] text-slate-600 leading-relaxed mt-2 max-w-[42
 
         <div class="flex items-start gap-3">
           <span class="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-700 mt-0.5">
-            <Icon name="check" class="h-3.5 w-3.5" />
+            <Icon name="check" class="h-3.5 w-3.5 shrink-0" />
           </span>
           <div>
             <h3 class="text-[14.5px] font-bold text-slate-950">Bangun Subuh Tubuh Segar &amp; Kepala Ringan</h3>
@@ -169,7 +172,7 @@ const sectionLead = 'text-[13.5px] text-slate-600 leading-relaxed mt-2 max-w-[42
 
         <div class="flex items-start gap-3">
           <span class="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-700 mt-0.5">
-            <Icon name="check" class="h-3.5 w-3.5" />
+            <Icon name="check" class="h-3.5 w-3.5 shrink-0" />
           </span>
           <div>
             <h3 class="text-[14.5px] font-bold text-slate-950">Bebas Obat Tidur Kimia yang Bikin Ketergantungan</h3>
@@ -179,7 +182,7 @@ const sectionLead = 'text-[13.5px] text-slate-600 leading-relaxed mt-2 max-w-[42
 
         <div class="flex items-start gap-3">
           <span class="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-700 mt-0.5">
-            <Icon name="check" class="h-3.5 w-3.5" />
+            <Icon name="check" class="h-3.5 w-3.5 shrink-0" />
           </span>
           <div>
             <h3 class="text-[14.5px] font-bold text-slate-950">Aroma Aromaterapi Lembut &amp; Menenangkan</h3>
@@ -190,19 +193,32 @@ const sectionLead = 'text-[13.5px] text-slate-600 leading-relaxed mt-2 max-w-[42
     </section>
 
     <!-- ═══ 3. PROBLEM AGITATION SECTION (FLUID LIST) ═══ -->
-    <section class="border-t border-slate-100 bg-red-50/35 px-5 py-10">
-      <span class="mb-2 block text-[11px] font-bold uppercase tracking-[0.2em] text-red-600">Siklus Buruk Insomnia</span>
-      <h2 class={`${sectionTitle} mt-1`}>
-        Apakah Malam Anda Dihantui <span class="box-decoration-clone rounded-[0.18em] bg-[#0B1E40] px-2 py-0.5 text-white">Siksaan Nyeri Ini?</span>
-      </h2>
-      <p class={`${sectionLead} text-left`}>
-        Kurang tidur akibat menahan sakit sendi dapat merusak daya tahan tubuh dan memicu komplikasi tekanan darah tinggi!
-      </p>
+    <section class="border-t border-slate-100 bg-red-50/35 pt-10 pb-10">
+      <div class="px-5">
+        <span class="mb-2 block text-[11px] font-bold uppercase tracking-[0.2em] text-red-600">Siklus Buruk Insomnia</span>
+        <h2 class={`${sectionTitle} mt-1`}>
+          Apakah Malam Anda Dihantui <span class="box-decoration-clone rounded-[0.18em] bg-[#0B1E40] px-2 py-0.5 text-white">Siksaan Nyeri Ini?</span>
+        </h2>
+        <p class={`${sectionLead} text-left`}>
+          Kurang tidur akibat menahan sakit sendi dapat merusak daya tahan tubuh dan memicu komplikasi tekanan darah tinggi!
+        </p>
+      </div>
 
-      <div class="mt-7 space-y-4">
-        <div class="flex gap-3.5 items-start">
+      <!-- Full-Width Problem Infographic -->
+      <div class="mt-6 w-full overflow-hidden mb-6 shadow-2xs">
+        <img
+          src="/images/landing/carukesi-assets/peta-titik-inflamasi-neuralgia-tulang-belakang-dan-sendi-targeted-relief-carukesi.webp"
+          alt="Peta Titik Inflamasi Neuralgia Tulang Belakang dan Sendi Tubuh"
+          class="w-full h-auto block"
+          loading="lazy"
+          decoding="async"
+        />
+      </div>
+
+      <div class="px-5 space-y-3.5">
+        <div class="flex gap-3 items-start">
           <span class="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-red-100 text-red-700 mt-0.5">
-            <Icon name="x" class="h-3.5 w-3.5" />
+            <Icon name="x" class="h-3.5 w-3.5 shrink-0" />
           </span>
           <div>
             <h3 class="text-[15px] font-bold text-slate-900">Terbangun Jam 2 Pagi Menahan Sendi Cenat-Cenut</h3>
@@ -210,9 +226,9 @@ const sectionLead = 'text-[13.5px] text-slate-600 leading-relaxed mt-2 max-w-[42
           </div>
         </div>
 
-        <div class="flex gap-3.5 items-start">
+        <div class="flex gap-3 items-start">
           <span class="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-red-100 text-red-700 mt-0.5">
-            <Icon name="x" class="h-3.5 w-3.5" />
+            <Icon name="x" class="h-3.5 w-3.5 shrink-0" />
           </span>
           <div>
             <h3 class="text-[15px] font-bold text-slate-900">Gelisah Bolak-Balik Posisi Tidur Tapi Tetap Sakit</h3>
@@ -220,9 +236,9 @@ const sectionLead = 'text-[13.5px] text-slate-600 leading-relaxed mt-2 max-w-[42
           </div>
         </div>
 
-        <div class="flex gap-3.5 items-start">
+        <div class="flex gap-3 items-start">
           <span class="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-red-100 text-red-700 mt-0.5">
-            <Icon name="x" class="h-3.5 w-3.5" />
+            <Icon name="x" class="h-3.5 w-3.5 shrink-0" />
           </span>
           <div>
             <h3 class="text-[15px] font-bold text-slate-900">Bangun Pagi Badan Lemas &amp; Kepala Pusing Berat</h3>
@@ -230,9 +246,9 @@ const sectionLead = 'text-[13.5px] text-slate-600 leading-relaxed mt-2 max-w-[42
           </div>
         </div>
 
-        <div class="flex gap-3.5 items-start">
+        <div class="flex gap-3 items-start">
           <span class="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-red-100 text-red-700 mt-0.5">
-            <Icon name="x" class="h-3.5 w-3.5" />
+            <Icon name="x" class="h-3.5 w-3.5 shrink-0" />
           </span>
           <div>
             <h3 class="text-[15px] font-bold text-slate-900">Ketergantungan Obat Penenang &amp; Pereda Nyeri</h3>
@@ -251,16 +267,29 @@ const sectionLead = 'text-[13.5px] text-slate-600 leading-relaxed mt-2 max-w-[42
     </section>
 
     <!-- ═══ 4. THE SOLUTION & MECHANISM ═══ -->
-    <section class="border-t border-slate-100 bg-white px-5 py-10 text-center">
-      <span class="mb-2 block text-[11px] font-bold uppercase tracking-[0.2em] text-[#0B1E40]">Mekanisme Kerja</span>
-      <h2 class={`${sectionTitle} mt-1`}>
-        Bagaimana Carukési Menghadirkan Tidur Nyenyak?
-      </h2>
-      <p class={`${sectionLead} text-center`}>
-        Formula gel mikro transparan menyerap (*Fast Absorbing*) langsung merileksasi saraf pemicu nyeri.
-      </p>
+    <section class="border-t border-slate-100 bg-white pt-10 pb-10 text-center">
+      <div class="px-5">
+        <span class="mb-2 block text-[11px] font-bold uppercase tracking-[0.2em] text-[#0B1E40]">Mekanisme Kerja</span>
+        <h2 class={`${sectionTitle} mt-1`}>
+          Bagaimana Carukési Menghadirkan Tidur Nyenyak?
+        </h2>
+        <p class={`${sectionLead} text-center`}>
+          Formula gel mikro transparan menyerap (*Fast Absorbing*) langsung merileksasi saraf pemicu nyeri.
+        </p>
+      </div>
 
-      <div class="mt-8 space-y-6 text-left">
+      <!-- Full-Width Solution Infographic -->
+      <div class="mt-6 w-full overflow-hidden mb-6 shadow-2xs">
+        <img
+          src="/images/landing/carukesi-assets/terapi-saraf-tulang-belakang-meradang-dengan-ekstrak-herbal-eucalyptus-carukesi.webp"
+          alt="Terapi Saraf Tulang Belakang Meradang dan Leher dengan Ekstrak Herbal Carukesi"
+          class="w-full h-auto block"
+          loading="lazy"
+          decoding="async"
+        />
+      </div>
+
+      <div class="px-5 mt-7 space-y-5 text-left">
         <div class="flex items-start gap-4">
           <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#0B1E40] text-white font-black text-[14px]">
             01
@@ -351,8 +380,8 @@ const sectionLead = 'text-[13.5px] text-slate-600 leading-relaxed mt-2 max-w-[42
       </div>
 
       <!-- Integrated Comparison Rows -->
-      <div class="px-5 grid grid-cols-2 gap-3 text-left text-[12.5px]">
-        <div class="p-3.5 rounded-lg bg-red-50/60 border-l-2 border-red-500">
+      <div class="px-5 grid grid-cols-2 gap-2.5 sm:gap-3 text-left text-[12px] sm:text-[12.5px]">
+        <div class="p-3 sm:p-3.5 rounded-lg bg-red-50/60 border-l-2 border-red-500">
           <p class="font-bold text-red-700 uppercase tracking-wider mb-2">❌ SEBELUM OLES</p>
           <ul class="space-y-1.5 text-slate-700 leading-relaxed font-medium">
             <li>• Terbangun jam 2 pagi ngilu</li>
@@ -361,7 +390,7 @@ const sectionLead = 'text-[13.5px] text-slate-600 leading-relaxed mt-2 max-w-[42
             <li>• Bangun pagi badan lemas</li>
           </ul>
         </div>
-        <div class="p-3.5 rounded-lg bg-emerald-50/70 border-l-2 border-emerald-600">
+        <div class="p-3 sm:p-3.5 rounded-lg bg-emerald-50/70 border-l-2 border-emerald-600">
           <p class="font-bold text-emerald-800 uppercase tracking-wider mb-2">✅ SETELAH OLES</p>
           <ul class="space-y-1.5 text-slate-900 font-bold leading-relaxed">
             <li>• Tidur pulas sampai Subuh</li>
@@ -373,8 +402,8 @@ const sectionLead = 'text-[13.5px] text-slate-600 leading-relaxed mt-2 max-w-[42
       </div>
     </section>
 
-    <!-- ═══ 7. REAL UNBOXING PRODUCT SHOWCASE (FULL WIDTH) ═══ -->
-    <section class="border-t border-slate-100 bg-slate-50/50 pt-10 pb-10 text-center">
+    <!-- ═══ 7. REAL UNBOXING PRODUCT SHOWCASE (3:2 RATIO & COMPACT UI) ═══ -->
+    <section class="border-t border-slate-100 bg-slate-50/70 pt-10 pb-10 text-center">
       <div class="px-5">
         <span class="mb-2 block text-[11px] font-bold uppercase tracking-[0.2em] text-[#0B1E40]">Kemasan Asli</span>
         <h2 class={`${sectionTitle} mt-1`}>
@@ -385,14 +414,47 @@ const sectionLead = 'text-[13.5px] text-slate-600 leading-relaxed mt-2 max-w-[42
         </p>
       </div>
 
-      <div class="mt-6 w-full overflow-hidden">
+      <!-- 3:2 Aspect Ratio Edge-to-Edge Container with Micro Highlights -->
+      <div class="mt-6 relative w-full overflow-hidden aspect-[3/2] bg-slate-100 shadow-2xs">
         <img
           src="/images/landing/carukesi-tidur-nyenyak-bebas-ngilu/real-duo.webp"
           alt="Foto Asli Kemasan Carukési Relaxing Gel"
-          class="w-full h-auto block"
+          class="h-full w-full object-cover block"
           loading="lazy"
           decoding="async"
+          width="480"
+          height="320"
         />
+        <!-- Bottom Overlay Badge for Trust & Clarity -->
+        <div class="absolute bottom-0 inset-x-0 bg-gradient-to-t from-slate-950/90 via-slate-950/50 to-transparent px-4 pt-6 pb-2.5 text-center">
+          <div class="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-[11.5px] font-bold text-white">
+            <span class="inline-flex items-center gap-1 text-amber-300 whitespace-nowrap">
+              <Icon name="shield-check" class="h-3.5 w-3.5 shrink-0" />
+              <span>BPOM TR. 200094363</span>
+            </span>
+            <span class="text-slate-400 hidden xs:inline">•</span>
+            <span class="inline-flex items-center gap-1 text-slate-100 whitespace-nowrap">
+              <Icon name="package" class="h-3.5 w-3.5 text-blue-400 shrink-0" />
+              <span>Isi Bersih 50 Gram</span>
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 3 Compact Product Feature Pills -->
+      <div class="mt-5 px-5 grid grid-cols-3 gap-2 text-center">
+        <div class="rounded-lg bg-white p-2.5 border border-slate-200/80 shadow-2xs">
+          <p class="text-[10px] font-extrabold uppercase text-[#0B1E40] tracking-wider">Formula</p>
+          <p class="text-[12px] font-bold text-slate-900 mt-0.5">Gel Bening</p>
+        </div>
+        <div class="rounded-lg bg-white p-2.5 border border-slate-200/80 shadow-2xs">
+          <p class="text-[10px] font-extrabold uppercase text-[#0B1E40] tracking-wider">Keamanan</p>
+          <p class="text-[12px] font-bold text-slate-900 mt-0.5">Flip-Top Seal</p>
+        </div>
+        <div class="rounded-lg bg-white p-2.5 border border-slate-200/80 shadow-2xs">
+          <p class="text-[10px] font-extrabold uppercase text-[#0B1E40] tracking-wider">Kenyamanan</p>
+          <p class="text-[12px] font-bold text-slate-900 mt-0.5">Bebas Lengket</p>
+        </div>
       </div>
     </section>
 
@@ -407,12 +469,13 @@ const sectionLead = 'text-[13.5px] text-slate-600 leading-relaxed mt-2 max-w-[42
       </p>
 
       <!-- Lifestyle Testimonial Banner -->
-      <div class="w-full overflow-hidden rounded-xl mb-8 shadow-xs">
+      <div class="w-full overflow-hidden mb-8 shadow-xs">
         <img
           src="/images/landing/carukesi-tidur-nyenyak-bebas-ngilu/banner-testi-tidur.webp"
           alt="Pasangan Bahagia Bangun Tidur Pagi Hari Penuh Energi"
           class="w-full h-auto block"
           loading="lazy"
+          decoding="async"
         />
         <div class="bg-[#0B1E40] px-4 py-2.5 text-center text-white">
           <p class="text-[12px] font-bold text-amber-300">
@@ -422,111 +485,61 @@ const sectionLead = 'text-[13.5px] text-slate-600 leading-relaxed mt-2 max-w-[42
       </div>
 
       <div class="space-y-8 text-left">
-        <!-- Review 1 -->
-        <div class="space-y-3">
-          <div class="flex items-center justify-between">
-            <div class="flex items-center gap-2.5">
-              <img
-                src="/images/landing/carukesi-tidur-nyenyak-bebas-ngilu/testi-faridah.webp"
-                alt="Ibu Faridah"
-                class="h-11 w-11 rounded-full object-cover border-2 border-[#0B1E40] shrink-0"
-                loading="lazy"
-              />
-              <div>
-                <div class="flex items-center gap-1.5">
-                  <h3 class="text-[15px] font-bold text-slate-950">Ibu Faridah (51 th)</h3>
-                  <Icon name="badge-check" class="h-4 w-4 fill-blue-600 text-white" />
+        {testimonials.map((testi, idx) => (
+          <>
+            {idx > 0 && <div class="h-px bg-slate-200" />}
+            <div class="space-y-3">
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2.5">
+                  <img
+                    src={testi.avatar}
+                    alt={testi.name}
+                    class="h-11 w-11 rounded-full object-cover border-2 border-[#0B1E40] shrink-0"
+                    loading="lazy"
+                  />
+                  <div>
+                    <div class="flex items-center gap-1.5">
+                      <h3 class="text-[15px] font-bold text-slate-950">{testi.name} ({testi.age} th)</h3>
+                      <Icon name="badge-check" class="h-4 w-4 fill-blue-600 text-white shrink-0" />
+                    </div>
+                    <p class="text-[11px] text-slate-500">{testi.city} • {testi.occupation}</p>
+                  </div>
                 </div>
-                <p class="text-[11px] text-slate-500">Surakarta, Jawa Tengah • Wiraswasta</p>
+
+                <!-- 5 Filled Gold Stars -->
+                <div class="flex items-center gap-0.5" aria-label={`Rating ${testi.rating} dari 5 bintang`}>
+                  {Array.from({ length: testi.rating }).map(() => (
+                    <svg class="h-3.5 w-3.5 fill-amber-400 text-amber-400 shrink-0" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+                  ))}
+                </div>
+              </div>
+
+              {testi.quote.includes(testi.highlight) ? (
+                <p class="border-l-2 border-[#0B1E40]/30 pl-3.5 text-[14px] leading-relaxed text-slate-700 italic">
+                  "{testi.quote.split(testi.highlight)[0]}
+                  <strong class="text-slate-950 font-bold not-italic">{testi.highlight}</strong>
+                  {testi.quote.split(testi.highlight)[1]}"
+                </p>
+              ) : (
+                <p class="border-l-2 border-[#0B1E40]/30 pl-3.5 text-[14px] leading-relaxed text-slate-700 italic">
+                  "{testi.quote}"
+                </p>
+              )}
+
+              <!-- Real Usage Proof Image -->
+              <div class="mt-2.5 overflow-hidden rounded-lg border border-slate-200 shadow-2xs">
+                <img
+                  src={testi.proofImage}
+                  alt={testi.proofAlt}
+                  class="w-full h-auto block object-cover max-h-[220px]"
+                  loading="lazy"
+                  decoding="async"
+                  width="480"
+                />
               </div>
             </div>
-
-            <!-- 5 Filled Gold Stars -->
-            <div class="flex items-center gap-0.5" aria-label="Rating 5 dari 5 bintang">
-              <svg class="h-4 w-4 fill-amber-400 text-amber-400" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
-              <svg class="h-4 w-4 fill-amber-400 text-amber-400" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
-              <svg class="h-4 w-4 fill-amber-400 text-amber-400" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
-              <svg class="h-4 w-4 fill-amber-400 text-amber-400" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
-              <svg class="h-4 w-4 fill-amber-400 text-amber-400" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
-            </div>
-          </div>
-
-          <p class="border-l-2 border-[#0B1E40]/30 pl-3.5 text-[14px] leading-relaxed text-slate-700 italic">
-            "Sudah 6 bulan tiap malam menderita terbangun jam 2 atau 3 pagi karena lutut cenat-cenut hebat kedinginan. Semenjak oles Carukesi sebelum tidur, <strong class="text-slate-950 font-bold not-italic">hangatnya meresap tahan sampai pagi dan tidur nyenyak pulas tanpa sekalipun kebangun lagi.</strong> Sangat bersyukur!"
-          </p>
-        </div>
-
-        <div class="h-px bg-slate-200" />
-
-        <!-- Review 2 -->
-        <div class="space-y-3">
-          <div class="flex items-center justify-between">
-            <div class="flex items-center gap-2.5">
-              <img
-                src="/images/landing/carukesi-tidur-nyenyak-bebas-ngilu/testi-djoko.webp"
-                alt="Pak Djoko"
-                class="h-11 w-11 rounded-full object-cover border-2 border-[#0B1E40] shrink-0"
-                loading="lazy"
-              />
-              <div>
-                <div class="flex items-center gap-1.5">
-                  <h3 class="text-[15px] font-bold text-slate-950">Pak Djoko (58 th)</h3>
-                  <Icon name="badge-check" class="h-4 w-4 fill-blue-600 text-white" />
-                </div>
-                <p class="text-[11px] text-slate-500">Yogyakarta • Pensiunan Guru</p>
-              </div>
-            </div>
-
-            <!-- 5 Filled Gold Stars -->
-            <div class="flex items-center gap-0.5" aria-label="Rating 5 dari 5 bintang">
-              <svg class="h-4 w-4 fill-amber-400 text-amber-400" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
-              <svg class="h-4 w-4 fill-amber-400 text-amber-400" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
-              <svg class="h-4 w-4 fill-amber-400 text-amber-400" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
-              <svg class="h-4 w-4 fill-amber-400 text-amber-400" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
-              <svg class="h-4 w-4 fill-amber-400 text-amber-400" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
-            </div>
-          </div>
-
-          <p class="border-l-2 border-[#0B1E40]/30 pl-3.5 text-[14px] leading-relaxed text-slate-700 italic">
-            "Pinggang sering kaku terkunci kalau kena AC kamar tidur malam. Gel ini wanginya enak dan gak bikin seprai kotor berminyak, <strong class="text-slate-950 font-bold not-italic">dioles di pinggang langsung enteng dan bangun subuh badan bugar siap jalan ke masjid.</strong> Produk jempolan!"
-          </p>
-        </div>
-
-        <div class="h-px bg-slate-200" />
-
-        <!-- Review 3 -->
-        <div class="space-y-3">
-          <div class="flex items-center justify-between">
-            <div class="flex items-center gap-2.5">
-              <img
-                src="/images/landing/carukesi-tidur-nyenyak-bebas-ngilu/testi-mariani.webp"
-                alt="Ibu Mariani"
-                class="h-11 w-11 rounded-full object-cover border-2 border-[#0B1E40] shrink-0"
-                loading="lazy"
-              />
-              <div>
-                <div class="flex items-center gap-1.5">
-                  <h3 class="text-[15px] font-bold text-slate-950">Ibu Mariani (48 th)</h3>
-                  <Icon name="badge-check" class="h-4 w-4 fill-blue-600 text-white" />
-                </div>
-                <p class="text-[11px] text-slate-500">Bogor, Jawa Barat • Ibu Rumah Tangga</p>
-              </div>
-            </div>
-
-            <!-- 5 Filled Gold Stars -->
-            <div class="flex items-center gap-0.5" aria-label="Rating 5 dari 5 bintang">
-              <svg class="h-4 w-4 fill-amber-400 text-amber-400" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
-              <svg class="h-4 w-4 fill-amber-400 text-amber-400" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
-              <svg class="h-4 w-4 fill-amber-400 text-amber-400" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
-              <svg class="h-4 w-4 fill-amber-400 text-amber-400" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
-              <svg class="h-4 w-4 fill-amber-400 text-amber-400" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
-            </div>
-          </div>
-
-          <p class="border-l-2 border-[#0B1E40]/30 pl-3.5 text-[14px] leading-relaxed text-slate-700 italic">
-            "Dulu tiap malam harus minum obat pereda nyeri biar bisa tidur. Sekarang cukup oles Carukesi di lutut dan betis, <strong class="text-slate-950 font-bold not-italic">bisa tidur pules alami tanpa kimia dan ginjal lebih aman.</strong> Sudah langganan beli paket hemat 2 tube."
-          </p>
-        </div>
+          </>
+        ))}
       </div>
     </section>
 
@@ -540,7 +553,7 @@ const sectionLead = 'text-[13.5px] text-slate-600 leading-relaxed mt-2 max-w-[42
       <div class="mt-8 space-y-4 text-left">
         <div class="flex items-start gap-3.5">
           <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-[#0B1E40] mt-0.5">
-            <Icon name="lock-keyhole" class="h-4.5 w-4.5" />
+            <Icon name="lock-keyhole" class="h-4 w-4 text-[#0B1E40] shrink-0" />
           </span>
           <div>
             <h3 class="text-[15px] font-bold text-slate-950">100% Privasi Sangat Terjaga</h3>
@@ -550,7 +563,7 @@ const sectionLead = 'text-[13.5px] text-slate-600 leading-relaxed mt-2 max-w-[42
 
         <div class="flex items-start gap-3.5">
           <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-[#0B1E40] mt-0.5">
-            <Icon name="truck" class="h-4.5 w-4.5" />
+            <Icon name="truck" class="h-4 w-4 text-[#0B1E40] shrink-0" />
           </span>
           <div>
             <h3 class="text-[15px] font-bold text-slate-950">Bisa Bayar di Tempat (COD)</h3>
@@ -560,7 +573,7 @@ const sectionLead = 'text-[13.5px] text-slate-600 leading-relaxed mt-2 max-w-[42
 
         <div class="flex items-start gap-3.5">
           <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-[#0B1E40] mt-0.5">
-            <Icon name="shield-check" class="h-4.5 w-4.5" />
+            <Icon name="shield-check" class="h-4 w-4 text-[#0B1E40] shrink-0" />
           </span>
           <div>
             <h3 class="text-[15px] font-bold text-slate-950">Jaminan 100% Original BPOM</h3>
@@ -570,61 +583,72 @@ const sectionLead = 'text-[13.5px] text-slate-600 leading-relaxed mt-2 max-w-[42
       </div>
     </section>
 
-    <!-- ═══ 10. PENAWARAN KHUSUS & URGENCY PROMO (FULL WIDTH) ═══ -->
-    <section class="w-full border-y-2 border-red-500 bg-red-50/95 px-5 py-7 text-center">
-      <!-- Top: 15-Minute Countdown Bar -->
-      <div class="flex items-center justify-between border-b border-red-200/80 pb-3.5 mb-2 max-w-[440px] mx-auto">
-        <div class="flex items-center gap-1.5 text-[12px] font-black uppercase tracking-wider text-red-950">
-          <Icon name="clock" class="h-4 w-4 text-red-600 shrink-0" />
-          <span>Promo Berakhir Dalam:</span>
+    <!-- ═══ 10. PENAWARAN KHUSUS & URGENCY PROMO (FLAT MINIMALIST MODERN) ═══ -->
+    <section class="w-full border-t border-slate-100 bg-[#0B1E40] text-white px-4 sm:px-5 py-7 text-center">
+      <div class="max-w-[420px] mx-auto space-y-4">
+        
+        <!-- Top: Countdown Timer Bar (Flat Frosted Pill) -->
+        <div class="flex items-center justify-between bg-white/10 backdrop-blur-sm rounded-xl px-3.5 py-2 border border-white/15">
+          <div class="flex items-center gap-2 text-[12px] font-bold text-slate-200">
+            <Icon name="clock" class="h-4 w-4 text-amber-400 shrink-0" />
+            <span>Promo Berakhir Dalam:</span>
+          </div>
+          <div class="flex items-center gap-1.5 font-mono font-black text-[14px]">
+            <span id="countdown-minutes" class="bg-red-600 text-white px-2 py-0.5 rounded-md min-w-[28px] text-center shadow-2xs">14</span>
+            <span class="text-amber-400 font-bold">:</span>
+            <span id="countdown-seconds" class="bg-red-600 text-white px-2 py-0.5 rounded-md min-w-[28px] text-center shadow-2xs">59</span>
+          </div>
         </div>
-        <div class="flex items-center gap-1 font-mono font-black text-[15px] text-white">
-          <span id="countdown-minutes" class="bg-red-700 px-2 py-0.5 rounded shadow-xs">14</span>
-          <span class="text-red-700 font-bold">:</span>
-          <span id="countdown-seconds" class="bg-red-700 px-2 py-0.5 rounded shadow-xs">59</span>
-        </div>
-      </div>
 
-      <!-- Price & Discount Display -->
-      <div class="py-3 max-w-[440px] mx-auto">
-        <div class="inline-block bg-red-600 text-white text-[11px] font-black uppercase tracking-widest px-3.5 py-1 rounded-full mb-2.5 shadow-xs">
-          DISKON {discount}% HARI INI
-        </div>
-        <div class="flex items-baseline justify-center gap-3">
-          <span class="text-[16px] font-semibold text-slate-400 line-through">Rp{comparePrice.toLocaleString('id-ID')}</span>
-          <span class="text-[34px] font-black text-red-700 leading-none tracking-tight">Rp{Math.round(price).toLocaleString('id-ID')}</span>
-        </div>
-        <p class="mt-2.5 text-[13px] font-black text-amber-950">
-          <span class="bg-amber-200/90 px-3.5 py-1 rounded-full border border-amber-300 shadow-2xs">Beli 2 Tube Lebih Hemat Hanya Rp 148.500!</span>
-        </p>
-      </div>
+        <!-- Price & Discount Display (Flat Modern) -->
+        <div class="space-y-1.5">
+          <div class="inline-flex items-center gap-1.5 bg-red-600 text-white text-[11px] font-extrabold uppercase tracking-widest px-3 py-0.5 rounded-full shadow-2xs">
+            <Icon name="zap" class="h-3 w-3 text-amber-300 shrink-0" />
+            <span>DISKON {discount}% HARI INI</span>
+          </div>
+          
+          <div class="flex items-baseline justify-center gap-3 pt-0.5">
+            <span class="text-[15px] font-medium text-slate-400 line-through">Rp{comparePrice.toLocaleString('id-ID')}</span>
+            <span class="text-[32px] sm:text-[36px] font-black text-amber-300 tracking-tight leading-none">
+              Rp{Math.round(price).toLocaleString('id-ID')}
+            </span>
+          </div>
 
-      <!-- Urgency Live Stock Indicator -->
-      <div class="border-t border-red-200/80 pt-3.5 mt-1 max-w-[440px] mx-auto">
-        <div class="flex items-center justify-between text-[12px] font-extrabold text-slate-800 mb-2">
-          <span class="flex items-center gap-1.5 text-red-900">
-            <span class="h-2.5 w-2.5 rounded-full bg-red-600 animate-pulse"></span>
-            <span>Sisa Kuota Promo Hari Ini:</span>
-          </span>
-          <span class="font-black text-red-800 font-mono">Tersisa 7 Tube Lagi</span>
+          <div class="pt-0.5">
+            <span class="inline-block bg-white/10 text-amber-200 border border-amber-400/30 text-[12px] font-semibold px-3.5 py-1 rounded-lg">
+              ✨ Beli 2 Tube Lebih Hemat Hanya Rp 148.500
+            </span>
+          </div>
         </div>
-        <div class="w-full bg-red-200 h-2.5 rounded-full overflow-hidden">
-          <div class="bg-red-600 h-full rounded-full w-[82%]"></div>
+
+        <!-- Urgency Live Stock Indicator (Randomized 8 - 19) -->
+        <div class="space-y-1.5 pt-0.5 text-left">
+          <div class="flex items-center justify-between text-[12px] font-bold">
+            <span class="flex items-center gap-1.5 text-slate-300">
+              <span class="h-2 w-2 rounded-full bg-red-400 animate-ping shrink-0"></span>
+              <span>Sisa Kuota Promo Hari Ini:</span>
+            </span>
+            <span id="stock-count-text" class="text-amber-300 font-extrabold font-mono">Tersisa 11 Tube Lagi</span>
+          </div>
+          <div class="w-full bg-white/20 h-2 rounded-full overflow-hidden">
+            <div id="stock-progress-bar" class="bg-gradient-to-r from-amber-400 to-red-500 h-full rounded-full transition-all duration-500" style="width: 55%;"></div>
+          </div>
         </div>
+
       </div>
     </section>
 
-    <!-- ═══ 11. FORMULIR PEMESANAN RESMI (CHECKOUT) ═══ -->
-    <section id="form-pemesanan" class="bg-white px-4 pt-8 pb-4 scroll-mt-6">
-      <div class="px-2 pb-3 text-center">
+    <!-- ═══ 11. FORMULIR PEMESANAN RESMI (FULL WIDTH COMPACT CHECKOUT) ═══ -->
+    <section id="form-pemesanan" class="bg-white px-0 pt-6 pb-4 scroll-mt-6 w-full">
+      <div class="px-4 pb-2 text-center">
         <div class="inline-flex items-center gap-1 text-[11px] font-extrabold uppercase tracking-wide text-[#0B1E40] mb-1">
-          <Icon name="package" class="h-4 w-4" />
+          <Icon name="package" class="h-3.5 w-3.5 shrink-0" />
           <span>Formulir Pemesanan Resmi</span>
         </div>
-        <h2 class="text-[22px] font-black tracking-tight text-slate-950">
+        <h2 class="text-[20px] sm:text-[22px] font-black tracking-tight text-slate-950 leading-tight">
           Lengkapi Data Pengiriman
         </h2>
-        <p class="text-[13px] text-slate-600 mt-1 max-w-[360px] mx-auto leading-relaxed">
+        <p class="text-[12.5px] sm:text-[13px] text-slate-600 mt-1 max-w-[380px] mx-auto leading-relaxed">
           Pilih paket promo di bawah dan isi alamat tujuan. Bayar uang tunai saat kurir tiba di rumah (COD).
         </p>
       </div>
@@ -652,7 +676,7 @@ const sectionLead = 'text-[13.5px] text-slate-600 leading-relaxed mt-2 max-w-[42
         class="inline-flex min-h-[40px] items-center justify-center rounded-xl bg-red-600 hover:bg-red-700 px-5 text-[12px] font-black uppercase tracking-wider text-white shadow-md transition-all active:scale-[0.98]"
       >
         <span>Pesan Sekarang (COD)</span>
-        <Icon name="arrow-right" class="h-4 w-4 ml-1.5" />
+        <Icon name="arrow-right" class="h-4 w-4 ml-1.5 shrink-0" />
       </a>
     </div>
 
@@ -738,9 +762,28 @@ const sectionLead = 'text-[13.5px] text-slate-600 leading-relaxed mt-2 max-w-[42
       setInterval(updateTimer, 1000);
     }
 
+        function initStockCounter() {
+      const stockText = document.getElementById('stock-count-text');
+      const stockBar = document.getElementById('stock-progress-bar');
+      if (!stockText || !stockBar) return;
+
+      const STORAGE_KEY = 'carukesi_promo_stock_v1';
+      let stock = parseInt(sessionStorage.getItem(STORAGE_KEY) || '0', 10);
+
+      if (!stock || stock < 8 || stock > 19) {
+        stock = Math.floor(Math.random() * (19 - 8 + 1)) + 8;
+        sessionStorage.setItem(STORAGE_KEY, stock.toString());
+      }
+
+      stockText.textContent = `Tersisa ${stock} Tube Lagi`;
+      const pct = Math.min(95, Math.max(25, Math.round((stock / 22) * 100)));
+      stockBar.style.width = `${pct}%`;
+    }
+
     const initAll = () => {
       initStickyBarObserver();
       initCountdownTimer();
+      initStockCounter();
     };
 
     if (document.readyState === 'loading') {
