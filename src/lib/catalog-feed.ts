@@ -200,12 +200,24 @@ export function generateGoogleCatalogXml(
   return buildCatalogXml(products, siteOrigin, title, description, {
     channelSuffix: "Google Merchant Catalog",
     categoryXml: googleCategoryXml,
-    // `sku` is nullable and merchant-editable, so it is never the catalog id —
-    // but it is the best MPN available, and declaring no GTIN keeps Merchant
-    // Center from rejecting an item for a missing global identifier.
-    identityXml: (variant) =>
-      `\n      <g:identifier_exists>no</g:identifier_exists>` +
-      (variant.sku ? `\n      <g:mpn>${escapeXml(variant.sku)}</g:mpn>` : ""),
+    // Neither `mpn` nor `identifier_exists` is emitted, and both omissions are
+    // deliberate.
+    //
+    // `sku` was being sent as the MPN. On this catalogue that produced
+    // `<g:mpn>BELI_1_PCS</g:mpn>` — a bundle label meaning "buy 1 piece",
+    // chosen by the merchant, not a manufacturer's part number. It is not an
+    // identifier of anything.
+    //
+    // `identifier_exists=no` then contradicted the `brand` and `mpn` sent
+    // beside it. Google's own reference is explicit that the value is for
+    // products that genuinely carry no assigned identifiers, and that "products
+    // for which the identifier exists attribute is incorrectly set to no and
+    // for which there is evidence that a unique product identifier exists, will
+    // receive a warning" — evidence being exactly the brand and MPN in the same
+    // item. Omitted, it defaults to yes, which is what a branded product is.
+    //
+    // A real GTIN or manufacturer MPN, once the merchant has one, belongs here.
+    identityXml: () => "",
   });
 }
 

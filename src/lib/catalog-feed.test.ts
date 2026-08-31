@@ -121,3 +121,43 @@ test("a feed omits the ad category it cannot determine", () => {
   );
   assert.ok(known.includes("<g:google_product_category>"));
 });
+
+/**
+ * `identifier_exists=no` used to be emitted beside `brand` and an `mpn` taken
+ * from the variant SKU. Both halves were wrong.
+ *
+ * The SKU on this catalogue is a bundle label the merchant chose — `BELI_1_PCS`,
+ * "buy 1 piece" — not a manufacturer's part number, so it identified nothing.
+ * And Google's reference is explicit that `identifier_exists=no` is for products
+ * that genuinely carry no assigned identifiers: an item declaring it while also
+ * sending a brand and an MPN is the documented case that "will receive a
+ * warning". Omitting the attribute defaults it to yes, which is what a branded
+ * product is.
+ */
+test("the feed never claims a product has no identifiers while sending a brand", () => {
+  const mockProducts: CatalogProduct[] = [
+    {
+      productId: 14001,
+      slug: "bibit-sirsak",
+      productName: "Bibit Sirsak Juara",
+      category: "Pertanian",
+      heroImage: "/images/hero.jpg",
+      variants: [{ id: 10, label: "Paket 1 Batang", price: 85000, sku: "BELI_1_PCS" }],
+    },
+  ];
+
+  for (const xml of [
+    generateGoogleCatalogXml(mockProducts, "https://toko-uji.example"),
+    generateMetaCatalogXml(mockProducts, "https://toko-uji.example"),
+  ]) {
+    assert.ok(xml.includes("<g:brand>"), "a branded product still declares its brand");
+    assert.ok(
+      !xml.includes("<g:identifier_exists>"),
+      "identifier_exists must not contradict the brand in the same item",
+    );
+    assert.ok(
+      !xml.includes("<g:mpn>"),
+      "a merchant bundle label is not a manufacturer part number",
+    );
+  }
+});
