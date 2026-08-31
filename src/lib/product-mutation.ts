@@ -13,6 +13,7 @@ export type ProductMutationPayload = {
   slug?: unknown;
   category?: unknown;
   brand?: unknown;
+  description?: unknown;
   is_active?: unknown;
   image_url?: unknown;
   variants?: unknown;
@@ -88,6 +89,8 @@ type ParsedProduct = {
   category: string;
   /** Null means the feeds fall back to the store name. */
   brand: string | null;
+  /** Null keeps the synthesised fallback the feeds used before this existed. */
+  description: string | null;
   image_url: string | null;
   is_active: boolean;
   variants: ParsedVariant[];
@@ -146,6 +149,9 @@ export function parseProductMutationPayload(
   // Optional. Empty means "no brand of its own", and the feeds fall back to the
   // store name — the behaviour every install had before this column existed.
   const brand = clean(body.brand, 70);
+  // The one field both feeds read for Shopping/PMax relevance. 320 matches the
+  // presentation schema's own `seoDescription` ceiling.
+  const description = clean(body.description, 320);
   const imageUrl = clean(body.image_url, 500);
   if (
     imageUrl &&
@@ -263,6 +269,7 @@ export function parseProductMutationPayload(
     slug,
     category,
     brand: brand || null,
+    description: description || null,
     image_url: imageUrl || null,
     is_active: isActive,
     variants,

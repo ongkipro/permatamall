@@ -22,6 +22,7 @@ type ProductPayload = {
   slug: string;
   category: string;
   brand: string;
+  description: string;
   image_url: string;
   is_active: boolean;
   variants: Array<{
@@ -49,6 +50,7 @@ type ProductResponse = {
   slug: string;
   category: string | null;
   brand: string | null;
+  description: string | null;
   image_url: string | null;
   is_active: number | boolean;
   variants: ProductVariantResponse[];
@@ -77,6 +79,7 @@ export function ProductForm({ productId }: { productId?: string }) {
   const [slug, setSlug] = useState("");
   const category = "Umum";
   const [brand, setBrand] = useState("");
+  const [description, setDescription] = useState("");
   const [active, setActive] = useState(!editing);
   const [imageUrl, setImageUrl] = useState("");
   const [uploading, setUploading] = useState(false);
@@ -108,6 +111,7 @@ export function ProductForm({ productId }: { productId?: string }) {
         setTitle(product.title || "");
         setSlug(product.slug || "");
         setBrand(product.brand || "");
+        setDescription(product.description || "");
         setImageUrl(product.image_url || "");
         setActive(product.is_active !== undefined ? Boolean(product.is_active) : true);
         setVariants(
@@ -245,6 +249,7 @@ export function ProductForm({ productId }: { productId?: string }) {
       slug: slug.trim(),
       category: category.trim(),
       brand: brand.trim(),
+      description: description.trim(),
       image_url: imageUrl,
       is_active: active,
       variants: payloadVariants,
@@ -361,6 +366,25 @@ export function ProductForm({ productId }: { productId?: string }) {
                 nama toko.
               </span>
             </label>
+            <div className="md:col-span-2">
+              <label>
+                <span className="mb-1.5 block text-xs font-black text-slate-700">
+                  Deskripsi produk
+                </span>
+                <textarea
+                  maxLength={320}
+                  rows={3}
+                  value={description}
+                  onChange={(event) => setDescription(event.target.value)}
+                  placeholder="Jelaskan produknya: fungsi, kandungan utama, isi kemasan."
+                  className="admin-input-flat w-full resize-y border-slate-300 bg-slate-50 p-3 text-base shadow-none focus-visible:border-emerald-700 focus-visible:ring-emerald-700/20 md:text-sm"
+                />
+                <span className="mt-1 block text-[11px] text-slate-500">
+                  Dipakai feed Google &amp; Meta untuk mencocokkan produk dengan
+                  pencarian pembeli. Maksimal 320 karakter, tanpa ajakan membeli.
+                </span>
+              </label>
+            </div>
             <div className="md:col-span-2">
               <label
                 htmlFor="product-image"

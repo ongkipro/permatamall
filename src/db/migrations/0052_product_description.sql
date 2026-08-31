@@ -1,0 +1,18 @@
+-- Product description, for the advertising feeds.
+--
+-- Both feeds published the same sentence for every product: "Lihat pilihan
+-- varian, harga, dan ketersediaan <nama>. Detail mengikuti informasi katalog
+-- toko." That is the fallback `catalog-data.ts` synthesises when a product has
+-- no presentation content, and no install has ever had any — `storefront_content`
+-- ships empty. Google reads `description` for Shopping and PMax relevance, so
+-- every item was competing on a sentence that describes nothing.
+--
+-- The presentation content workbench can already hold a real `seoDescription`,
+-- but its schema is strict and all-or-nothing: benefits, key points, ideal-for
+-- lists and review objects are all required alongside it. Filling those in to
+-- reach one field means inventing product claims and social proof. This column
+-- is the one field the feeds actually read, editable on its own.
+--
+-- Nullable, and the resolution order is unchanged behind it, so an install that
+-- never fills this in behaves exactly as it does today.
+ALTER TABLE `products` ADD `description` text;

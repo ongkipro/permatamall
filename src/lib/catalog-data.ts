@@ -7,6 +7,8 @@ export interface CatalogProductRow {
   category?: string | null;
   /** The product's own brand. Null falls back to the store name in the feeds. */
   brand?: string | null;
+  /** Merchant-written description. Null keeps the synthesised fallback. */
+  description?: string | null;
   image_url?: string | null;
   is_active?: number | null;
   created_at?: string | null;
@@ -150,8 +152,12 @@ export function mergeStorefrontCatalog(
         headline: presentation?.headline || productName,
         subheadline: presentation?.subheadline || details.subheadline,
         seoTitle: presentation?.seoTitle || productName,
+        // Presentation content wins when an operator has authored it; the
+        // product's own column is next; the synthesised sentence is last and
+        // describes nothing, which is why the feeds were competing on it.
         seoDescription:
           presentation?.seoDescription ||
+          product.description?.trim() ||
           `Lihat pilihan varian, harga, dan ketersediaan ${productName}. Detail mengikuti informasi katalog toko.`,
         price: firstVariant.price,
         ...(firstVariant.comparePrice
