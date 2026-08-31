@@ -4849,3 +4849,48 @@ again returned `200`.
   budget is still selected and settles; a retried event reports its own time,
   including the `created_at` fallback; Purchase is ordered first), `npm run
   check` 417 files clean, build and deploy verified (`9c0858c0`).
+
+### Entry 95: The catalogue feeds stop misdescribing what they sell
+
+**Date:** 2026-09-01 · **Release:** 1.4.0 · **Migration:** 0051 · **Gap:** AD3 (half closed)
+
+- **The outbox, closed out first.** Entry 94's three fixes drained it completely:
+  **269 `sent`, zero `pending`, zero `failed`**. Every event that had been stuck
+  since the wrong-token period reached Meta, each carrying its own original
+  `event_time` rather than the retry's.
+- **`identifier_exists` contradicted the item it sat in.** Both feeds emitted
+  `identifier_exists=no` beside a `brand` and an `mpn`. Google's reference is
+  explicit that the value is for products that genuinely carry no assigned
+  identifiers, and that items "for which the identifier exists attribute is
+  incorrectly set to no and for which there is evidence that a unique product
+  identifier exists, will receive a warning" — the evidence being the brand and
+  MPN in the same item. Verified against the live documentation, not from
+  memory. The `mpn` was independently wrong: it came from the variant SKU, which
+  on this catalogue reads `BELI_1_PCS` — a bundle label meaning "buy 1 piece"
+  that the merchant chose, identifying nothing. Both attributes are now omitted;
+  `identifier_exists` defaults to yes, which is what a branded product is.
+- **`<g:brand>` named the shop, not the maker.** Every item published
+  "Permata Mall" as the brand of Carukési, He-ji and Ken+total alike, because
+  the store name was the only name the schema carried and Google matches on
+  brand. Migration 0051 adds a nullable `products.brand`, carried through
+  `product-mutation`, both admin write paths, the admin read, the catalogue
+  builder and both feeds, with a **Merek** field in the product form. Null falls
+  back to the store name, so an install that never fills it in is unchanged —
+  asserted by a test covering both absent and whitespace-only values. Deployed
+  in the safe order: remote migration first (additive, nullable, invisible to
+  the running code), then the build that reads the column.
+- **AD3's remaining half changed answer under audit.** The register asked for
+  products with no sellable variant to be retained as a stable `out_of_stock`
+  item instead of disappearing. But a product leaves the feed because
+  `getStorefrontProducts` drops it, and that same function backs
+  `/produk/<slug>` — so the page 404s at the same moment. A retained item would
+  point `<g:link>` at a 404, which is a landing-page disapproval and worse than
+  the omission it was meant to fix. Nothing was built; AD3 now records that
+  retention is a storefront decision (the page must be willing to render an
+  out-of-stock state) before it is a feed one.
+- **Evidence.** `npm test` 609/609 including two new feed fixtures — one
+  asserting neither `identifier_exists` nor `mpn` is emitted while a brand is,
+  one asserting brand precedence and both fallback cases. `npm run check` 418
+  files clean. Migration applied to production D1 and the column read back.
+  After deploy: home, the new landing page, `/produk/<slug>` and
+  `/api/form-config` all 200; both feeds publish Carukési / He-ji / Ken+total.
