@@ -161,3 +161,33 @@ test("the feed never claims a product has no identifiers while sending a brand",
     );
   }
 });
+
+/**
+ * `<g:brand>` was always the *store* name, because that was the only name the
+ * schema carried. On a single-brand store that is harmless; on a store selling
+ * Carukesi, He-ji and Ken+total it published one manufacturer for all three,
+ * and Google matches on brand. The column is nullable, so a store that never
+ * fills it in keeps exactly the behaviour it had.
+ */
+test("a product's own brand wins over the store name, and absence falls back", () => {
+  const base = {
+    slug: "gel",
+    productName: "Carukesi Relaxing Gel 50g",
+    category: "Kesehatan",
+    heroImage: "/images/hero.jpg",
+    variants: [{ id: 10, label: "1 Pcs", price: 98500 }],
+  };
+  const products: CatalogProduct[] = [
+    { ...base, productId: 14001, brand: "Carukesi" },
+    { ...base, productId: 14002, slug: "lain" },
+    { ...base, productId: 14003, slug: "kosong", brand: "   " },
+  ];
+
+  for (const xml of [
+    generateGoogleCatalogXml(products, "https://toko-uji.example", "Permata Mall"),
+    generateMetaCatalogXml(products, "https://toko-uji.example", "Permata Mall"),
+  ]) {
+    const brands = [...xml.matchAll(/<g:brand>([^<]+)<\/g:brand>/g)].map((m) => m[1]);
+    assert.deepEqual(brands, ["Carukesi", "Permata Mall", "Permata Mall"]);
+  }
+});

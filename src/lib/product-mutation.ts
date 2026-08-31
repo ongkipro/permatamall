@@ -12,6 +12,7 @@ export type ProductMutationPayload = {
   title?: unknown;
   slug?: unknown;
   category?: unknown;
+  brand?: unknown;
   is_active?: unknown;
   image_url?: unknown;
   variants?: unknown;
@@ -85,6 +86,8 @@ type ParsedProduct = {
   title: string;
   slug: string;
   category: string;
+  /** Null means the feeds fall back to the store name. */
+  brand: string | null;
   image_url: string | null;
   is_active: boolean;
   variants: ParsedVariant[];
@@ -140,6 +143,9 @@ export function parseProductMutationPayload(
   const title = capitalizeTitle(rawTitle);
   const slug = normalizeSlug(clean(body.slug, 200));
   const category = clean(body.category, 120) || "Umum";
+  // Optional. Empty means "no brand of its own", and the feeds fall back to the
+  // store name — the behaviour every install had before this column existed.
+  const brand = clean(body.brand, 70);
   const imageUrl = clean(body.image_url, 500);
   if (
     imageUrl &&
@@ -256,6 +262,7 @@ export function parseProductMutationPayload(
     title,
     slug,
     category,
+    brand: brand || null,
     image_url: imageUrl || null,
     is_active: isActive,
     variants,

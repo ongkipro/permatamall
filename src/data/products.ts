@@ -35,6 +35,12 @@ export type Product = {
   images?: string[];
   tag?: string;
   category: string;
+  /**
+   * The product's own brand, for the advertising feeds' `<g:brand>`.
+   * Absent falls back to the store name, which is what every item published
+   * before this field existed.
+   */
+  brand?: string;
   relatedCategories: string[];
   relatedTags?: string[];
   description: string;

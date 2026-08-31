@@ -1,0 +1,11 @@
+-- Product brand, for the advertising feeds.
+--
+-- Both catalog feeds sent `<g:brand>` as the *store* name, because that was the
+-- only name the schema carried. On a single-brand store that is harmless; on
+-- this one it published "Permata Mall" as the brand of Carukesi, He-ji and
+-- Ken+total alike. Google matches on brand, so every item was describing a
+-- manufacturer that does not make it.
+--
+-- Nullable, and the feed falls back to the store name when it is empty, so an
+-- install that never fills this in behaves exactly as it does today.
+ALTER TABLE `products` ADD `brand` text;

@@ -5,6 +5,8 @@ export interface CatalogProductRow {
   title: string;
   slug: string;
   category?: string | null;
+  /** The product's own brand. Null falls back to the store name in the feeds. */
+  brand?: string | null;
   image_url?: string | null;
   is_active?: number | null;
   created_at?: string | null;
@@ -160,6 +162,7 @@ export function mergeStorefrontCatalog(
         images: [image],
         tag: presentation?.tag || categoryLabel,
         category: categoryLabel,
+        brand: product.brand?.trim() || undefined,
         relatedCategories:
           presentation?.relatedCategories?.length
             ? presentation.relatedCategories

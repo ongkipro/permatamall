@@ -21,6 +21,7 @@ type ProductPayload = {
   title: string;
   slug: string;
   category: string;
+  brand: string;
   image_url: string;
   is_active: boolean;
   variants: Array<{
@@ -47,6 +48,7 @@ type ProductResponse = {
   title: string;
   slug: string;
   category: string | null;
+  brand: string | null;
   image_url: string | null;
   is_active: number | boolean;
   variants: ProductVariantResponse[];
@@ -74,6 +76,7 @@ export function ProductForm({ productId }: { productId?: string }) {
   const [title, setTitle] = useState("");
   const [slug, setSlug] = useState("");
   const category = "Umum";
+  const [brand, setBrand] = useState("");
   const [active, setActive] = useState(!editing);
   const [imageUrl, setImageUrl] = useState("");
   const [uploading, setUploading] = useState(false);
@@ -104,6 +107,7 @@ export function ProductForm({ productId }: { productId?: string }) {
       .then((product) => {
         setTitle(product.title || "");
         setSlug(product.slug || "");
+        setBrand(product.brand || "");
         setImageUrl(product.image_url || "");
         setActive(product.is_active !== undefined ? Boolean(product.is_active) : true);
         setVariants(
@@ -240,6 +244,7 @@ export function ProductForm({ productId }: { productId?: string }) {
       title: title.trim(),
       slug: slug.trim(),
       category: category.trim(),
+      brand: brand.trim(),
       image_url: imageUrl,
       is_active: active,
       variants: payloadVariants,
@@ -338,6 +343,22 @@ export function ProductForm({ productId }: { productId?: string }) {
               />
               <span className="mt-1 block text-[11px] text-slate-500">
                 Huruf kecil, angka, dan tanda hubung.
+              </span>
+            </label>
+            <label>
+              <span className="mb-1.5 block text-xs font-black text-slate-700">
+                Merek
+              </span>
+              <Input
+                maxLength={70}
+                value={brand}
+                onChange={(event) => setBrand(event.target.value)}
+                placeholder="Carukési"
+                className="admin-input-flat h-11 border-slate-300 bg-slate-50 text-base shadow-none focus-visible:border-emerald-700 focus-visible:ring-emerald-700/20 md:text-sm"
+              />
+              <span className="mt-1 block text-[11px] text-slate-500">
+                Merek produk untuk feed Google &amp; Meta. Kosongkan jika memakai
+                nama toko.
               </span>
             </label>
             <div className="md:col-span-2">
