@@ -112,4 +112,11 @@ export const nativeLandingPages: NativeLandingPage[] = [
     description: 'Landing page konversi untuk Carukési Relaxing Gel angle Nyeri Sendi Nyut-Nyutan Tengah Malam, Insomnia Nyeri & Tidur Pulas.',
     isActive: true,
   },
+  {
+    slug: 'carukesi-momen-intim-pasangan',
+    title: 'Carukési Soothing Gristle Gel — Relaksasi Pinggang, Paha & Lutut Momen Pasangan',
+    productSlug: 'soothing-gristle-gel-cream-perawatan-cream-pijat-otot-sendi',
+    description: 'Landing page konversi untuk Carukési Soothing Gristle Gel angle Momen Intim Pasangan, relaksasi pinggang cepat lelah, paha tegang & lutut kaku setelah aktivitas.',
+    isActive: true,
+  },
 ];
