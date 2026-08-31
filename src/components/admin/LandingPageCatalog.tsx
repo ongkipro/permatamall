@@ -499,6 +499,7 @@ export default function LandingPageCatalog() {
                   the track. Do not rely on either half alone. */}
               <div
                 className="grid grid-cols-1 gap-3 p-4 lg:hidden"
+                role="region"
                 aria-label="Daftar landing page mobile"
               >
                 {paginated.map((page) => {

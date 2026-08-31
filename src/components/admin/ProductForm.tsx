@@ -269,6 +269,7 @@ export function ProductForm({ productId }: { productId?: string }) {
     return (
       <div
         className="h-96 animate-pulse rounded-xl bg-slate-100"
+        role="status"
         aria-label="Memuat formulir produk"
         aria-busy="true"
       />

@@ -221,6 +221,7 @@ function LoadingState() {
   return (
     <div
       className="space-y-5"
+      role="status"
       aria-label="Memuat data pengiriman"
       aria-busy="true"
     >
@@ -851,7 +852,16 @@ export function ShippingOperations() {
           </div>
         </div>
 
-        <div id="shipping-queue-results" role="tabpanel" aria-live="polite">
+        {/* Named by the tab that selected it. Without this the panel is the one
+            half of the pattern with no name at all: the tabs already point in
+            through `aria-controls`, and a reader landing in the results has no
+            way to tell which queue it is looking at. */}
+        <div
+          id="shipping-queue-results"
+          role="tabpanel"
+          aria-labelledby={`shipping-queue-${activeQueue}`}
+          aria-live="polite"
+        >
         {filteredShipments.length === 0 ? (
           <div className="p-10 text-center">
             <PackageSearchIcon
@@ -949,6 +959,7 @@ export function ShippingOperations() {
                 the right-hand controls out of reach on mobile. */}
             <div
               className="grid grid-cols-1 gap-3 py-3 lg:hidden"
+              role="region"
               aria-label="Daftar pengiriman mobile"
             >
             {filteredShipments.map((shipment) => {
@@ -1061,6 +1072,7 @@ export function ShippingOperations() {
           </div>
           <div
             className="hidden overflow-x-auto lg:block"
+            role="region"
             aria-label="Tabel pengiriman desktop"
           >
             <Table className="min-w-[1100px]">

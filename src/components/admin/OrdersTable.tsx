@@ -478,6 +478,7 @@ function RiskBadge({
   return (
     <div
       className="min-w-36"
+      role="img"
       aria-label={
         hasValidRate
           ? `Risiko RTS ${styles.label}, tingkat keberhasilan pengiriman ${deliveryRate} persen`
@@ -1018,6 +1019,7 @@ export function OrdersTable({ initialOrders }: { initialOrders?: OrderItem[] }) 
     return (
       <div
         className="h-96 animate-pulse rounded-xl bg-slate-100"
+        role="status"
         aria-label="Memuat daftar order"
         aria-busy="true"
       />

@@ -96,6 +96,7 @@ function LoadingState() {
   return (
     <div
       className="space-y-6"
+      role="status"
       aria-label="Memuat ringkasan analitik"
       aria-busy="true"
     >

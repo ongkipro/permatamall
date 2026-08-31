@@ -4766,3 +4766,38 @@ again returned `200`.
   class, layout, or visible-text edit anywhere in the diff — confirmed live
   on `/carukesi-nyeri-sendi-lutut`: the exact flagged element now serves
   `role="img" aria-label="Rating 5 dari 5 bintang"`.
+
+### Entry 93: Entry 92's sweep was line-based, so it missed every multi-line JSX site
+
+**Date:** 2026-08-31 · **Release:** 1.4.0
+
+- **Why.** Entry 92 claimed the tree had been swept. It had not. The sweep was
+  `grep '<div[^>]*aria-label='`, which only matches when the attribute sits on
+  the same physical line as the tag — true of the Astro markup that was
+  reported, false of most React JSX, where Prettier puts each attribute on its
+  own line. Ten more sites were sitting in exactly the blind spot the tool
+  created, and re-running the same grep would have kept reporting clean
+  forever. Re-swept with a tag-aware parse (`re.finditer` over the whole
+  element, `re.S`) covering every element whose implicit role is `generic` —
+  not just `div` — and both prohibited attributes, `aria-label` and
+  `aria-labelledby`.
+- **The ten.** Four loading skeletons already carrying `aria-busy` but no role
+  (`ShippingOperations`, `AnalyticsDashboard`, `OrdersTable`, `ProductForm`)
+  → `role="status"`; three list/table wrappers (`ShippingOperations` ×2,
+  `LandingPageCatalog` mobile list) → `role="region"`; the CRM template-variable
+  chip group and the warehouse origin-search results → `role="group"`; and the
+  RTS risk badge in `OrdersTable`, whose label is a genuine text alternative
+  for a coloured gauge (`Risiko RTS <level>, tingkat keberhasilan pengiriman
+  <n> persen`) → `role="img"`.
+- **Found while verifying the rest of the ARIA surface.** All 15 distinct role
+  values in the tree are real ARIA roles, and every name-required role
+  (`region`, `img`, `group`, `navigation`) carries a name. The shipping queue's
+  tab pattern is complete on the tab side — `role="tablist"`, `aria-selected`,
+  `aria-controls`, roving `tabIndex`, arrow-key handling — but its
+  `role="tabpanel"` had no `aria-labelledby`, so the one half of the
+  relationship pointing back was absent and a reader landing in the results
+  could not tell which queue produced them. Now named by the active tab's id.
+- **Evidence.** `npm test` 604/604, `npm run check` 417 files clean, build and
+  deploy verified (`ad970c33`); storefront 200, `/hello` 200, `/admin/*` still
+  302 to login. The re-sweep reports clean for both `aria-label` and
+  `aria-labelledby` across `src/pages`, `src/components` and `src/layouts`.
