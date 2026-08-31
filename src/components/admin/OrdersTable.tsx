@@ -1421,7 +1421,7 @@ export function OrdersTable({ initialOrders }: { initialOrders?: OrderItem[] }) 
         {/* grid-cols-1 expands to minmax(0, 1fr); without it a card's min-content
             width widens the implicit column past the viewport and the wrapper clips
             the right-hand controls out of reach on mobile. */}
-        <div className="grid grid-cols-1 gap-3 py-3 lg:hidden" aria-label="Daftar order mobile">
+        <div className="grid grid-cols-1 gap-3 py-3 lg:hidden" role="region" aria-label="Daftar order mobile">
             {filteredOrders.map((order) => {
               const selected = selectedOrderIds.includes(order.id);
               return (
@@ -1554,7 +1554,7 @@ export function OrdersTable({ initialOrders }: { initialOrders?: OrderItem[] }) 
               </article>
             ); })}
           </div>
-        <div className="hidden lg:block overflow-x-auto pb-16" aria-label="Tabel order desktop">
+        <div className="hidden lg:block overflow-x-auto pb-16" role="region" aria-label="Tabel order desktop">
             <Table className="min-w-[1180px]">
               <TableHeader>
                 <TableRow className="bg-slate-50 text-[11px] font-black uppercase tracking-wider text-slate-500">

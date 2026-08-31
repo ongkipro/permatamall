@@ -4727,3 +4727,42 @@ again returned `200`.
 - **Evidence.** `npm test` 604/604, `npm run check` 417 files clean, build and
   deploy verified (`0ecd330f`). `capi_event_outbox` read back at 169 rows, all
   `pending`, zero `sent`/`failed` debris.
+
+### Entry 92: `aria-label` on a bare `div` never reached the accessibility tree, sitewide
+
+**Date:** 2026-08-31 · **Release:** 1.4.0
+
+- **Why.** An accessibility-tree audit flagged the star-rating markup on a
+  Carukési landing page: a plain `<div aria-label="Rating 5 dari 5 bintang">`
+  has no ARIA role, which computes to `generic` — and `generic` is one of the
+  roles the ARIA-in-HTML mapping explicitly excludes from name computation.
+  The attribute was there, well-formed, spelled correctly, and simply never
+  reached a screen reader or an AI agent reading the tree. Silent, like the
+  CAPI double-init in Entry 90 — nothing renders wrong, nothing throws, the
+  label just isn't there.
+- **Swept the whole tree for the same shape**, not only the reported one:
+  every `<div …aria-label=…>` with no `role`, 35 sites in 13 files.
+  - **24 star ratings** (10 Carukési landing pages × hero + testimonial loop,
+    `ken-total.astro` × 4) → `role="img"`: the rating is one visual unit with
+    one name, the same pattern used for an icon standing in for text.
+  - **`trust-strip`** in both `FormHybridContent.astro` and
+    `FormMiddleContent.astro` (the lock/shield/truck reassurance row) →
+    `role="group"`.
+  - **Admin table/list section wrappers** — `LandingPageCatalog.tsx`,
+    `ProductCatalog.tsx` ×2 (desktop table, mobile card list),
+    `OrdersTable.tsx` ×2 (same pair) → `role="region"`, so the label makes it
+    a landmark a screen reader can jump straight to instead of a name nobody
+    can reach.
+  - **`OrderDetail.tsx`** location search results → `role="group"`.
+  - **`PaymentReconciliationQueue.tsx`** pending/settled view toggle →
+    `role="group"`.
+  - **Loading placeholders** in `ContentWorkbench.tsx` and
+    `ExpeditionSettings.tsx` → `role="status"`, which is not merely the
+    ARIA-valid choice but the correct one: a live region that actually
+    announces "Memuat…" when it appears, which a bare `div` never did
+    regardless of this bug.
+- **Evidence.** `npm test` 604/604, `npm run check` 417 files clean, build
+  and Cloudflare deploy verified (`509c20b7`). Attribute-only change — no
+  class, layout, or visible-text edit anywhere in the diff — confirmed live
+  on `/carukesi-nyeri-sendi-lutut`: the exact flagged element now serves
+  `role="img" aria-label="Rating 5 dari 5 bintang"`.

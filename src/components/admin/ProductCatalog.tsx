@@ -754,7 +754,7 @@ export function ProductCatalog({
              the `truncate` (white-space: nowrap) title and slug — widens the column past
              the viewport. The wrapper clips that overflow, which put the status switch
              and the Aksi menu off-screen and unreachable on mobile. */
-          <div className="grid grid-cols-1 gap-3 p-4 lg:hidden" aria-label="Daftar produk mobile">
+          <div className="grid grid-cols-1 gap-3 p-4 lg:hidden" role="region" aria-label="Daftar produk mobile">
             {paginated.map((product) => {
               const priceRange = getProductPriceRange(product.variants);
 
@@ -866,7 +866,7 @@ export function ProductCatalog({
           </div>
         ) : (
           /* Desktop Product Table */
-          <div className="hidden overflow-x-auto lg:block" aria-label="Tabel produk desktop">
+          <div className="hidden overflow-x-auto lg:block" role="region" aria-label="Tabel produk desktop">
             <Table>
               <TableHeader>
                 <TableRow className="bg-slate-50/80 text-[11px] font-bold uppercase tracking-wider text-slate-500 border-b border-slate-200">

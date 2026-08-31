@@ -615,7 +615,7 @@ function EditCustomerDialog({
             )}
 
             {visibleLocations.length > 0 && (
-              <div id="edit-customer-location-results" className="max-h-40 overflow-y-auto rounded-xl border border-slate-200 bg-slate-50 p-1.5 space-y-1" aria-label="Hasil pencarian lokasi">
+              <div id="edit-customer-location-results" className="max-h-40 overflow-y-auto rounded-xl border border-slate-200 bg-slate-50 p-1.5 space-y-1" role="group" aria-label="Hasil pencarian lokasi">
                 {visibleLocations.map((loc) => (
                   <button
                     key={loc.id}

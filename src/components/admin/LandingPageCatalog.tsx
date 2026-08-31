@@ -690,7 +690,7 @@ export default function LandingPageCatalog() {
               </div>
 
               {/* Desktop table */}
-              <div className="hidden lg:block" aria-label="Tabel landing page desktop">
+              <div className="hidden lg:block" role="region" aria-label="Tabel landing page desktop">
                 <Table>
                   <TableHeader className="bg-slate-50/80">
                     <TableRow className="hover:bg-transparent">

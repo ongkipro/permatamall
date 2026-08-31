@@ -588,7 +588,7 @@ export default function PaymentReconciliationQueue() {
             </Button>
           </div>
           <div className="mt-3 flex flex-col gap-3 border-t pt-4 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex gap-2" aria-label="Tampilan rekonsiliasi">
+            <div className="flex gap-2" role="group" aria-label="Tampilan rekonsiliasi">
               <Button
                 type="button"
                 variant={viewStatus === "pending" ? "default" : "outline"}

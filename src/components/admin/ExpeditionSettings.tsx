@@ -243,7 +243,7 @@ export function ExpeditionSettings() {
   };
 
   if (loading) {
-    return <div className="grid grid-cols-1 gap-4 sm:grid-cols-2" aria-label="Memuat pengaturan ekspedisi" aria-busy="true">{Array.from({ length: 6 }).map((_, index) => <div key={index} className="h-36 animate-pulse rounded-xl bg-slate-100" />)}</div>;
+    return <div className="grid grid-cols-1 gap-4 sm:grid-cols-2" role="status" aria-label="Memuat pengaturan ekspedisi" aria-busy="true">{Array.from({ length: 6 }).map((_, index) => <div key={index} className="h-36 animate-pulse rounded-xl bg-slate-100" />)}</div>;
   }
 
   if (loadError) {

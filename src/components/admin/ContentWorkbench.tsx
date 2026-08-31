@@ -177,7 +177,7 @@ export function ContentWorkbench() {
   };
 
   if (loading && !index) {
-    return <div className="h-96 rounded-xl bg-slate-100" aria-label="Memuat workbench konten" />;
+    return <div className="h-96 rounded-xl bg-slate-100" role="status" aria-label="Memuat workbench konten" />;
   }
 
   return (
