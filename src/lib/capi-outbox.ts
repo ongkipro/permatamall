@@ -305,3 +305,26 @@ export async function drainCapiOutbox(
   }
   return sent;
 }
+
+/** Terminal rows only — matches `autolaris_callbacks`' retention window. */
+const OUTBOX_RETENTION_DAYS = 30;
+
+/**
+ * Nothing pruned this table. A `sent` or `failed` row is terminal — `pending`
+ * always resolves to one or the other once `decideRetry` sees `attempts >=
+ * max_attempts` — so both are safe to drop once they are old enough that no
+ * operator is still reading them for a delivery investigation. Left alone,
+ * every event this storefront ever fires (a PageView and a ViewContent on
+ * nearly every visit) accumulates in D1 forever.
+ */
+export async function purgeExpiredCapiOutboxEvents(database: D1Database, now = new Date()) {
+  const result = await database
+    .prepare(
+      `DELETE FROM capi_event_outbox
+        WHERE status IN ('sent', 'failed')
+          AND unixepoch(updated_at) < unixepoch(?, '-${OUTBOX_RETENTION_DAYS} days')`,
+    )
+    .bind(now.toISOString())
+    .run();
+  return result.meta.changes;
+}

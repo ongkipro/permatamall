@@ -4691,3 +4691,39 @@ again returned `200`.
   was sent end-to-end, because the CAPI token is still the wrong grant —
   browser/CAPI matching-quality improvement is real in the code but unobserved
   in Meta's own reporting until the operator replaces the token correctly.
+
+### Entry 91: The correct token, confirmed live, and the outbox table nothing was pruning
+
+**Date:** 2026-08-31 · **Release:** 1.4.0
+
+- **The token, resolved.** Two operator-generated tokens after Entry 90 still
+  carried `read_ads_dataset_quality` only, with `511101804635811` absent from
+  `granular_scopes.target_ids` both times — same `app_id`/`user_id` on each,
+  so the System User behind Meta's "Conversions API Application" quick-connect
+  had never been granted access to this pixel in Business Settings, not a
+  wrong click in Events Manager. A third generation, from a different System
+  User context, carries this pixel in its target list. `debug_token` still
+  reads `read_ads_dataset_quality` for the diagnostic `GET /{pixel}?fields=…`
+  call this investigation used to probe it, which is a narrower permission
+  than the real `POST /{pixel}/events` — confirmed live rather than assumed:
+  `capi_event_outbox` moved from 8 `sent` (stale, pre-fix) to 102 `sent` with
+  timestamps minutes old, zero new `failed` rows since the token changed, and
+  every one of the 131 stale failures still carried the old
+  pre-2026-08-31T17:55Z timestamp. The Entry 90 code fixes and a correctly
+  scoped token are both required and both now true.
+- **Found while cleaning up.** Nothing purged `capi_event_outbox`. Every
+  `PageView`/`ViewContent` this storefront ever fires — nearly every visit —
+  accumulates a row forever; only `autolaris_callbacks` had the equivalent
+  30-day sweep. Added `purgeExpiredCapiOutboxEvents` (`src/lib/capi-outbox.ts`)
+  on the same pattern and retention window, deleting only terminal (`sent`,
+  `failed`) rows by `updated_at` — `pending` always resolves to one or the
+  other via `decideRetry` once `attempts >= max_attempts`, so it is never a
+  purge candidate. Wired into `runScheduledMaintenance` alongside the other
+  hourly housekeeping, same fail-open `housekeeping()` wrapper. One-time
+  manual cleanup of the 235 rows that predated this run: `DELETE FROM
+  capi_event_outbox WHERE status IN ('sent','failed')` against remote D1 —
+  169 legitimate `pending` rows left untouched, draining on their own now that
+  the token works.
+- **Evidence.** `npm test` 604/604, `npm run check` 417 files clean, build and
+  deploy verified (`0ecd330f`). `capi_event_outbox` read back at 169 rows, all
+  `pending`, zero `sent`/`failed` debris.
