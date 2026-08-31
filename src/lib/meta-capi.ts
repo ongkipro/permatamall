@@ -98,6 +98,18 @@ export async function sendMetaCapiEvent(
   pixelId?: string,
   accessToken?: string,
   testEventCode?: string,
+  /**
+   * When the event actually happened, in unix seconds. Omitted means "now",
+   * which is only correct for a first, immediate send.
+   *
+   * The outbox retries, so "now" is exactly what it is not. A Purchase that
+   * stalled for two days was reported to Meta as having happened at the moment
+   * the retry finally succeeded — a real conversion filed under the wrong day,
+   * which is worse than a missing one because it silently teaches Smart Bidding
+   * the wrong timing. The outbox stamps this at enqueue and hands it back on
+   * every attempt.
+   */
+  eventTime?: number,
 ): Promise<{
   success: boolean;
   response?: unknown;
@@ -141,7 +153,7 @@ export async function sendMetaCapiEvent(
     data: [
       {
         event_name: eventName,
-        event_time: Math.floor(Date.now() / 1000),
+        event_time: eventTime ?? Math.floor(Date.now() / 1000),
         event_id: resolvedEventId,
         event_source_url: eventSourceUrl,
         action_source: 'website',

@@ -4801,3 +4801,51 @@ again returned `200`.
   deploy verified (`ad970c33`); storefront 200, `/hello` 200, `/admin/*` still
   302 to login. The re-sweep reports clean for both `aria-label` and
   `aria-labelledby` across `src/pages`, `src/components` and `src/layouts`.
+
+### Entry 94: The outbox had stalled every row it held, including a real Purchase
+
+**Date:** 2026-08-31 · **Release:** 1.4.0
+
+- **Why we looked.** "Has the Purchase reached Events Manager yet?" It had not.
+  `capi_event_outbox` held one `Purchase`, `INV-10011`, a real COD order from
+  2026-08-29 — `status = 'pending'`, `attempts = 5`, `max_attempts = 5`, last
+  touched 2026-08-29T08:53, carrying the old wrong-token error. It was not
+  waiting. It had stopped.
+- **The stall.** `deliverCapiEvent` selects `WHERE event_id = ? AND status =
+  'pending'` with no attempt-budget guard, and fires inline from
+  `/api/meta-event` while a drain — another visitor's, or the hourly cron's —
+  can be working the same row. Both read the same `attempts`, both call
+  `decideRetry` and get "pending", and both apply `attempts = attempts + 1`.
+  The row lands `pending` at or past `max_attempts`. `drainCapiOutbox` then
+  selected `... AND attempts < max_attempts`, so it was never picked up again
+  and never settled to `failed` either — the one outcome a transactional outbox
+  exists to prevent, reached silently. **All 169 pending rows on this install
+  were in that state**, which also corrects Entry 91's claim that they were
+  "draining on their own now that the token works". They could not. Nothing
+  could ever have drained them.
+- **Fixed** by re-evaluating the terminal check in SQL against the row's
+  *current* attempts (`WHEN attempts + 1 >= max_attempts THEN 'failed'`) rather
+  than the value the caller read, so a lost update can no longer produce the
+  state; and by dropping the `attempts < max_attempts` filter, which was
+  redundant against that write and was the clause that made an existing stall
+  permanent instead of self-healing. A stranded row now gets one more transmit
+  and settles. Bounded: never more than one extra attempt.
+- **Second defect, found while preparing to deliver the stalled Purchase.**
+  `event_time` was `Math.floor(Date.now() / 1000)` computed inside
+  `sendMetaCapiEvent` — at send, not at occurrence. The outbox exists to retry,
+  so this was wrong precisely for the events that needed it most: delivering
+  `INV-10011` would have filed a real two-day-old conversion under today,
+  teaching Smart Bidding the wrong timing. Worse than a missing conversion,
+  because it looks correct. `eventTime` is now stamped at `enqueueCapiEvent`
+  and passed on every attempt; a row enqueued before this existed falls back to
+  its own `created_at`, never to "now".
+- **Third, the same head-of-line shape upstream fixed for Google Ads offline.**
+  The drain is bounded at ten and ordered `id ASC`, so this Purchase sat behind
+  eleven PageView/ViewContent rows and would have waited two full cron hours
+  behind events worth a fraction of it. Now ordered
+  `CASE WHEN event_name = 'Purchase' THEN 0 ELSE 1 END, id ASC` — revenue
+  first, `id ASC` within each class so nothing is starved.
+- **Evidence.** `npm test` 607/607 (three new regression tests: a row at its
+  budget is still selected and settles; a retried event reports its own time,
+  including the `created_at` fallback; Purchase is ordered first), `npm run
+  check` 417 files clean, build and deploy verified (`9c0858c0`).
