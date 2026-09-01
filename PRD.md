@@ -1,6 +1,21 @@
 # PRD — AdsBookCMS (single)
 
-> Verified against disk: 2026-08-27 @ `679f577` + stock-unlimited working tree
+> Verified against disk: 2026-09-01 @ `68e34ef` + order/Purchase dedupe working tree
+
+## A23 — Canonical checkout replay
+
+**Status:** Accepted 2026-09-01.
+
+- **REQ-173** — Exact repeats of one validated checkout within two hours shall
+  resolve to one canonical order even when form mode, retry timing, or browser
+  code supplies different submit tokens. The database shall enforce the claim
+  under concurrent writes.
+- **REQ-174** — A canonical replay shall not repeat order notifications,
+  receiver scoring, conversion identity, or a second live payment instruction
+  for an order that already has one. COD remains a qualified `Purchase`;
+  browser Pixel and server CAPI continue to share the canonical `INV-` order
+  number, while a later order after expiry or terminal state receives a new
+  order and event ID.
 
 ## A22 — Release-driven updates for isolated installs
 

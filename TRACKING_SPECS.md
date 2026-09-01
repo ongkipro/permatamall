@@ -1,6 +1,6 @@
 # AdsBookCMS Meta Pixel, CAPI, GTM, and Google Ads Specification
 
-> Verified against disk: 2026-08-27 @ `3bb51a3` + payment-recovery working tree
+> Verified against disk: 2026-09-01 @ `68e34ef` + order/Purchase dedupe working tree
 
 This document owns the technical tracking contract for AdsBookCMS-rendered and headless storefronts. It covers event semantics, identity, browser/server boundaries, deduplication, durable delivery, store configuration, and verification. It does not claim attribution certainty, legal compliance, consent applicability, or live provider acceptance.
 
@@ -131,6 +131,18 @@ A funnel event and a Purchase event must not reuse one ID.
    - `once('Purchase_order_' + orderId)`.
 5. Refresh, revisit, duplicate callback, or repeated polling must not create another Purchase for the same qualifying order.
 6. A new valid order receives a new Purchase event ID.
+
+Event-ID deduplication cannot repair three business orders that were already
+created from one repeated checkout: three `INV-` numbers are three legitimate
+event IDs to Meta. The checkout boundary therefore also owns business replay
+deduplication. It hashes the validated, server-priced checkout identity, gives
+that fingerprint one live D1 owner for two hours, and returns the canonical
+order for exact retries across native, middle/hybrid, and Headless callers.
+The unique partial index is the concurrency guard; application pre-checks are
+only the fast path. A replay does not create another notification, receiver
+score, Purchase identity, or second live payment instruction for an order that
+already has one. An expired or terminal claim is released so a later genuine
+reorder receives a new `INV-` number.
 
 ### What ships today
 

@@ -13,6 +13,7 @@
     "build": "astro build",
     "check": "astro check && tsc --noEmit",
     "test": "node --experimental-strip-types --test src/lib/*.test.ts",
+    "docs:check": "node --experimental-strip-types scripts/check-docs.ts",
     "preview": "astro preview",
     "cf:dev": "wrangler dev --local",
     "cf:deploy": "wrangler deploy",

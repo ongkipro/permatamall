@@ -1,6 +1,24 @@
 # Tasks: AdsBookCMS
 
-> Verified against disk: 2026-08-27 @ `679f577` + stock-unlimited working tree
+> Verified against disk: 2026-09-01 @ `68e34ef` + order/Purchase dedupe working tree
+
+## A23 — Canonical checkout replay
+
+- [x] **A-174** — Collapse repeated checkout submissions before they become
+  duplicate orders or duplicate Purchase signals.
+      -> REQ: REQ-173, REQ-174 · Done when: a forward migration gives one live
+      checkout fingerprint a unique D1 owner; normal, middle/hybrid, and
+      Headless paths return the canonical order across different submit tokens;
+      concurrent writes produce one order and notification; the payment path
+      reuses its unique live transaction and scoring runs only for the creator;
+      the replay window permits a later
+      genuine reorder; COD remains Purchase; Pixel/CAPI use the same canonical
+      order number; focused/full tests, check, build, docs validation, and local
+      browser evidence pass after the final edit.
+      -> Evidence: migration `0053`, sequential and concurrent replay tests,
+      614-test full suite, clean 419-file check, successful build, 34-document
+      link validation, fresh 54-migration D1, and mobile `/thanks` Pixel/GTM
+      inspection using the canonical order number.
 
 ## A21 — A landing page may become the product page
 

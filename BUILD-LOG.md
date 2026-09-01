@@ -1,10 +1,31 @@
 # BUILD LOG: AdsBookCMS
 
-> Verified against disk: 2026-08-27 @ `679f577` + stock-unlimited working tree
+> Verified against disk: 2026-09-01 @ `68e34ef` + order/Purchase dedupe working tree
 
 Author & Curator: **[ongki.pro](https://ongki.pro)**
 
 ---
+
+### Entry 96: Repeated checkout resolves to one order and one Purchase
+
+**Date:** 2026-09-01 · **Release:** local candidate only · **Migration:** 0053
+
+- Migration `0053_checkout_order_deduplication.sql` gives one active,
+  server-derived checkout fingerprint a unique D1 owner for two hours. Exact
+  retries through normal, middle/hybrid, or Headless checkout return that owner
+  even when submit tokens differ; terminal or expired claims allow a genuine
+  later reorder.
+- Only the creator records the notification and receiver score. Online payment
+  still runs through its order-unique transaction helper, so a replay can recover
+  an interrupted first attempt without producing another live instruction.
+- COD remains `Purchase`; Pixel, GTM, and CAPI use the same canonical order
+  number, D1 Product IDs, value, currency, and retained matching context.
+- Evidence: sequential and concurrent replay coverage, 614 tests (612 passed,
+  two intentional skips), 419 files with zero diagnostics, successful build,
+  34-document link validation, all 54 migrations on a fresh local D1, and a
+  390 × 844 `/thanks` inspection proving one Pixel/GTM Purchase plus reload
+  suppression. No live provider call, remote D1 mutation, deploy, commit, or push.
+
 
 ## Provenance — read before citing any entry
 
