@@ -1,6 +1,6 @@
 # STATUS — AdsBookCMS
 
-> Verified against disk: 2026-09-01 @ `68e34ef` + order/Purchase dedupe working tree
+> Verified against disk: 2026-09-01 @ `f842c44` + production release evidence
 
 > Last executed baseline: 2026-08-27 @ `1acbd7e` + review-hardening working tree.
 > `npm run check` 399 files / 0 errors / 0 warnings / 0 hints · `npm test`
@@ -134,7 +134,11 @@ build, 34-document link validation, and all 54 migrations on a fresh local D1.
 At 390 × 844, `/thanks` emitted one Pixel Purchase and one GTM purchase using
 the same canonical order number, catalog Product ID, value, and currency; the
 local once-guard suppressed reload and the WhatsApp confirmation control was
-present. No provider call, remote D1 write, deployment, commit, or push occurred.
+present. Commit `f842c44` was pushed to `main` and deployed to
+`cmsads-permatamall` as version `7f1f03f1-6f0c-451c-aea3-15cf75c89e5d`.
+Live home, sitemap, Google feed, and Meta feed returned `200`; protected health
+returned `401`. No provider test event, dummy order, or explicit remote D1
+command ran.
 
 | Gate | Result |
 | --- | --- |

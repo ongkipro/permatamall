@@ -1,6 +1,6 @@
 # BUILD LOG: AdsBookCMS
 
-> Verified against disk: 2026-09-01 @ `68e34ef` + order/Purchase dedupe working tree
+> Verified against disk: 2026-09-01 @ `f842c44` + production release evidence
 
 Author & Curator: **[ongki.pro](https://ongki.pro)**
 
@@ -20,11 +20,14 @@ Author & Curator: **[ongki.pro](https://ongki.pro)**
   an interrupted first attempt without producing another live instruction.
 - COD remains `Purchase`; Pixel, GTM, and CAPI use the same canonical order
   number, D1 Product IDs, value, currency, and retained matching context.
-- Evidence: sequential and concurrent replay coverage, 614 tests (612 passed,
+- Evidence before release: sequential and concurrent replay coverage, 614 tests (612 passed,
   two intentional skips), 419 files with zero diagnostics, successful build,
   34-document link validation, all 54 migrations on a fresh local D1, and a
   390 × 844 `/thanks` inspection proving one Pixel/GTM Purchase plus reload
-  suppression. No live provider call, remote D1 mutation, deploy, commit, or push.
+  suppression. Commit `f842c44` was pushed to `main` and deployed as Worker
+  version `7f1f03f1-6f0c-451c-aea3-15cf75c89e5d`. Live home, sitemap, Google
+  feed, and Meta feed returned `200`; protected health returned `401`. No
+  provider test event, dummy order, or explicit remote D1 command ran.
 
 
 ## Provenance — read before citing any entry
