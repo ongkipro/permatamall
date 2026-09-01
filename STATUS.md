@@ -1,6 +1,6 @@
 # STATUS — AdsBookCMS
 
-> Verified against disk: 2026-09-01 @ `ae3b2bd` + WhatsApp production evidence
+> Verified against disk: 2026-09-02 @ `d962732` + Meta signal parity working tree
 
 > Last executed baseline: 2026-08-27 @ `1acbd7e` + review-hardening working tree.
 > `npm run check` 399 files / 0 errors / 0 warnings / 0 hints · `npm test`
@@ -26,10 +26,22 @@ The previous version of this file described a different repository — it opened
 | Product | AdsBookCMS (single) |
 | Repository role | **Product.** Deploys nothing; CI runs check, test and build only |
 | Install model | 1 installer = 1 Worker = 1 store (ADR-001) |
-| Version | `1.4.0` / `2026.08-stock-unlimited` (`src/lib/version.ts`) |
-| Schema | 54 migration files, `0000`-`0053` |
+| Version | `1.4.1` / `2026.09-meta-signal-parity` (`src/lib/version.ts`) |
+| Schema | 55 migration files, `0000`-`0054` |
 | Bindings | `OMS_DB` (D1), `SESSION` (KV, caches only since ADR-021), `ASSET_BUCKET` (R2), `AI`, `ASSETS` — names fixed across installs |
 | `wrangler.jsonc` | template of placeholders; each install supplies its own resources |
+
+### Current Meta signal parity candidate
+
+- `MetaPixelBase` establishes `_fbp` before immediate top-of-funnel CAPI events.
+- Native and headless checkout retain validated Meta browser/request context for
+  a delayed paid Purchase.
+- Browser and server Purchase use the canonical order number, merchandise
+  value, and D1 product IDs; the outbox and Meta deduplicate on the same ID.
+- Google and Meta click families no longer erase each other during later visits.
+- Local evidence: 618 passed / 2 skipped / 0 failed; 421-file check with zero
+  diagnostics; Cloudflare build complete; all 55 migrations applied on a fresh
+  local D1. Provider acceptance and production migration remain release checks.
 
 ### Known installs
 

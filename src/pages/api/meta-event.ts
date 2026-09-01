@@ -9,6 +9,7 @@ import { readMetaBrowserIds } from '../../lib/click-ids';
 import { matchableCustomerEmail } from '../../lib/autolaris-payment';
 import {
   findPurchaseOrderByStatusToken,
+  resolveMetaPurchaseContentIds,
   type MetaPurchaseOrder,
 } from '../../lib/meta-purchase-order';
 
@@ -149,23 +150,23 @@ export const POST: APIRoute = async ({ request, locals }) => {
     // the dedicated external ID cookie wins over phone so every funnel event for
     // one visitor keeps the same advertiser-issued identity.
     const browserIds = readMetaBrowserIds(request);
+    const resolvedPhone = purchaseOrder?.customer_phone || payload.phone;
+    const resolvedEmail = purchaseOrder?.customer_email || payload.email;
     const event = {
       eventName: payload.eventName,
       eventId,
       eventSourceUrl: payload.eventSourceUrl,
       userData: {
-        phone: purchaseOrder?.customer_phone || payload.phone,
+        phone: resolvedPhone,
         name: purchaseOrder?.customer_name || payload.name,
         // Never the address `buyerEmail`/`submit-order` mint for the payment
         // provider: it is `<phone digits>@<store host>`, nobody owns it, and Meta
         // scores match quality on every key it is handed.
-        email:
-          matchableCustomerEmail(
-            purchaseOrder?.customer_email,
-            locals.tenant.siteUrl,
-            request.url,
-          ) ||
-          payload.email,
+        email: matchableCustomerEmail(
+          resolvedEmail,
+          locals.tenant.siteUrl,
+          request.url,
+        ),
         city: purchaseOrder?.city || payload.city,
         province: purchaseOrder?.province || payload.province,
         postalCode: purchaseOrder?.postal_code || payload.postalCode,
@@ -178,7 +179,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
       },
       customData: {
         contentName: payload.contentName,
-        contentIds: payload.contentIds,
+        contentIds: resolveMetaPurchaseContentIds(purchaseOrder, payload.contentIds),
         // The goods, not the invoice — the same figure the browser leg sends,
         // read the same way, so the two legs of one Purchase never disagree on
         // revenue. Shipping, the COD service fee and its VAT, and the payment

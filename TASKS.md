@@ -1555,3 +1555,15 @@ genuinely unmanageable.
 
 - [x] **A-173** — A variant must be purchasable whatever its stock figure says. **Done 2026-08-27 (ADR-023, 1.4.0).**
   -> Done when: no checkout, CS conversion, storefront publication, admin picker or product save consults stock; releasing an order returns nothing; the suite asserts the inverse of every rule that was removed; and a store whose only variant carries `stock = 0` renders and offers it in a browser. Evidence: BUILD-LOG entry 88.
+
+## A30 — Meta signal parity
+
+- [x] **A-182** — Preserve complete Meta identity and authoritative commerce
+  fields across `ViewContent`, `AddToCart`, and delayed `Purchase`. **Done
+  locally 2026-09-02.**
+  -> Done when: `_fbp` exists before immediate CAPI posts; Google and Meta click
+  families do not erase each other; checkout persists validated first-party
+  Meta IDs, IP, and user agent; a later paid Purchase reuses that context;
+  Purchase `event_id`, merchandise value, and `content_ids` come from the order;
+  native/headless callers agree; migration `0054`, focused/full tests, check,
+  build, and a fresh local migration chain pass. Evidence: BUILD-LOG entry 96.

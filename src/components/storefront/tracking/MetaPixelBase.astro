@@ -25,7 +25,9 @@ const shouldRenderPixel = /^\d{5,25}$/.test(String(pixelId || '').trim());
     <link rel="preconnect" href="https://connect.facebook.net" crossorigin />
     <link rel="dns-prefetch" href="https://connect.facebook.net" />
     <script is:inline define:vars={{ pixelId, metaExternalIdCookie: META_EXTERNAL_ID_COOKIE }}>
-      void (async () => {
+      // Deliberately synchronous. Everything another script may call is
+      // installed before this returns; only the external-ID hash is async.
+      (() => {
         if (typeof window === 'undefined') return;
 
         const createEventId = (prefix) => `${prefix}_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
@@ -37,6 +39,29 @@ const shouldRenderPixel = /^\d{5,25}$/.test(String(pixelId || '').trim());
             .split('; ')
             .find((row) => row.startsWith(`${name}=`))
             ?.split('=')[1] || '';
+        const cookieSecurity = window.location.protocol === 'https:'
+          ? 'SameSite=None; Secure'
+          : 'SameSite=Lax';
+        const writeMetaCookie = (name, value) => {
+          document.cookie =
+            `${name}=${value}; Path=/; Max-Age=${90 * 24 * 60 * 60}; ${cookieSecurity}`;
+        };
+
+        // Establish `_fbp` before immediate PageView/ViewContent CAPI posts.
+        // Waiting for deferred fbevents.js leaves the first server event without
+        // the browser identifier even though the later Pixel event has one.
+        let fbp = readCookieValue('_fbp');
+        if (!/^fb\.\d\.\d{10,20}\..+$/.test(fbp)) {
+          let randomPart = '';
+          try {
+            randomPart = Array.from(crypto.getRandomValues(new Uint32Array(2))).join('');
+          } catch {
+            randomPart = String(Math.floor(Math.random() * 1_000_000_000_000_000));
+          }
+          fbp = `fb.1.${Date.now()}.${randomPart}`;
+          writeMetaCookie('_fbp', fbp);
+        }
+
         let externalId = readCookieValue(metaExternalIdCookie);
         if (!/^[a-f0-9]{32}$/.test(externalId)) {
           externalId = '';
@@ -48,28 +73,25 @@ const shouldRenderPixel = /^\d{5,25}$/.test(String(pixelId || '').trim());
             // Pixel and CAPI still carry fbp/fbc when Web Crypto is unavailable.
           }
           if (externalId) {
-            const cookieSecurity = window.location.protocol === 'https:'
-              ? 'SameSite=None; Secure'
-              : 'SameSite=Lax';
-            document.cookie =
-              `${metaExternalIdCookie}=${externalId}; Path=/; Max-Age=${90 * 24 * 60 * 60}; ${cookieSecurity}`;
+            writeMetaCookie(metaExternalIdCookie, externalId);
           }
         }
 
-        let externalIdHash;
-        if (externalId) {
+        const externalIdHashReady = (async () => {
+          if (!externalId) return undefined;
           try {
             const digest = await crypto.subtle.digest(
               'SHA-256',
               new TextEncoder().encode(externalId),
             );
-            externalIdHash = Array.from(new Uint8Array(digest))
+            return Array.from(new Uint8Array(digest))
               .map((byte) => byte.toString(16).padStart(2, '0'))
               .join('');
           } catch {
             // Pixel and CAPI still carry fbp/fbc when Web Crypto is unavailable.
+            return undefined;
           }
-        }
+        })();
 
         // Meta's own stub queues every fbq() call until the script arrives, so
         // the queue is created now and the 105 KB download is deferred. The
@@ -137,14 +159,16 @@ const shouldRenderPixel = /^\d{5,25}$/.test(String(pixelId || '').trim());
         const runInit = (advancedMatching) => {
           if (initialised) return false;
           initialised = true;
-          const matching = Object.assign({}, advancedMatching || {});
-          if (externalIdHash && !matching.external_id) matching.external_id = externalIdHash;
-          for (const key of Object.keys(matching)) {
-            if (matching[key] === undefined || matching[key] === '') delete matching[key];
-          }
-          if (Object.keys(matching).length) window.fbq('init', pixelId, matching);
-          else window.fbq('init', pixelId);
-          window.fbq('track', 'PageView', {}, { eventID: eventId });
+          void externalIdHashReady.then((externalIdHash) => {
+            const matching = Object.assign({}, advancedMatching || {});
+            if (externalIdHash && !matching.external_id) matching.external_id = externalIdHash;
+            for (const key of Object.keys(matching)) {
+              if (matching[key] === undefined || matching[key] === '') delete matching[key];
+            }
+            if (Object.keys(matching).length) window.fbq('init', pixelId, matching);
+            else window.fbq('init', pixelId);
+            window.fbq('track', 'PageView', {}, { eventID: eventId });
+          });
           return true;
         };
         window.__PS_META_INIT__ = runInit;
@@ -154,7 +178,7 @@ const shouldRenderPixel = /^\d{5,25}$/.test(String(pixelId || '').trim());
           // Purchase keys are only known after `/api/order-status` answers).
           // The wait is bounded: a hung or failed fetch must cost the better
           // matching, never the PageView itself.
-          window.setTimeout(runInit, 4000);
+          window.setTimeout(runInit, 1500);
         } else {
           runInit();
         }

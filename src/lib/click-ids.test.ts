@@ -8,6 +8,7 @@ import {
   parseClickIdsFromUrl,
   readClickIdCookie,
   readMetaBrowserIds,
+  readOrderClickIds,
 } from "./click-ids.ts";
 
 test("captures the click id Google attached to the landing URL", () => {
@@ -176,15 +177,34 @@ test("a campaign-tagged link never erases the ad click that was paid for", () =>
     "and no tag from the older click lingers to mix two campaigns",
   );
 
-  // A genuinely new paid click is last-touch: it replaces the attribution and
-  // brings its own campaign tags with it.
+  // Each network keeps its own last click. A Meta click must not erase the
+  // Google click needed for later Google offline reconciliation.
   const metaClick = parseClickIdsFromUrl(new URL("https://shop.example/promo?fbclid=IwAR_new"));
   const afterMeta = mergeClickIds(merged, metaClick);
-  assert.equal(afterMeta.gclid, undefined);
+  assert.equal(afterMeta.gclid, "Cj0KCQ_paid");
   assert.equal(afterMeta.fbclid, "IwAR_new");
   assert.match(String(afterMeta._fbc), /^fb\.1\.\d+\.IwAR_new$/);
-  assert.equal(afterMeta.utm_source, undefined);
+  assert.equal(afterMeta.utm_source, "whatsapp");
 
   // Nothing stored yet is the common first-touch case and must not invent keys.
   assert.deepEqual(mergeClickIds({}, broadcast), broadcast);
+});
+
+test("a later browser ID enriches order attribution without erasing click IDs", () => {
+  const fbp = "fb.1.1788230000000.1234567890";
+  const fbc = "fb.1.1788230000000.IwARcurrent";
+  const request = new Request("https://shop.example/api/submit-order", {
+    headers: {
+      cookie:
+        `adsbook_click_ids=${encodeURIComponent(JSON.stringify({ gclid: "Cj0_paid", fbclid: "IwARold", _fbc: "fb.1.1788220000000.IwARold" }))}; ` +
+        `_fbp=${fbp}; _fbc=${fbc}`,
+    },
+  });
+
+  assert.deepEqual(readOrderClickIds(request), {
+    gclid: "Cj0_paid",
+    fbclid: "IwARold",
+    _fbp: fbp,
+    _fbc: fbc,
+  });
 });

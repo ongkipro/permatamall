@@ -4937,3 +4937,25 @@ again returned `200`.
   files clean. Migration applied to production D1 and the column read back.
   After deploy: home, the new landing page, `/produk/<slug>` and
   `/api/form-config` all 200; both feeds publish Carukési / He-ji / Ken+total.
+
+### Entry 96: Meta top-of-funnel and delayed Purchase identity parity
+
+**Date:** 2026-09-02 · **Release candidate:** 1.4.1 · **Migration:** 0054
+
+- `MetaPixelBase` now establishes `_fbp` before the immediate `PageView` and
+  `ViewContent` CAPI requests. The deferred Pixel library no longer leaves the
+  first server event without the browser ID that its browser pair later uses.
+- Checkout persists validated `external_id`, `_fbp`, `_fbc`, client IP, and user
+  agent in `orders.meta_request_context`. A delayed paid Purchase reads that
+  snapshot instead of losing attribution after the buyer has left.
+- Public and API-key Purchase routes replace caller-supplied catalog IDs with
+  the products joined from the authoritative order. The browser thanks leg
+  reads the same IDs from `/api/order-status`; browser and CAPI retain one order
+  number, merchandise value, and catalog identity.
+- Google and Meta click families now keep independent last-click state. A click
+  from one network cannot erase the other network's conversion identifier.
+- Evidence: focused Meta/order tests 48/48; end-to-end Purchase/dedup tests
+  19/19; full suite 620 total, 618 passed, 2 intentionally skipped, 0 failed;
+  `npm run check` 421 files with zero diagnostics; `npm run build` completed;
+  and all 55 migrations applied successfully to a fresh local D1. No provider
+  secret was read and no production state was changed during local validation.

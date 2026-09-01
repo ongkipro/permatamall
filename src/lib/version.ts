@@ -8,11 +8,11 @@ export type CmsVersionInfo = {
 };
 
 export const CMS_VERSION: CmsVersionInfo = {
-  version: "1.4.0",
+  version: "1.4.1",
   channel: "production",
-  // Stock stops gating a sale (ADR-023). Schema 54 adds checkout replay dedupe.
-  releaseTag: "2026.08-stock-unlimited",
+  // Schema 55 retains Meta request identity for delayed paid Purchase events.
+  releaseTag: "2026.09-meta-signal-parity",
   coreEngine: "Astro 7 SSR + Cloudflare Workers",
-  schemaVersion: 54,
-  lastUpdated: "2026-09-01",
+  schemaVersion: 55,
+  lastUpdated: "2026-09-02",
 };

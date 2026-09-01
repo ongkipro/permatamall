@@ -142,6 +142,19 @@ test("the Pixel bootstrap mints and hashes one stable first-party external ID", 
   assert.equal(pageViewOptions?.eventID, windowStub.__META_PAGEVIEW_EVENT_ID__);
 });
 
+test("the Pixel bootstrap establishes fbp before an immediate CAPI tracker runs", () => {
+  const readIndex = PIXEL_BASE.indexOf("let fbp = readCookieValue('_fbp')");
+  const writeIndex = PIXEL_BASE.indexOf("writeMetaCookie('_fbp', fbp)");
+  const initHookIndex = PIXEL_BASE.indexOf("window.__PS_META_INIT__ =");
+  assert.ok(readIndex >= 0, "MetaPixelBase must read an existing first-party fbp");
+  assert.ok(writeIndex > readIndex, "MetaPixelBase must mint a missing fbp");
+  assert.ok(
+    initHookIndex > writeIndex,
+    "fbp must exist before page trackers can post the matching CAPI event",
+  );
+  assert.match(PIXEL_BASE, /fbp = `fb\.1\.\$\{Date\.now\(\)\}\.\$\{randomPart\}`/);
+});
+
 test("the browser Pixel's advanced-matching object hashes every field CAPI also hashes for the same event", async () => {
   // This is the gap that motivated the shared builder: AddToCart and
   // InitiateCheckout already send city/province/postal_code/country to the

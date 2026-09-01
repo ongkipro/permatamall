@@ -5,9 +5,11 @@ import { getStoreAdsConfig } from '../../../../lib/store-ads';
 import { getRuntimeEnv } from '../../../../lib/env';
 import { getClientIp } from '../../../../lib/rate-limit';
 import { enqueueCapiEvent, deliverCapiEvent, drainCapiOutbox } from '../../../../lib/capi-outbox';
-import { findPurchaseOrderForApiKeyCaller } from '../../../../lib/meta-purchase-order';
+import { findPurchaseOrderForApiKeyCaller, resolveMetaPurchaseContentIds } from '../../../../lib/meta-purchase-order';
 import { toE164Digits } from '../../../../lib/meta-capi';
 import { matchableCustomerEmail } from '../../../../lib/autolaris-payment';
+import { parseClickIds } from '../../../../lib/click-ids';
+import { parseMetaOrderContext } from '../../../../lib/meta-order-context';
 
 export const prerender = false;
 
@@ -73,36 +75,38 @@ export const POST: APIRoute = async ({ request, locals }) => {
     }
 
     const eventId = purchaseOrder?.order_number || payload.eventId;
+    const resolvedPhone = purchaseOrder?.customer_phone || payload.phone;
+    const resolvedEmail = purchaseOrder?.customer_email || payload.email;
+    const storedContext = parseMetaOrderContext(purchaseOrder?.meta_request_context);
+    const storedClickIds = parseClickIds(purchaseOrder?.ad_click_ids);
     const event = {
       eventName: payload.eventName,
       eventId,
       eventSourceUrl: payload.eventSourceUrl,
       userData: {
-        phone: purchaseOrder?.customer_phone || payload.phone,
+        phone: resolvedPhone,
         name: purchaseOrder?.customer_name || payload.name,
         // See `/api/meta-event`: a minted provider address is not a match key.
-        email:
-          matchableCustomerEmail(
-            purchaseOrder?.customer_email,
-            locals.tenant.siteUrl,
-            request.url,
-          ) ||
-          payload.email,
+        email: matchableCustomerEmail(
+          resolvedEmail,
+          locals.tenant.siteUrl,
+          request.url,
+        ),
         city: purchaseOrder?.city || payload.city,
         province: purchaseOrder?.province || payload.province,
         postalCode: purchaseOrder?.postal_code || payload.postalCode,
         country: payload.country,
-        externalId:
-          payload.externalId ||
-          (purchaseOrder ? toE164Digits(purchaseOrder.customer_phone) : undefined),
-        fbp: payload.fbp,
-        fbc: payload.fbc,
-        clientIp: getClientIp(request.headers),
-        userAgent: request.headers.get('user-agent') || '',
+        externalId: payload.externalId || storedContext.externalId || (purchaseOrder
+          ? toE164Digits(purchaseOrder.customer_phone)
+          : undefined),
+        fbp: payload.fbp || storedContext.fbp || storedClickIds._fbp,
+        fbc: payload.fbc || storedContext.fbc || storedClickIds._fbc,
+        clientIp: storedContext.clientIp || getClientIp(request.headers),
+        userAgent: storedContext.userAgent || request.headers.get('user-agent') || '',
       },
       customData: {
         contentName: payload.contentName,
-        contentIds: payload.contentIds,
+        contentIds: resolveMetaPurchaseContentIds(purchaseOrder, payload.contentIds),
         // The goods, not the invoice, and read from D1 rather than from the
         // caller — the two legs of one Purchase must not disagree on revenue.
         value: purchaseOrder?.product_value ?? payload.value,

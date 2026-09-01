@@ -1,5 +1,9 @@
 import type { CourierRateResult } from "../../lib/mengantar-client";
-import { hasClickId, readClickIdCookie, serializeClickIds } from "../../lib/click-ids";
+import { hasClickId, readOrderClickIds, serializeClickIds } from "../../lib/click-ids";
+import {
+  captureMetaOrderContext,
+  serializeMetaOrderContext,
+} from "../../lib/meta-order-context";
 import type { ResolvedShippingRates } from "../../lib/shipping-quote";
 import type { APIRoute } from "astro";
 import { selectQuotedRate } from "../../lib/courier-rules";
@@ -259,8 +263,11 @@ export const POST: APIRoute = async ({ request, locals }) => {
   try {
     // Attribution captured at the ad landing by the middleware; kept with the
     // order so a COD sale confirmed later can be uploaded to Google Ads.
-    const clickIds = readClickIdCookie(request);
+    const clickIds = readOrderClickIds(request);
     const storedClickIds = hasClickId(clickIds) ? serializeClickIds(clickIds) : undefined;
+    const metaRequestContext = serializeMetaOrderContext(
+      captureMetaOrderContext(request),
+    );
 
     const order = await persistOrder(database, {
       submitToken: data.submit_token,
@@ -294,6 +301,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
       courierCode: selectedRate.courier_code,
       courierService: selectedRate.courier_service,
       adClickIds: storedClickIds,
+      metaRequestContext,
     });
 
     let payment: AutoLarisPaymentRecord | undefined;

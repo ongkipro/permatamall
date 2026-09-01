@@ -176,6 +176,7 @@ test("persistOrder promotes the recent abandoned row and replaces its items", as
     courierCode: "jne",
     courierService: "REG",
     adClickIds: '{"gclid":"click-123"}',
+    metaRequestContext: '{"clientIp":"203.0.113.7"}',
   });
 
   assert.equal(result.id, 7);
@@ -193,8 +194,10 @@ test("persistOrder promotes the recent abandoned row and replaces its items", as
   assert.match(batchStatements[1].sql, /warehouse_id = \?/);
   assert.ok(batchStatements[1].args.includes(3));
   assert.match(batchStatements[1].sql, /ad_click_ids = COALESCE/);
+  assert.match(batchStatements[1].sql, /meta_request_context = COALESCE/);
   assert.ok(batchStatements[1].args.includes("sb_promote_123456"));
   assert.ok(batchStatements[1].args.includes('{"gclid":"click-123"}'));
+  assert.ok(batchStatements[1].args.includes('{"clientIp":"203.0.113.7"}'));
   assert.ok(!batchStatements.some((statement) =>
     statement.sql.includes("INSERT INTO orders"),
   ));

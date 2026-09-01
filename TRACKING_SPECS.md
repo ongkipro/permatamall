@@ -1,6 +1,6 @@
 # AdsBookCMS Meta Pixel, CAPI, GTM, and Google Ads Specification
 
-> Verified against disk: 2026-09-01 @ `68e34ef` + order/Purchase dedupe working tree
+> Verified against disk: 2026-09-02 @ `d962732` + Meta signal parity working tree
 
 This document owns the technical tracking contract for AdsBookCMS-rendered and headless storefronts. It covers event semantics, identity, browser/server boundaries, deduplication, durable delivery, store configuration, and verification. It does not claim attribution certainty, legal compliance, consent applicability, or live provider acceptance.
 
@@ -193,6 +193,12 @@ characters, generated with Web Crypto, and retained for 90 days. HTTPS uses
 `SameSite=None; Secure` so an embedded storefront can keep the same identifier;
 local HTTP uses `SameSite=Lax`.
 
+The bootstrap also establishes a valid first-party `_fbp` synchronously before
+an immediate `PageView` or `ViewContent` CAPI post. Deferring that work until
+`fbevents.js` loads leaves the server leg without a browser ID even though the
+later Pixel leg has one. A missing `_fbc` on organic traffic remains correct;
+it is created only from a real Meta click and is never fabricated for coverage.
+
 The raw value remains first-party transport data. Pixel Advanced Matching and
 the outbound CAPI payload each contain its SHA-256 hash. `PageView`,
 `ViewContent`, `AddToCart`, `InitiateCheckout`, and `Purchase` therefore share
@@ -214,6 +220,14 @@ request cookie header. All are first-party on the storefront origin and every
 tracker posts same-origin, so they arrive without a tracker having to include
 them. Explicit `_fbp`/`_fbc` values still win because Meta minted them; the
 dedicated external-ID cookie wins over phone so one visitor keeps one identity.
+
+Checkout snapshots the validated browser IDs plus request-derived IP and user
+agent into `orders.meta_request_context` (migration `0054`). A Purchase emitted
+after a later online-payment confirmation therefore retains the same
+`external_id`, `_fbp`, `_fbc`, IP, and user agent as the original checkout
+instead of inheriting the operator's confirmation request. Purchase catalog
+IDs are resolved from `order_items -> product_variants -> products`; caller or
+browser values cannot override the order's product identity.
 
 This is deliberate rather than defensive. Before the server read, `ViewContent`
 and `PageView` posted no `user_data` at all, and on a live install that was 2992
@@ -240,13 +254,18 @@ Flow:
 
 1. **Capture.** `src/middleware.ts` runs `parseClickIdsFromUrl(url)` on every non-private request. Values must match `/^[A-Za-z0-9._-]{1,256}$/` or they are dropped. When `fbclid` arrives without `_fbc`, the library synthesizes `_fbc` as `fb.1.<timestamp>.<fbclid>`.
 2. **Store.** Matching values are JSON-serialized into the cookie named by `CLICK_ID_COOKIE` — currently `adsbook_click_ids` — with `Max-Age` of 90 days, `Path=/`, and `SameSite=None; Secure` on HTTPS (`SameSite=Lax` otherwise). `_fbp` and `_fbc` are additionally re-issued as their own first-party cookies so Meta's own readers find them.
-3. **Read back.** `readClickIdCookie(request)` is called by `src/pages/api/submit-order.ts`, `src/pages/api/submit-middle-order.ts`, and `src/pages/api/v1/checkout.ts`; `readMetaBrowserIds(request)` wraps it for `src/pages/api/meta-event.ts`. Cookies ride along with the submit request, so no hidden form fields are needed. Malformed or hand-edited cookie values parse to `{}` rather than throwing inside the order path.
+3. **Read back.** `readOrderClickIds(request)` is called by `src/pages/api/submit-order.ts`, `src/pages/api/submit-middle-order.ts`, and `src/pages/api/v1/checkout.ts`; `readMetaBrowserIds(request)` wraps the same validated sources for `src/pages/api/meta-event.ts`. Cookies ride along with the submit request, so no hidden form fields are needed. Malformed or hand-edited cookie values parse to `{}` rather than throwing inside the order path.
 4. **Persist.** The serialized value is written to `orders.ad_click_ids` (migration `0024_daily_typhoid_mary.sql`).
 5. **Classify.** `src/lib/traffic-source.ts` reads that stored JSON and derives a `TrafficSourceType` of `meta`, `google`, `organic`, or `custom`, precedence Meta → Google → UTM heuristics. The admin surfaces it through `TrafficSourceBadge` in `OrdersTable.tsx` and `OrderDetail.tsx`.
 
 The cookie is `adsbook_click_ids`, renamed from `zanoby_click_ids` on 2026-08-16. `readClickIdCookie()` still **reads** the legacy name when the current one is absent, so attribution captured before the rename survives; nothing writes the legacy name, so it ages out with its own 90-day expiry.
 
 Why this matters for COD: the real conversion happens days after the click, when the courier collects cash. Without the click ID captured at landing and stored on the order, delivered revenue can never be uploaded back as an offline conversion, and Smart Bidding only ever learns from unconfirmed form submissions.
+
+Google and Meta clicks are retained independently. A later click from one
+network replaces only that network's identifier family; it does not erase the
+other network's still-attributable click. UTM-only follow-ups update campaign
+tags without erasing either paid identity.
 
 ### Cross-frame and cross-page preservation
 

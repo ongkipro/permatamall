@@ -6,6 +6,7 @@ import { checkRateLimit } from "./rate-limit.ts";
 import {
   findPurchaseOrderByStatusToken,
   findPurchaseOrderForApiKeyCaller,
+  resolveMetaPurchaseContentIds,
 } from "./meta-purchase-order.ts";
 import { sendMetaCapiEvent } from "./meta-capi.ts";
 
@@ -37,18 +38,25 @@ function purchaseDatabase() {
       customer_name TEXT NOT NULL, customer_phone TEXT NOT NULL, customer_email TEXT,
       province TEXT NOT NULL, city TEXT NOT NULL, postal_code TEXT,
       total_amount INTEGER NOT NULL, payment_method TEXT NOT NULL,
-      payment_status TEXT NOT NULL, public_status_token TEXT
+      payment_status TEXT NOT NULL, public_status_token TEXT,
+      ad_click_ids TEXT, meta_request_context TEXT
     );
     CREATE TABLE order_items (
       id INTEGER PRIMARY KEY, order_id INTEGER NOT NULL,
-      unit_price INTEGER NOT NULL, quantity INTEGER NOT NULL
+      variant_id INTEGER NOT NULL, unit_price INTEGER NOT NULL, quantity INTEGER NOT NULL
     );
+    CREATE TABLE products (id INTEGER PRIMARY KEY, title TEXT NOT NULL);
+    CREATE TABLE product_variants (id INTEGER PRIMARY KEY, product_id INTEGER NOT NULL);
     INSERT INTO orders VALUES (
       41, 'INV-10041', 'Nur Aisyah', '081234567890', NULL,
-      'Jawa Barat', 'Bandung', '40111', 214000, 'cod', 'unpaid', 'tok-41'
+      'Jawa Barat', 'Bandung', '40111', 214000, 'cod', 'unpaid', 'tok-41',
+      '{"_fbp":"fb.1.1700000000.browser"}',
+      '{"clientIp":"203.0.113.7"}'
     );
+    INSERT INTO products VALUES (10041, 'Produk Uji');
+    INSERT INTO product_variants VALUES (501, 10041);
     -- 135000 of goods; the 214000 invoice also carries shipping and the COD fee.
-    INSERT INTO order_items VALUES (1, 41, 45000, 3);
+    INSERT INTO order_items VALUES (1, 41, 501, 45000, 3);
   `);
   return { sqlite, database: { prepare: (sql: string) => new Statement(sqlite, sql) } as unknown as D1Database };
 }
@@ -80,6 +88,17 @@ test("the public lookup needs the order's own status token, the API-key lookup d
   // The goods, not the invoice: 45000 x 3, never the 214000 total.
   assert.equal(resolved?.product_value, 135000);
   assert.equal(resolved?.total_amount, 214000);
+  assert.equal(resolved?.product_ids, "10041");
+});
+
+test("Purchase content IDs come from order items, never the submitted browser value", () => {
+  const order = { product_ids: "10041,10042,invalid,10041" };
+  assert.deepEqual(resolveMetaPurchaseContentIds(order as never, ["99999"]), [
+    "10041",
+    "10042",
+  ]);
+  assert.equal(resolveMetaPurchaseContentIds({ product_ids: null } as never, ["99999"]), undefined);
+  assert.deepEqual(resolveMetaPurchaseContentIds(null, ["99999"]), ["99999"]);
 });
 
 /**

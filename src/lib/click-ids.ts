@@ -74,19 +74,31 @@ export function hasAdClickId(ids: ClickIds): boolean {
  * the only thing that can attribute it. The click was paid for and the
  * conversion was silently unattributable.
  *
- * - A new ad click replaces the stored set wholesale: last touch wins, and its
- *   campaign tags belong to it.
+ * - A new ad click replaces only that network's identifier family. Google and
+ *   Meta each retain their own last attributable click.
  * - Campaign tags alone keep the stored click identity and describe the
  *   current visit, so stale tags from an older click do not linger either.
  */
 export function mergeClickIds(stored: ClickIds, incoming: ClickIds): ClickIds {
-  if (hasAdClickId(incoming)) return incoming;
-  const preserved: ClickIds = {};
-  for (const key of AD_CLICK_KEYS) {
-    const value = stored[key];
-    if (value) preserved[key] = value;
+  const merged = { ...stored, ...incoming };
+
+  // Each ad network owns its own last click. A later Google click must not
+  // erase Meta attribution, and a later Meta click must not erase Google.
+  const googleKeys = ["gclid", "gbraid", "wbraid"] as const;
+  const incomingGoogle = googleKeys.some((key) => Boolean(incoming[key]));
+  if (incomingGoogle) {
+    for (const key of googleKeys) {
+      if (!incoming[key]) delete merged[key];
+    }
   }
-  return { ...preserved, ...incoming };
+
+  const incomingMetaClick = Boolean(incoming.fbclid || incoming._fbc);
+  if (incomingMetaClick) {
+    if (!incoming.fbclid) delete merged.fbclid;
+    if (!incoming._fbc) delete merged._fbc;
+  }
+
+  return merged;
 }
 
 // Click ids and tracking tokens are URL-safe strings up to 256 chars.
@@ -153,6 +165,14 @@ export function hasClickId(ids: ClickIds): boolean {
 const FB_BROWSER_ID_PATTERN = /^fb\.\d\.\d{10,20}\..+$/;
 const META_EXTERNAL_ID_PATTERN = /^[a-f0-9]{32}$/;
 
+export function isValidMetaBrowserId(value: unknown): value is string {
+  return typeof value === "string" && FB_BROWSER_ID_PATTERN.test(value);
+}
+
+export function isValidMetaExternalId(value: unknown): value is string {
+  return typeof value === "string" && META_EXTERNAL_ID_PATTERN.test(value);
+}
+
 function readCookieValue(cookieHeader: string, name: string): string | undefined {
   const match = cookieHeader.match(new RegExp(`(?:^|;\\s*)${name}=([^;]+)`));
   if (!match) return undefined;
@@ -193,13 +213,26 @@ export function readMetaBrowserIds(
   const directFbc = readCookieValue(cookieHeader, "_fbc");
   return {
     externalId:
-      externalId && META_EXTERNAL_ID_PATTERN.test(externalId)
+      externalId && isValidMetaExternalId(externalId)
         ? externalId
         : undefined,
-    fbp: fbp && FB_BROWSER_ID_PATTERN.test(fbp) ? fbp : undefined,
+    fbp: fbp && isValidMetaBrowserId(fbp) ? fbp : undefined,
     fbc:
-      directFbc && FB_BROWSER_ID_PATTERN.test(directFbc)
+      directFbc && isValidMetaBrowserId(directFbc)
         ? directFbc
-        : clickIds._fbc,
+        : clickIds._fbc && isValidMetaBrowserId(clickIds._fbc)
+          ? clickIds._fbc
+          : undefined,
+  };
+}
+
+/** Preserve the latest browser identifiers at the checkout boundary. */
+export function readOrderClickIds(request: Request): ClickIds {
+  const clickIds = readClickIdCookie(request);
+  const browserIds = readMetaBrowserIds(request);
+  return {
+    ...clickIds,
+    ...(browserIds.fbp ? { _fbp: browserIds.fbp } : {}),
+    ...(browserIds.fbc ? { _fbc: browserIds.fbc } : {}),
   };
 }
