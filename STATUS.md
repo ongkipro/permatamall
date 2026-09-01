@@ -1,6 +1,6 @@
 # STATUS — AdsBookCMS
 
-> Verified against disk: 2026-09-01 @ `8a0afcc` + WhatsApp same-context working tree
+> Verified against disk: 2026-09-01 @ `ae3b2bd` + WhatsApp production evidence
 
 > Last executed baseline: 2026-08-27 @ `1acbd7e` + review-hardening working tree.
 > `npm run check` 399 files / 0 errors / 0 warnings / 0 hints · `npm test`
@@ -146,6 +146,10 @@ the current browsing context instead of forcing another tab. Local Chrome at
 click, navigated that page to WhatsApp, and reported zero horizontal overflow.
 The full gate passed 615 tests (613 passed, two intentional skips), a clean
 419-file check, build, and 34-document validation.
+Commit `ae3b2bd` is live as Worker version
+`9c2dfae2-539f-4b93-b193-1931a6c7aa6a`; uncached production home and `/thanks`
+both return `200`, and the live action has `rel="nofollow"` with no browsing-
+context target.
 
 | Gate | Result |
 | --- | --- |

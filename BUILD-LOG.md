@@ -1,6 +1,6 @@
 # BUILD LOG: AdsBookCMS
 
-> Verified against disk: 2026-09-01 @ `8a0afcc` + WhatsApp same-context working tree
+> Verified against disk: 2026-09-01 @ `ae3b2bd` + WhatsApp production evidence
 
 Author & Curator: **[ongki.pro](https://ongki.pro)**
 
@@ -16,7 +16,13 @@ Author & Curator: **[ongki.pro](https://ongki.pro)**
 - Evidence: 615 tests (613 passed, two intentional skips), 419 checked files
   with zero diagnostics, successful build, 34-document validation, and local
   Chrome at 390 px showing one page target before and after the click while the
-  current page navigated to WhatsApp. No production action occurred.
+  current page navigated to WhatsApp.
+- Commit `ae3b2bd` was pushed to `main`. The first upload used a stale canonical
+  `dist/` and the immediate live check returned `503`; rebuilding from the
+  canonical commit and redeploying produced Worker version
+  `9c2dfae2-539f-4b93-b193-1931a6c7aa6a`. Uncached live home and `/thanks`
+  return `200`, and the rendered WhatsApp action has `rel="nofollow"` with no
+  `target`.
 
 
 ### Entry 96: Repeated checkout resolves to one order and one Purchase
