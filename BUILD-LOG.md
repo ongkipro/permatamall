@@ -1,10 +1,23 @@
 # BUILD LOG: AdsBookCMS
 
-> Verified against disk: 2026-09-01 @ `f842c44` + production release evidence
+> Verified against disk: 2026-09-01 @ `8a0afcc` + WhatsApp same-context working tree
 
 Author & Curator: **[ongki.pro](https://ongki.pro)**
 
 ---
+
+### Entry 97: WhatsApp confirmation stays in the current tab
+
+**Date:** 2026-09-01 · **Release:** local candidate only · **Migration:** none
+
+- Removed `_blank` only from the buyer-facing `/thanks` WhatsApp action. The
+  official `https://wa.me` URL and confirmation message remain unchanged,
+  allowing universal-link app handoff with a same-context web fallback.
+- Evidence: 615 tests (613 passed, two intentional skips), 419 checked files
+  with zero diagnostics, successful build, 34-document validation, and local
+  Chrome at 390 px showing one page target before and after the click while the
+  current page navigated to WhatsApp. No production action occurred.
+
 
 ### Entry 96: Repeated checkout resolves to one order and one Purchase
 

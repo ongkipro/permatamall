@@ -1,6 +1,16 @@
 # PRD — AdsBookCMS (single)
 
-> Verified against disk: 2026-09-01 @ `68e34ef` + order/Purchase dedupe working tree
+> Verified against disk: 2026-09-01 @ `8a0afcc` + WhatsApp same-context working tree
+
+## A24 — Same-context WhatsApp handoff
+
+**Status:** Accepted 2026-09-01.
+
+- **REQ-175** — When a buyer activates the WhatsApp confirmation action on
+  `/thanks`, the storefront shall navigate the current browsing context to the
+  official `https://wa.me` URL so a capable mobile OS may hand off to WhatsApp
+  without the storefront creating another browser tab. Devices without an app
+  shall retain the same-context HTTPS fallback.
 
 ## A23 — Canonical checkout replay
 

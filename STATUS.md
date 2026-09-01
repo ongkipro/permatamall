@@ -1,6 +1,6 @@
 # STATUS — AdsBookCMS
 
-> Verified against disk: 2026-09-01 @ `f842c44` + production release evidence
+> Verified against disk: 2026-09-01 @ `8a0afcc` + WhatsApp same-context working tree
 
 > Last executed baseline: 2026-08-27 @ `1acbd7e` + review-hardening working tree.
 > `npm run check` 399 files / 0 errors / 0 warnings / 0 hints · `npm test`
@@ -139,6 +139,13 @@ present. Commit `f842c44` was pushed to `main` and deployed to
 Live home, sitemap, Google feed, and Meta feed returned `200`; protected health
 returned `401`. No provider test event, dummy order, or explicit remote D1
 command ran.
+
+The `/thanks` WhatsApp action now keeps the official `https://wa.me` handoff in
+the current browsing context instead of forcing another tab. Local Chrome at
+390 px resolved the configured message, retained one page target across the
+click, navigated that page to WhatsApp, and reported zero horizontal overflow.
+The full gate passed 615 tests (613 passed, two intentional skips), a clean
+419-file check, build, and 34-document validation.
 
 | Gate | Result |
 | --- | --- |

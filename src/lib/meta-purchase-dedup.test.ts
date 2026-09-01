@@ -14,6 +14,10 @@ const TRACKER_SOURCE = readFileSync(
   new URL("../components/storefront/tracking/MetaThanksTracker.astro", import.meta.url),
   "utf8",
 );
+const THANKS_SOURCE = readFileSync(
+  new URL("../pages/thanks.astro", import.meta.url),
+  "utf8",
+);
 
 const INLINE_SCRIPT = (() => {
   const match = TRACKER_SOURCE.match(/<script\b[^>]*\bis:inline\b[^>]*>([\s\S]*)<\/script>/);
@@ -307,4 +311,15 @@ test("embed parent surfaces never emit Purchase before verified thanks", () => {
   assert.doesNotMatch(widgetSource, /["']Purchase["']/);
   assert.doesNotMatch(widgetSource, /adsbook:order-complete/);
   assert.doesNotMatch(navigationSource, /adsbook:order-complete/);
+});
+
+test("the thanks WhatsApp action keeps app handoff in the current browsing context", () => {
+  const whatsappAnchor = THANKS_SOURCE.match(/<a\s+id="wa-confirm"[\s\S]*?<\/a>/)?.[0] ?? "";
+
+  assert.ok(whatsappAnchor, "the thanks page must render its WhatsApp confirmation action");
+  assert.doesNotMatch(
+    whatsappAnchor,
+    /target\s*=\s*["']_blank["']/,
+    "wa.me must receive the current context so mobile can hand off without opening another tab",
+  );
 });
