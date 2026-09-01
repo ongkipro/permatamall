@@ -1560,7 +1560,7 @@ genuinely unmanageable.
 
 - [x] **A-182** — Preserve complete Meta identity and authoritative commerce
   fields across `ViewContent`, `AddToCart`, and delayed `Purchase`. **Done
-  locally 2026-09-02.**
+  and deployed 2026-09-02.**
   -> Done when: `_fbp` exists before immediate CAPI posts; Google and Meta click
   families do not erase each other; checkout persists validated first-party
   Meta IDs, IP, and user agent; a later paid Purchase reuses that context;

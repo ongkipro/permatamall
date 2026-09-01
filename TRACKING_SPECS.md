@@ -1,6 +1,6 @@
 # AdsBookCMS Meta Pixel, CAPI, GTM, and Google Ads Specification
 
-> Verified against disk: 2026-09-02 @ `d962732` + Meta signal parity working tree
+> Verified against disk: 2026-09-02 @ `b653de8` + Meta signal parity production evidence
 
 This document owns the technical tracking contract for AdsBookCMS-rendered and headless storefronts. It covers event semantics, identity, browser/server boundaries, deduplication, durable delivery, store configuration, and verification. It does not claim attribution certainty, legal compliance, consent applicability, or live provider acceptance.
 

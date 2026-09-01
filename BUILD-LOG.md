@@ -4940,7 +4940,7 @@ again returned `200`.
 
 ### Entry 96: Meta top-of-funnel and delayed Purchase identity parity
 
-**Date:** 2026-09-02 · **Release candidate:** 1.4.1 · **Migration:** 0054
+**Date:** 2026-09-02 · **Release:** 1.4.1 · **Migration:** 0054
 
 - `MetaPixelBase` now establishes `_fbp` before the immediate `PageView` and
   `ViewContent` CAPI requests. The deferred Pixel library no longer leaves the
@@ -4959,3 +4959,12 @@ again returned `200`.
   `npm run check` 421 files with zero diagnostics; `npm run build` completed;
   and all 55 migrations applied successfully to a fresh local D1. No provider
   secret was read and no production state was changed during local validation.
+- **Production evidence.** GitHub Actions run `33538583304` deployed commit
+  `b653de8` successfully as Worker version
+  `56c5940e-79c0-41d1-9b82-4c1f20083c67`; the first database-backed request
+  applied migration `0054`, confirmed by both its migration claim and the new
+  column. A clean organic Chromium product visit then produced `PageView` and
+  `ViewContent` rows accepted by Meta on the first attempt. Both carried
+  `external_id`, `_fbp`, client IP, and user agent; `ViewContent` also carried
+  one catalog ID and value. `_fbc` was absent by design because no Meta click
+  was supplied. No order or customer record was created for this smoke.

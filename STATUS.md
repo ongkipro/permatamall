@@ -1,6 +1,6 @@
 # STATUS — AdsBookCMS
 
-> Verified against disk: 2026-09-02 @ `d962732` + Meta signal parity working tree
+> Verified against disk: 2026-09-02 @ `b653de8` + Meta signal parity production evidence
 
 > Last executed baseline: 2026-08-27 @ `1acbd7e` + review-hardening working tree.
 > `npm run check` 399 files / 0 errors / 0 warnings / 0 hints · `npm test`
@@ -31,7 +31,7 @@ The previous version of this file described a different repository — it opened
 | Bindings | `OMS_DB` (D1), `SESSION` (KV, caches only since ADR-021), `ASSET_BUCKET` (R2), `AI`, `ASSETS` — names fixed across installs |
 | `wrangler.jsonc` | template of placeholders; each install supplies its own resources |
 
-### Current Meta signal parity candidate
+### Current Meta signal parity release
 
 - `MetaPixelBase` establishes `_fbp` before immediate top-of-funnel CAPI events.
 - Native and headless checkout retain validated Meta browser/request context for
@@ -41,7 +41,13 @@ The previous version of this file described a different repository — it opened
 - Google and Meta click families no longer erase each other during later visits.
 - Local evidence: 618 passed / 2 skipped / 0 failed; 421-file check with zero
   diagnostics; Cloudflare build complete; all 55 migrations applied on a fresh
-  local D1. Provider acceptance and production migration remain release checks.
+  local D1.
+- GitHub Actions run `33538583304` deployed commit `b653de8` successfully as
+  Worker version `56c5940e-79c0-41d1-9b82-4c1f20083c67`. Production applied
+  migration `0054`. An organic product-page browser smoke produced accepted
+  `PageView` and `ViewContent` CAPI rows with `external_id`, `_fbp`, IP, user
+  agent, and (for `ViewContent`) one catalog ID plus value. `_fbc` was correctly
+  absent because the smoke did not originate from a Meta click.
 
 ### Known installs
 
