@@ -1,6 +1,6 @@
 # STATUS — AdsBookCMS
 
-> Verified against disk: 2026-09-02 @ `a680105` + AutoLaris submit/advice working tree
+> Verified against disk: 2026-09-02 @ `ef86095` + AutoLaris production evidence
 
 > Last executed baseline: 2026-08-27 @ `1acbd7e` + review-hardening working tree.
 > `npm run check` 399 files / 0 errors / 0 warnings / 0 hints · `npm test`
@@ -171,9 +171,9 @@ context target.
 
 | Gate | Result |
 | --- | --- |
-| `npm test` | **540 / 540 passing**, with zero notification writes failing open unnoticed (grepped for after the A19 review found four fixtures swallowing them) |
-| `npm run check` | 387 files · 0 errors · 0 warnings · 0 hints |
-| `npm run build` | Cloudflare server bundle complete; 48 bundled migrations |
+| `npm test` | **624 total: 622 passing, two intentional install-only skips, zero failures** |
+| `npm run check` | 421 files · 0 errors · 0 warnings · 0 hints |
+| `npm run build` | Cloudflare server bundle complete; 55 bundled migrations |
 | PageSpeed Insights, mobile, official API (2026-08-24) | taniniaga 96 · carukesi 95 · permatamall 94 · zanobyshop 92 · skincarebpom 89 · zvara 85 — CLS 0.00 on every store |
 | Lighthouse accessibility, `/payment` & `/thanks` (2026-08-24) | 100, zero failed audits, on both pages on every install |
 | Browser smoke | A fresh isolated install exposed all ten default couriers through `/api/admin/expeditions`. `/admin/orders/abandoned` rendered its shadcn Card/Badge/Button/Dialog composition at 390, 768, and 1280 CSS px with zero overflow, no stuck busy state, no failed request, and no console error. A populated lead opened the conversion Dialog, focused the invalid address, and returned focus after `Escape`. A separate isolated owner session on `/admin/balance` rendered pending and locked AutoLaris rows, blocked blank manual-confirmation submission with focused inline errors, and an already-confirmed payment redirected `/payment` to `/thanks` with zero console errors. No live provider request, deployment, or remote D1 mutation occurred. |
@@ -274,7 +274,7 @@ System-wide security, correctness, documentation, navigation, and UX audit:
 | Medium | Theme colour, locale, and admin display name resolve from D1 but still lack complete admin editors. |
 | Medium | External uptime checks and a cross-install operational view do not exist; per-install schema/CAPI alerting does. |
 | Blocked | Mengantar tracking, pickup, insufficient-wallet recovery, and wallet balance still require canonical provider contracts or explicitly approved sandbox/live evidence. |
-| Release evidence | Commit `09812c7` plus the A17 working tree has local test/check/build and isolated browser evidence, but no hosted CI result, production-D1 preflight, or install-specific provider smoke. |
+| Release evidence | Commit `ef86095` passed hosted run `33621446443` and is live as Worker version `b5002c3c-df91-4f54-8760-38feb16c7fb7`; custom domains, `7 * * * *` cron, live `/payment`, catalogues, sitemap, and robots were verified. Real settled/expired/failed Advice vocabulary remains provider evidence, not a local code claim. |
 | Data note | Local/remote D1 may still contain a previously provisioned warehouse address, phone, and provider ObjectIds; scrubbing it is a separate destructive/remote-data action |
 
 ---

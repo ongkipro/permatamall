@@ -1,6 +1,6 @@
 # BUILD LOG: AdsBookCMS
 
-> Verified against disk: 2026-09-02 @ `a680105` + AutoLaris submit/advice working tree
+> Verified against disk: 2026-09-02 @ `ef86095` + AutoLaris production evidence
 
 Author & Curator: **[ongki.pro](https://ongki.pro)**
 
@@ -8,7 +8,7 @@ Author & Curator: **[ongki.pro](https://ongki.pro)**
 
 ### Entry 98: One AutoLaris Create Order, then fail-closed Advice reconciliation
 
-**Date:** 2026-09-02 · **Release:** 1.4.2 local candidate · **Migration:** none
+**Date:** 2026-09-02 · **Release:** 1.4.2 production · **Migration:** none
 
 - Replaced the standalone AutoLaris payment request with exactly one
   `POST /api/h2h/submit`. The payload is built from the committed order,
@@ -34,6 +34,14 @@ Author & Curator: **[ongki.pro](https://ongki.pro)**
   browser opened the install gate because a feature worktree intentionally has
   no seeded D1; buyer-page rendering is therefore deferred to the post-deploy
   live smoke instead of being claimed from static checks.
+- Production evidence: commit `ef86095` passed GitHub Actions run
+  `33621446443` and deployed as Cloudflare Worker version
+  `b5002c3c-df91-4f54-8760-38feb16c7fb7`. The deploy registered custom domains
+  plus `schedule: 7 * * * *`. Uncached live home and `/payment` returned `200`;
+  headless Chromium at 390 × 844 rendered the new AutoLaris confirmation copy;
+  Google and Meta catalogue feeds, sitemap, and robots all returned `200` with
+  non-empty bodies. No dummy payment, provider mutation, secret read, or remote
+  D1 command was used for this release smoke.
 
 
 ### Entry 97: WhatsApp confirmation stays in the current tab

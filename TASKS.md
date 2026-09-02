@@ -1,6 +1,6 @@
 # Tasks: AdsBookCMS
 
-> Verified against disk: 2026-09-02 @ `a680105` + AutoLaris submit/advice working tree
+> Verified against disk: 2026-09-02 @ `ef86095` + AutoLaris production evidence
 
 ## A31 — AutoLaris Create Order and scheduled Advice reconciliation
 
@@ -18,7 +18,9 @@
       -> Evidence: focused provider/payment/health suite 54/54; full suite
       624 total, 622 passed, two intentional skips; clean 421-file check;
       successful Worker build, 34-document validation, Wrangler config type
-      generation, and deploy dry-run.
+      generation, deploy dry-run, hosted run `33621446443`, Worker version
+      `b5002c3c-df91-4f54-8760-38feb16c7fb7`, registered hourly trigger, and
+      live browser/feed smoke.
 - [x] **A-184** — Refuse Purchase for an abandoned lead at the shared Meta
   order eligibility boundary while retaining COD Purchase for submitted orders.
       -> REQ: REQ-173, REQ-174 · Done when: `shipping_status = abandoned`

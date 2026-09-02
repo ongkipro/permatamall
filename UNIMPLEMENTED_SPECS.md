@@ -1,6 +1,6 @@
 # AdsBookCMS — Remaining Work and Blockers
 
-> Verified against disk: 2026-09-02 @ `a680105` + AutoLaris submit/advice working tree
+> Verified against disk: 2026-09-02 @ `ef86095` + AutoLaris production evidence
 
 This is the single ledger of work that is **not** done. Implemented behaviour belongs in `STATUS.md`, history in `BUILD-LOG.md`, accepted product behaviour in `PRD.md`, real architecture in `ARCHITECTURE.md`, and constraining decisions in `DECISIONS.md`.
 

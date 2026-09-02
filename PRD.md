@@ -1,6 +1,6 @@
 # PRD — AdsBookCMS (single)
 
-> Verified against disk: 2026-09-02 @ `a680105` + AutoLaris submit/advice working tree
+> Verified against disk: 2026-09-02 @ `ef86095` + AutoLaris production evidence
 
 ## A24 — Same-context WhatsApp handoff
 

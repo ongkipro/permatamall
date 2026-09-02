@@ -1,6 +1,6 @@
 # Release and Deployment — AdsBookCMS
 
-> Verified against disk: 2026-09-02 @ `a680105` + AutoLaris submit/advice working tree
+> Verified against disk: 2026-09-02 @ `ef86095` + AutoLaris production evidence
 
 This document is the single owner of how a change reaches production. It replaces the previous `VERSION.md` runbook and the deleted `AUTO_UPDATE_DEPLOY.md`, which between them described three mutually exclusive release models, none of which matched the one workflow that exists.
 
@@ -49,25 +49,21 @@ npm run check     # astro check && tsc --noEmit
 npm run build     # astro build
 ```
 
-Current verified working-tree baseline: **419 tests passing**, `tsc` clean, `astro check` 353 files, 0 errors / 0 warnings / 0 hints, and the Cloudflare server build complete. The pushed branch does not yet contain the A17 working tree and has no hosted CI result because this workflow runs only for `main`, pull requests, or manual dispatch.
+Current verified baseline: **624 tests total, 622 passing and two intentional skips**, `tsc` clean, `astro check` 421 files with 0 errors / 0 warnings / 0 hints, 34 Markdown documents valid, and the Cloudflare server build complete. Commit `ef86095` passed the hosted build-and-deploy workflow.
 
 ### Current production-readiness assessment
 
-Commit `09812c7` plus the verified A17 working tree is a **release candidate**,
-not an unconditional full-production release. The local automated and browser gates are green, but the following
-release evidence is still missing:
+Commit `ef86095` is deployed as Worker version
+`b5002c3c-df91-4f54-8760-38feb16c7fb7`. Hosted check, test, build, deploy,
+custom-domain, hourly-cron, buyer-page browser, and catalogue-feed evidence are
+green. The following provider evidence remains separate from this release:
 
-- a hosted CI run for the exact commit;
-- an approved production-D1 migration preflight or an explicitly accepted
-  first-request runtime migration;
 - read-only or approved sandbox/live smoke evidence for the active Mengantar
   account's tracking, pickup, and insufficient-wallet responses;
 - a live settled, expired, and failed AutoLaris Advice response proving the
   provider vocabulary accepted by the fail-closed scheduled reconciliation.
 
-COD and manual seller-bank transfer can be considered for a controlled canary
-after install-specific configuration, backup/rollback preparation, and provider
-smoke checks. AutoLaris QRIS/VA creates one provider order through `/submit` and
+AutoLaris QRIS/VA now creates one provider order through `/submit` and
 the hourly Worker reconciles it through `/advice`. Only explicit provider-paid
 evidence advances D1; unknown responses fail closed, and owner/admin manual
 confirmation remains the immutable audited fallback.
