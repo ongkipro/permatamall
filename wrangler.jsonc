@@ -112,6 +112,12 @@
     "PUBLIC_ADMIN_NAME": "Permata Mall Ops",
     "PUBLIC_EMBED_ALLOWED_ORIGINS": "https://permatamall.shop",
 
+    // AutoLaris uses its own numeric area catalogue. These are deliberately
+    // separate from the Mongo-style Mengantar ids stored on orders/warehouses.
+    // `/submit` mirrors the order for payment; Mengantar remains fulfilment.
+    "AUTOLARIS_ORDER_ORIGIN_ID": "3517100",
+    "AUTOLARIS_ORDER_DESTINATION_ID": "3518010",
+
     // Root-relative or absolute. Replace the placeholder wordmark in
     // public/images/ with the store's own brand assets.
     "PUBLIC_SITE_LOGO": "/images/logo.webp",

@@ -1,6 +1,6 @@
 # Release and Deployment — AdsBookCMS
 
-> Verified against disk: 2026-08-25 @ `17f3b9a` + Google offline delivery working tree
+> Verified against disk: 2026-09-02 @ `a680105` + AutoLaris submit/advice working tree
 
 This document is the single owner of how a change reaches production. It replaces the previous `VERSION.md` runbook and the deleted `AUTO_UPDATE_DEPLOY.md`, which between them described three mutually exclusive release models, none of which matched the one workflow that exists.
 
@@ -62,15 +62,15 @@ release evidence is still missing:
   first-request runtime migration;
 - read-only or approved sandbox/live smoke evidence for the active Mengantar
   account's tracking, pickup, and insufficient-wallet responses;
-- the canonical AutoLaris transaction-inquiry endpoint and paid/pending/expired/
-  failed schemas required by any future automated reconciliation job.
+- a live settled, expired, and failed AutoLaris Advice response proving the
+  provider vocabulary accepted by the fail-closed scheduled reconciliation.
 
 COD and manual seller-bank transfer can be considered for a controlled canary
 after install-specific configuration, backup/rollback preparation, and provider
-smoke checks. AutoLaris QRIS/VA no longer depends on the retired webhook path:
-the accepted production-safe path today is owner/admin manual confirmation from
-the provider dashboard with immutable audit evidence. Any automatic paid marking
-must remain disabled until authoritative provider inquiry is implemented and proven.
+smoke checks. AutoLaris QRIS/VA creates one provider order through `/submit` and
+the hourly Worker reconciles it through `/advice`. Only explicit provider-paid
+evidence advances D1; unknown responses fail closed, and owner/admin manual
+confirmation remains the immutable audited fallback.
 
 A green build is not proof the storefront works. For any browser-visible change, open the affected page before merging. Neither `tsc` nor `astro check` catches a route that fails to compose — an unterminated `.astro` frontmatter block silently produced a 404 on `/disclaimer` while every static check stayed green.
 

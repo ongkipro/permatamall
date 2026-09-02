@@ -8,10 +8,10 @@ export type CmsVersionInfo = {
 };
 
 export const CMS_VERSION: CmsVersionInfo = {
-  version: "1.4.1",
+  version: "1.4.2",
   channel: "production",
-  // Schema 55 retains Meta request identity for delayed paid Purchase events.
-  releaseTag: "2026.09-meta-signal-parity",
+  // Schema 55 remains current; this release changes provider transport only.
+  releaseTag: "2026.09-autolaris-submit-advice",
   coreEngine: "Astro 7 SSR + Cloudflare Workers",
   schemaVersion: 55,
   lastUpdated: "2026-09-02",

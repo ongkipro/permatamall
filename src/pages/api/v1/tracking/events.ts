@@ -5,7 +5,7 @@ import { getStoreAdsConfig } from '../../../../lib/store-ads';
 import { getRuntimeEnv } from '../../../../lib/env';
 import { getClientIp } from '../../../../lib/rate-limit';
 import { enqueueCapiEvent, deliverCapiEvent, drainCapiOutbox } from '../../../../lib/capi-outbox';
-import { findPurchaseOrderForApiKeyCaller, resolveMetaPurchaseContentIds } from '../../../../lib/meta-purchase-order';
+import { findPurchaseOrderForApiKeyCaller, isMetaPurchaseOrderEligible, resolveMetaPurchaseContentIds } from '../../../../lib/meta-purchase-order';
 import { toE164Digits } from '../../../../lib/meta-capi';
 import { matchableCustomerEmail } from '../../../../lib/autolaris-payment';
 import { parseClickIds } from '../../../../lib/click-ids';
@@ -69,6 +69,14 @@ export const POST: APIRoute = async ({ request, locals }) => {
           'Purchase event_id harus berupa order_number yang tercatat.',
           404,
           { code: 'PURCHASE_ORDER_NOT_FOUND' },
+          validation.corsHeaders,
+        ));
+      }
+      if (!isMetaPurchaseOrderEligible(purchaseOrder)) {
+        return validation.finalize(headlessError(
+          'Order belum memenuhi syarat Purchase.',
+          409,
+          { code: 'PURCHASE_ORDER_NOT_ELIGIBLE' },
           validation.corsHeaders,
         ));
       }

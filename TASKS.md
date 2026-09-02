@@ -1,6 +1,31 @@
 # Tasks: AdsBookCMS
 
-> Verified against disk: 2026-09-01 @ `8a0afcc` + WhatsApp same-context working tree
+> Verified against disk: 2026-09-02 @ `a680105` + AutoLaris submit/advice working tree
+
+## A31 — AutoLaris Create Order and scheduled Advice reconciliation
+
+- [x] **A-183** — Replace the standalone payment request with one complete
+  AutoLaris Create Order and reconcile its settlement on the existing hourly
+  Worker schedule.
+      -> REQ: REQ-30, REQ-34 · Done when: checkout sends exactly one
+      `/api/h2h/submit` request for QRIS/VA with `courir_id: 1`, configured
+      numeric area IDs, D1-authoritative shipper/receiver/item facts, prepaid
+      `cod_value: 0`, and nested instruction/expiry parsing; cron sends
+      `{ transaction_id: provider_transaction_id }` to `/api/h2h/advice`;
+      pending and unknown responses change nothing; explicit paid evidence
+      advances payment/order atomically and once, queues the order-derived Meta
+      Purchase, never dispatches shipment, and retains audited manual fallback.
+      -> Evidence: focused provider/payment/health suite 54/54; full suite
+      624 total, 622 passed, two intentional skips; clean 421-file check;
+      successful Worker build, 34-document validation, Wrangler config type
+      generation, and deploy dry-run.
+- [x] **A-184** — Refuse Purchase for an abandoned lead at the shared Meta
+  order eligibility boundary while retaining COD Purchase for submitted orders.
+      -> REQ: REQ-173, REQ-174 · Done when: `shipping_status = abandoned`
+      cannot reach either first-party or Headless Purchase; prepaid Purchase
+      requires `payment_status = paid`; normal pending COD remains eligible.
+      -> Evidence: direct four-state eligibility regression in
+      `meta-purchase-order.test.ts`, included in the focused and full suites.
 
 ## A24 — Same-context WhatsApp handoff
 

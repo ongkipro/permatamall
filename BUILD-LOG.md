@@ -1,10 +1,40 @@
 # BUILD LOG: AdsBookCMS
 
-> Verified against disk: 2026-09-01 @ `ae3b2bd` + WhatsApp production evidence
+> Verified against disk: 2026-09-02 @ `a680105` + AutoLaris submit/advice working tree
 
 Author & Curator: **[ongki.pro](https://ongki.pro)**
 
 ---
+
+### Entry 98: One AutoLaris Create Order, then fail-closed Advice reconciliation
+
+**Date:** 2026-09-02 · **Release:** 1.4.2 local candidate · **Migration:** none
+
+- Replaced the standalone AutoLaris payment request with exactly one
+  `POST /api/h2h/submit`. The payload is built from the committed order,
+  warehouse, and item rows; sends numeric install-owned area IDs,
+  `courir_id: 1`, the selected QRIS/VA channel, real item quantity/price/weight,
+  and `cod_value: 0`; and persists nested VA/QR/payment URL and Jakarta expiry.
+  Physical dispatch remains an explicit Mengantar operator action.
+- Extended the existing hourly Worker cron with
+  `POST /api/h2h/advice { transaction_id }`. Observed `02/PENDING` remains
+  untouched. Only `00` plus an explicit paid status can commit one guarded D1
+  payment/order transition; unknown and failed reads are no-ops. Each accepted
+  automatic transition enqueues the same order-derived Meta Purchase as the
+  audited manual fallback.
+- Updated payment/admin copy and operational health so automatic settlement is
+  visible without claiming that every paid result was manually confirmed.
+- Closed a sibling signal defect found during review: an `ABN-*` abandoned lead
+  can no longer become Meta Purchase through either public or Headless tracking.
+  Submitted COD remains Purchase; prepaid orders require confirmed payment.
+- Local evidence: provider/payment/health/Meta focus 54/54; full suite 624 total,
+  622 passed and two intentional skips; `npm run check` 421 files with zero
+  diagnostics; successful Worker build; 34 Markdown documents validated;
+  Wrangler configuration types generated; deploy dry-run completed. The local
+  browser opened the install gate because a feature worktree intentionally has
+  no seeded D1; buyer-page rendering is therefore deferred to the post-deploy
+  live smoke instead of being claimed from static checks.
+
 
 ### Entry 97: WhatsApp confirmation stays in the current tab
 

@@ -6,6 +6,7 @@ import { checkRateLimit } from "./rate-limit.ts";
 import {
   findPurchaseOrderByStatusToken,
   findPurchaseOrderForApiKeyCaller,
+  isMetaPurchaseOrderEligible,
   resolveMetaPurchaseContentIds,
 } from "./meta-purchase-order.ts";
 import { sendMetaCapiEvent } from "./meta-capi.ts";
@@ -38,7 +39,8 @@ function purchaseDatabase() {
       customer_name TEXT NOT NULL, customer_phone TEXT NOT NULL, customer_email TEXT,
       province TEXT NOT NULL, city TEXT NOT NULL, postal_code TEXT,
       total_amount INTEGER NOT NULL, payment_method TEXT NOT NULL,
-      payment_status TEXT NOT NULL, public_status_token TEXT,
+      payment_status TEXT NOT NULL, shipping_status TEXT NOT NULL,
+      public_status_token TEXT,
       ad_click_ids TEXT, meta_request_context TEXT
     );
     CREATE TABLE order_items (
@@ -49,7 +51,7 @@ function purchaseDatabase() {
     CREATE TABLE product_variants (id INTEGER PRIMARY KEY, product_id INTEGER NOT NULL);
     INSERT INTO orders VALUES (
       41, 'INV-10041', 'Nur Aisyah', '081234567890', NULL,
-      'Jawa Barat', 'Bandung', '40111', 214000, 'cod', 'unpaid', 'tok-41',
+      'Jawa Barat', 'Bandung', '40111', 214000, 'cod', 'unpaid', 'pending', 'tok-41',
       '{"_fbp":"fb.1.1700000000.browser"}',
       '{"clientIp":"203.0.113.7"}'
     );
@@ -89,6 +91,41 @@ test("the public lookup needs the order's own status token, the API-key lookup d
   assert.equal(resolved?.product_value, 135000);
   assert.equal(resolved?.total_amount, 214000);
   assert.equal(resolved?.product_ids, "10041");
+});
+
+test("an abandoned COD lead is never eligible for Purchase", () => {
+  assert.equal(
+    isMetaPurchaseOrderEligible({
+      payment_method: "cod",
+      payment_status: "unpaid",
+      shipping_status: "abandoned",
+    }),
+    false,
+  );
+  assert.equal(
+    isMetaPurchaseOrderEligible({
+      payment_method: "cod",
+      payment_status: "unpaid",
+      shipping_status: "pending",
+    }),
+    true,
+  );
+  assert.equal(
+    isMetaPurchaseOrderEligible({
+      payment_method: "qris",
+      payment_status: "pending",
+      shipping_status: "pending",
+    }),
+    false,
+  );
+  assert.equal(
+    isMetaPurchaseOrderEligible({
+      payment_method: "qris",
+      payment_status: "paid",
+      shipping_status: "pending",
+    }),
+    true,
+  );
 });
 
 test("Purchase content IDs come from order items, never the submitted browser value", () => {
