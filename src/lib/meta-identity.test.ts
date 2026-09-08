@@ -7,6 +7,7 @@ import {
   normalizeMetaText,
   sha256Hex,
   toE164Digits,
+  resolveMetaCountry,
 } from "./meta-identity.ts";
 
 const THANKS_TRACKER = readFileSync(
@@ -278,4 +279,37 @@ test("Google enhanced-conversion names are nested where gtag reads them", () => 
     THANKS_TRACKER.includes("nameParts.slice(1).join(' ')"),
     "Google last name must keep the space Meta strips",
   );
+});
+
+
+// `country` was validated by the contract, hashed by `meta-capi`, sent by the
+// `/thanks` browser leg and forwarded by the headless route — and dropped by
+// `/api/meta-event`, which carries every first-party PageView, ViewContent and
+// `/thanks` Purchase. The two legs of one order described the buyer with
+// different key sets, and Meta scores match quality on what it is handed.
+
+test("country is an order's own key, the edge country otherwise, and never a guess", () => {
+  assert.equal(resolveMetaCountry(undefined, "SG", true), "id");
+  assert.equal(resolveMetaCountry("us", "SG", true), "id", "the order outranks a caller claim");
+  assert.equal(resolveMetaCountry(undefined, "SG", false), "sg");
+  assert.equal(resolveMetaCountry("id", null, false), "id");
+  assert.equal(resolveMetaCountry(undefined, "XX", false), undefined, "Cloudflare's unknown");
+  assert.equal(resolveMetaCountry(undefined, "T1", false), undefined, "Cloudflare's Tor");
+  assert.equal(resolveMetaCountry(undefined, "indonesia", false), undefined, "not alpha-2");
+  assert.equal(resolveMetaCountry(undefined, null, false), undefined);
+});
+
+test("both CAPI ingestion routes forward country to the outbox", () => {
+  for (const [label, path] of [
+    ["src/pages/api/meta-event.ts", "../pages/api/meta-event.ts"],
+    ["src/pages/api/v1/tracking/events.ts", "../pages/api/v1/tracking/events.ts"],
+  ] as const) {
+    const source = readFileSync(new URL(path, import.meta.url), "utf8");
+    const userData = source.slice(source.indexOf("userData: {"), source.indexOf("customData: {"));
+    assert.match(
+      userData,
+      /country: resolveMetaCountry\(/,
+      `${label} builds user_data without country — the Pixel leg sends it and this leg would not`,
+    );
+  }
 });

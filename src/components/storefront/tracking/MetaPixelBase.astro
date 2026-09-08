@@ -156,6 +156,26 @@ const shouldRenderPixel = /^\d{5,25}$/.test(String(pixelId || '').trim());
         // component now owns the single init, and a page with better matching
         // supplies it through `__PS_META_INIT__` instead of calling `fbq`.
         let initialised = false;
+        let releaseInit;
+        // Resolves the moment the single init has actually been *issued* — not
+        // when `runInit` was called. The two differ: the init waits on the
+        // external-ID digest, so the function returns first and the
+        // `fbq('init')` lands a microtask later.
+        //
+        // That gap is load-bearing. fbq's stub queues by arrival order and
+        // fbevents replays the queue in that order, so a `track` enqueued
+        // before the init is replayed before it and discarded. Measured against
+        // the live library in an isolated frame: `track` then `init` produced
+        // zero beacons to `facebook.com/tr`; `init` then `track` produced one.
+        // No error, no warning — the event simply never existed.
+        //
+        // `MetaLandingTracker` fires during body parse, and
+        // `build.inlineStylesheets: 'always'` means no render-blocking
+        // stylesheet separates it from this script, so nothing guarantees the
+        // parser yields in between.
+        const pixelInitialised = new Promise((resolve) => {
+          releaseInit = resolve;
+        });
         const runInit = (advancedMatching) => {
           if (initialised) return false;
           initialised = true;
@@ -167,11 +187,26 @@ const shouldRenderPixel = /^\d{5,25}$/.test(String(pixelId || '').trim());
             }
             if (Object.keys(matching).length) window.fbq('init', pixelId, matching);
             else window.fbq('init', pixelId);
+            releaseInit();
             window.fbq('track', 'PageView', {}, { eventID: eventId });
           });
           return true;
         };
         window.__PS_META_INIT__ = runInit;
+
+        // The only way another file may reach `fbq('track')`. A caller cannot
+        // overtake the init above no matter which order the document parses in,
+        // and it no longer has to rely on an incidental network delay to be
+        // correct.
+        window.__PS_META_TRACK__ = (eventName, data, options) => {
+          void pixelInitialised.then(() => {
+            try {
+              window.fbq('track', eventName, data, options);
+            } catch (error) {
+              console.error('meta-pixel-track', error);
+            }
+          });
+        };
 
         if (window.__PS_META_AWAIT_MATCHING__ === true) {
           // The page declared it will supply matching (see `/thanks`, whose

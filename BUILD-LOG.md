@@ -6,6 +6,45 @@ Author & Curator: **[ongki.pro](https://ongki.pro)**
 
 ---
 
+## 2026-09-08 — Meta signal parity: `country` and pixel ordering
+
+Both defects were first proven on the `zvarashop` install and confirmed here by
+reading the code, not by matching symbol names.
+
+- **`country` never reached the Conversions API leg.** It was validated by
+  `meta-event-contract.ts`, hashed by `meta-capi.ts`, sent by the `/thanks`
+  browser leg and forwarded by the headless route — and dropped by
+  `/api/meta-event`, which built `userData` without it. That route carries every
+  first-party PageView, ViewContent and `/thanks` Purchase, so the Pixel leg of
+  an order described the buyer with `country` and the Conversions API leg of the
+  same order did not. `resolveMetaCountry` supplies it: `id` for a resolved
+  order, the caller's validated claim otherwise, Cloudflare's `cf-ipcountry`
+  last, and nothing at all for `XX` or `T1` — a hash of a non-country matches
+  nobody, which is worse than an absent key.
+
+- **A browser event could be replayed ahead of the pixel init and discarded.**
+  `runInit` defers the actual `fbq('init')` behind the external-ID digest, so
+  the function returns before the init is issued. fbq's stub queues by arrival
+  order and fbevents replays it in that order. Measured against the live library
+  in an isolated frame: `track` then `init` produced **zero** beacons to
+  `facebook.com/tr`; `init` then `track` produced one. No error, no warning.
+  `MetaLandingTracker` fires during body parse and
+  `build.inlineStylesheets: 'always'` leaves no render-blocking stylesheet
+  between it and the head bootstrap, so nothing guaranteed the parser yielded.
+  Every tracker now queues through `window.__PS_META_TRACK__`, which holds the
+  call until the init has actually been issued.
+
+- Two test-side consequences, both the tests catching up to a real change rather
+  than being bent around it. `meta-purchase-dedup.test.ts` waited only for the
+  CAPI post before asserting, and the browser leg now lands after it; and its
+  window stub models `MetaPixelBase`'s contract, which has gained the track
+  hook. Both were updated to match.
+
+- Gates: 628 tests (626 passed, 2 pre-existing skips), `astro check` clean,
+  build passed, 34 documents validated.
+
+---
+
 ### Entry 98: One AutoLaris Create Order, then fail-closed Advice reconciliation
 
 **Date:** 2026-09-02 · **Release:** 1.4.2 production · **Migration:** none

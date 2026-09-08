@@ -110,6 +110,22 @@ async function runTracker(
     __PS_LOAD_META_PIXEL__: () => {
       run.pixelLoadPulled += 1;
     },
+    // The other half of the base's contract: no tracker may call `fbq('track')`
+    // itself, because fbevents replays its queue in arrival order and discards
+    // a track that precedes the init. The real hook waits for the init to have
+    // been issued; here that is already true, so it forwards immediately.
+    __PS_META_TRACK__: (
+      eventName: string,
+      data?: unknown,
+      options?: { eventID?: string },
+    ) => {
+      (windowStub.fbq as (...args: unknown[]) => unknown)(
+        "track",
+        eventName,
+        data,
+        options,
+      );
+    },
     location: {
       search: "",
       href: "https://permatamall.shop/thanks",
@@ -152,8 +168,16 @@ async function runTracker(
     fetchStub,
   );
 
-  // The script fires asynchronously (status fetch + SHA-256 hashing).
-  for (let i = 0; i < 20 && run.postedPayloads.length === 0; i += 1) {
+  // The script fires asynchronously (status fetch + SHA-256 hashing), and the
+  // browser leg now lands *after* the CAPI post: `__PS_META_TRACK__` holds it
+  // until MetaPixelBase's single init has actually been issued, so waiting only
+  // for `postedPayloads` returns before the Pixel call exists. Wait for both,
+  // still bounded.
+  for (
+    let i = 0;
+    i < 40 && (run.postedPayloads.length === 0 || run.pixelEventIds.length === 0);
+    i += 1
+  ) {
     await new Promise((resolve) => setTimeout(resolve, 5));
   }
   return run;

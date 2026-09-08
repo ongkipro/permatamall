@@ -241,7 +241,10 @@ const { tenantName, tenantSlug } = Astro.props;
           if (typeof window.__PS_LOAD_META_PIXEL__ === 'function') {
             window.__PS_LOAD_META_PIXEL__();
           }
-          window.fbq('track', eventName, data, { eventID: finalEventId });
+          // Through the ordered hook, not `fbq` directly: the Purchase must
+          // never be replayed ahead of MetaPixelBase's single init, which
+          // fbevents would discard without a word.
+          window.__PS_META_TRACK__(eventName, data, { eventID: finalEventId });
         }
       } catch (error) {
         console.error('meta-browser-purchase', error);
