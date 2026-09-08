@@ -6,6 +6,24 @@ Author & Curator: **[ongki.pro](https://ongki.pro)**
 
 ---
 
+## 2026-09-08 — Catalog feed fields are clamped to what the platforms accept
+
+- Google Merchant Center caps `title` at 150 characters and `description` at
+  5000; Meta's catalog caps them at 200 and 9999. Over a cap the item is
+  **disapproved**, not truncated — silently, one product at a time.
+
+- `product-mutation.ts` accepts a title of up to 160 characters, so a title of
+  151-160 saved cleanly, rendered correctly on the storefront, and vanished from
+  Google's approved set. The clamp is in the feed rather than at the admin
+  boundary: the merchant's own record is not Google's to constrain, and a
+  platform's limit belongs where that platform reads. A shortened title is
+  listed; an over-length one is not listed at all.
+
+- Gates: 637 tests (635 passed, 2 pre-existing skips), `astro check` clean,
+  build passed.
+
+---
+
 ## 2026-09-08 — Pixel identity guard, drain claim, and outage recovery
 
 Ported from defects proven on the `zvarashop` install, each verified here before
