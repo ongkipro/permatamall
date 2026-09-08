@@ -1,6 +1,11 @@
 import type { APIRoute } from 'astro';
 import { getEnvValue, getRuntimeEnv, maskSecretValue } from '../../../lib/env';
-import { sendMetaCapiEvent } from '../../../lib/meta-capi';
+import { sendMetaCapiEvent, verifyMetaPixelIdentity } from '../../../lib/meta-capi';
+import {
+  countRecoverableEvents,
+  drainCapiOutbox,
+  requeueRecoverableEvents,
+} from '../../../lib/capi-outbox';
 import {
   GOOGLE_ADS_CONVERSION_ID_PATTERN,
   GOOGLE_ADS_CONVERSION_LABEL_PATTERN,
@@ -14,7 +19,7 @@ const GTM_ID_PATTERN = /^GTM-[A-Z0-9]{4,20}$/;
 const META_TEST_CODE_PATTERN = /^TEST\d{3,20}$/;
 
 type AdsConfigPayload = {
-  action?: 'save-meta' | 'save-google' | 'test-capi';
+  action?: 'save-meta' | 'save-google' | 'test-capi' | 'requeue-capi';
   meta_pixel_id?: string;
   meta_capi_token?: string;
   meta_test_event_code?: string;
@@ -72,7 +77,15 @@ export const GET: APIRoute = async ({ locals }) => {
   try {
     const row = await getAdsRow(database);
     if (!row) return json({ success: false, error: 'Store belum tersedia.' }, 404);
-    return json({ success: true, data: publicConfig(row, getEnvValue('META_CAPI_ACCESS_TOKEN', getRuntimeEnv(locals))) });
+    return json({
+      success: true,
+      data: {
+        ...publicConfig(row, getEnvValue('META_CAPI_ACCESS_TOKEN', getRuntimeEnv(locals))),
+        // Surfaced so the operator is told an outage is recoverable rather than
+        // having to know to ask. Zero on a healthy store.
+        capi_recoverable_events: await countRecoverableEvents(database).catch(() => 0),
+      },
+    });
   } catch (error) {
     console.error('ads-config-get', error);
     return json({ success: false, error: 'Gagal mengambil konfigurasi Ads & Tracking.' }, 500);
@@ -88,6 +101,7 @@ export const PUT: APIRoute = async ({ request, locals }) => {
 
   try {
     const current = await getAdsRow(database);
+    let identityWarning: string | undefined;
     if (!current) return json({ success: false, error: 'Store belum tersedia.' }, 404);
 
     const submittedPixelId = clean(body.meta_pixel_id, 25);
@@ -124,8 +138,69 @@ export const PUT: APIRoute = async ({ request, locals }) => {
       );
     }
 
+    // Offer an outage back, once, on an explicit operator decision. A dead
+    // token or an unreachable destination terminates every event that arrives
+    // while it is broken; fixing the credential does not un-terminate them, and
+    // nothing else in the system ever will.
+    if (body.action === 'requeue-capi') {
+      const pixelId = submittedPixelId || String(current.meta_pixel_id || '');
+      if (!PIXEL_ID_PATTERN.test(pixelId) || !storedToken) {
+        return json({ success: false, error: 'Simpan Pixel ID dan Access Token yang valid sebelum mengirim ulang.' }, 400);
+      }
+      // Proven live before anything moves: requeueing against a destination
+      // that is still broken would re-terminate every row and spend the
+      // operator's one recovery on nothing.
+      const probe = await sendMetaCapiEvent(
+        'PageView',
+        `requeue_probe_${Date.now()}`,
+        new URL(request.url).origin,
+        {
+          clientIp: request.headers.get('cf-connecting-ip') || '127.0.0.1',
+          userAgent: request.headers.get('user-agent') || 'AdsBookCMS-CAPI-Tester/1.0',
+        },
+        {},
+        pixelId,
+        storedToken,
+      ).catch(() => ({ success: false, reason: 'Koneksi ke Meta CAPI gagal.' }));
+      if (!probe.success) {
+        return json({ success: false, error: probe.reason || 'Meta menolak konfigurasi saat ini; tidak ada event yang dikirim ulang.' }, 400);
+      }
+      const requeued = await requeueRecoverableEvents(database);
+      const delivered = requeued ? await drainCapiOutbox(database, pixelId, storedToken) : 0;
+      return json({
+        success: true,
+        message: requeued
+          ? `${requeued} event dikirim ulang, ${delivered} sudah diterima Meta. Sisanya menunggu antrean.`
+          : 'Tidak ada event tertahan yang bisa dikirim ulang.',
+        data: { requeued, delivered },
+      });
+    }
+
     if (body.action === 'save-meta') {
       if (submittedPixelId && !PIXEL_ID_PATTERN.test(submittedPixelId)) return json({ success: false, error: 'Meta Pixel ID hanya boleh berisi 5–25 digit.' }, 400);
+      // A digit check cannot tell a pixel from a Business Manager ID, and
+      // saving the wrong one kills the browser Pixel and the Conversions API
+      // together, silently. Ask Meta what the ID is while the operator is still
+      // on the screen.
+      if (submittedPixelId && submittedPixelId !== String(current.meta_pixel_id || '') && storedToken) {
+        const identity = await verifyMetaPixelIdentity(submittedPixelId, storedToken);
+        if (identity.state === 'not-a-pixel') {
+          return json({
+            success: false,
+            error:
+              `ID ${submittedPixelId} ada di Meta${identity.name ? ` dengan nama "${identity.name}"` : ''}, ` +
+              'tetapi bukan Pixel/Dataset — kemungkinan ID Business Manager, Page, atau Ad Account. ' +
+              'Ambil Dataset ID dari Events Manager → Data Sources → Settings.',
+          }, 400);
+        }
+        if (identity.state === 'unknown') {
+          // Never block on an inconclusive answer: a permission gap or a
+          // network blip must not stop an operator saving a correct ID.
+          identityWarning =
+            `ID tersimpan, tetapi belum dapat dipastikan sebagai Pixel/Dataset (${identity.reason}). ` +
+            'Jalankan "Kirim test event" untuk memastikan.';
+        }
+      }
       await database.prepare(`
         UPDATE stores
         SET meta_pixel_id = ?,
@@ -152,7 +227,11 @@ export const PUT: APIRoute = async ({ request, locals }) => {
     const updated = await getAdsRow(database);
     return json({
       success: true,
-      message: 'Konfigurasi tracking berhasil disimpan.',
+      // A save can succeed and still carry a warning — an ID Meta could not
+      // confirm as a Pixel/Dataset. Overwriting that with a fixed success
+      // string is how a two-day outage stayed invisible on a sibling install.
+      message: identityWarning || 'Konfigurasi tracking berhasil disimpan.',
+      warning: identityWarning,
       data: updated ? publicConfig(updated, getEnvValue('META_CAPI_ACCESS_TOKEN', getRuntimeEnv(locals))) : undefined,
     });
   } catch (error) {

@@ -180,6 +180,19 @@ const feedUrl = `${origin}/feed/meta-catalog.xml`;
           <button id="testMeta" type="button" class="btn-secondary min-h-11 w-full px-5 text-xs sm:w-auto">Kirim test event</button>
         </div>
 
+        <div id="capiRecoveryBlock" class="hidden border-t border-slate-200 p-5 md:p-6">
+          <h2 class="text-sm font-black text-slate-950">Kirim ulang event yang tertahan</h2>
+          <p id="capiRecoveryCount" class="mt-1 text-xs leading-5 text-slate-500"></p>
+          <p class="mt-2 text-[11px] leading-5 text-slate-500">
+            Konfigurasi yang salah menghentikan setiap event yang masuk selama ia salah, dan memperbaikinya
+            tidak menghidupkan kembali event tersebut. Tombol ini mengantre ulang event itu satu kali dengan
+            <code>event_id</code> dan waktu kejadian aslinya, jadi Meta tetap melakukan deduplikasi terhadap
+            apa pun yang sudah diterima. Konfigurasi diuji lebih dulu; kalau Meta masih menolaknya, tidak ada
+            satu pun event yang dipindahkan.
+          </p>
+          <button id="requeueCapi" type="button" class="btn-secondary mt-4 min-h-11 w-full px-5 text-xs sm:w-auto">Kirim ulang event tertahan</button>
+        </div>
+
         <div class="flex flex-col gap-3 border-t border-slate-200 p-4 sm:flex-row sm:items-center sm:justify-between">
           <p id="metaStatus" class="min-h-5 text-xs font-bold text-slate-500" role="status" aria-live="polite" aria-atomic="true">Perubahan belum ada.</p>
           <button id="saveMeta" type="submit" class="btn-blue min-h-11 w-full px-6 text-xs sm:w-auto">Simpan Meta</button>
@@ -343,6 +356,19 @@ const feedUrl = `${origin}/feed/meta-catalog.xml`;
     const toggleToken = document.getElementById('toggleToken');
     const tokenHint = document.getElementById('tokenHint');
     const testButton = document.getElementById('testMeta');
+    const requeueButton = document.getElementById('requeueCapi') as HTMLButtonElement | null;
+    const recoveryBlock = document.getElementById('capiRecoveryBlock');
+    const recoveryCount = document.getElementById('capiRecoveryCount');
+
+    // Hidden entirely at zero: a healthy store must not be shown a recovery
+    // control for an outage it never had.
+    const renderRecovery = (recoverable: number) => {
+      if (!recoveryBlock) return;
+      recoveryBlock.classList.toggle('hidden', recoverable < 1);
+      if (recoveryCount) {
+        recoveryCount.textContent = `${recoverable} event tertahan dan masih bisa dikirim ulang.`;
+      }
+    };
 
     const kpiPixelStatus = document.getElementById('kpiPixelStatus');
     const kpiPixelVal = document.getElementById('kpiPixelVal');
@@ -370,6 +396,7 @@ const feedUrl = `${origin}/feed/meta-catalog.xml`;
         return payload.data;
       })
       .then((data) => {
+        renderRecovery(Number(data.capi_recoverable_events || 0));
         pixelInput.value = data.meta_pixel_id || '';
         if (tokenHint) tokenHint.textContent = data.meta_capi_configured ? 'Tersimpan (Enkripsi Server)' : 'Belum diisi';
 
@@ -409,10 +436,38 @@ const feedUrl = `${origin}/feed/meta-catalog.xml`;
         const payload = await res.json().catch(() => ({}));
         if (!res.ok || !payload.success) throw new Error(payload.error || 'Gagal menyimpan konfigurasi.');
 
-        if (statusText) statusText.textContent = 'Konfigurasi Meta berhasil disimpan!';
+        // A save can succeed and still carry a warning — an ID Meta could not
+        // confirm as a Pixel/Dataset. Overwriting it with a fixed cheerful
+        // string is how a two-day outage stayed invisible on a sibling install.
+        if (statusText) statusText.textContent = payload.warning || 'Konfigurasi Meta berhasil disimpan!';
         updateBadge(Boolean(payload.data.meta_pixel_id && payload.data.meta_capi_configured));
       } catch (err) {
         if (statusText) statusText.textContent = err instanceof Error ? err.message : 'Gagal menyimpan.';
+      }
+    });
+
+    requeueButton?.addEventListener('click', async () => {
+      requeueButton.setAttribute('disabled', 'true');
+      requeueButton.textContent = 'Mengirim ulang...';
+      try {
+        const res = await fetch('/api/admin/ads', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'requeue-capi',
+            meta_pixel_id: pixelInput.value.trim(),
+            meta_capi_token: tokenInput.value.trim() || undefined,
+          }),
+        });
+        const payload = await res.json().catch(() => ({}));
+        if (!res.ok || !payload.success) throw new Error(payload.error || 'Gagal mengirim ulang event.');
+        if (statusText) statusText.textContent = payload.message || 'Event dikirim ulang.';
+        renderRecovery(0);
+      } catch (err) {
+        if (statusText) statusText.textContent = err instanceof Error ? err.message : 'Gagal mengirim ulang event.';
+      } finally {
+        requeueButton.removeAttribute('disabled');
+        requeueButton.textContent = 'Kirim ulang event tertahan';
       }
     });
 

@@ -6,6 +6,55 @@ Author & Curator: **[ongki.pro](https://ongki.pro)**
 
 ---
 
+## 2026-09-08 — Pixel identity guard, drain claim, and outage recovery
+
+Ported from defects proven on the `zvarashop` install, each verified here before
+being applied rather than assumed from a matching symbol name.
+
+- **A Pixel ID is now verified against Meta, not a regular expression.**
+  `^\d{5,25}$` accepts a Business Manager ID, an ad account, a page. When one
+  was saved into that field on a sibling install, both legs died for two days
+  and neither said so: `POST /{business}/events` answers "Object with ID … does
+  not exist, cannot be loaded due to missing permissions, **or does not support
+  this operation**" — the third clause being the operative one, which reads like
+  an auth failure — and the browser beacon endpoint validates no ID at all, so
+  `facebook.com/tr` accepted every event and discarded it. `verifyMetaPixelIdentity`
+  asks Meta for a field that exists only on an AdsPixel: code 200 means it is a
+  pixel, code 100 "nonexisting field" means the object resolves and is something
+  else, and that case is refused **by name**. Code 100/33 and anything else is
+  `unknown` and saves with a warning, because a missing asset permission
+  produces the same shape and a verification that cannot reach Meta must never
+  block an operator from fixing a credential. The screen shows that warning
+  rather than overwriting it with a fixed success string.
+
+- **Outbox rows are claimed before they are sent.** Every `/api/meta-event`
+  request fires a drain in `waitUntil`, so two visitors arriving together ran
+  two drains that selected the same due rows and both transmitted them. The
+  evidence on the sibling install was rows carrying `attempts` of 9 against a
+  `max_attempts` of 5, which no sequential path can produce. Meta deduplicates
+  on `event_id` so nothing double-counted, but the quota was spent twice and the
+  attempt budget stopped meaning anything. The drain now claims its batch with
+  one `UPDATE … RETURNING` that leases the rows five minutes forward.
+
+- **A terminated outage can be recovered, once, by an operator.** A dead token
+  or an unreachable destination terminates every event that arrives while it is
+  broken, and fixing the configuration does not un-terminate them.
+  `requeueRecoverableEvents` gives every failed row one more attempt after the
+  route has proven the destination live with a probe — refusing to move
+  anything if Meta still rejects it. Two exclusions are absolute: an unparseable
+  payload, and anything older than seven days, because retries preserve the
+  original `event_time` and Meta rejects a stale event. Without that bound a
+  recovery would send rows Meta refuses and re-terminate them.
+
+- Existing drain tests identified the statement by `SELECT id, event_id`, which
+  is now `RETURNING id, event_id`; they were realigned to identify the two
+  statements by what they do rather than by their verb.
+
+- Gates: 635 tests (633 passed, 2 pre-existing skips), `astro check` clean,
+  build passed, 34 documents validated.
+
+---
+
 ## 2026-09-08 — Meta signal parity: `country` and pixel ordering
 
 Both defects were first proven on the `zvarashop` install and confirmed here by
