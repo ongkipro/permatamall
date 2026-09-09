@@ -835,7 +835,17 @@ export function initMiddleOrderForm(
       variant_label: label,
       guard_token: guardToken,
     };
-    sessionStorage.setItem("thanks_state", JSON.stringify(state));
+    // The order already exists in D1 by this point, so nothing here may throw:
+    // a storage write that fails must not cost the buyer their confirmation.
+    // Safari's private mode has historically thrown on any write, and a browser
+    // set to block site data does the same. Unguarded, that stranded a buyer on
+    // the submitting spinner with a real order behind them — and because the
+    // CAPI Purchase is only ever triggered from `/thanks`, neither leg fired.
+    try {
+      sessionStorage.setItem("thanks_state", JSON.stringify(state));
+    } catch {
+      // The fragment locator carries the order on its own.
+    }
     setSubmitting(true, "Mengalihkan...");
 
     navigateAfterCheckout("/thanks");

@@ -6,6 +6,37 @@ Author & Curator: **[ongki.pro](https://ongki.pro)**
 
 ---
 
+## 2026-09-09 — A committed order could lose its own confirmation
+
+- `sessionStorage.setItem("thanks_state", …)` sat **outside** the try/catch, and
+  after the order was already committed to D1. Safari's private mode has
+  historically thrown on any write, and a browser set to block site data does
+  the same. That throw stranded the buyer on the submitting spinner with a real
+  order behind them — and because the server Purchase is only ever triggered
+  from `/thanks`, neither the Pixel leg nor the Conversions API leg fired.
+  Guarded in both checkout forms.
+
+- Ported from the product line rather than merged: this install is 273 commits
+  behind `product/main` and 118 ahead, and a reconciliation would touch 117
+  source files with 12,500 deletions — its own landing pages among them. That
+  is a maintenance-window operation with a backup and its own session, not a
+  routine sync, so only the safety-critical fix was brought across.
+
+- **The catalog identifier decision was deliberately left alone.** The product
+  now emits `identifier_exists: no` without `g:mpn`; this install emits
+  **neither**, and its comment argues the case from Google's own reference —
+  that the value is for products genuinely carrying no assigned identifiers,
+  that setting it incorrectly where evidence of an identifier exists earns a
+  warning, and that omitting it defaults to `yes`, which is what a branded
+  product is. Both positions are defensible and this one is the better
+  researched of the two. Overriding it silently to match the product would have
+  been the wrong instinct; the divergence is recorded for a decision instead.
+
+- Gates: 646 tests (644 passed, 2 pre-existing skips), `astro check` clean,
+  build passed.
+
+---
+
 ## 2026-09-08 — The panel now reports what it could not say
 
 Two blind spots that let a Meta outage on a sibling install run for two days.
