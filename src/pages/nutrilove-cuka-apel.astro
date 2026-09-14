@@ -144,16 +144,18 @@ const sectionLead = 'text-[13.5px] sm:text-[14px] text-slate-600 leading-relaxed
   <main class="mx-auto min-h-screen w-full max-w-[480px] bg-white pb-12 font-sans text-slate-900 shadow-2xl selection:bg-[#0F2F1F] selection:text-white antialiased">
     
     <!-- ═══ 1. URGENCY ANNOUNCEMENT BAR (TOP) ═══ -->
-    <header class="flex items-center justify-between border-b border-emerald-950 bg-[#0F2F1F] px-3.5 sm:px-4 py-2 text-white shadow-md">
-      <div class="flex items-center gap-2 text-[11px] sm:text-[11.5px] font-extrabold tracking-wide min-w-0">
+    <header class="flex items-center justify-between border-b border-emerald-950 bg-[#0F2F1F] px-3 py-2 text-white shadow-xs">
+      <div class="flex items-center gap-1.5 text-[10.5px] min-[380px]:text-[11.5px] font-extrabold tracking-wide min-w-0">
         <span class="flex h-2 w-2 relative shrink-0">
           <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
           <span class="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
         </span>
         <span class="text-amber-300 font-black uppercase shrink-0">PROMO:</span>
-        <span class="text-slate-100 truncate">BELI 1 DAPAT 3 • GRATIS ONGKIR</span>
+        <span class="text-slate-100 font-bold whitespace-nowrap">BELI 1 DAPAT 3</span>
+        <span class="text-amber-400 font-bold">•</span>
+        <span class="text-amber-300 font-black uppercase whitespace-nowrap">GRATIS ONGKIR</span>
       </div>
-      <span class="whitespace-nowrap text-[10.5px] sm:text-[11px] font-black tracking-wider text-amber-300 bg-emerald-800/90 px-2.5 py-0.5 rounded-full border border-emerald-600/60 shadow-xs shrink-0 ml-2">
+      <span class="whitespace-nowrap text-[9.5px] min-[380px]:text-[10.5px] font-black tracking-wider text-amber-300 bg-emerald-800/90 px-2 py-0.5 rounded-full border border-emerald-600/60 shadow-xs shrink-0 ml-1.5">
         BISA COD
       </span>
     </header>
@@ -182,20 +184,22 @@ const sectionLead = 'text-[13.5px] sm:text-[14px] text-slate-600 leading-relaxed
           <strong class="text-emerald-950 font-bold">Bukan Sekadar Salah Bantal:</strong> Habis makan santan, gulai, rendang, atau gorengan kepala langsung kliyengan dan pundak tegang kencang? Jangan tunggu sampai pembuluh darah tersumbat total. Terapi 1 gelas rutin NutriLove Cuka Apel Murni <em>With The Mother</em> membantu mengikis plak kolesterol dan melarutkan lemak darah secara alami.
         </p>
 
-        <!-- GRATIS ONGKIR SELURUH INDONESIA (BOLD & BESAR) -->
-        <div class="mx-auto mt-4 max-w-[420px] rounded-2xl bg-gradient-to-r from-[#0F2F1F] via-[#16422C] to-[#0F2F1F] p-3 text-white shadow-md border-2 border-amber-400/40">
-          <div class="flex items-center justify-center gap-2">
-            <span class="flex h-2.5 w-2.5 relative shrink-0">
-              <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-300 opacity-80"></span>
-              <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-amber-400"></span>
+        <!-- ═══ GRATIS ONGKIR SELURUH INDONESIA (MOBILE-OPTIMIZED BANNER) ═══ -->
+        <div class="mx-auto mt-4 w-full max-w-[420px] rounded-2xl bg-gradient-to-b from-[#0F2F1F] via-[#143e2a] to-[#0F2F1F] px-3.5 py-3 text-center text-white shadow-md border-2 border-amber-400/60">
+          <div class="flex items-center justify-center gap-1.5">
+            <span class="flex h-2 w-2 relative shrink-0">
+              <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-300 opacity-75"></span>
+              <span class="relative inline-flex rounded-full h-2 w-2 bg-amber-400"></span>
             </span>
-            <span class="text-[16px] sm:text-[18px] font-black uppercase tracking-wider text-amber-300 drop-shadow-xs">
+            <span class="text-[clamp(14px,4.5vw,17.5px)] font-black uppercase tracking-wide text-amber-300 drop-shadow-xs leading-tight">
               GRATIS ONGKIR SELURUH INDONESIA
             </span>
           </div>
-          <p class="text-[11.5px] sm:text-[12px] font-bold text-slate-200 mt-1">
-            Khusus Promo Beli 1 Dapat 3 Hari Ini • Bisa Bayar di Tempat (COD)
-          </p>
+          <div class="mt-1.5 flex flex-wrap items-center justify-center gap-x-1.5 gap-y-0.5 text-[11.5px] min-[380px]:text-[12px] font-bold text-slate-100 leading-snug">
+            <span>Khusus Promo Beli 1 Dapat 3 Hari Ini</span>
+            <span class="text-amber-400 font-black">•</span>
+            <span class="text-amber-200 font-extrabold">Bisa Bayar di Tempat (COD)</span>
+          </div>
         </div>
       </div>
 
@@ -223,11 +227,11 @@ const sectionLead = 'text-[13.5px] sm:text-[14px] text-slate-600 leading-relaxed
       </div>
 
       <!-- Clean Minimalist Trust Row -->
-      <div class="mt-4 flex flex-wrap items-center justify-center gap-x-2.5 gap-y-1.5 px-3 text-[11.5px] sm:text-[12px] font-bold text-slate-700">
-        <span class="bg-emerald-50 px-3 py-1 rounded-full text-emerald-900 border border-emerald-200/80">Gratis Ongkir se-Indonesia</span>
-        <span class="bg-slate-100 px-3 py-1 rounded-full text-slate-800 border border-slate-200/60">Bisa COD (Bayar di Tempat)</span>
-        <span class="bg-slate-100 px-3 py-1 rounded-full text-slate-800 border border-slate-200/60">100% Fermentasi Murni</span>
-        <span class="bg-slate-100 px-3 py-1 rounded-full text-slate-800 border border-slate-200/60">Garansi Anti Pecah</span>
+      <div class="mt-4 flex flex-wrap items-center justify-center gap-x-2 gap-y-1.5 px-3 text-[11px] sm:text-[11.5px] font-bold text-slate-700">
+        <span class="bg-emerald-50 px-2.5 py-1 rounded-full text-emerald-900 border border-emerald-200/80 whitespace-nowrap">Gratis Ongkir se-Indonesia</span>
+        <span class="bg-slate-100 px-2.5 py-1 rounded-full text-slate-800 border border-slate-200/60 whitespace-nowrap">Bisa COD (Bayar di Tempat)</span>
+        <span class="bg-slate-100 px-2.5 py-1 rounded-full text-slate-800 border border-slate-200/60 whitespace-nowrap">100% Fermentasi Murni</span>
+        <span class="bg-slate-100 px-2.5 py-1 rounded-full text-slate-800 border border-slate-200/60 whitespace-nowrap">Garansi Anti Pecah</span>
       </div>
 
       <!-- 4 Key Physical Pain Points (Clean Structured Cards) -->
@@ -859,9 +863,12 @@ const sectionLead = 'text-[13.5px] sm:text-[14px] text-slate-600 leading-relaxed
             </span>
           </div>
 
-          <div class="pt-1">
+          <div class="pt-1 flex flex-wrap items-center justify-center gap-1.5">
             <span class="inline-block bg-white/10 text-amber-200 border border-amber-400/30 text-[11.5px] sm:text-[12.5px] font-bold px-3 py-1.5 rounded-lg leading-tight">
-              BELI 1 DAPAT 3 (Total 1.500 ml) Hanya Rp 97.500
+              BELI 1 DAPAT 3 (Total 1.500 ml)
+            </span>
+            <span class="inline-block bg-amber-400 text-emerald-950 font-black text-[11px] sm:text-[11.5px] px-2.5 py-1.5 rounded-lg uppercase tracking-wide">
+              GRATIS ONGKIR
             </span>
           </div>
         </div>
