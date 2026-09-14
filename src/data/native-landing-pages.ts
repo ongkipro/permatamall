@@ -119,4 +119,12 @@ export const nativeLandingPages: NativeLandingPage[] = [
     description: 'Landing page konversi untuk Carukési Relaxing Gel angle Momen Intim Pasangan, relaksasi pinggang cepat lelah, paha tegang & lutut kaku setelah aktivitas.',
     isActive: true,
   },
+  {
+    slug: 'nutrilove-cuka-apel',
+    title: 'NutriLove Cuka Apel — Terapi Alami Kolesterol, Tengkuk Kaku & Lemak Darah',
+    productSlug: 'cuka-sari-apel-100-original',
+    description: 'Landing page konversi NutriLove Cuka Apel With The Mother angle Kolesterol Tinggi, Tengkuk Kaku Berat, Plak Pembuluh Darah & Promo Beli 1 Dapat 3.',
+    isActive: true,
+  },
 ];
+
