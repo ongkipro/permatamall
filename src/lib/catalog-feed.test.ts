@@ -7,6 +7,7 @@ import {
   generateMetaCatalogXml,
   type CatalogProduct,
   clampFeedText,
+  feedImagePath,
 } from "./catalog-feed.ts";
 
 test("catalog identity is the numeric Product ID with a five-digit minimum", () => {
@@ -226,4 +227,12 @@ test("clampFeedText trims on a word boundary when one is close", () => {
   assert.equal(clampFeedText("satu dua tiga empat", 12), "satu dua");
   // No nearby space: a hard cut, and never one character short of it.
   assert.equal(clampFeedText("a".repeat(40), 10), "a".repeat(10));
+});
+
+test("feeds link the JPEG sibling of an uploaded WebP, since Meta takes JPEG or PNG only", () => {
+  const upload = "/assets/uploads/2026-10-08/bd4cac38-d36e-4285-9811-532ebecdb3de.webp";
+  assert.equal(feedImagePath(upload), upload.replace(/\.webp$/, ".jpg"));
+  for (const other of ["/images/mark.webp", "https://r2.example.com/x.webp", "/assets/uploads/2026-10-08/x.png"]) {
+    assert.equal(feedImagePath(other), other);
+  }
 });
