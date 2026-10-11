@@ -2,7 +2,8 @@
 import BaseLayout from '../layouts/BaseLayout.astro';
 import MetaLandingTracker from '../components/storefront/tracking/MetaLandingTracker.astro';
 import GeoIpResolvedForm from '../components/storefront/forms/GeoIpResolvedForm.astro';
-import SocialProofToast from '../components/storefront/install/LandingSocialProofToast.astro';
+import SocialProofToast from '../components/storefront/shared/SocialProofToast.astro';
+import { recentOrderCount } from '../lib/social-proof';
 import { getStorefrontProduct, getStorefrontProducts } from '../lib/catalog';
 import { nativeLandingCanonicalPath } from '../lib/landing-pages';
 import { defaultCatalogContentId } from '../lib/catalog-feed';
@@ -80,16 +81,6 @@ const discount = comparePrice > price ? Math.round((1 - price / comparePrice) * 
 
 const canonical = `${Astro.locals.tenant.siteUrl}${await nativeLandingCanonicalPath(Astro.locals, SLUG)}`;
 
-const indonesianBuyers = [
-  { name: 'Pak Bambang S.', location: 'Semarang, Jawa Tengah', time: '2 menit lalu' },
-  { name: 'Ibu Wahyuni', location: 'Solo, Jawa Tengah', time: '4 menit lalu' },
-  { name: 'Pak Hendra T.', location: 'Bandung, Jawa Barat', time: '7 menit lalu' },
-  { name: 'Ibu Hj. Maryam', location: 'Surabaya, Jawa Timur', time: '9 menit lalu' },
-  { name: 'Pak Djoko W.', location: 'Jakarta Timur, DKI', time: '12 menit lalu' },
-  { name: 'Ibu Sri Rahayu', location: 'Yogyakarta, DIY', time: '15 menit lalu' },
-  { name: 'Pak Mulyadi', location: 'Bekasi, Jawa Barat', time: '18 menit lalu' },
-  { name: 'Ibu Nurul H.', location: 'Tangerang Selatan, Banten', time: '22 menit lalu' },
-];
 
 const testimonials = [
   {
@@ -123,6 +114,9 @@ const testimonials = [
 
 const sectionTitle = 'text-[clamp(21px,6.5vw,25px)] font-black text-slate-950 tracking-tight leading-[1.22]';
 const sectionLead = 'text-[13.5px] sm:text-[14px] text-slate-600 leading-relaxed mt-2 max-w-[420px] mx-auto';
+// Real orders in the last 24 hours; the toast stays hidden below the floor
+// `socialProofMessage` sets, never invented (product A-1, A-300).
+const socialProofOrders = await recentOrderCount(getRuntimeEnv(Astro.locals)?.OMS_DB as D1Database | undefined);
 ---
 
 <BaseLayout
@@ -877,11 +871,9 @@ const sectionLead = 'text-[13.5px] sm:text-[14px] text-slate-600 leading-relaxed
 
     <!-- Realtime Social Proof Toast -->
     <SocialProofToast
-      productLabel="Cuka Sari Apel 100% Original (Beli 1 Dapat 3)"
-      productImage="/images/landing/nutrilove-cuka-apel/product-thumb.webp"
+      orderCount={socialProofOrders}
       heroSelector="#landing-hero"
       formSelector="#form-pemesanan"
-      buyers={indonesianBuyers}
     />
   </main>
 

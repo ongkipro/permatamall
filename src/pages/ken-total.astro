@@ -18,7 +18,9 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 import MetaLandingTracker from '../components/storefront/tracking/MetaLandingTracker.astro';
 import GeoIpResolvedForm from '../components/storefront/forms/GeoIpResolvedForm.astro';
 import Icon from '../components/storefront/shared/Icon.astro';
-import SocialProofToast from '../components/storefront/install/LandingSocialProofToast.astro';
+import SocialProofToast from '../components/storefront/shared/SocialProofToast.astro';
+import { recentOrderCount } from '../lib/social-proof';
+import { getRuntimeEnv } from '../lib/env';
 import { getStorefrontProduct } from '../lib/catalog';
 import { nativeLandingCanonicalPath } from '../lib/landing-pages';
 import { defaultCatalogContentId } from '../lib/catalog-feed';
@@ -48,24 +50,9 @@ const sectionSubtitle = 'text-[clamp(0.825rem,3.5vw,0.9rem)] text-slate-600 mt-1
 const cheapest = [...product.variants].sort((a, b) => a.price - b.price)[0] ?? null;
 const price = cheapest?.price ?? product.price;
 
-const maleBuyers = [
-  { name: 'Pak Hendra Wijaya', location: 'Jakarta Selatan', time: 'Baru saja', avatar: '/assets/landing/ken-total/avatar-2.webp' },
-  { name: 'Mas Dimas Prasetyo', location: 'Surabaya, Jatim', time: '1 mnt lalu', avatar: '/assets/landing/ken-total/avatar-1.webp' },
-  { name: 'Pak Gunawan Santoso', location: 'Bandung, Jabar', time: '3 mnt lalu', avatar: '/assets/landing/ken-total/avatar-2.webp' },
-  { name: 'Bapak Bambang Triyono', location: 'Medan, Sumut', time: '2 mnt lalu', avatar: '/assets/landing/ken-total/avatar-4.webp' },
-  { name: 'Mas Rizky Pratama', location: 'Semarang, Jateng', time: '5 mnt lalu', avatar: '/assets/landing/ken-total/avatar-3.webp' },
-  { name: 'Pak Agus Salim', location: 'Tangerang, Banten', time: 'Baru saja', avatar: '/assets/landing/ken-total/avatar-6.webp' },
-  { name: 'Bapak Yusuf Hidayat', location: 'Makassar, Sulsel', time: '1 mnt lalu', avatar: '/assets/landing/ken-total/avatar-5.webp' },
-  { name: 'Mas Eko Wahyudi', location: 'Balikpapan, Kaltim', time: 'Baru saja', avatar: '/assets/landing/ken-total/avatar-1.webp' },
-  { name: 'Pak Taufik Hidayat', location: 'Cirebon, Jabar', time: '6 mnt lalu', avatar: '/assets/landing/ken-total/avatar-2.webp' },
-  { name: 'Bapak Irfan Maulana', location: 'Padang, Sumbar', time: '2 mnt lalu', avatar: '/assets/landing/ken-total/avatar-5.webp' },
-  { name: 'Mas Fauzi Rahman', location: 'Banjarmasin, Kalsel', time: '3 mnt lalu', avatar: '/assets/landing/ken-total/avatar-3.webp' },
-  { name: 'Pak Salman Kusuma', location: 'Serang, Banten', time: '7 mnt lalu', avatar: '/assets/landing/ken-total/avatar-4.webp' },
-  { name: 'Mas Bayu Anggoro', location: 'Yogyakarta, DIY', time: '1 mnt lalu', avatar: '/assets/landing/ken-total/avatar-1.webp' },
-  { name: 'Pak Doni Kurniawan', location: 'Palembang, Sumsel', time: '4 mnt lalu', avatar: '/assets/landing/ken-total/avatar-2.webp' },
-  { name: 'Mas Andika Putra', location: 'Denpasar, Bali', time: '2 mnt lalu', avatar: '/assets/landing/ken-total/avatar-3.webp' },
-  { name: 'Bapak Herman Susilo', location: 'Malang, Jatim', time: '5 mnt lalu', avatar: '/assets/landing/ken-total/avatar-4.webp' },
-];
+// Real orders in the last 24 hours; the toast stays hidden below the floor
+// `socialProofMessage` sets, never invented (product A-1, A-300).
+const socialProofOrders = await recentOrderCount(getRuntimeEnv(Astro.locals)?.OMS_DB as D1Database | undefined);
 ---
 
 <BaseLayout
@@ -894,11 +881,9 @@ const maleBuyers = [
     </div>
 
     <SocialProofToast
-      productLabel="Ken+total Serbuk Pria Dewasa"
-      productImage="/assets/landing/ken-total/product-thumb.webp"
+      orderCount={socialProofOrders}
       heroSelector="#landing-hero"
       formSelector="#form-pemesanan"
-      buyers={maleBuyers}
     />
   </main>
 

@@ -2,7 +2,8 @@
 import BaseLayout from '../layouts/BaseLayout.astro';
 import MetaLandingTracker from '../components/storefront/tracking/MetaLandingTracker.astro';
 import GeoIpResolvedForm from '../components/storefront/forms/GeoIpResolvedForm.astro';
-import SocialProofToast from '../components/storefront/install/LandingSocialProofToast.astro';
+import SocialProofToast from '../components/storefront/shared/SocialProofToast.astro';
+import { recentOrderCount } from '../lib/social-proof';
 import Icon from '../components/storefront/shared/Icon.astro';
 import { getStorefrontProduct } from '../lib/catalog';
 import { nativeLandingCanonicalPath } from '../lib/landing-pages';
@@ -38,17 +39,13 @@ const discount = comparePrice > price ? Math.round((1 - price / comparePrice) * 
 
 const canonical = `${Astro.locals.tenant.siteUrl}${await nativeLandingCanonicalPath(Astro.locals, SLUG)}`;
 
-const pekerjaBuyers = [
-  { name: 'Bambang Sugianto', location: 'Surabaya', time: '3 menit lalu' },
-  { name: 'Supriadi (Yanto)', location: 'Bekasi', time: '7 menit lalu' },
-  { name: 'Eko Prasetyo', location: 'Karawang', time: '11 menit lalu' },
-  { name: 'Dedi Kurniawan', location: 'Tangerang', time: '15 menit lalu' },
-  { name: 'Agus Salim', location: 'Semarang', time: '19 menit lalu' },
-];
 
 const testimonials = getTestimonialsForLanding(['yanto', 'bambang', 'dimas']);
 const sectionTitle = 'text-[clamp(22px,6.8vw,26px)] font-black text-slate-950 tracking-tight leading-[1.2]';
 const sectionLead = 'text-[13.5px] text-slate-600 leading-relaxed mt-2 max-w-[420px] mx-auto';
+// Real orders in the last 24 hours; the toast stays hidden below the floor
+// `socialProofMessage` sets, never invented (product A-1, A-300).
+const socialProofOrders = await recentOrderCount(getRuntimeEnv(Astro.locals)?.OMS_DB as D1Database | undefined);
 ---
 
 <BaseLayout
@@ -682,11 +679,9 @@ const sectionLead = 'text-[13.5px] text-slate-600 leading-relaxed mt-2 max-w-[42
 
     <!-- Realtime Social Proof Toast -->
     <SocialProofToast
-      productLabel="Carukési Relaxing Gel 50g"
-      productImage="/images/landing/carukesi-pekerja-keras-badan-remuk/product-thumb.webp"
+      orderCount={socialProofOrders}
       heroSelector="#landing-hero"
       formSelector="#form-pemesanan"
-      buyers={pekerjaBuyers}
     />
   </main>
 
