@@ -1,6 +1,6 @@
 {
   "name": "adsbookcms",
-  "version": "1.4.2",
+  "version": "1.5.0",
   "description": "AdsBookCMS — single-install direct-response commerce CMS for Cloudflare Workers",
   "engines": {
     "node": ">=22",
@@ -10,13 +10,20 @@
   "scripts": {
     "dev": "astro dev",
     "start": "astro dev",
+    "dev:local": "node --experimental-strip-types scripts/dev-local.ts",
+    "dev:providers": "node --experimental-strip-types scripts/dev-providers.ts",
+    "dev:seed": "node --experimental-strip-types scripts/dev-seed.ts",
     "build": "astro build",
     "check": "astro check && tsc --noEmit",
     "test": "node --experimental-strip-types --test src/lib/*.test.ts",
     "docs:check": "node --experimental-strip-types scripts/check-docs.ts",
     "preview": "astro preview",
     "cf:dev": "wrangler dev --local",
+    "preflight:deploy": "node --experimental-strip-types scripts/preflight-deploy.ts",
+    "route-map": "node --experimental-strip-types scripts/route-map.ts",
+    "precf:deploy": "npm run preflight:deploy && npm run build",
     "cf:deploy": "wrangler deploy",
+    "predeploy": "npm run preflight:deploy && npm run build",
     "deploy": "wrangler deploy",
     "db:migrate:local": "wrangler d1 migrations apply OMS_DB --local",
     "db:migrate:remote": "wrangler d1 migrations apply OMS_DB --remote"
@@ -56,7 +63,24 @@
     "@types/qrcode": "^1.5.6",
     "@types/react": "^19.0.10",
     "@types/react-dom": "^19.0.4",
+    "esbuild": "^0.28.2",
     "typescript": "^5.7.3",
-    "wrangler": "^4.120.0"
+    "wrangler": "^4.148.0"
+  },
+  "cloudflare": {
+    "bindings": {
+      "OMS_DB": {
+        "description": "The store database: products, orders, settings. Its schema is applied automatically on the first request."
+      },
+      "SESSION": {
+        "description": "Caches only (location lookups, alert state). Safe to empty."
+      },
+      "ASSET_BUCKET": {
+        "description": "Product photos and landing-page media uploaded from `/admin`."
+      },
+      "INSTALL_TOKEN": {
+        "description": "Type a long random value (**16+ characters**) of your own. The `/install` wizard asks for it so nobody else can claim the store first."
+      }
+    }
   }
 }

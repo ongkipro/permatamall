@@ -16,10 +16,7 @@ export type OutboxEvent = {
   eventSourceUrl: string;
   userData: MetaUserData;
   customData: MetaCustomData;
-  /**
-   * Unix seconds, stamped at enqueue. Optional only so an older stored payload
-   * still parses; anything enqueued from now on carries it.
-   */
+  /** Unix seconds, stamped at enqueue so every retry reports when it happened. */
   eventTime?: number;
 };
 
@@ -30,8 +27,6 @@ type OutboxRow = {
   payload: string;
   attempts: number;
   max_attempts: number;
-  /** Fallback `event_time` for a row enqueued before it was stored. */
-  created_at: string;
 };
 
 /** Meta error codes: 4/17/613 are rate limits, 190 means the token is dead. */
@@ -81,19 +76,20 @@ export async function enqueueCapiEvent(
   event: OutboxEvent,
 ): Promise<boolean> {
   const now = new Date().toISOString();
-  // Stamped here, not at send. A retry can be minutes or days later, and Meta
-  // reads `event_time` as when the conversion happened.
-  const stamped: OutboxEvent = {
-    ...event,
-    eventTime: event.eventTime ?? Math.floor(Date.now() / 1000),
-  };
   const result = await database
     .prepare(
       `INSERT OR IGNORE INTO capi_event_outbox
          (event_id, event_name, payload, status, next_retry_at, created_at, updated_at)
        VALUES (?, ?, ?, 'pending', ?, ?, ?)`,
     )
-    .bind(event.eventId, event.eventName, JSON.stringify(stamped), now, now, now)
+    .bind(
+      event.eventId,
+      event.eventName,
+      JSON.stringify({ ...event, eventTime: event.eventTime ?? Math.floor(Date.now() / 1000) }),
+      now,
+      now,
+      now,
+    )
     .run();
   return Boolean(result.meta?.changes);
 }
@@ -129,9 +125,7 @@ async function transmit(
     pixelId,
     accessToken,
     undefined,
-    // Absent on a row enqueued before this was stored: fall back to the row's
-    // own creation time rather than to "now", which is the whole point.
-    event.eventTime ?? Math.floor(new Date(row.created_at).getTime() / 1000),
+    event.eventTime,
   );
 
   const decision = decideRetry(
@@ -141,34 +135,13 @@ async function transmit(
   );
   const now = Date.now();
 
-  // The terminal check is re-evaluated in SQL against the row's *current*
-  // attempts, not the value this call read. `decideRetry` is correct but works
-  // from a snapshot, and two transmits of the same row can overlap:
-  // `deliverCapiEvent` fires inline from `/api/meta-event` while a drain — a
-  // concurrent visitor's, or the hourly cron's — is already working the same
-  // row. Both then read `attempts = 3`, both decide "pending", and both apply
-  // `attempts + 1`, leaving the row `pending` at or past `max_attempts`.
-  // `drainCapiOutbox` selected `attempts < max_attempts`, so such a row was
-  // never picked up again and never marked `failed` either: it simply stopped,
-  // silently, which is the one outcome a transactional outbox exists to
-  // prevent. Every one of this store's 169 stalled rows was in that state,
-  // including the Purchase for INV-10011.
   await database
     .prepare(
       `UPDATE capi_event_outbox
-       SET status = CASE
-             WHEN ? = 'sent' THEN 'sent'
-             WHEN attempts + 1 >= max_attempts THEN 'failed'
-             ELSE ?
-           END,
-           attempts = attempts + ?,
-           last_error = ?,
-           next_retry_at = ?,
-           updated_at = ?
+       SET status = ?, attempts = attempts + ?, last_error = ?, next_retry_at = ?, updated_at = ?
        WHERE id = ?`,
     )
     .bind(
-      decision.status,
       decision.status,
       decision.status === "sent" ? 0 : 1,
       decision.status === "sent" ? null : (result.reason ?? "unknown"),
@@ -196,6 +169,13 @@ export type CapiOutboxDepth = {
   pending: number;
   /** Terminally undeliverable — a dead token or an exhausted attempt budget. */
   failed: number;
+  /**
+   * Subset of `failed` that failed inside `OUTBOX_FAILURE_ALERT_WINDOW_MS`.
+   * Only these raise the alert: failed rows are kept 30 days, so counting all
+   * of them held the alert firing for a month and deduplicated the next
+   * outage into silence. Optional so older callers keep their behaviour.
+   */
+  recentFailed?: number;
   /** Subset of `pending` whose `next_retry_at` is already in the past. */
   overdue: number;
   /** `created_at` of the oldest undelivered row, or null when there are none. */
@@ -208,9 +188,13 @@ export type CapiDeliveryWindow = {
   lastFailedAt: string | null;
 };
 
+/** How recent a terminal failure must be to keep an outbox alert firing. */
+export const OUTBOX_FAILURE_ALERT_WINDOW_MS = 24 * 60 * 60_000;
+
 type DepthRow = {
   pending: number | null;
   failed: number | null;
+  recent_failed: number | null;
   overdue: number | null;
   oldest_created_at: string | null;
 };
@@ -239,16 +223,18 @@ export async function readCapiOutboxDepth(
         `SELECT
            SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) AS pending,
            SUM(CASE WHEN status = 'failed' THEN 1 ELSE 0 END) AS failed,
+           SUM(CASE WHEN status = 'failed' AND updated_at >= ? THEN 1 ELSE 0 END) AS recent_failed,
            SUM(CASE WHEN status = 'pending' AND next_retry_at <= ? THEN 1 ELSE 0 END) AS overdue,
            MIN(CASE WHEN status IN ('pending', 'failed') THEN created_at END) AS oldest_created_at
          FROM capi_event_outbox
          WHERE status IN ('pending', 'failed')`,
       )
-      .bind(new Date().toISOString())
+      .bind(new Date(Date.now() - OUTBOX_FAILURE_ALERT_WINDOW_MS).toISOString(), new Date().toISOString())
       .first<DepthRow>();
     return {
       pending: count(row?.pending),
       failed: count(row?.failed),
+      recentFailed: count(row?.recent_failed),
       overdue: count(row?.overdue),
       oldestCreatedAt: row?.oldest_created_at ?? null,
     };
@@ -263,8 +249,9 @@ export async function readCapiOutboxDepth(
  *
  * lazy: bounded reverse-rowid scan of the newest `CAPI_DELIVERY_WINDOW` rows
  * rather than `MAX(updated_at) WHERE status = 'sent'`, which would read every
- * delivered row on every dashboard refresh — nothing indexes `updated_at` and
- * the outbox is never pruned. Ceiling: a delivery older than the last 200
+ * delivered row on every dashboard refresh — nothing indexes `updated_at`,
+ * and pruning only runs hourly, so the table can still hold weeks of rows
+ * between purges. Ceiling: a delivery older than the last 200
  * events reads as "none recorded", which on a store still sending conversions
  * is itself the answer. Upgrade path: add `(status, updated_at)` in a forward
  * migration and drop the window.
@@ -300,19 +287,40 @@ export async function readCapiDeliveryWindow(
   }
 }
 
-/** Sends one already-enqueued event immediately. */
+/**
+ * Sends one already-enqueued event immediately.
+ *
+ * Claims the row with the same lease `drainCapiOutbox` uses rather than merely
+ * reading it: the row was just inserted due now, so a drain running in another
+ * request would otherwise select and transmit it too — a double send whose
+ * second outcome could overwrite the first and strand the row `pending` with
+ * its attempt budget spent.
+ *
+ * Keyed by name *and* id (migration 0057): a funnel event cannot occupy a
+ * Purchase's order-number `event_id` and have the Purchase deduplicated away.
+ */
 export async function deliverCapiEvent(
   database: D1Database,
+  eventName: string,
   eventId: string,
   pixelId: string,
   accessToken: string,
+  now = new Date(),
 ) {
   const row = await database
     .prepare(
-      `SELECT id, event_id, event_name, payload, attempts, max_attempts, created_at
-       FROM capi_event_outbox WHERE event_id = ? AND status = 'pending' LIMIT 1`,
+      `UPDATE capi_event_outbox
+          SET next_retry_at = ?
+        WHERE event_name = ? AND event_id = ? AND status = 'pending'
+          AND next_retry_at <= ? AND attempts < max_attempts
+       RETURNING id, event_id, event_name, payload, attempts, max_attempts`,
     )
-    .bind(eventId)
+    .bind(
+      new Date(now.getTime() + CAPI_DRAIN_LEASE_MS).toISOString(),
+      eventName,
+      eventId,
+      now.toISOString(),
+    )
     .first<OutboxRow>();
   if (!row) return false;
   return transmit(database, row, pixelId, accessToken);
@@ -321,61 +329,49 @@ export async function deliverCapiEvent(
 /**
  * Retries events whose backoff has elapsed. Bounded per call so a burst of
  * failures cannot turn one storefront request into a long-running drain.
- *
- * No `attempts < max_attempts` filter. It was redundant — the write above
- * settles a row to `failed` the moment its budget is spent, so a row over
- * budget should not exist — and it was actively harmful: when a concurrent
- * double-increment created one anyway, this clause is what made the stall
- * permanent rather than self-healing. Without it such a row gets one more
- * transmit, and the `attempts + 1 >= max_attempts` branch settles it to
- * `failed` (or `sent`, if it succeeds) instead of leaving it in limbo.
- * Bounded either way: a row can never take more than one extra attempt.
- *
- * Purchase drains first. The batch is bounded at ten, so with `id ASC` alone a
- * backlog of PageViews sits in front of the one event the whole outbox exists
- * to protect: this store's stalled Purchase had eleven top-of-funnel rows
- * ahead of it and would have waited two full cron hours behind events worth a
- * fraction of it. Within each class the order stays `id ASC`, so nothing else
- * changes and no row is starved.
  */
 /**
- * How long a claimed row is hidden from other drains. Long enough to transmit a
- * batch, short enough that a Worker killed mid-drain returns its rows to the
+ * How long a claimed row is hidden from other drains. Long enough to transmit
+ * a batch, short enough that a Worker killed mid-drain returns its rows to the
  * queue rather than stranding them.
  */
 export const CAPI_DRAIN_LEASE_MS = 5 * 60_000;
 
+/**
+ * Rows are **claimed** before they are sent, not merely selected. Every
+ * `/api/meta-event` request fires a drain in `waitUntil`, and since 1.4.0 the
+ * hourly cron fires one too, so two drains arriving together selected the same
+ * due rows and both transmitted them. Live evidence from an install on
+ * 2026-09-04: rows carrying `attempts` of 9 against a `max_attempts` of 5,
+ * unreachable through any single sequential path. Meta deduplicates on
+ * `event_id` so nothing double-counted, but the quota was spent twice over and
+ * the attempt budget stopped meaning anything — a row could be terminated in
+ * half the retries it was granted.
+ *
+ * The claim is one `UPDATE … RETURNING` that pushes `next_retry_at` a lease
+ * into the future. SQLite serializes writers, so a concurrent drain runs after
+ * it, sees the moved timestamps and selects a disjoint set. `transmit` then
+ * overwrites `next_retry_at` with the real backoff, so the lease only ever
+ * governs rows nobody got to. Purchases go first: they are the rows whose
+ * loss costs money.
+ */
 export async function drainCapiOutbox(
   database: D1Database,
   pixelId: string,
   accessToken: string,
   now = new Date(),
 ): Promise<number> {
-  // Rows are **claimed** before they are sent, not merely selected. Every
-  // `/api/meta-event` request fires a drain in `waitUntil`, so two visitors
-  // arriving together ran two drains that selected the same due rows and both
-  // transmitted them. Observed on a sibling install: rows carrying `attempts`
-  // of 9 against a `max_attempts` of 5, which no sequential path can produce.
-  // Meta deduplicates on `event_id` so nothing double-counted, but the quota
-  // was spent twice and the attempt budget stopped meaning anything — a row
-  // could be terminated in half the retries it was granted.
-  //
-  // The claim is one `UPDATE … RETURNING` that pushes `next_retry_at` a lease
-  // into the future. SQLite serializes writers, so a concurrent drain runs
-  // after it, sees the moved timestamps and selects a disjoint set. `transmit`
-  // then overwrites `next_retry_at` with the real backoff, so the lease only
-  // ever governs rows nobody got to.
   const due = await database
     .prepare(
       `UPDATE capi_event_outbox
           SET next_retry_at = ?
         WHERE id IN (
           SELECT id FROM capi_event_outbox
-           WHERE status = 'pending' AND next_retry_at <= ?
+           WHERE status = 'pending' AND next_retry_at <= ? AND attempts < max_attempts
            ORDER BY CASE WHEN event_name = 'Purchase' THEN 0 ELSE 1 END, id ASC
            LIMIT ?
         )
-       RETURNING id, event_id, event_name, payload, attempts, max_attempts, created_at`,
+       RETURNING id, event_id, event_name, payload, attempts, max_attempts`,
     )
     .bind(
       new Date(now.getTime() + CAPI_DRAIN_LEASE_MS).toISOString(),
@@ -391,7 +387,27 @@ export async function drainCapiOutbox(
   return sent;
 }
 
-/** Terminal rows only — matches `autolaris_callbacks`' retention window. */
+/**
+ * Settled and terminal rows older than the retention window. The outbox is a
+ * queue, not an archive: one install carried 3,464 rows on 2026-09-05 with
+ * nothing left to send, every one of them scanned by the depth and health
+ * queries each hour. Thirty days keeps enough to answer "did this Purchase go
+ * out" for any order still inside a dispute window.
+ */
+const OUTBOX_RETENTION_DAYS = 30;
+
+export async function purgeExpiredCapiOutboxEvents(database: D1Database, now = new Date()) {
+  const result = await database
+    .prepare(
+      `DELETE FROM capi_event_outbox
+        WHERE status IN ('sent', 'failed')
+          AND unixepoch(updated_at) < unixepoch(?, '-${OUTBOX_RETENTION_DAYS} days')`,
+    )
+    .bind(now.toISOString())
+    .run();
+  return result.meta.changes;
+}
+
 /**
  * Undelivered rows offered back once the destination is proven live again.
  *
@@ -400,17 +416,33 @@ export async function drainCapiOutbox(
  * arrived during an outage is lost the moment the operator fixes the
  * credential. Nothing else in the system ever un-terminates them.
  *
- * The classification is not a guess about *why* a row failed. The caller proves
- * the destination works — the admin route sends a probe event and refuses to
- * requeue at all if Meta rejects it — and every failed row then gets one more
- * go. Meta still deduplicates on `event_id`, so a row that did reach it cannot
- * double-count.
+ * The first version of this selected `attempts < max_attempts`, on the
+ * reasoning that `decideRetry` terminates for exactly two reasons and the other
+ * one increments `attempts`, so that predicate was precisely the dead-token
+ * case. It was precise and too narrow. On 2026-09-03 an install started
+ * getting "Object with ID … does not exist, cannot be loaded due to missing
+ * permissions" on every event: a destination-side misconfiguration, entirely
+ * fixable, that let 107 rows exhaust their budget honestly. Those are exactly
+ * as recoverable as a token failure and that predicate excluded all of them.
  *
- * Two exclusions are absolute: a payload that cannot be parsed can never
- * succeed, and Meta rejects an event whose `event_time` is more than seven days
- * old while retries deliberately preserve the original time. Without that bound
- * a recovery would send rows Meta refuses as stale and re-terminate them,
- * spending the operator's one recovery on events that could never land.
+ * So the classification is no longer a guess about *why* a row failed. The
+ * caller proves the destination works — `/api/admin/ads` sends a probe event
+ * and refuses to requeue at all if Meta rejects it — and every failed row then
+ * gets one more go. Meta still deduplicates on `event_id`, so a row that did
+ * reach it cannot double-count.
+ *
+ * Two exclusions remain, and both are absolute:
+ *
+ * - A payload that cannot be parsed can never succeed; retrying it is waste.
+ * - Meta rejects an event whose `event_time` is more than seven days old, and
+ *   retries deliberately preserve the original time so a Purchase is still
+ *   attributed to when it happened. Without this bound a requeue would take
+ *   rows the 30-day retention still holds, send them, have Meta refuse them for
+ *   being stale, and re-terminate them — spending the operator's recovery on
+ *   events that could never land.
+ *
+ * Deliberately not automatic: resending conversions has a real advertising
+ * consequence, so it stays an explicit operator decision.
  */
 export const CAPI_REQUEUE_MAX_AGE_DAYS = 7;
 
@@ -455,26 +487,4 @@ export async function countRecoverableEvents(
     .bind(now.toISOString())
     .first<{ recoverable: number }>();
   return Number(row?.recoverable || 0);
-}
-
-const OUTBOX_RETENTION_DAYS = 30;
-
-/**
- * Nothing pruned this table. A `sent` or `failed` row is terminal — `pending`
- * always resolves to one or the other once `decideRetry` sees `attempts >=
- * max_attempts` — so both are safe to drop once they are old enough that no
- * operator is still reading them for a delivery investigation. Left alone,
- * every event this storefront ever fires (a PageView and a ViewContent on
- * nearly every visit) accumulates in D1 forever.
- */
-export async function purgeExpiredCapiOutboxEvents(database: D1Database, now = new Date()) {
-  const result = await database
-    .prepare(
-      `DELETE FROM capi_event_outbox
-        WHERE status IN ('sent', 'failed')
-          AND unixepoch(updated_at) < unixepoch(?, '-${OUTBOX_RETENTION_DAYS} days')`,
-    )
-    .bind(now.toISOString())
-    .run();
-  return result.meta.changes;
 }

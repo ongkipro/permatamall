@@ -1,4 +1,5 @@
 import {
+  AUTOLARIS_PAID_CODE,
   AutoLarisClient,
   type AutoLarisCheckoutChannel,
   type AutoLarisPayment,
@@ -126,6 +127,17 @@ export function autoLarisReferenceId(orderNumber: string) {
  * so an order converted to an online payment later still needs a deliverable-
  * looking address that belongs to this store rather than to a stranger.
  */
+/**
+ * The domain a minted buyer email uses. A dotless host — `localhost` in
+ * `npm run dev:local` — is not an email domain AutoLaris accepts, so it gets
+ * the reserved `.invalid` suffix (RFC 2606): still recognisably this store's,
+ * still never deliverable.
+ */
+function mintedEmailDomain(siteUrl: string) {
+  const host = new URL(siteUrl).hostname.toLowerCase();
+  return host.includes(".") ? host : `${host}.invalid`;
+}
+
 export function buyerEmail(
   storedEmail: string | null,
   customerPhone: string,
@@ -133,7 +145,7 @@ export function buyerEmail(
 ) {
   const stored = storedEmail?.trim();
   if (stored) return stored;
-  return `${customerPhone.replace(/\D/g, "")}@${new URL(siteUrl).hostname}`;
+  return `${customerPhone.replace(/\D/g, "")}@${mintedEmailDomain(siteUrl)}`;
 }
 
 /**
@@ -175,6 +187,7 @@ export function isSyntheticBuyerEmail(
     if (!siteUrl) continue;
     try {
       if (domain === new URL(siteUrl).hostname.toLowerCase()) return true;
+      if (domain === mintedEmailDomain(siteUrl)) return true;
     } catch {
       // An unparseable configured URL simply matches nothing.
     }
@@ -335,6 +348,15 @@ export type AutoLarisScheduledReconciliation = {
   unproven: number;
   failed: number;
   paidOrderIds: number[];
+  /**
+   * Reads that carried the provider's success code but a settlement word the
+   * allowlist does not recognise. This is not a failure — it is the evidence
+   * `UNIMPLEMENTED_SPECS.md` has been waiting for, and it used to be counted as
+   * `unproven` beside genuine failures and discarded. Each entry carries the
+   * exact word so the allowlist can be revised from observation instead of
+   * from a guess.
+   */
+  unrecognisedPaidStatuses: string[];
 };
 
 /**
@@ -342,6 +364,39 @@ export type AutoLarisScheduledReconciliation = {
  * moves D1; pending, unknown, and failed reads are observable no-ops. The
  * guarded D1 batch makes concurrent cron executions idempotent.
  */
+/**
+ * How long after its expiry an instruction is still asked about. A QRIS or VA
+ * can be paid in the last minute and settle at the provider after this side
+ * has already marked it expired, so a recent expiry is worth one more look;
+ * an old one is not — no money arrives on an instruction dead for days.
+ */
+export const AUTOLARIS_EXPIRED_RECHECK_HOURS = 24;
+
+/**
+ * The instructions the hourly Advice run asks about: every one still pending,
+ * plus the ones that expired within the recheck window, newest first.
+ *
+ * It used to take the 25 oldest pending-or-expired rows with no age bound. An
+ * instruction nobody paid stays eligible forever, so on a store with 96 of them
+ * the window sat on the same August rows every hour and nothing created after
+ * 11 September was ever asked about — a QRIS paid after the buyer closed the
+ * payment page would never have settled, and its Purchase never reached Meta.
+ * Binds: the recheck cutoff (ISO), then the limit.
+ */
+export const PENDING_AUTOLARIS_INQUIRY_SQL = `SELECT pt.id AS transaction_id, pt.order_id, o.order_number,
+        o.customer_name, pt.provider_transaction_id, pt.total_amount
+      FROM payment_transactions pt
+      INNER JOIN orders o ON o.id = pt.order_id
+      WHERE pt.provider = 'autolaris'
+        AND (pt.status = 'pending' OR (pt.status = 'expired' AND pt.expires_at >= ?))
+        AND o.payment_status IN ('pending', 'unpaid')
+        AND o.shipping_status = 'pending'
+        AND o.stock_restored_at IS NULL
+        AND pt.provider_transaction_id IS NOT NULL
+        AND trim(pt.provider_transaction_id) <> ''
+      ORDER BY (pt.status = 'pending') DESC, pt.created_at DESC, pt.id DESC
+      LIMIT ?`;
+
 export async function reconcileAutoLarisPaymentStatuses(
   database: D1Database,
   locals: App.Locals,
@@ -354,27 +409,17 @@ export async function reconcileAutoLarisPaymentStatuses(
     unproven: 0,
     failed: 0,
     paidOrderIds: [],
+    unrecognisedPaidStatuses: [],
   };
   const config = (await getProviderConfig(database, locals)).autolaris;
   if (!config.apiKey) return result;
 
   const rows = await database
-    .prepare(
-      `SELECT pt.id AS transaction_id, pt.order_id, o.order_number,
-        o.customer_name, pt.provider_transaction_id, pt.total_amount
-      FROM payment_transactions pt
-      INNER JOIN orders o ON o.id = pt.order_id
-      WHERE pt.provider = 'autolaris'
-        AND pt.status IN ('pending', 'expired')
-        AND o.payment_status IN ('pending', 'unpaid')
-        AND o.shipping_status = 'pending'
-        AND o.stock_restored_at IS NULL
-        AND pt.provider_transaction_id IS NOT NULL
-        AND trim(pt.provider_transaction_id) <> ''
-      ORDER BY pt.created_at, pt.id
-      LIMIT ?`,
+    .prepare(PENDING_AUTOLARIS_INQUIRY_SQL)
+    .bind(
+      new Date(now.getTime() - AUTOLARIS_EXPIRED_RECHECK_HOURS * 3_600_000).toISOString(),
+      Math.max(1, Math.min(100, Math.trunc(limit))),
     )
-    .bind(Math.max(1, Math.min(100, Math.trunc(limit))))
     .all<PendingAutoLarisInquiryRow>();
   const client = new AutoLarisClient(config.apiKey, config.baseUrl);
   const paidAt = now.toISOString();
@@ -389,6 +434,21 @@ export async function reconcileAutoLarisPaymentStatuses(
       }
       if (inquiry.settlement !== "paid") {
         result.unproven += 1;
+        // The provider's success code with a word the allowlist does not know.
+        // Never settle on it — a guess must not move money — but never discard
+        // it either: no settled response has ever been observed, so this read is
+        // exactly the capture that closes SCR1, and it was being thrown away.
+        if (inquiry.code === AUTOLARIS_PAID_CODE) {
+          const observed = inquiry.status || "(kosong)";
+          if (!result.unrecognisedPaidStatuses.includes(observed)) {
+            result.unrecognisedPaidStatuses.push(observed);
+          }
+          console.warn("autolaris-paid-code-unknown-status", {
+            orderNumber: row.order_number,
+            code: inquiry.code,
+            status: observed,
+          });
+        }
         continue;
       }
 

@@ -3,7 +3,7 @@ import { META_EXTERNAL_ID_COOKIE } from "../lib/click-ids.ts";
 import { normalizePhone } from "../lib/validation";
 import { formatIdr } from "../lib/format-idr";
 import { pushGtmEcomEvent } from "../lib/gtm";
-import { isValidWa62 } from "../lib/validation";
+import { isValidWa62, missingCheckoutContact } from "../lib/validation";
 import { navigateAfterCheckout } from "../lib/checkout-navigation";
 import {
   AbandonedLeadCaptureGate,
@@ -57,22 +57,40 @@ const findMiddleConfigEl = (formRoot: HTMLElement | null) => {
 
 export function initPromoSessionStock(root?: Document | HTMLElement) {
   const scope = root || document;
-  const formRoot = scope.querySelector<HTMLElement>("[data-middle-form-root]");
-  const configEl = findMiddleConfigEl(formRoot);
-  const parsedConfig = configEl?.textContent
-    ? (JSON.parse(configEl.textContent) as MiddleFormConfig)
-    : null;
-  if (!formRoot || !parsedConfig) return;
-  applyPromoStock(formRoot, parsedConfig.productSlug);
+  scope.querySelectorAll<HTMLElement>("[data-middle-form-root]").forEach((formRoot) => {
+    const configEl = findMiddleConfigEl(formRoot);
+    const parsedConfig = configEl?.textContent
+      ? (JSON.parse(configEl.textContent) as MiddleFormConfig)
+      : null;
+    if (parsedConfig) applyPromoStock(formRoot, parsedConfig.productSlug);
+  });
 }
 
+const initializedMiddleRoots = new WeakSet<HTMLElement>();
+
+/**
+ * Every middle form on the page, not only the first. Astro emits this module
+ * once however many form sections a landing page carries, so wiring only
+ * `querySelector`'s match left a second form to submit natively — a GET that
+ * put the buyer's name, phone and address in the URL and created no order.
+ */
 export function initMiddleOrderForm(
   config?: MiddleFormConfig,
   root?: Document | HTMLElement,
 ) {
   const scope = root || document;
-  const formRoot = scope.querySelector<HTMLElement>("[data-middle-form-root]");
-  const configEl = findMiddleConfigEl(formRoot || null);
+  scope.querySelectorAll<HTMLElement>("[data-middle-form-root]").forEach((formRoot) => {
+    if (initializedMiddleRoots.has(formRoot)) return;
+    initializedMiddleRoots.add(formRoot);
+    initMiddleOrderFormInstance(formRoot, config);
+  });
+}
+
+function initMiddleOrderFormInstance(
+  formRoot: HTMLElement,
+  config?: MiddleFormConfig,
+) {
+  const configEl = findMiddleConfigEl(formRoot);
   const parsedConfig =
     config ||
     (configEl?.textContent
@@ -282,16 +300,23 @@ export function initMiddleOrderForm(
 
   const timerKey = `promo_end_${productSlug}_middle`;
   const now = Date.now();
-  const stored = Number(localStorage.getItem(timerKey) || 0);
+  // A storage that throws (blocked site data) must not take the order form
+  // down with a promo countdown; it just restarts per visit.
+  let stored = 0;
+  try {
+    stored = Number(localStorage.getItem(timerKey) || 0);
+  } catch {}
   const end = stored > now ? stored : now + 30 * 60 * 1000;
-  localStorage.setItem(timerKey, String(end));
+  try {
+    localStorage.setItem(timerKey, String(end));
+  } catch {}
 
   const form = formRoot?.querySelector("form") as HTMLFormElement | null;
   const nameInput = formRoot?.querySelector(
-    "#customer-name",
+    '[data-field="customer-name"]',
   ) as HTMLInputElement | null;
   const phoneInput = formRoot?.querySelector(
-    "#middle-phone",
+    '[data-field="middle-phone"]',
   ) as HTMLInputElement | null;
   const errorEl = formRoot?.querySelector(
     "#middle-error",
@@ -449,17 +474,17 @@ export function initMiddleOrderForm(
         disabled: true,
         label: submitButton.dataset.loadingLabel || "Memproses Pesanan...",
       };
-    const hasName = Boolean(nameInput && nameInput.value.trim().length >= 3);
-    const hasPhone = Boolean(phoneInput && phoneInput.value.trim().length >= 8);
-    const hasAddress = Boolean(
-      addressInput && addressInput.value.trim().length >= 3,
-    );
+    const missing = missingCheckoutContact({
+      name: nameInput?.value || "",
+      phone: phoneInput?.value || "",
+      address: addressInput?.value || "",
+    });
 
-    if (!hasName)
+    if (missing === "name")
       return { disabled: true, label: "Lengkapi Nama Terlebih Dahulu" };
-    if (!hasPhone)
+    if (missing === "phone")
       return { disabled: true, label: "Lengkapi No. WA Terlebih Dahulu" };
-    if (!hasAddress)
+    if (missing === "address")
       return { disabled: true, label: "Lengkapi Alamat Terlebih Dahulu" };
 
     return { disabled: false, label: "Buat Order Sekarang" };
@@ -467,7 +492,13 @@ export function initMiddleOrderForm(
 
   const syncSubmitState = () => {
     const next = getSubmitState();
-    submitButton.disabled = next.disabled;
+    // Natively disabled only while an order is in flight. An incomplete form
+    // keeps the button tappable (aria-disabled + the grey data-state): the
+    // submit handler then names the missing field. A real `disabled` swallowed
+    // the tap whenever autofill filled a field without an `input` event, so a
+    // complete-looking form had a dead button until the buyer tapped elsewhere.
+    submitButton.disabled = submitting;
+    submitButton.setAttribute("aria-disabled", String(next.disabled));
     submitButton.dataset.state = submitting
       ? "loading"
       : next.disabled
@@ -648,6 +679,8 @@ export function initMiddleOrderForm(
     });
 
   let sessionGuardToken = createId(`tg_${productSlug}`);
+  // Autofill can set a value and fire only `change`.
+  form.addEventListener("change", syncSubmitState);
   syncSubmitState();
   submitButton.addEventListener("click", () => {
     maybeTrackAddToCart();
@@ -657,6 +690,9 @@ export function initMiddleOrderForm(
     e.preventDefault();
     errorEl.hidden = true;
     setSubmitting(true, "Memvalidasi Data...");
+    // Autofill stores numbers as 08…; normalise before validating, since the
+    // `input`/`blur` handlers that usually do it may never have run.
+    if (phoneInput.value) phoneInput.value = normalizePhone(phoneInput.value);
 
     const fd = new FormData(form);
     const customerName = String(fd.get("customer_name") || "").trim();
@@ -835,19 +871,21 @@ export function initMiddleOrderForm(
       variant_label: label,
       guard_token: guardToken,
     };
-    // The order already exists in D1 by this point, so nothing here may throw:
-    // a storage write that fails must not cost the buyer their confirmation.
-    // Safari's private mode has historically thrown on any write, and a browser
-    // set to block site data does the same. Unguarded, that stranded a buyer on
-    // the submitting spinner with a real order behind them — and because the
-    // CAPI Purchase is only ever triggered from `/thanks`, neither leg fired.
+    // The order already exists in D1, so nothing here may throw: a storage
+    // write that fails must not cost the buyer their confirmation, and the
+    // CAPI Purchase is only ever triggered from `/thanks`.
     try {
       sessionStorage.setItem("thanks_state", JSON.stringify(state));
     } catch {
-      // The fragment locator carries the order on its own.
+      // The fragment locator below carries the order on its own.
     }
     setSubmitting(true, "Mengalihkan...");
 
-    navigateAfterCheckout("/thanks");
+    // The fragment is never sent to a server or a referrer, which is why it
+    // already carries the payment instructions; `/thanks` needs the same
+    // carrier to survive a lost tab or a storage write that never landed.
+    navigateAfterCheckout(
+      `/thanks#o=${encodeURIComponent(String(state.order_pk ?? ""))}&t=${encodeURIComponent(String(state.status_token ?? ""))}`,
+    );
   });
 }

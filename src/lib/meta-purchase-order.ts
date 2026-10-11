@@ -21,6 +21,12 @@ export type MetaPurchaseOrder = {
   city: string;
   postal_code: string | null;
   total_amount: number;
+  shipping_status: string;
+  /** `products.id` of every line, comma-joined by D1. The catalog identity. */
+  product_ids: string | null;
+  /** Attribution captured at checkout; both may be null on pre-0052 orders. */
+  ad_click_ids: string | null;
+  meta_request_context: string | null;
   /**
    * Variant price x quantity, summed from `order_items`. Excludes shipping,
    * the COD service fee and its VAT, and the payment channel's admin fee —
@@ -30,12 +36,30 @@ export type MetaPurchaseOrder = {
   product_value: number;
   payment_method: string;
   payment_status: string;
-  shipping_status: string;
-  ad_click_ids: string | null;
-  meta_request_context: string | null;
-  product_ids: string | null;
 };
 
+/**
+ * Only a real submitted order may become a Purchase. COD is purchased at
+ * submit; prepaid methods require a confirmed payment. An abandoned lead is
+ * neither, even though its capture row historically carries COD-like defaults
+ * — and before this check, a lead's own status token was enough to send Meta a
+ * Purchase for a sale that never happened.
+ */
+export function isMetaPurchaseOrderEligible(
+  order: Pick<MetaPurchaseOrder, "payment_method" | "payment_status" | "shipping_status">,
+): boolean {
+  if (order.shipping_status === "abandoned") return false;
+  if (["failed", "cancelled", "returned"].includes(order.shipping_status)) return false;
+  if (["failed", "refunded", "cancelled"].includes(order.payment_status)) return false;
+  return order.payment_method === "cod" || order.payment_status === "paid";
+}
+
+/**
+ * The order's own catalog identity, in the shape the feeds advertise: product
+ * id, content_id and <g:id> are one value (`catalogProductId`). Anything that
+ * does not fit that shape is dropped rather than sent — a content_id Meta
+ * cannot match to the catalog is worse than none.
+ */
 export function parseMetaPurchaseContentIds(raw: string | null | undefined): string[] {
   if (!raw) return [];
   const seen = new Set<string>();
@@ -46,6 +70,12 @@ export function parseMetaPurchaseContentIds(raw: string | null | undefined): str
   return [...seen];
 }
 
+/**
+ * For a Purchase the order decides what was bought, not the caller. A browser
+ * or an API client can send any content_ids it likes; the catalog attribution
+ * that pays for the ad has to agree with the invoice. Non-Purchase events have
+ * no order and keep what was submitted.
+ */
 export function resolveMetaPurchaseContentIds(
   order: Pick<MetaPurchaseOrder, "product_ids"> | null,
   submitted: string[] | undefined,
@@ -53,27 +83,6 @@ export function resolveMetaPurchaseContentIds(
   if (!order) return submitted;
   const authoritative = parseMetaPurchaseContentIds(order.product_ids);
   return authoritative.length ? authoritative : undefined;
-}
-
-/**
- * Only a real submitted order may become Purchase. COD is purchased at submit;
- * prepaid methods require a confirmed payment. An abandoned lead is neither,
- * even though its capture row historically carries COD-like defaults.
- */
-export function isMetaPurchaseOrderEligible(
-  order: Pick<
-    MetaPurchaseOrder,
-    "payment_method" | "payment_status" | "shipping_status"
-  >,
-): boolean {
-  if (order.shipping_status === "abandoned") return false;
-  if (["failed", "cancelled", "returned"].includes(order.shipping_status)) {
-    return false;
-  }
-  if (["failed", "refunded", "cancelled"].includes(order.payment_status)) {
-    return false;
-  }
-  return order.payment_method === "cod" || order.payment_status === "paid";
 }
 
 const PURCHASE_ORDER_SELECT = `

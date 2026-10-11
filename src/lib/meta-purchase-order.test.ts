@@ -7,6 +7,7 @@ import {
   findPurchaseOrderByStatusToken,
   findPurchaseOrderForApiKeyCaller,
   isMetaPurchaseOrderEligible,
+  parseMetaPurchaseContentIds,
   resolveMetaPurchaseContentIds,
 } from "./meta-purchase-order.ts";
 import { sendMetaCapiEvent } from "./meta-capi.ts";
@@ -39,26 +40,26 @@ function purchaseDatabase() {
       customer_name TEXT NOT NULL, customer_phone TEXT NOT NULL, customer_email TEXT,
       province TEXT NOT NULL, city TEXT NOT NULL, postal_code TEXT,
       total_amount INTEGER NOT NULL, payment_method TEXT NOT NULL,
-      payment_status TEXT NOT NULL, shipping_status TEXT NOT NULL,
-      public_status_token TEXT,
-      ad_click_ids TEXT, meta_request_context TEXT
+      payment_status TEXT NOT NULL, public_status_token TEXT,
+      ad_click_ids TEXT, meta_request_context TEXT,
+      shipping_status TEXT NOT NULL DEFAULT 'pending'
     );
     CREATE TABLE order_items (
       id INTEGER PRIMARY KEY, order_id INTEGER NOT NULL,
-      variant_id INTEGER NOT NULL, unit_price INTEGER NOT NULL, quantity INTEGER NOT NULL
+      unit_price INTEGER NOT NULL, quantity INTEGER NOT NULL,
+      variant_id INTEGER
     );
     CREATE TABLE products (id INTEGER PRIMARY KEY, title TEXT NOT NULL);
     CREATE TABLE product_variants (id INTEGER PRIMARY KEY, product_id INTEGER NOT NULL);
+    INSERT INTO products VALUES (100001, 'Pupuk Organik');
+    INSERT INTO product_variants VALUES (1, 100001);
     INSERT INTO orders VALUES (
       41, 'INV-10041', 'Nur Aisyah', '081234567890', NULL,
-      'Jawa Barat', 'Bandung', '40111', 214000, 'cod', 'unpaid', 'pending', 'tok-41',
-      '{"_fbp":"fb.1.1700000000.browser"}',
-      '{"clientIp":"203.0.113.7"}'
+      'Jawa Barat', 'Bandung', '40111', 214000, 'cod', 'unpaid', 'tok-41',
+      NULL, NULL, 'pending'
     );
-    INSERT INTO products VALUES (10041, 'Produk Uji');
-    INSERT INTO product_variants VALUES (501, 10041);
     -- 135000 of goods; the 214000 invoice also carries shipping and the COD fee.
-    INSERT INTO order_items VALUES (1, 41, 501, 45000, 3);
+    INSERT INTO order_items VALUES (1, 41, 45000, 3, 1);
   `);
   return { sqlite, database: { prepare: (sql: string) => new Statement(sqlite, sql) } as unknown as D1Database };
 }
@@ -90,52 +91,6 @@ test("the public lookup needs the order's own status token, the API-key lookup d
   // The goods, not the invoice: 45000 x 3, never the 214000 total.
   assert.equal(resolved?.product_value, 135000);
   assert.equal(resolved?.total_amount, 214000);
-  assert.equal(resolved?.product_ids, "10041");
-});
-
-test("an abandoned COD lead is never eligible for Purchase", () => {
-  assert.equal(
-    isMetaPurchaseOrderEligible({
-      payment_method: "cod",
-      payment_status: "unpaid",
-      shipping_status: "abandoned",
-    }),
-    false,
-  );
-  assert.equal(
-    isMetaPurchaseOrderEligible({
-      payment_method: "cod",
-      payment_status: "unpaid",
-      shipping_status: "pending",
-    }),
-    true,
-  );
-  assert.equal(
-    isMetaPurchaseOrderEligible({
-      payment_method: "qris",
-      payment_status: "pending",
-      shipping_status: "pending",
-    }),
-    false,
-  );
-  assert.equal(
-    isMetaPurchaseOrderEligible({
-      payment_method: "qris",
-      payment_status: "paid",
-      shipping_status: "pending",
-    }),
-    true,
-  );
-});
-
-test("Purchase content IDs come from order items, never the submitted browser value", () => {
-  const order = { product_ids: "10041,10042,invalid,10041" };
-  assert.deepEqual(resolveMetaPurchaseContentIds(order as never, ["99999"]), [
-    "10041",
-    "10042",
-  ]);
-  assert.equal(resolveMetaPurchaseContentIds({ product_ids: null } as never, ["99999"]), undefined);
-  assert.deepEqual(resolveMetaPurchaseContentIds(null, ["99999"]), ["99999"]);
 });
 
 /**
@@ -244,4 +199,31 @@ test("the public Meta event endpoint counts sixty a minute per IP and fails open
   // The route wires exactly this key and ceiling.
   const route = readFileSync(new URL("../pages/api/meta-event.ts", import.meta.url), "utf8");
   assert.match(route, /checkRateLimit\(database, `public-meta-event:\$\{clientIp\}`, 60, 60_000\)/);
+});
+
+test("a Purchase is only ever a submitted order, never a lead", () => {
+  const cod = { payment_method: "cod", payment_status: "unpaid", shipping_status: "pending" };
+  assert.equal(isMetaPurchaseOrderEligible(cod), true, "COD is purchased at submit");
+  // The failure this exists for: an abandoned lead carries COD-like defaults
+  // and its own status token, and used to be enough to send Meta a Purchase.
+  assert.equal(isMetaPurchaseOrderEligible({ ...cod, shipping_status: "abandoned" }), false);
+  assert.equal(isMetaPurchaseOrderEligible({ payment_method: "qris", payment_status: "pending", shipping_status: "pending" }), false, "prepaid waits for payment");
+  assert.equal(isMetaPurchaseOrderEligible({ payment_method: "qris", payment_status: "paid", shipping_status: "pending" }), true);
+  for (const shipping_status of ["failed", "cancelled", "returned"]) assert.equal(isMetaPurchaseOrderEligible({ ...cod, shipping_status }), false, shipping_status);
+  for (const payment_status of ["failed", "refunded", "cancelled"]) assert.equal(isMetaPurchaseOrderEligible({ payment_method: "qris", payment_status, shipping_status: "pending" }), false, payment_status);
+});
+
+test("a Purchase carries the order's catalog identity, whatever the caller sent", async () => {
+  const { database } = purchaseDatabase();
+  const order = await findPurchaseOrderForApiKeyCaller(database, "INV-10041");
+  assert.ok(order);
+  assert.equal(order.product_ids, "100001");
+  // The caller's list is discarded for a Purchase: attribution must agree
+  // with the invoice, and only the order knows the invoice.
+  assert.deepEqual(resolveMetaPurchaseContentIds(order, ["999999", "100001"]), ["100001"]);
+  // No order — a ViewContent or AddToCart — keeps what was submitted.
+  assert.deepEqual(resolveMetaPurchaseContentIds(null, ["100002"]), ["100002"]);
+  // Ids that cannot be a catalog id are dropped, not forwarded.
+  assert.deepEqual(parseMetaPurchaseContentIds("100001, 42, abc, 100001, 07777"), ["100001"]);
+  assert.equal(resolveMetaPurchaseContentIds({ product_ids: "42" }, ["100003"]), undefined);
 });

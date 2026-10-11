@@ -1,4 +1,6 @@
 import * as React from "react";
+import { buttonVariants } from "../ui/button";
+import { StoreMark } from "./StoreMark";
 import {
   SidebarInset,
   SidebarProvider,
@@ -24,13 +26,16 @@ import { Toaster } from "@/components/ui/sonner";
 import {
   ArrowUpRight,
   ChevronRight,
+  History,
   LogOut,
   Menu,
   Search,
   UserRound,
 } from "lucide-react";
 import { AppSidebar } from "./AppSidebar";
+import { ChangelogModal } from "./ChangelogModal";
 import { NotificationBell } from "./NotificationBell";
+import { CMS_VERSION } from "@/lib/version";
 import {
   ADMIN_ACCENT,
   getSearchableNavItems,
@@ -54,12 +59,6 @@ interface AdminShellProps {
   sidebarDefaultOpen?: boolean;
 }
 
-// A store that has not set its own logo gets the product's neutral mark,
-// never another store's wordmark. /images/logo.webp was the demo store's,
-// and it was hardcoded here, so every install wore it. Same defect as
-// LOGIN-10, one surface over.
-const PRODUCT_MARK = "/images/adsbook-mark.webp";
-
 export function AdminShell({
   children,
   title,
@@ -81,6 +80,7 @@ export function AdminShell({
   );
   const [isDesktop, setIsDesktop] = React.useState(false);
   const [sidebarOpen, setSidebarOpen] = React.useState(sidebarDefaultOpen);
+  const [changelogOpen, setChangelogOpen] = React.useState(false);
   const groups = mustChangePassword ? [] : getVisibleNavGroups(adminRole);
   const searchItems = mustChangePassword ? [] : getSearchableNavItems(adminRole);
   const allItems = groups.flatMap((group) => group.items);
@@ -145,7 +145,7 @@ export function AdminShell({
       </div>
       <CommandList className="max-h-none flex-1 overflow-y-auto px-2 py-2 sm:max-h-[min(55vh,28rem)]">
         <CommandEmpty className="px-4 py-14 text-center">
-          <p className="font-bold text-slate-900">Tidak ada halaman yang cocok</p>
+          <p className="font-semibold text-slate-900">Tidak ada halaman yang cocok</p>
           <p className="mt-1 text-xs leading-5 text-slate-500">
             Coba istilah seperti order, resi, gudang, CRM, Meta, atau payment.
           </p>
@@ -166,8 +166,8 @@ export function AdminShell({
                   <item.icon className="size-[18px]" aria-hidden="true" />
                 </span>
                 <span className="min-w-0 flex-1">
-                  <span className="block truncate text-sm font-bold text-slate-900">{item.label}</span>
-                  <span className="block truncate text-[11px] text-slate-500">{item.description}</span>
+                  <span className="block truncate text-sm font-semibold text-slate-900">{item.label}</span>
+                  <span className="block truncate text-xs text-slate-500">{item.description}</span>
                 </span>
                 <ChevronRight className="size-4 shrink-0 text-slate-300" aria-hidden="true" />
               </CommandItem>
@@ -175,7 +175,7 @@ export function AdminShell({
           </CommandGroup>
         ))}
       </CommandList>
-      <div className="hidden items-center justify-between border-t border-slate-200 bg-slate-50 px-4 py-2.5 text-[10px] font-semibold text-slate-500 sm:flex">
+      <div className="hidden items-center justify-between border-t border-slate-200 bg-slate-50 px-4 py-2.5 text-xs font-semibold text-slate-500 sm:flex">
         <span>↑↓ Pilih hasil</span>
         <span>Enter untuk buka · Esc untuk tutup</span>
       </div>
@@ -194,19 +194,27 @@ export function AdminShell({
           siteUrl={siteUrl}
           adminRole={adminRole}
           restricted={mustChangePassword}
+          onOpenChangelog={() => setChangelogOpen(true)}
         />
         <SidebarInset className="min-w-0 bg-transparent">
           <header className="admin-topbar sticky top-0 z-30 flex h-[60px] shrink-0 items-center border-b border-slate-200/80 bg-white/95 px-3 backdrop-blur-xl md:h-[68px] md:px-6">
-            <div className="flex min-w-0 flex-1 items-center gap-2.5 md:gap-3">
-              <a href={mustChangePassword ? "/admin/profile" : "/admin/dashboard"} className="flex size-9 shrink-0 items-center justify-center md:hidden" aria-label={mustChangePassword ? "Keamanan akun" : `Dashboard ${adminName}`}>
-                <img src={siteLogo || PRODUCT_MARK} alt={siteName || adminName} className="size-8 object-contain" />
+            <div className="flex min-w-0 flex-1 items-center gap-2 md:gap-3">
+              <button
+                type="button"
+                onClick={() => setMenuOpen(true)}
+                className="grid size-9 shrink-0 place-items-center rounded-xl text-slate-600 transition hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300 md:hidden"
+                aria-label="Buka menu navigasi"
+              >
+                <Menu className="size-5" aria-hidden="true" />
+              </button>
+              <a href={mustChangePassword ? "/admin/profile" : "/admin/dashboard"} className="flex size-8 shrink-0 items-center justify-center md:hidden" aria-label={mustChangePassword ? "Keamanan akun" : `Dashboard ${adminName}`}>
+                <StoreMark logo={siteLogo} name={siteName || adminName} className="size-8" />
               </a>
               <div className="min-w-0">
-                <h1 className="truncate text-[15px] font-extrabold tracking-[-0.02em] text-slate-950 md:text-base">
-                  <span className="md:hidden">{title}</span>
-                  <span className="hidden md:inline">{title}</span>
+                <h1 className="truncate text-base font-semibold tracking-tight text-slate-950">
+                  {title}
                 </h1>
-                <p className="hidden truncate text-[11px] font-medium text-slate-500 lg:block">
+                <p className="hidden truncate text-xs font-medium text-slate-500 lg:block">
                   {currentItem?.description ?? "Workspace operasional"}
                 </p>
               </div>
@@ -215,14 +223,19 @@ export function AdminShell({
             {!mustChangePassword && <button
               type="button"
               onClick={() => setSearchOpen(true)}
-              className="group mx-4 hidden min-h-10 w-full max-w-lg flex-1 items-center gap-2.5 rounded-xl border border-slate-200 bg-slate-50/80 px-3 text-left text-sm font-medium text-slate-500 transition hover:border-slate-300 hover:bg-white hover:text-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300 md:flex xl:mx-6"
+              className="group mx-4 hidden min-h-10 w-full max-w-lg flex-1 items-center gap-2.5 rounded-xl border border-slate-200/90 bg-slate-50/70 px-3 text-left text-sm font-medium text-slate-500 transition hover:border-slate-300 hover:bg-white hover:text-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300 md:flex xl:mx-6"
             >
-              <Search className="size-4 text-slate-400" aria-hidden="true" />
-              <span className="min-w-0 flex-1 truncate">Cari halaman atau pengaturan</span>
-              <kbd className="rounded-md border border-slate-200 bg-white px-1.5 py-0.5 font-mono text-[10px] font-semibold text-slate-400">⌘K</kbd>
+              <Search className="size-4 text-slate-400 transition group-hover:text-slate-600" aria-hidden="true" />
+              <span className="min-w-0 flex-1 truncate">Cari halaman atau tugas…</span>
+              <kbd className="inline-flex items-center gap-0.5 rounded-md border border-slate-200 bg-white px-1.5 py-0.5 font-mono text-xs font-semibold text-slate-500 shadow-xs">
+                ⌘K
+              </kbd>
             </button>}
 
             <div className="flex flex-1 items-center justify-end gap-1.5 md:gap-2">
+              {!mustChangePassword && <span className="hidden items-center rounded-full border border-slate-200 bg-slate-50/80 px-2.5 py-1 text-xs font-medium text-slate-600 lg:inline-flex">
+                {adminRole === "owner" ? "Owner" : adminRole === "admin" ? "Admin" : adminRole === "customer_service" ? "CS" : "Advertiser"}
+              </span>}
               {!mustChangePassword && <button
                 type="button"
                 onClick={() => setSearchOpen(true)}
@@ -231,7 +244,7 @@ export function AdminShell({
               >
                 <Search className="size-[18px]" aria-hidden="true" />
               </button>}
-              {!mustChangePassword && <a href="/" target="_blank" rel="noopener noreferrer" className="hidden min-h-10 items-center gap-1.5 rounded-xl px-3 text-xs font-bold text-slate-600 transition hover:bg-slate-100 hover:text-slate-950 xl:inline-flex">
+              {!mustChangePassword && <a href="/" target="_blank" rel="noopener noreferrer" className={buttonVariants({ variant: "ghost", className: "hidden text-slate-600 xl:inline-flex" })}>
                 Lihat storefront <ArrowUpRight className="size-3.5" aria-hidden="true" />
               </a>}
               {/* A first-run session may only rotate its password; the bell
@@ -242,7 +255,7 @@ export function AdminShell({
                 aria-current={activeMenu === "profile" ? "page" : undefined}
                 className={`grid size-10 place-items-center rounded-xl border shadow-sm transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300 ${
                   activeMenu === "profile"
-                    ? "border-blue-600 bg-blue-50 text-blue-600 font-bold"
+                    ? "border-blue-600 bg-blue-50 text-blue-600 font-semibold"
                     : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50 hover:text-slate-950"
                 }`}
                 aria-label="Buka profil & integrasi admin"
@@ -262,7 +275,10 @@ export function AdminShell({
             </div>
           )}
 
-          <div id="admin-main" tabIndex={-1} className="admin-main min-h-0 flex-1 overflow-y-auto overscroll-y-contain px-2 pb-[calc(5.25rem+env(safe-area-inset-bottom))] pt-3 sm:px-3 md:px-6 md:pb-8 md:pt-6 xl:px-8">
+          <div id="admin-main" tabIndex={-1} className="admin-main min-h-0 flex-1 overflow-y-auto overscroll-y-contain px-4 pb-[calc(5.25rem+env(safe-area-inset-bottom))] pt-4 md:px-6 md:pb-8 md:pt-6 xl:px-8">
+            {/* The one page-width contract: every admin page fills this box, so the
+                header and content edges line up across menus. Pages do not set
+                their own max-width. */}
             <div className="mx-auto w-full max-w-[1560px]">{children}</div>
           </div>
 
@@ -271,7 +287,7 @@ export function AdminShell({
               {mobilePrimary.map((item) => {
                 const active = activeMenu === item.id;
                 return (
-                  <a key={item.href} href={item.href} aria-current={isAdminNavHrefActive(currentPath, item.href) ? "page" : undefined} className={`group flex min-w-0 flex-col items-center justify-center gap-1 px-1 text-[10px] transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-slate-300 ${active ? "font-medium text-slate-950" : "font-normal text-slate-500"}`}>
+                  <a key={item.href} href={item.href} aria-current={isAdminNavHrefActive(currentPath, item.href) ? "page" : undefined} className={`group flex min-w-0 flex-col items-center justify-center gap-1 px-1 text-xs transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-slate-300 ${active ? "font-medium text-slate-950" : "font-normal text-slate-500"}`}>
                     <span className="relative grid size-8 place-items-center rounded-xl transition-colors" style={active ? { backgroundColor: `${ADMIN_ACCENT}14`, color: ADMIN_ACCENT } : undefined}>
                       <item.icon className="size-[19px]" aria-hidden="true" />
                       {active && <span className="absolute -bottom-1 h-0.5 w-3 rounded-full" style={{ backgroundColor: ADMIN_ACCENT }} aria-hidden="true" />}
@@ -280,7 +296,7 @@ export function AdminShell({
                   </a>
                 );
               })}
-              <button id="admin-mobile-menu-trigger" type="button" onClick={() => setMenuOpen(true)} aria-current={menuIsActive ? "page" : undefined} className={`flex min-w-0 flex-col items-center justify-center gap-1 px-1 text-[10px] transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-slate-300 ${menuIsActive ? "font-medium text-slate-950" : "font-normal text-slate-500"}`} aria-label={mustChangePassword ? "Buka menu akun" : "Buka semua menu"}>
+              <button id="admin-mobile-menu-trigger" type="button" onClick={() => setMenuOpen(true)} aria-current={menuIsActive ? "page" : undefined} className={`flex min-w-0 flex-col items-center justify-center gap-1 px-1 text-xs transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-slate-300 ${menuIsActive ? "font-medium text-slate-950" : "font-normal text-slate-500"}`} aria-label={mustChangePassword ? "Buka menu akun" : "Buka semua menu"}>
                 <span className="relative grid size-8 place-items-center rounded-xl" style={menuIsActive ? { backgroundColor: `${ADMIN_ACCENT}14`, color: ADMIN_ACCENT } : undefined}>
                   <Menu className="size-[19px]" aria-hidden="true" />
                   {menuIsActive && <span className="absolute -bottom-1 h-0.5 w-3 rounded-full" style={{ backgroundColor: ADMIN_ACCENT }} aria-hidden="true" />}
@@ -307,7 +323,7 @@ export function AdminShell({
             <div className="overflow-y-auto overscroll-contain px-2 pb-[calc(0.75rem+env(safe-area-inset-bottom))] pt-2">
               {groups.map((group) => (
                 <section key={group.label} className="mb-3">
-                  <h2 className="px-2 pb-1.5 text-[10px] font-medium uppercase tracking-[0.14em] text-slate-400">{group.label}</h2>
+                  <h2 className="px-2 pb-1.5 text-xs font-medium uppercase tracking-wider text-slate-400">{group.label}</h2>
                   <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">
                     {group.items.map((item) => {
                       const active = activeMenu === item.id;
@@ -325,7 +341,7 @@ export function AdminShell({
                             </span>
                             <span className="min-w-0 flex-1">
                               <span className={`block truncate text-sm text-slate-900 ${active ? "font-medium" : "font-normal"}`}>{item.label}</span>
-                              <span className="block truncate text-[11px] text-slate-500">{item.description}</span>
+                              <span className="block truncate text-xs text-slate-500">{item.description}</span>
                             </span>
                             {!hasChildren && (
                               <ChevronRight className="size-4 shrink-0 text-slate-300" aria-hidden="true" />
@@ -373,9 +389,26 @@ export function AdminShell({
               ))}
               <a href={profileNavItem.href} className="mb-2 flex min-h-13 items-center gap-3 rounded-xl border border-slate-200 bg-white px-3 py-2">
                 <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-slate-100 text-slate-600"><profileNavItem.icon className="size-4" /></span>
-                <span className="min-w-0 flex-1"><span className="block text-sm font-normal text-slate-900">{profileNavItem.label}</span><span className="block truncate text-[11px] text-slate-500">{profileNavItem.description}</span></span>
+                <span className="min-w-0 flex-1"><span className="block text-sm font-normal text-slate-900">{profileNavItem.label}</span><span className="block truncate text-xs text-slate-500">{profileNavItem.description}</span></span>
                 <ChevronRight className="size-4 text-slate-300" aria-hidden="true" />
               </a>
+              <button
+                type="button"
+                onClick={() => {
+                  setMenuOpen(false);
+                  setChangelogOpen(true);
+                }}
+                className="mb-2 flex min-h-13 w-full items-center gap-3 rounded-xl border border-slate-200 bg-white px-3 py-2 text-left active:bg-slate-50"
+              >
+                <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-slate-100 text-slate-600">
+                  <History className="size-4" aria-hidden="true" />
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block text-sm font-normal text-slate-900">Catatan Rilis</span>
+                  <span className="block truncate text-xs text-slate-500">AdsBookCMS v{CMS_VERSION.version}</span>
+                </span>
+                <ChevronRight className="size-4 text-slate-300" aria-hidden="true" />
+              </button>
               <form method="POST" action="/api/admin/logout" data-logout-form className="mb-2">
                 <button type="submit" className="flex min-h-13 w-full items-center gap-3 rounded-xl border border-rose-200 bg-rose-50/70 px-3 py-2 text-left text-rose-700 active:bg-rose-100">
                   <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-rose-100">
@@ -383,7 +416,7 @@ export function AdminShell({
                   </span>
                   <span className="min-w-0 flex-1">
                     <span className="block text-sm font-medium">Keluar</span>
-                    <span className="block truncate text-[11px] text-rose-600">Akhiri sesi admin di perangkat ini</span>
+                    <span className="block truncate text-xs text-rose-600">Akhiri sesi admin di perangkat ini</span>
                   </span>
                   <ChevronRight className="size-4 shrink-0 text-rose-300" aria-hidden="true" />
                 </button>
@@ -401,8 +434,8 @@ export function AdminShell({
             showCloseButton
           >
             <div className="border-b border-slate-200 px-4 py-3 pr-12">
-              <h2 className="text-sm font-extrabold tracking-tight text-slate-950">Pencarian admin</h2>
-              <p className="mt-0.5 text-[11px] text-slate-500">
+              <h2 className="text-sm font-semibold tracking-tight text-slate-950">Pencarian admin</h2>
+              <p className="mt-0.5 text-xs text-slate-500">
                 Cari order, pengiriman, produk, tracking, atau pengaturan.
               </p>
             </div>
@@ -412,7 +445,7 @@ export function AdminShell({
           <Sheet open={searchOpen} onOpenChange={handleSearchOpenChange}>
             <SheetContent side="bottom" style={{ height: "min(82dvh, 42rem)" }} className="max-h-[calc(100dvh-env(safe-area-inset-top))] gap-0 overflow-hidden rounded-t-[1.25rem] border-slate-200 bg-white p-0">
               <SheetHeader className="border-b border-slate-200 px-4 pb-3 pt-4 pr-12 text-left">
-                <SheetTitle className="text-base font-extrabold tracking-tight text-slate-950">Pencarian admin</SheetTitle>
+                <SheetTitle className="text-base font-semibold tracking-tight text-slate-950">Pencarian admin</SheetTitle>
                 <SheetDescription className="text-xs">
                   Cari order, pengiriman, produk, tracking, atau pengaturan.
                 </SheetDescription>
@@ -423,6 +456,7 @@ export function AdminShell({
             </SheetContent>
           </Sheet>
         ))}
+        <ChangelogModal open={changelogOpen} onOpenChange={setChangelogOpen} />
         <Toaster position="top-center" />
       </SidebarProvider>
     </TooltipProvider>

@@ -2,59 +2,42 @@
 import { META_EXTERNAL_ID_COOKIE } from '../../../lib/click-ids';
 interface Props {
   tenantName: string;
-  tenantSlug: string;
 }
 
-const { tenantName, tenantSlug } = Astro.props;
+const { tenantName } = Astro.props;
 ---
 
 <script
   is:inline
   define:vars={{
     tenantName,
-    tenantSlug,
     metaExternalIdCookie: META_EXTERNAL_ID_COOKIE,
   }}
 >
   (() => {
     if (typeof window === 'undefined') return;
 
-    const pushGtmEcomEvent =
-      window.__PS_PUSH_GTM_ECOM__ ||
-      ((event, payload) => {
-        window.dataLayer = window.dataLayer || [];
-        window.dataLayer.push({ ecommerce: null });
-        window.dataLayer.push({
-          event,
-          tracking_owner: 'app',
-          meta_managed_by_app: true,
-          meta_event_id: payload.event_id,
-          ecommerce: {
-            currency: payload.currency || 'IDR',
-            value: Number(payload.value || 0),
-            transaction_id: payload.transaction_id,
-            items: [
-              {
-                item_id: payload.item_id || '',
-                item_name: payload.item_name || '',
-                item_variant: payload.item_variant,
-                quantity: 1,
-              },
-            ],
-          },
-        });
-      });
+    // GtmBase.astro (BaseLayout <head>) owns the ecommerce shape; see src/lib/gtm.ts.
+    const pushGtmEcomEvent = (event, payload) => window.__PS_PUSH_GTM_ECOM__?.(event, payload);
 
     const hashSha256Hex = async (input) => {
       const normalized = String(input || '')
         .trim()
         .toLowerCase();
-      if (!normalized || !globalThis.crypto?.subtle) return '';
-      const bytes = new TextEncoder().encode(normalized);
-      const digest = await crypto.subtle.digest('SHA-256', bytes);
-      return Array.from(new Uint8Array(digest))
-        .map((b) => b.toString(16).padStart(2, '0'))
-        .join('');
+      // undefined, never '': an empty string travels as a present-but-blank
+      // match key (sha256_phone_number: "") on both the Pixel and Google
+      // enhanced conversions, where an omitted key is simply not matched on.
+      // Web Crypto is absent outside a secure context.
+      if (!normalized || !globalThis.crypto?.subtle) return undefined;
+      try {
+        const bytes = new TextEncoder().encode(normalized);
+        const digest = await crypto.subtle.digest('SHA-256', bytes);
+        return Array.from(new Uint8Array(digest))
+          .map((b) => b.toString(16).padStart(2, '0'))
+          .join('');
+      } catch {
+        return undefined;
+      }
     };
 
     if (new URLSearchParams(window.location.search).get('preview') === '1') return;
@@ -65,12 +48,16 @@ const { tenantName, tenantSlug } = Astro.props;
 
     const pick = (key, fallback = '') => String(state?.[key] ?? fallback);
     const pickNum = (key, fallback = 0) => Number(state?.[key] ?? fallback);
+    // Storage that throws (blocked site data, quota) must not cost the
+    // Purchase: for COD the server leg below is the only one. Meta still
+    // deduplicates a repeat on event_id.
     const once = (key) => {
       const fullKey = `meta_once_${key}`;
-      const prev = localStorage.getItem(fullKey);
-      if (prev === '1') return false;
-      localStorage.setItem(fullKey, '1');
-      sessionStorage.setItem(fullKey, '1');
+      try {
+        if (localStorage.getItem(fullKey) === '1') return false;
+        localStorage.setItem(fullKey, '1');
+        sessionStorage.setItem(fullKey, '1');
+      } catch {}
       return true;
     };
     const getCookieValue = (name) =>
@@ -84,6 +71,9 @@ const { tenantName, tenantSlug } = Astro.props;
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
+        // /thanks may hand the buyer to WhatsApp moments later; keepalive lets
+        // the request finish after the page is gone.
+        keepalive: true,
       }).catch(() => {});
     };
 
@@ -97,7 +87,7 @@ const { tenantName, tenantSlug } = Astro.props;
     // Product ID is the catalog identity published by both feeds. Variant ID is
     // retained separately for checkout and reporting, never folded into it.
     const productId = pick('product_id', '');
-    let contentIds = productId ? [productId] : [];
+    const contentId = productId;
     const phone = pick('phone', '');
     const name = pick('name', '');
     const province = pick('province', '');
@@ -115,7 +105,7 @@ const { tenantName, tenantSlug } = Astro.props;
 
     const data = {
       content_name: productName,
-      content_ids: contentIds.length ? contentIds : undefined,
+      content_ids: contentId ? [contentId] : undefined,
       content_type: 'product',
       value: Number(conversionValue || 1),
       currency: 'IDR',
@@ -159,12 +149,6 @@ const { tenantName, tenantSlug } = Astro.props;
           // corrected too or the two legs would report different revenue.
           data.value = serverProductValue;
         }
-        const serverContentIds = Array.isArray(statusData.content_ids)
-          ? statusData.content_ids.filter((id) => typeof id === 'string' && /^\d{5,16}$/.test(id))
-          : [];
-        if (!serverContentIds.length) return;
-        contentIds = serverContentIds;
-        data.content_ids = serverContentIds;
       } catch {
         return;
       }
@@ -241,10 +225,7 @@ const { tenantName, tenantSlug } = Astro.props;
           if (typeof window.__PS_LOAD_META_PIXEL__ === 'function') {
             window.__PS_LOAD_META_PIXEL__();
           }
-          // Through the ordered hook, not `fbq` directly: the Purchase must
-          // never be replayed ahead of MetaPixelBase's single init, which
-          // fbevents would discard without a word.
-          window.__PS_META_TRACK__(eventName, data, { eventID: finalEventId });
+          window.fbq('track', eventName, data, { eventID: finalEventId });
         }
       } catch (error) {
         console.error('meta-browser-purchase', error);
@@ -254,7 +235,9 @@ const { tenantName, tenantSlug } = Astro.props;
         pushGtmEcomEvent('purchase', {
           currency: 'IDR',
           value: Number(conversionValue || 1),
-          item_id: contentIds[0] || productId,
+          // The unit price is derived from the server's value, never from browser state.
+          quantity,
+          item_id: productId,
           item_name: productName,
           item_variant: pick('variant_unique_id', '') || undefined,
           transaction_id: orderId || undefined,
@@ -313,7 +296,7 @@ const { tenantName, tenantSlug } = Astro.props;
         order_number: finalEventId,
         status_token: statusToken,
         lp_name: pick('lp_name', ''),
-        content_ids: contentIds.length ? contentIds : undefined,
+        product_id: productId || undefined,
         content_name: productName,
         value: Number(conversionValue || 1),
         currency: 'IDR',
@@ -337,6 +320,14 @@ const { tenantName, tenantSlug } = Astro.props;
       });
     };
 
-    void fire();
+    // Tells /thanks the Purchase has been handed to the Pixel and the CAPI leg
+    // (or that there was none to send), so a WhatsApp hand-off can follow
+    // without cutting either request short. Fired on every exit of fire().
+    void fire().finally(() => {
+      window.__PS_PURCHASE_DONE__ = true;
+      if (typeof window.dispatchEvent === 'function' && typeof Event === 'function') {
+        window.dispatchEvent(new Event('ps:purchase-done'));
+      }
+    });
   })();
 </script>

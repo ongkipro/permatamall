@@ -6,14 +6,13 @@ import PaymentReconciliationQueue from "../../components/admin/PaymentReconcilia
 export const prerender = false;
 ---
 
-<AdminLayout title="Rekonsiliasi pembayaran AutoLaris" activeMenu="payments">
-  <div class="mx-auto max-w-7xl space-y-5">
+<AdminLayout title="Verifikasi pembayaran AutoLaris" activeMenu="payments">
+  <div class="space-y-5">
     <AdminPageHeader
-      eyebrow="Payment operations"
-      title="Rekonsiliasi pembayaran AutoLaris"
-      description="Gunakan rekonsiliasi manual bila status otomatis belum berubah. Tandai lunas hanya setelah transaksi terlihat berhasil di dashboard AutoLaris."
+      title="Verifikasi pembayaran AutoLaris"
+      description="Periksa pembayaran QRIS dan virtual account yang masih menunggu, lalu konfirmasi hanya setelah transaksi terlihat berhasil di dashboard AutoLaris."
       backHref="/admin/payments"
-      backLabel="Payment AutoLaris"
+      backLabel="Pembayaran"
     />
 
     <PaymentReconciliationQueue client:load />

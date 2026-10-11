@@ -5,9 +5,9 @@ import {
   buildMetaAdvancedMatching,
   metaNameParts,
   normalizeMetaText,
+  resolveMetaCountry,
   sha256Hex,
   toE164Digits,
-  resolveMetaCountry,
 } from "./meta-identity.ts";
 
 const THANKS_TRACKER = readFileSync(
@@ -143,17 +143,48 @@ test("the Pixel bootstrap mints and hashes one stable first-party external ID", 
   assert.equal(pageViewOptions?.eventID, windowStub.__META_PAGEVIEW_EVENT_ID__);
 });
 
-test("the Pixel bootstrap establishes fbp before an immediate CAPI tracker runs", () => {
-  const readIndex = PIXEL_BASE.indexOf("let fbp = readCookieValue('_fbp')");
-  const writeIndex = PIXEL_BASE.indexOf("writeMetaCookie('_fbp', fbp)");
-  const initHookIndex = PIXEL_BASE.indexOf("window.__PS_META_INIT__ =");
-  assert.ok(readIndex >= 0, "MetaPixelBase must read an existing first-party fbp");
-  assert.ok(writeIndex > readIndex, "MetaPixelBase must mint a missing fbp");
-  assert.ok(
-    initHookIndex > writeIndex,
-    "fbp must exist before page trackers can post the matching CAPI event",
+test("the Pixel bootstrap exposes the hooks /thanks and the forms call, and inits once", async () => {
+  // `/thanks`, form-middle and form-hybrid hand their advanced matching to
+  // `window.__PS_META_INIT__` and pull the library forward with
+  // `__PS_LOAD_META_PIXEL__`, each behind `?.`. A bootstrap without them fails
+  // nothing — the matching is dropped in silence. An install once shipped
+  // exactly that rewrite, with one init and so past the init-count checks.
+  const match = PIXEL_BASE.match(
+    /<script\b[^>]*\bis:inline\b[^>]*>([\s\S]*)<\/script>/,
   );
-  assert.match(PIXEL_BASE, /fbp = `fb\.1\.\$\{Date\.now\(\)\}\.\$\{randomPart\}`/);
+  assert.ok(match, "MetaPixelBase must keep its inline bootstrap");
+
+  const calls: unknown[][] = [];
+  const windowStub: Record<string, any> = {
+    location: { protocol: "https:" },
+    addEventListener: () => undefined,
+    setTimeout: () => 1,
+    // The page declares it will supply matching, as /thanks does.
+    __PS_META_AWAIT_MATCHING__: true,
+    fbq: (...args: unknown[]) => calls.push(args),
+  };
+  const documentStub = {
+    cookie: "",
+    createElement: () => ({}),
+    head: { appendChild: () => undefined },
+  };
+  new Function(
+    "pixelId", "metaExternalIdCookie", "window", "document", "crypto", "TextEncoder", "Uint8Array",
+    match[1],
+  )("1234567890", "adsbook_meta_external_id", windowStub, documentStub, globalThis.crypto, TextEncoder, Uint8Array);
+
+  for (let i = 0; i < 50 && typeof windowStub.__PS_META_INIT__ !== "function"; i += 1) {
+    await new Promise((resolve) => setImmediate(resolve));
+  }
+  assert.equal(typeof windowStub.__PS_META_INIT__, "function", "__PS_META_INIT__ must be exposed");
+  assert.equal(typeof windowStub.__PS_LOAD_META_PIXEL__, "function", "__PS_LOAD_META_PIXEL__ must be exposed");
+  assert.equal(calls.filter((args) => args[0] === "init").length, 0, "an awaiting page is not init'd early");
+
+  assert.equal(windowStub.__PS_META_INIT__({ ph: "hashed-phone" }), true);
+  assert.equal(windowStub.__PS_META_INIT__({ fn: "late" }), false, "a second init is refused");
+  const inits = calls.filter((args) => args[0] === "init");
+  assert.equal(inits.length, 1);
+  assert.equal((inits[0][2] as Record<string, unknown>).ph, "hashed-phone");
 });
 
 test("the browser Pixel's advanced-matching object hashes every field CAPI also hashes for the same event", async () => {
@@ -285,18 +316,20 @@ test("Google enhanced-conversion names are nested where gtag reads them", () => 
 // `country` was validated by the contract, hashed by `meta-capi`, sent by the
 // `/thanks` browser leg and forwarded by the headless route — and dropped by
 // `/api/meta-event`, which carries every first-party PageView, ViewContent and
-// `/thanks` Purchase. The two legs of one order described the buyer with
-// different key sets, and Meta scores match quality on what it is handed.
+// `/thanks` Purchase. The two legs of one order therefore described the buyer
+// with different key sets, and Meta scored match quality on the shorter one.
 
 test("country is an order's own key, the edge country otherwise, and never a guess", () => {
-  assert.equal(resolveMetaCountry(undefined, "SG", true), "id");
+  assert.equal(resolveMetaCountry(undefined, "SG", true), "id", "a resolved order is domestic");
   assert.equal(resolveMetaCountry("us", "SG", true), "id", "the order outranks a caller claim");
-  assert.equal(resolveMetaCountry(undefined, "SG", false), "sg");
-  assert.equal(resolveMetaCountry("id", null, false), "id");
+  assert.equal(resolveMetaCountry(undefined, "SG", false), "sg", "the edge country is truthful");
+  assert.equal(resolveMetaCountry("id", null, false), "id", "a validated claim is honoured");
+  // A hash of a non-country matches nobody, and Meta scores match quality on
+  // the keys it was given — an absent key is strictly better than a wrong one.
   assert.equal(resolveMetaCountry(undefined, "XX", false), undefined, "Cloudflare's unknown");
   assert.equal(resolveMetaCountry(undefined, "T1", false), undefined, "Cloudflare's Tor");
   assert.equal(resolveMetaCountry(undefined, "indonesia", false), undefined, "not alpha-2");
-  assert.equal(resolveMetaCountry(undefined, null, false), undefined);
+  assert.equal(resolveMetaCountry(undefined, null, false), undefined, "nothing to say");
 });
 
 test("both CAPI ingestion routes forward country to the outbox", () => {
@@ -312,4 +345,30 @@ test("both CAPI ingestion routes forward country to the outbox", () => {
       `${label} builds user_data without country — the Pixel leg sends it and this leg would not`,
     );
   }
+});
+
+test("buildMetaAdvancedMatching omits keys instead of throwing when Web Crypto is unavailable", async () => {
+  // Plain-http origins have no crypto.subtle; the checkout AddToCart used to
+  // die here on every leg. Omit the hashes, never substitute raw values.
+  const subtle = Object.getOwnPropertyDescriptor(globalThis.crypto, "subtle");
+  Object.defineProperty(globalThis.crypto, "subtle", { value: undefined, configurable: true });
+  try {
+    const am = await buildMetaAdvancedMatching({ customer_name: "Budi Santoso", customer_phone: "081234567890", city: "Jakarta" });
+    assert.equal(am.ph, undefined);
+    assert.equal(am.fn, undefined);
+    assert.equal(am.ct, undefined);
+    assert.ok(!JSON.stringify(am).includes("81234567890"), "raw phone must never stand in for its hash");
+    assert.ok(!JSON.stringify(am).toLowerCase().includes("budi"), "raw name must never stand in for its hash");
+  } finally {
+    if (subtle) Object.defineProperty(globalThis.crypto, "subtle", subtle);
+  }
+});
+
+test("the thanks tracker's hash returns undefined, never '', when it cannot hash", () => {
+  // '' reached Google as sha256_phone_number: "" and the Pixel as ph: "" —
+  // present-but-blank match keys — on any origin without Web Crypto.
+  const source = readFileSync("src/components/storefront/tracking/MetaThanksTracker.astro", "utf8");
+  const body = source.slice(source.indexOf("const hashSha256Hex"), source.indexOf("};", source.indexOf("const hashSha256Hex")));
+  assert.ok(body.length > 0, "hashSha256Hex not found");
+  assert.doesNotMatch(body, /return\s+''|return\s+""/);
 });

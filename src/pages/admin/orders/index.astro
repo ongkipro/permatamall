@@ -96,13 +96,6 @@ if (database?.prepare) {
             ORDER BY pt.id DESC
             LIMIT 1
           ), '') AS paymentInstructionStatus,
-          COALESCE((
-            SELECT channel_code
-            FROM payment_transactions
-            WHERE payment_transactions.order_id = orders.id
-            ORDER BY payment_transactions.id DESC
-            LIMIT 1
-          ), '') AS paymentChannelCode,
           COALESCE(orders.receiver_rts_score, -1) AS receiverDeliveryRate,
           CASE
             WHEN UPPER(COALESCE(orders.rts_risk_label, '')) LIKE '%HIGH%' THEN 'HIGH'
@@ -135,16 +128,15 @@ if (database?.prepare) {
 }
 ---
 
-<AdminLayout title="Order Management" activeMenu="orders">
+<AdminLayout title="Pesanan" activeMenu="orders">
   <div class="space-y-5">
     <AdminPageHeader
-      eyebrow="Commerce operations"
-      title="Order management"
+      title="Pesanan"
       description="Validasi pembayaran, alamat, risiko RTS, kurir, dan gudang. Konfirmasi order yang siap agar masuk ke antrean Pengiriman."
     >
       <div slot="actions" class="grid grid-cols-2 gap-2 sm:flex">
-        <a href="/admin/check" class="btn-secondary min-h-11 px-4 text-xs">Cek risiko</a>
-        <a href="/admin/shipping" class="btn-primary min-h-11 px-4 text-xs">Pengiriman</a>
+        <a href="/admin/check" class="btn-secondary">Cek risiko</a>
+        <a href="/admin/shipping" class="btn-primary">Pengiriman</a>
       </div>
     </AdminPageHeader>
     <OrdersTable initialOrders={initialOrders} client:load />

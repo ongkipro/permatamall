@@ -38,10 +38,29 @@ function databaseBeforeCourierBootstrap() {
   return database;
 }
 
-const migration = readFileSync(
+const bootstrapMigration = readFileSync(
   new URL("../db/migrations/0042_default_courier_rules.sql", import.meta.url),
   "utf8",
 );
+// 0042's own SQL still seeds Ninja — a fixed historical record of what that
+// migration actually ran — so a store's *current* policy is only complete
+// once 0056 has retired it too. Real installs apply both in sequence.
+const retireNinjaMigration = readFileSync(
+  new URL("../db/migrations/0056_retire_ninja_courier.sql", import.meta.url),
+  "utf8",
+);
+// 0059 adds SPX to every store that already has a policy, including one
+// 0042 just repaired.
+const addSpxMigration = readFileSync(
+  new URL("../db/migrations/0059_add_spx_courier.sql", import.meta.url),
+  "utf8",
+);
+// 0061 removes the retired Ninja rule 0042 seeded and 0056 disabled.
+const removeNinjaMigration = readFileSync(
+  new URL("../db/migrations/0061_remove_ninja_courier.sql", import.meta.url),
+  "utf8",
+);
+const migration = [bootstrapMigration, retireNinjaMigration, addSpxMigration, removeNinjaMigration].join("\n");
 
 test("courier bootstrap repairs an installed store only when its policy is empty", () => {
   const database = databaseBeforeCourierBootstrap();
@@ -67,6 +86,9 @@ test("courier bootstrap repairs an installed store only when its policy is empty
       enabled: number;
       cod: number;
     }>;
+  // The migrations are history: 0042 repaired an empty policy with every
+  // courier enabled, and 0061 removed Ninja. A fresh install enables fewer (see
+  // the install bootstrap test below); the repair keeps what it ran.
   assert.deepEqual(
     repaired,
     DEFAULT_COURIER_RULES.map((rule) => ({
@@ -75,6 +97,7 @@ test("courier bootstrap repairs an installed store only when its policy is empty
       cod: rule.cod,
     })),
   );
+  assert.equal(repaired.some((rule) => String(rule.code).toLowerCase() === "ninja"), false);
 
   const configured = database
     .prepare(`
@@ -84,8 +107,11 @@ test("courier bootstrap repairs an installed store only when its policy is empty
     `)
     .all()
     .map((row) => ({ ...row }));
+  // A configured policy is kept as is; SPX, a courier it could never have
+  // configured, is the only addition.
   assert.deepEqual(configured, [
     { code: "JNE", enabled: 0, cod: 0, excluded: "custom-policy" },
+    { code: "SPX", enabled: 1, cod: 1, excluded: null },
   ]);
 
   database.exec(migration);
@@ -95,7 +121,7 @@ test("courier bootstrap repairs an installed store only when its policy is empty
     .map((row) => ({ ...row }));
   assert.deepEqual(counts, [
     { store_id: 1, total: DEFAULT_COURIER_RULES.length },
-    { store_id: 2, total: 1 },
+    { store_id: 2, total: 2 },
   ]);
 });
 
@@ -130,14 +156,31 @@ test("the Expeditions API exposes the repaired catalogue after upgrade", async (
 
   assert.equal(response.status, 200);
   assert.equal(payload.success, true);
+  // Ninja is gone from the catalogue once 0061 has run.
+  const expectedCouriers = [
+    ...DEFAULT_COURIER_RULES.map((rule) => ({
+      code: rule.code,
+      enabled: 1,
+      cod: rule.cod,
+    })),
+  // SQLite ORDER BY compares bytes, so "SPX" sorts before "SiCepat".
+  ].sort((left, right) => (left.code < right.code ? -1 : left.code > right.code ? 1 : 0));
   assert.deepEqual(
     payload.data.couriers.map((courier) => ({
       code: courier.courierCode,
       enabled: courier.isEnabled,
       cod: courier.isCodEnabled,
     })),
-    [...DEFAULT_COURIER_RULES]
-      .sort((left, right) => left.code.localeCompare(right.code))
-      .map((rule) => ({ code: rule.code, enabled: 1, cod: rule.cod })),
+    expectedCouriers,
   );
+});
+
+test("a fresh install offers JNE and J&T, with every other courier present but off", () => {
+  assert.deepEqual(
+    DEFAULT_COURIER_RULES.filter((rule) => rule.enabled === 1).map((rule) => rule.code),
+    ["JNE", "J&T"],
+  );
+  assert.equal(DEFAULT_COURIER_RULES.some((rule) => rule.code.toLowerCase() === "ninja"), false);
+  // Every other courier keeps a row, so switching one on is a toggle.
+  assert.ok(DEFAULT_COURIER_RULES.length > 2);
 });

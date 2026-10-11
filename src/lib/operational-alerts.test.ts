@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
+  alertWebhookBody,
   alertsFromOperationalHealth,
   evaluateOperationalAlerts,
   schemaAlertFromError,
@@ -172,6 +173,14 @@ test("health and schema failures map only to bounded redacted alert state", () =
         ageMinutes: 120,
         metrics: { pending: 4, failed: 0, overdue: 4 },
       },
+      {
+        id: "google-ads-outbox",
+        state: "degraded",
+        reason: "terminal-failures",
+        lastAt: "2026-08-17T10:00:00.000Z",
+        ageMinutes: 120,
+        metrics: { pending: 0, failed: 2, overdue: 0 },
+      },
     ],
     build: {
       version: "test",
@@ -185,6 +194,8 @@ test("health and schema failures map only to bounded redacted alert state", () =
   assert.deepEqual(alertsFromOperationalHealth(health), [
     { id: "schema", state: "firing", reason: "schema-database-behind" },
     { id: "capi-outbox", state: "firing", reason: "stalled" },
+    // A-227: a stuck Google queue pages the operator, not only the panel.
+    { id: "google-ads-outbox", state: "firing", reason: "terminal-failures" },
   ]);
   assert.deepEqual(
     schemaAlertFromError(
@@ -197,4 +208,50 @@ test("health and schema failures map only to bounded redacted alert state", () =
     ),
     { id: "schema", state: "firing", reason: "schema-upgrade-failed" },
   );
+});
+
+test("the webhook names its store and carries a line chat webhooks render", async () => {
+  const store = new MemoryAlertStore();
+  const log = recordingLogger();
+  const realFetch = globalThis.fetch;
+  const bodies: Record<string, unknown>[] = [];
+  globalThis.fetch = (async (_url: string, init: RequestInit) => {
+    bodies.push(JSON.parse(String(init.body)));
+    return new Response(null, { status: 204 });
+  }) as typeof fetch;
+  try {
+    const result = await evaluateOperationalAlerts([firing], {
+      store,
+      logger: log.logger,
+      webhookUrl: "https://hooks.example.test/alert",
+      source: "https://store.example",
+      now: () => "2026-09-26T12:07:00.000Z",
+    });
+    assert.equal(result[0].notification, "sent");
+  } finally {
+    globalThis.fetch = realFetch;
+  }
+
+  assert.equal(bodies.length, 1);
+  const line = "[FIRING] https://store.example capi-outbox: terminal-failures (2026-09-26T12:07:00.000Z)";
+  assert.equal(bodies[0].store, "https://store.example");
+  assert.equal(bodies[0].text, line);
+  assert.equal(bodies[0].content, line);
+  // A generic receiver keeps every field of the redacted event.
+  assert.equal(bodies[0].signal, "capi-outbox");
+  assert.equal(bodies[0].status, "firing");
+  assert.equal(bodies[0].version, 1);
+});
+
+test("an alert without a source still reads cleanly", () => {
+  const body = alertWebhookBody({
+    version: 1,
+    eventId: "schema:recovered:t",
+    status: "recovered",
+    signal: "schema",
+    reason: "recovered-from-schema-behind",
+    transitionAt: "t",
+  }, "  ");
+  assert.equal(body.store, undefined);
+  assert.equal(body.text, "[RECOVERED] schema: recovered-from-schema-behind (t)");
 });

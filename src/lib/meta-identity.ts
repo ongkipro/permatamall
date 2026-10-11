@@ -112,15 +112,22 @@ export async function buildMetaAdvancedMatching(
   const zip = normalizeMetaText(String(input?.postal_code ?? ""));
   const country = normalizeMetaText(String(input?.country ?? ""));
   const externalId = normalizeMetaText(String(input?.external_id ?? "")) ?? normalizedPhone;
+  // Web Crypto is absent outside a secure context (plain-http origin, some
+  // embedded webviews). The checkout scripts await this before their
+  // AddToCart/InitiateCheckout, so a throw here used to drop the event on
+  // all three legs — Pixel, CAPI and GTM — and, the event flag already set,
+  // never retry. A key that cannot be hashed is omitted; its raw value is
+  // never sent in its place.
+  const hash = (value: string | undefined) => (value ? sha256Hex(value).catch(() => undefined) : undefined);
   return {
-    ph: normalizedPhone ? await sha256Hex(normalizedPhone) : undefined,
-    fn: firstName ? await sha256Hex(firstName) : undefined,
-    ln: lastName ? await sha256Hex(lastName) : undefined,
-    ct: city ? await sha256Hex(city) : undefined,
-    st: state ? await sha256Hex(state) : undefined,
-    zp: zip ? await sha256Hex(zip) : undefined,
-    country: country ? await sha256Hex(country) : undefined,
-    external_id: externalId ? await sha256Hex(externalId) : undefined,
+    ph: await hash(normalizedPhone),
+    fn: await hash(firstName),
+    ln: await hash(lastName),
+    ct: await hash(city),
+    st: await hash(state),
+    zp: await hash(zip),
+    country: await hash(country),
+    external_id: await hash(externalId),
     client_user_agent:
       typeof navigator !== "undefined" ? navigator.userAgent : undefined,
   };
@@ -137,15 +144,15 @@ export async function buildMetaAdvancedMatching(
  * dropped by `/api/meta-event`, which built `userData` without it. That route
  * carries every first-party PageView, ViewContent and `/thanks` Purchase, so
  * the Pixel leg of an order described the buyer with `country` and the CAPI leg
- * of the same order did not. Meta scores match quality on the keys it is
- * handed, so it scored the shorter set.
+ * of the same order did not. Meta then scored match quality on the shorter set.
  *
  * `edgeCountry` is Cloudflare's `cf-ipcountry` for the *buyer's* request, so it
  * is only truthful where the request came from the buyer's browser; the
  * headless route, whose caller is another server, passes `null` rather than
  * attribute its own egress location to a customer. `XX` (unknown) and `T1`
  * (Tor) are Cloudflare's own not-a-country values, and a hash of either matches
- * nobody — worse than an absent key, because Meta scores on what it is given.
+ * nobody — which is worse than an absent key, because Meta scores on the keys
+ * it is given.
  */
 const ISO_ALPHA2 = /^[a-z]{2}$/;
 const NOT_A_COUNTRY = new Set(["xx", "t1"]);

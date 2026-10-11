@@ -8,11 +8,12 @@ export type CmsVersionInfo = {
 };
 
 export const CMS_VERSION: CmsVersionInfo = {
-  version: "1.4.2",
+  version: "1.5.0",
   channel: "production",
-  // Schema 55 remains current; this release changes provider transport only.
-  releaseTag: "2026.09-autolaris-submit-advice",
+  // 1.5.0: migrations 0056-0061, GA4 ecommerce payload, variant id over SKU,
+  // mobile order button, deploy builds before upload (BUILD-LOG 2026-10-11).
+  releaseTag: "2026.10-checkout-tracking",
   coreEngine: "Astro 7 SSR + Cloudflare Workers",
-  schemaVersion: 56,
-  lastUpdated: "2026-09-02",
+  schemaVersion: 62,
+  lastUpdated: "2026-10-11",
 };

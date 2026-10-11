@@ -12,12 +12,11 @@ const storeName = Astro.locals.tenant.name;
 const feedUrl = `${Astro.locals.tenant.siteUrl.replace(/\/$/, '')}/feed/google-catalog.xml`;
 ---
 
-<AdminLayout title="Google Ads Signal & Catalog Engine" activeMenu="ads">
+<AdminLayout title="Google Ads & Merchant Center" activeMenu="ads">
   <div class="space-y-6">
     <!-- Header Page -->
     <AdminPageHeader
-      eyebrow="Google Ads Signal OS"
-      title="Google Ads & Merchant Center Engine"
+      title="Google Ads & Merchant Center"
       description="Kelola GTM Container, Google Ads Purchase Conversion, Enhanced Conversions, Consent Mode v2, dan Catalog XML Feed dari satu tempat."
       backHref="/admin/ads"
       backLabel="Ads & tracking"
@@ -27,14 +26,14 @@ const feedUrl = `${Astro.locals.tenant.siteUrl.replace(/\/$/, '')}/feed/google-c
           href="/feed/google-catalog.xml"
           target="_blank"
           rel="noopener noreferrer"
-          class="btn-secondary inline-flex min-h-9 items-center gap-1.5 px-3 text-xs"
+          class="btn-secondary"
         >
           <svg class="h-3.5 w-3.5 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
           </svg>
           XML Feed
         </a>
-        <span id="googleBadge" class="inline-flex min-h-9 items-center rounded-full bg-slate-100 px-3 text-xs font-bold text-slate-600">
+        <span id="googleBadge" class="inline-flex min-h-9 items-center rounded-full bg-slate-100 px-3 text-xs font-semibold text-slate-600">
           Memuat…
         </span>
       </div>
@@ -44,50 +43,50 @@ const feedUrl = `${Astro.locals.tenant.siteUrl.replace(/\/$/, '')}/feed/google-c
     <div class="grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-4">
       <div class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
         <div class="flex items-center justify-between">
-          <span class="text-[11px] font-bold uppercase tracking-wider text-slate-500">GTM Container</span>
+          <span class="text-xs font-semibold uppercase tracking-wider text-slate-500">GTM Container</span>
           <span id="kpiGtmStatus" class="h-2 w-2 rounded-full bg-slate-300"></span>
         </div>
-        <div id="kpiGtmVal" class="mt-2 font-mono text-sm font-extrabold text-slate-900">--</div>
-        <p class="mt-1 text-[11px] text-slate-500">Google Tag Manager</p>
+        <div id="kpiGtmVal" class="mt-2 font-mono text-sm font-semibold text-slate-900">--</div>
+        <p class="mt-1 text-xs text-slate-500">Google Tag Manager</p>
       </div>
 
       <div class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
         <div class="flex items-center justify-between">
-          <span class="text-[11px] font-bold uppercase tracking-wider text-slate-500">Ads Conversion</span>
+          <span class="text-xs font-semibold uppercase tracking-wider text-slate-500">Ads Conversion</span>
           <span id="kpiAdsStatus" class="h-2 w-2 rounded-full bg-slate-300"></span>
         </div>
-        <div id="kpiAdsVal" class="mt-2 font-mono text-sm font-extrabold text-slate-900">--</div>
-        <p class="mt-1 text-[11px] text-slate-500">Purchase Tag (AW-)</p>
+        <div id="kpiAdsVal" class="mt-2 font-mono text-sm font-semibold text-slate-900">--</div>
+        <p class="mt-1 text-xs text-slate-500">Purchase Tag (AW-)</p>
       </div>
 
       <div class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
         <div class="flex items-center justify-between">
-          <span class="text-[11px] font-bold uppercase tracking-wider text-slate-500">Enhanced Conv.</span>
+          <span class="text-xs font-semibold uppercase tracking-wider text-slate-500">Enhanced Conv.</span>
           <span class="h-2 w-2 rounded-full bg-emerald-500"></span>
         </div>
-        <div class="mt-2 text-sm font-extrabold text-emerald-700">SHA-256 Web</div>
-        <p class="mt-1 text-[11px] text-slate-500">Phone E.164 + Name</p>
+        <div class="mt-2 text-sm font-semibold text-emerald-700">SHA-256 Web</div>
+        <p class="mt-1 text-xs text-slate-500">Phone E.164 + Name</p>
       </div>
 
       <div class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
         <div class="flex items-center justify-between">
-          <span class="text-[11px] font-bold uppercase tracking-wider text-slate-500">Catalog Feed</span>
+          <span class="text-xs font-semibold uppercase tracking-wider text-slate-500">Catalog Feed</span>
           <span class="h-2 w-2 rounded-full bg-emerald-500"></span>
         </div>
-        <div class="mt-2 text-sm font-extrabold text-blue-700">GPC Auto-Mapped</div>
-        <p class="mt-1 text-[11px] text-slate-500">PMax & Shopping XML</p>
+        <div class="mt-2 text-sm font-semibold text-blue-700">GPC Auto-Mapped</div>
+        <p class="mt-1 text-xs text-slate-500">PMax & Shopping XML</p>
       </div>
     </div>
 
     <!-- Navigation Tabs -->
-    <div class="flex overflow-x-auto border-b border-slate-200 text-sm font-bold [&>button]:shrink-0 [&>button]:whitespace-nowrap">
+    <div class="flex overflow-x-auto border-b border-slate-200 text-sm font-semibold [&>button]:shrink-0 [&>button]:whitespace-nowrap">
       <button
         id="tabBtnConfig"
         type="button"
         class="tab-btn border-b-2 border-blue-600 px-4 py-2.5 text-blue-600 focus:outline-none"
         data-target="tabConfig"
       >
-        ⚙️ Konfigurasi ID
+        Konfigurasi
       </button>
       <button
         id="tabBtnTutorial"
@@ -95,7 +94,7 @@ const feedUrl = `${Astro.locals.tenant.siteUrl.replace(/\/$/, '')}/feed/google-c
         class="tab-btn border-b-2 border-transparent px-4 py-2.5 text-slate-500 hover:text-slate-900 focus:outline-none"
         data-target="tabTutorial"
       >
-        📘 Tutorial Step-by-Step
+        Panduan setup
       </button>
       <button
         id="tabBtnFeed"
@@ -103,7 +102,7 @@ const feedUrl = `${Astro.locals.tenant.siteUrl.replace(/\/$/, '')}/feed/google-c
         class="tab-btn border-b-2 border-transparent px-4 py-2.5 text-slate-500 hover:text-slate-900 focus:outline-none"
         data-target="tabFeed"
       >
-        🛒 Catalog XML Feed
+        Feed katalog
       </button>
       <button
         id="tabBtnSpecs"
@@ -111,7 +110,7 @@ const feedUrl = `${Astro.locals.tenant.siteUrl.replace(/\/$/, '')}/feed/google-c
         class="tab-btn border-b-2 border-transparent px-4 py-2.5 text-slate-500 hover:text-slate-900 focus:outline-none"
         data-target="tabSpecs"
       >
-        🔬 Sinyal & Payload Inspector
+        Inspeksi sinyal
       </button>
     </div>
 
@@ -121,17 +120,17 @@ const feedUrl = `${Astro.locals.tenant.siteUrl.replace(/\/$/, '')}/feed/google-c
     </div>
 
     <!-- Error Banner -->
-    <div id="googleError" class="hidden rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm font-bold text-rose-800" role="alert"></div>
+    <div id="googleError" class="hidden rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm font-semibold text-rose-800" role="alert"></div>
 
     <!-- TAB 1: Konfigurasi Form -->
     <div id="tabConfig" class="tab-content">
       <form id="googleForm" class="hidden rounded-xl border border-slate-200 bg-white text-slate-950 shadow-sm" novalidate aria-busy="false">
         <div class="border-b border-slate-200 p-5 md:p-6">
           <div class="flex items-center justify-between">
-            <label for="googleTagManagerId" class="block text-xs font-black text-slate-900">
+            <label for="googleTagManagerId" class="block text-xs font-semibold text-slate-900">
               Google Tag Manager Container ID
             </label>
-            <span class="rounded bg-slate-100 px-2 py-0.5 font-mono text-[10px] text-slate-600">Opsional</span>
+            <span class="rounded bg-slate-100 px-2 py-0.5 font-mono text-xs text-slate-600">Opsional</span>
           </div>
           <input
             id="googleTagManagerId"
@@ -140,16 +139,16 @@ const feedUrl = `${Astro.locals.tenant.siteUrl.replace(/\/$/, '')}/feed/google-c
             autocomplete="off"
             placeholder="GTM-XXXXXXX"
             pattern="GTM-[A-Za-z0-9]{4,20}"
-            class="admin-input-flat mt-2 h-11 font-mono text-base uppercase md:text-sm"
+            class="admin-input-flat mt-2 font-mono uppercase"
           />
-          <p class="mt-1.5 text-[11px] leading-5 text-slate-500">
+          <p class="mt-1.5 text-xs leading-5 text-slate-500">
             Mengaktifkan container GTM tenant untuk event e-commerce <code>view_item</code>, <code>add_to_cart</code>, <code>begin_checkout</code>, dan <code>purchase</code>.
           </p>
         </div>
 
         <div class="grid grid-cols-1 gap-5 p-5 md:grid-cols-2 md:p-6">
           <div>
-            <label for="googleId" class="block text-xs font-black text-slate-900">
+            <label for="googleId" class="block text-xs font-semibold text-slate-900">
               Google Ads Conversion ID
             </label>
             <input
@@ -159,13 +158,13 @@ const feedUrl = `${Astro.locals.tenant.siteUrl.replace(/\/$/, '')}/feed/google-c
               autocomplete="off"
               placeholder="AW-998877665"
               pattern="AW-[0-9]{5,20}"
-              class="admin-input-flat mt-2 h-11 font-mono text-base uppercase md:text-sm"
+              class="admin-input-flat mt-2 font-mono uppercase"
             />
-            <p class="mt-1.5 text-[11px] text-slate-500">Format standar Google Tag: <code>AW-XXXXXXXXX</code></p>
+            <p class="mt-1.5 text-xs text-slate-500">Format standar Google Tag: <code>AW-XXXXXXXXX</code></p>
           </div>
 
           <div>
-            <label for="googleLabel" class="block text-xs font-black text-slate-900">
+            <label for="googleLabel" class="block text-xs font-semibold text-slate-900">
               Purchase Conversion Label
             </label>
             <input
@@ -175,18 +174,17 @@ const feedUrl = `${Astro.locals.tenant.siteUrl.replace(/\/$/, '')}/feed/google-c
               autocomplete="off"
               placeholder="AbCd_EFGHIJKlm"
               pattern="[A-Za-z0-9_-]{1,100}"
-              class="admin-input-flat mt-2 h-11 font-mono text-base md:text-sm"
+              class="admin-input-flat mt-2 font-mono"
             />
-            <p class="mt-1.5 text-[11px] text-slate-500">Conversion Label khusus untuk event Purchase di Google Ads Manager.</p>
+            <p class="mt-1.5 text-xs text-slate-500">Conversion Label khusus untuk event Purchase di Google Ads Manager.</p>
           </div>
         </div>
 
         <div class="mx-5 mb-5 rounded-xl border border-blue-200 bg-blue-50/70 p-4 text-xs leading-5 text-blue-900 md:mx-6">
           <div class="flex items-start gap-2.5">
-            <span class="text-base">💡</span>
             <div>
               <strong>Ketentuan Pengisian:</strong>
-              <ul class="mt-1 list-disc space-y-0.5 pl-4 text-[11px]">
+              <ul class="mt-1 list-disc space-y-0.5 pl-4 text-xs">
                 <li>Google Ads Conversion ID dan Label <strong>harus diisi bersamaan</strong> untuk mengaktifkan tag Purchase langsung.</li>
                 <li>Jika Anda menggunakan GTM, GTM ID dapat diisi secara independen.</li>
                 <li>Sistem secara otomatis menangani <strong>Consent Mode v2</strong> dan <strong>Enhanced Conversions</strong> client-side.</li>
@@ -196,10 +194,10 @@ const feedUrl = `${Astro.locals.tenant.siteUrl.replace(/\/$/, '')}/feed/google-c
         </div>
 
         <div class="flex flex-col gap-3 border-t border-slate-200 p-4 sm:flex-row sm:items-center sm:justify-between">
-          <p id="googleStatus" class="min-h-5 text-xs font-bold text-slate-500" role="status" aria-live="polite">
+          <p id="googleStatus" class="min-h-5 text-xs font-semibold text-slate-500" role="status" aria-live="polite">
             Perubahan belum disimpan.
           </p>
-          <button id="saveGoogle" type="submit" class="btn-blue min-h-11 w-full px-6 text-xs sm:w-auto">
+          <button id="saveGoogle" type="submit" class="btn-blue w-full sm:w-auto">
             Simpan Konfigurasi
           </button>
         </div>
@@ -211,37 +209,37 @@ const feedUrl = `${Astro.locals.tenant.siteUrl.replace(/\/$/, '')}/feed/google-c
       <div class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm md:p-6">
         <div class="flex items-center justify-between border-b border-slate-100 pb-4">
           <div>
-            <h3 class="text-base font-extrabold text-slate-900">Panduan Setup Google Ads & Merchant Center Step-by-Step</h3>
+            <h3 class="text-base font-semibold text-slate-900">Panduan Setup Google Ads & Merchant Center Step-by-Step</h3>
             <p class="mt-1 text-xs text-slate-500">Ikuti 5 langkah mudah di bawah ini untuk menghubungkan toko Anda dengan Google Ads & PMax Campaign.</p>
           </div>
-          <span class="rounded-full bg-blue-100 px-3 py-1 text-xs font-black text-blue-800">5 Langkah Praktis</span>
+          <span class="rounded-full bg-blue-100 px-3 py-1 text-xs font-semibold text-blue-800">5 Langkah Praktis</span>
         </div>
 
         <div class="mt-6 space-y-6">
           <!-- Step 1 -->
           <div class="relative pl-8 before:absolute before:left-3.5 before:top-8 before:bottom-0 before:w-0.5 before:bg-slate-200">
-            <span class="absolute left-0 top-0 flex h-7 w-7 items-center justify-center rounded-full bg-blue-600 text-xs font-black text-white">1</span>
+            <span class="absolute left-0 top-0 flex h-7 w-7 items-center justify-center rounded-full bg-blue-600 text-xs font-semibold text-white">1</span>
             <div class="rounded-xl border border-slate-200 bg-slate-50/50 p-4">
-              <h4 class="text-sm font-black text-slate-900">Buat Conversion Action "Purchase" di Google Ads</h4>
-              <p class="mt-1 text-xs text-slate-600">Buka dashboard <a href="https://ads.google.com" target="_blank" rel="noopener noreferrer" class="font-bold text-blue-600 underline">Google Ads Manager</a> $\rightarrow$ Goals $\rightarrow$ Conversions $\rightarrow$ Summary.</p>
+              <h4 class="text-sm font-semibold text-slate-900">Buat Conversion Action "Purchase" di Google Ads</h4>
+              <p class="mt-1 text-xs text-slate-600">Buka dashboard <a href="https://ads.google.com" target="_blank" rel="noopener noreferrer" class="font-semibold text-blue-600 underline">Google Ads Manager</a> → Goals → Conversions → Summary.</p>
               
               <div class="mt-3 space-y-2 text-xs">
                 <div class="grid grid-cols-1 gap-2 sm:grid-cols-2">
                   <div class="rounded-lg border border-slate-200 bg-white p-3">
-                    <span class="block text-[11px] font-bold text-slate-400 uppercase">Kategori & Nama</span>
-                    <p class="mt-1 font-semibold text-slate-800">Category: <span class="text-blue-600 font-bold">Purchase (Pembelian)</span></p>
-                    <p class="text-slate-600">Conversion name: <code class="bg-slate-100 px-1 font-mono">Zanoby Purchase</code></p>
+                    <span class="block text-xs font-semibold text-slate-400 uppercase">Kategori & Nama</span>
+                    <p class="mt-1 font-semibold text-slate-800">Category: <span class="text-blue-600 font-semibold">Purchase (Pembelian)</span></p>
+                    <p class="text-slate-600">Conversion name: <code class="bg-slate-100 px-1 font-mono">{storeName} Purchase</code></p>
                   </div>
 
                   <div class="rounded-lg border border-slate-200 bg-white p-3">
-                    <span class="block text-[11px] font-bold text-slate-400 uppercase">Nilai & Hitungan</span>
-                    <p class="mt-1 font-semibold text-slate-800">Value: <span class="text-emerald-600 font-bold">Use different values for each conversion</span></p>
-                    <p class="text-slate-600">Count: <span class="font-bold">Every (Setiap konversi)</span> | Currency: <code class="bg-slate-100 px-1 font-mono">IDR</code></p>
+                    <span class="block text-xs font-semibold text-slate-400 uppercase">Nilai & Hitungan</span>
+                    <p class="mt-1 font-semibold text-slate-800">Value: <span class="text-emerald-600 font-semibold">Use different values for each conversion</span></p>
+                    <p class="text-slate-600">Count: <span class="font-semibold">Every (Setiap konversi)</span> | Currency: <code class="bg-slate-100 px-1 font-mono">IDR</code></p>
                   </div>
                 </div>
 
                 <div class="rounded-lg border border-slate-200 bg-white p-3">
-                  <span class="block text-[11px] font-bold text-slate-400 uppercase">Metode Attribution & Deduplication</span>
+                  <span class="block text-xs font-semibold text-slate-400 uppercase">Metode Attribution & Deduplication</span>
                   <p class="mt-1 text-slate-700">Gunakan model <strong class="text-slate-900">Data-driven attribution</strong>. Sistem {storeName} secara otomatis mengirimkan <code class="bg-slate-100 px-1 font-mono">transaction_id</code> (Nomor Pesanan) untuk mencegah duplikasi data.</p>
                 </div>
               </div>
@@ -250,9 +248,9 @@ const feedUrl = `${Astro.locals.tenant.siteUrl.replace(/\/$/, '')}/feed/google-c
 
           <!-- Step 2 -->
           <div class="relative pl-8 before:absolute before:left-3.5 before:top-8 before:bottom-0 before:w-0.5 before:bg-slate-200">
-            <span class="absolute left-0 top-0 flex h-7 w-7 items-center justify-center rounded-full bg-blue-600 text-xs font-black text-white">2</span>
+            <span class="absolute left-0 top-0 flex h-7 w-7 items-center justify-center rounded-full bg-blue-600 text-xs font-semibold text-white">2</span>
             <div class="rounded-xl border border-slate-200 bg-slate-50/50 p-4">
-              <h4 class="text-sm font-black text-slate-900">Aktifkan Enhanced Conversions for Web</h4>
+              <h4 class="text-sm font-semibold text-slate-900">Aktifkan Enhanced Conversions for Web</h4>
               <p class="mt-1 text-xs text-slate-600">Di halaman detail Conversion Action yang baru dibuat, buka bagian <strong class="text-slate-900">Enhanced Conversions</strong>.</p>
               
               <ul class="mt-3 list-disc space-y-1.5 pl-4 text-xs text-slate-700">
@@ -265,34 +263,34 @@ const feedUrl = `${Astro.locals.tenant.siteUrl.replace(/\/$/, '')}/feed/google-c
 
           <!-- Step 3 -->
           <div class="relative pl-8 before:absolute before:left-3.5 before:top-8 before:bottom-0 before:w-0.5 before:bg-slate-200">
-            <span class="absolute left-0 top-0 flex h-7 w-7 items-center justify-center rounded-full bg-blue-600 text-xs font-black text-white">3</span>
+            <span class="absolute left-0 top-0 flex h-7 w-7 items-center justify-center rounded-full bg-blue-600 text-xs font-semibold text-white">3</span>
             <div class="rounded-xl border border-slate-200 bg-slate-50/50 p-4">
-              <h4 class="text-sm font-black text-slate-900">Salin & Simpan Conversion ID / GTM ID di Form Admin</h4>
+              <h4 class="text-sm font-semibold text-slate-900">Salin & Simpan Conversion ID / GTM ID di Form Admin</h4>
               <p class="mt-1 text-xs text-slate-600">Setelah menyimpan Conversion Action di Google Ads Manager, dapatkan nilai ID berikut:</p>
               
               <div class="mt-3 overflow-x-auto rounded-lg border border-slate-200 bg-white">
                 <table class="w-full text-left text-xs">
                   <thead class="bg-slate-100 text-slate-700">
                     <tr>
-                      <th class="p-2.5 font-bold">Bidang Field</th>
-                      <th class="p-2.5 font-bold">Contoh Format</th>
-                      <th class="p-2.5 font-bold">Fungsi</th>
+                      <th class="p-2.5 font-semibold">Bidang Field</th>
+                      <th class="p-2.5 font-semibold">Contoh Format</th>
+                      <th class="p-2.5 font-semibold">Fungsi</th>
                     </tr>
                   </thead>
-                  <tbody class="divide-y divide-slate-100 font-mono text-[11px]">
+                  <tbody class="divide-y divide-slate-100 font-mono text-xs">
                     <tr>
                       <td class="p-2.5 font-sans font-semibold text-slate-900">GTM Container ID</td>
-                      <td class="p-2.5 text-blue-600 font-bold">GTM-K9X28M1</td>
+                      <td class="p-2.5 text-blue-600 font-semibold">GTM-K9X28M1</td>
                       <td class="p-2.5 font-sans text-slate-600">Tag container GTM opsional</td>
                     </tr>
                     <tr>
                       <td class="p-2.5 font-sans font-semibold text-slate-900">Google Ads Conversion ID</td>
-                      <td class="p-2.5 text-blue-600 font-bold">AW-1122334455</td>
+                      <td class="p-2.5 text-blue-600 font-semibold">AW-1122334455</td>
                       <td class="p-2.5 font-sans text-slate-600">ID Utama Google Tag Ads</td>
                     </tr>
                     <tr>
                       <td class="p-2.5 font-sans font-semibold text-slate-900">Purchase Conversion Label</td>
-                      <td class="p-2.5 text-blue-600 font-bold">xYz_9876543210</td>
+                      <td class="p-2.5 text-blue-600 font-semibold">xYz_9876543210</td>
                       <td class="p-2.5 font-sans text-slate-600">Label khusus event Purchase</td>
                     </tr>
                   </tbody>
@@ -301,82 +299,30 @@ const feedUrl = `${Astro.locals.tenant.siteUrl.replace(/\/$/, '')}/feed/google-c
             </div>
           </div>
 
-          <!-- Step 3B: GTM container build-out -->
-          <div class="relative pl-8 before:absolute before:left-3.5 before:top-8 before:bottom-0 before:w-0.5 before:bg-slate-200">
-            <span class="absolute left-0 top-0 flex h-7 w-7 items-center justify-center rounded-full bg-indigo-600 text-xs font-black text-white">🎯</span>
-            <div class="rounded-xl border border-indigo-200 bg-indigo-50/50 p-4">
-              <div class="flex items-center justify-between">
-                <h4 class="text-sm font-black text-slate-900">Bonus: Bangun Container GTM dari Nol</h4>
-                <span class="rounded bg-indigo-100 px-2 py-0.5 font-mono text-[10px] font-bold text-indigo-700">Opsional</span>
-              </div>
-              <p class="mt-1 text-xs text-slate-600">
-                Kalau memilih jalur GTM (bukan Google Tag langsung), mengisi field <strong class="text-slate-900">GTM Container ID</strong> di atas hanya memuat container-nya — tag &amp; trigger di dalamnya harus dibuat sendiri di <a href="https://tagmanager.google.com" target="_blank" rel="noopener noreferrer" class="font-bold text-indigo-600 underline">tagmanager.google.com</a>. Toko ini sudah push <code class="bg-white px-1 font-mono">dataLayer</code> ecommerce standar GA4, jadi container tinggal membaca, bukan menghitung ulang.
-              </p>
-
-              <ol class="mt-3 list-decimal space-y-2 pl-4 text-xs text-slate-700">
-                <li>
-                  <strong class="text-slate-900">Buat container Web</strong> baru di GTM, salin <code class="bg-white px-1 font-mono">GTM-XXXXXXX</code>-nya ke field di atas.
-                </li>
-                <li>
-                  <strong class="text-slate-900">Tag GA4 Configuration</strong> — Tag type <code class="bg-white px-1 font-mono">Google Analytics: GA4 Configuration</code>, Measurement ID dari GA4 property, Trigger: <code class="bg-white px-1 font-mono">All Pages</code>.
-                </li>
-                <li>
-                  <strong class="text-slate-900">4 trigger Custom Event</strong>, satu per nama event yang sudah di-push toko ke <code class="bg-white px-1 font-mono">dataLayer</code> — persis nama ini, tanpa awalan:
-                  <div class="mt-2 overflow-x-auto rounded-lg border border-indigo-200 bg-white">
-                    <table class="w-full text-left text-xs">
-                      <thead class="bg-indigo-50 text-slate-700">
-                        <tr>
-                          <th class="p-2 font-bold">Custom Event Name (trigger)</th>
-                          <th class="p-2 font-bold">Kapan terpicu</th>
-                        </tr>
-                      </thead>
-                      <tbody class="divide-y divide-slate-100 font-mono text-[11px]">
-                        <tr><td class="p-2 text-indigo-700 font-bold">view_item</td><td class="p-2 font-sans text-slate-600">Halaman produk dibuka</td></tr>
-                        <tr><td class="p-2 text-indigo-700 font-bold">add_to_cart</td><td class="p-2 font-sans text-slate-600">Form checkout diisi, niat beli jelas</td></tr>
-                        <tr><td class="p-2 text-indigo-700 font-bold">begin_checkout</td><td class="p-2 font-sans text-slate-600">Submit checkout dimulai</td></tr>
-                        <tr><td class="p-2 text-indigo-700 font-bold">purchase</td><td class="p-2 font-sans text-slate-600">Order tervalidasi/terbayar (halaman thanks)</td></tr>
-                      </tbody>
-                    </table>
-                  </div>
-                </li>
-                <li>
-                  <strong class="text-slate-900">4 tag GA4 Event</strong> (satu per trigger di atas) — Tag type <code class="bg-white px-1 font-mono">Google Analytics: GA4 Event</code>, Configuration Tag: tag dari langkah 2, Event Name diisi manual sama seperti nama trigger-nya (<code class="bg-white px-1 font-mono">view_item</code>, dst). Di bagian <strong>Event Parameters</strong>, aktifkan <strong class="text-slate-900">"Send Ecommerce Data"</strong> / gunakan Data Layer Variable <code class="bg-white px-1 font-mono">ecommerce</code> — jangan mapping field satu-satu, objek <code class="bg-white px-1 font-mono">ecommerce</code> yang di-push toko sudah berisi <code class="bg-white px-1 font-mono">currency</code>, <code class="bg-white px-1 font-mono">value</code>, <code class="bg-white px-1 font-mono">transaction_id</code>, dan <code class="bg-white px-1 font-mono">items[]</code> siap pakai.
-                </li>
-                <li>
-                  <strong class="text-slate-900">Preview mode</strong> di GTM, coba alur produk → checkout → thanks, pastikan 4 event di atas muncul di panel Tag Assistant dengan <code class="bg-white px-1 font-mono">ecommerce</code> terisi (bukan <code class="bg-white px-1 font-mono">null</code>) — lalu <strong class="text-slate-900">Submit &amp; Publish</strong> container.
-                </li>
-              </ol>
-
-              <p class="mt-3 text-[11px] text-slate-500">
-                Catatan: kalau field <strong>Google Ads Conversion ID</strong> &amp; <strong>Label</strong> di atas juga diisi, Purchase Google Ads dikirim langsung oleh Google Tag — jangan buat lagi konversi Ads dari dalam GTM untuk event yang sama, satu conversion action cukup satu pengirim.
-              </p>
-            </div>
-          </div>
-
           <!-- Step 4 -->
           <div class="relative pl-8 before:absolute before:left-3.5 before:top-8 before:bottom-0 before:w-0.5 before:bg-slate-200">
-            <span class="absolute left-0 top-0 flex h-7 w-7 items-center justify-center rounded-full bg-blue-600 text-xs font-black text-white">4</span>
+            <span class="absolute left-0 top-0 flex h-7 w-7 items-center justify-center rounded-full bg-blue-600 text-xs font-semibold text-white">4</span>
             <div class="rounded-xl border border-slate-200 bg-slate-50/50 p-4">
-              <h4 class="text-sm font-black text-slate-900">Submit XML Catalog Feed ke Google Merchant Center (PMax / Shopping)</h4>
+              <h4 class="text-sm font-semibold text-slate-900">Submit XML Catalog Feed ke Google Merchant Center (PMax / Shopping)</h4>
               <p class="mt-1 text-xs text-slate-600">Untuk mengaktifkan kampanye <strong class="text-slate-900">Performance Max (PMax)</strong> dan <strong class="text-slate-900">Google Shopping Ads</strong>:</p>
               
               <div class="mt-3 space-y-2 text-xs">
                 <div class="flex items-center justify-between gap-3 rounded-lg border border-slate-200 bg-white p-3">
                   <div class="min-w-0">
-                    <span class="block text-[11px] font-bold text-slate-400 uppercase">Primary Feed URL</span>
-                    <code id="feedUrlText" class="mt-0.5 block break-all font-mono font-bold text-blue-700">{feedUrl}</code>
+                    <span class="block text-xs font-semibold text-slate-400 uppercase">Primary Feed URL</span>
+                    <code id="feedUrlText" class="mt-0.5 block break-all font-mono font-semibold text-blue-700">{feedUrl}</code>
                   </div>
                   <button
                     id="btnCopyFeedUrl"
                     type="button"
-                    class="btn-secondary min-h-8 shrink-0 px-3 text-[11px]"
+                    class="btn-secondary"
                   >
-                    📋 Salin URL Feed
+                    Salin URL Feed
                   </button>
                 </div>
 
                 <div class="rounded-lg border border-slate-200 bg-white p-3">
-                  <span class="block text-[11px] font-bold text-slate-400 uppercase">Pengaturan Feed di Merchant Center</span>
+                  <span class="block text-xs font-semibold text-slate-400 uppercase">Pengaturan Feed di Merchant Center</span>
                   <p class="mt-1 text-slate-700">Target Country: <strong class="text-slate-900">Indonesia</strong> | Language: <strong class="text-slate-900">Indonesian</strong> | Method: <strong class="text-slate-900">Scheduled Fetch (Pengambilan Terjadwal Daily)</strong>.</p>
                 </div>
               </div>
@@ -385,15 +331,15 @@ const feedUrl = `${Astro.locals.tenant.siteUrl.replace(/\/$/, '')}/feed/google-c
 
           <!-- Step 5 -->
           <div class="relative pl-8">
-            <span class="absolute left-0 top-0 flex h-7 w-7 items-center justify-center rounded-full bg-emerald-600 text-xs font-black text-white">5</span>
+            <span class="absolute left-0 top-0 flex h-7 w-7 items-center justify-center rounded-full bg-emerald-600 text-xs font-semibold text-white">5</span>
             <div class="rounded-xl border border-emerald-200 bg-emerald-50/50 p-4">
-              <h4 class="text-sm font-black text-emerald-950">Verifikasi & Test Sinyal Live</h4>
+              <h4 class="text-sm font-semibold text-emerald-950">Verifikasi & Test Sinyal Live</h4>
               <p class="mt-1 text-xs text-emerald-800">Gunakan extension browser <strong class="text-emerald-950">Google Tag Assistant Companion</strong> untuk menguji event konversi saat checkout.</p>
               
               <div class="mt-2 text-xs text-emerald-900">
-                <p>💡 <strong>Checklist Uji Coba:</strong></p>
-                <ul class="mt-1 list-disc space-y-0.5 pl-4 text-[11px]">
-                  <li>Event <code class="font-mono font-bold">conversion</code> terdeteksi dengan <code class="font-mono">send_to</code> sesuai ID & Label.</li>
+                <p><strong>Checklist Uji Coba:</strong></p>
+                <ul class="mt-1 list-disc space-y-0.5 pl-4 text-xs">
+                  <li>Event <code class="font-mono font-semibold">conversion</code> terdeteksi dengan <code class="font-mono">send_to</code> sesuai ID & Label.</li>
                   <li>Parameter <code class="font-mono">value</code> bernilai IDR angka bersih (misal <code class="font-mono">249000</code>).</li>
                   <li>Parameter <code class="font-mono">transaction_id</code> sesuai dengan nomor invoice pesanan.</li>
                   <li>Parameter <code class="font-mono">user_data</code> berisi hash SHA-256 nomor HP/email.</li>
@@ -410,15 +356,15 @@ const feedUrl = `${Astro.locals.tenant.siteUrl.replace(/\/$/, '')}/feed/google-c
       <div class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm md:p-6">
         <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <span class="inline-block rounded-md bg-blue-100 px-2 py-0.5 text-[10px] font-black uppercase text-blue-800">Automated XML Engine</span>
-            <h3 class="mt-1 text-base font-extrabold text-slate-900">Google Merchant Center Product Catalog Feed</h3>
+            <span class="inline-block rounded-md bg-blue-100 px-2 py-0.5 text-xs font-semibold uppercase text-blue-800">Automated XML Engine</span>
+            <h3 class="mt-1 text-base font-semibold text-slate-900">Google Merchant Center Product Catalog Feed</h3>
             <p class="mt-1 text-xs text-slate-500">Feed XML otomatis yang mengadaptasi seluruh produk D1 dengan pemetaan taksonomi <code>google_product_category</code> (GPC ID).</p>
           </div>
           <div class="flex items-center gap-2">
             <button
               id="btnCopyFeedUrl2"
               type="button"
-              class="btn-secondary min-h-10 px-4 text-xs"
+              class="btn-secondary"
             >
               Salin Link Feed
             </button>
@@ -426,7 +372,7 @@ const feedUrl = `${Astro.locals.tenant.siteUrl.replace(/\/$/, '')}/feed/google-c
               href="/feed/google-catalog.xml"
               target="_blank"
               rel="noopener noreferrer"
-              class="btn-blue min-h-10 px-4 text-xs"
+              class="btn-blue"
             >
               Buka Feed XML ↗
             </a>
@@ -435,27 +381,27 @@ const feedUrl = `${Astro.locals.tenant.siteUrl.replace(/\/$/, '')}/feed/google-c
 
         <!-- Taxonomy Auto-Map Specs Table -->
         <div class="mt-6">
-          <h4 class="text-xs font-black uppercase tracking-wider text-slate-700">Tabel Pemetaan Otomatis Taksonomi Google (GPC ID)</h4>
+          <h4 class="text-xs font-semibold uppercase tracking-wider text-slate-700">Tabel Pemetaan Otomatis Taksonomi Google (GPC ID)</h4>
           <div class="mt-2 overflow-x-auto rounded-lg border border-slate-200">
             <table class="w-full text-left text-xs">
               <thead class="bg-slate-100 text-slate-700">
                 <tr>
-                  <th class="p-3 font-bold">Kategori Produk Toko</th>
-                  <th class="p-3 font-bold">Google Product Category (GPC ID)</th>
-                  <th class="p-3 font-bold">Jalur Taksonomi Resmi Google</th>
+                  <th class="p-3 font-semibold">Kategori Produk Toko</th>
+                  <th class="p-3 font-semibold">Google Product Category (GPC ID)</th>
+                  <th class="p-3 font-semibold">Jalur Taksonomi Resmi Google</th>
                 </tr>
               </thead>
               <tbody class="divide-y divide-slate-100 text-slate-800">
                 {TAXONOMY_RULES.map((rule) => (
                   <tr>
                     <td class="p-3 font-semibold text-slate-900">{rule.productType}</td>
-                    <td class="p-3 font-mono font-bold text-blue-600">{rule.google?.id ?? "—"}</td>
+                    <td class="p-3 font-mono font-semibold text-blue-600">{rule.google?.id ?? "—"}</td>
                     <td class="p-3 text-slate-600">{rule.google?.path ?? "Tidak dikirim (tidak ada kategori Google yang tepat)"}</td>
                   </tr>
                 ))}
                 <tr>
                   <td class="p-3 font-semibold text-slate-900">Kategori Lainnya</td>
-                  <td class="p-3 font-mono font-bold text-slate-600">—</td>
+                  <td class="p-3 font-mono font-semibold text-slate-600">—</td>
                   <td class="p-3 text-slate-600">Tidak dikirim. Google mengklasifikasikan sendiri produk tanpa kategori.</td>
                 </tr>
               </tbody>
@@ -468,17 +414,17 @@ const feedUrl = `${Astro.locals.tenant.siteUrl.replace(/\/$/, '')}/feed/google-c
     <!-- TAB 4: Technical Signal Specs & Inspector -->
     <div id="tabSpecs" class="tab-content hidden space-y-4">
       <div class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm md:p-6">
-        <h3 class="text-base font-extrabold text-slate-900">Spesifikasi Sinyal & Payload Inspector</h3>
+        <h3 class="text-base font-semibold text-slate-900">Spesifikasi Sinyal & Payload Inspector</h3>
         <p class="mt-1 text-xs text-slate-500">Detail spesifikasi teknis sinyal konversi yang dikirimkan oleh sistem {storeName}.</p>
 
         <div class="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
           <!-- Code snippet -->
           <div class="rounded-xl border border-slate-800 bg-slate-950 p-4 text-white">
             <div class="flex items-center justify-between border-b border-slate-800 pb-2">
-              <span class="font-mono text-xs font-bold text-slate-400">gtag('event', 'conversion', payload)</span>
-              <span class="rounded bg-blue-900/60 px-2 py-0.5 text-[10px] font-mono text-blue-300">Web Script</span>
+              <span class="font-mono text-xs font-semibold text-slate-400">gtag('event', 'conversion', payload)</span>
+              <span class="rounded bg-blue-900/60 px-2 py-0.5 text-xs font-mono text-blue-300">Web Script</span>
             </div>
-            <pre class="mt-3 overflow-x-auto font-mono text-[11px] leading-5 text-emerald-400"><code>window.gtag('event', 'conversion', &#123;
+            <pre class="mt-3 overflow-x-auto font-mono text-xs leading-5 text-emerald-400"><code>window.gtag('event', 'conversion', &#123;
   send_to: 'AW-XXXXXXXXX/AbCd_EFGHIJKlm',
   value: 249000,
   currency: 'IDR',
@@ -497,19 +443,19 @@ const feedUrl = `${Astro.locals.tenant.siteUrl.replace(/\/$/, '')}/feed/google-c
 
           <!-- Consent Mode Matrix -->
           <div class="rounded-xl border border-slate-200 bg-slate-50 p-4 text-xs">
-            <h4 class="font-black text-slate-900">Consent Mode v2 Matrix Compliance</h4>
+            <h4 class="font-semibold text-slate-900">Consent Mode v2 Matrix Compliance</h4>
             <ul class="mt-2 space-y-1.5 text-slate-700">
               <li class="flex items-center justify-between border-b border-slate-200 pb-1">
                 <span>Wilayah ID & MY (Default)</span>
-                <span class="font-bold text-emerald-600">Granted All</span>
+                <span class="font-semibold text-emerald-600">Granted All</span>
               </li>
               <li class="flex items-center justify-between border-b border-slate-200 pb-1">
                 <span>Wilayah EEA & UK (GDPR)</span>
-                <span class="font-bold text-amber-600">Denied Default</span>
+                <span class="font-semibold text-amber-600">Denied Default</span>
               </li>
               <li class="flex items-center justify-between border-b border-slate-200 pb-1">
                 <span>Ad Storage & Personalization</span>
-                <span class="font-mono font-bold text-slate-900">ad_user_data</span>
+                <span class="font-mono font-semibold text-slate-900">ad_user_data</span>
               </li>
               <li class="flex items-center justify-between">
                 <span>Attribution Click-IDs</span>
@@ -574,7 +520,7 @@ const feedUrl = `${Astro.locals.tenant.siteUrl.replace(/\/$/, '')}/feed/google-c
       status.setAttribute('role', state === 'error' ? 'alert' : 'status');
       status.setAttribute('aria-live', state === 'error' ? 'assertive' : 'polite');
       status.textContent = message;
-      status.className = `min-h-5 text-xs font-bold ${
+      status.className = `min-h-5 text-xs font-semibold ${
         state === 'success' ? 'text-blue-700' : state === 'error' ? 'text-rose-700' : 'text-slate-500'
       }`;
     };
@@ -611,10 +557,10 @@ const feedUrl = `${Astro.locals.tenant.siteUrl.replace(/\/$/, '')}/feed/google-c
       if (badge) {
         badge.textContent = tagManagerReady && adsReady ? 'GTM + Ads Aktif' : tagManagerReady || adsReady ? 'Sebagian Aktif' : 'Belum Dikonfigurasi';
         badge.className = tagManagerReady && adsReady
-          ? 'inline-flex min-h-9 items-center rounded-full bg-blue-100 px-3 text-xs font-bold text-blue-800'
+          ? 'inline-flex min-h-9 items-center rounded-full bg-blue-100 px-3 text-xs font-semibold text-blue-800'
           : tagManagerReady || adsReady
-            ? 'inline-flex min-h-9 items-center rounded-full bg-amber-100 px-3 text-xs font-bold text-amber-800'
-            : 'inline-flex min-h-9 items-center rounded-full bg-slate-100 px-3 text-xs font-bold text-slate-600';
+            ? 'inline-flex min-h-9 items-center rounded-full bg-amber-100 px-3 text-xs font-semibold text-amber-800'
+            : 'inline-flex min-h-9 items-center rounded-full bg-slate-100 px-3 text-xs font-semibold text-slate-600';
       }
     };
 
@@ -681,7 +627,7 @@ const feedUrl = `${Astro.locals.tenant.siteUrl.replace(/\/$/, '')}/feed/google-c
         const url = document.getElementById('feedUrlText')?.textContent?.trim() || '';
         await navigator.clipboard.writeText(url).catch(() => {});
         const oldText = btn.textContent;
-        btn.textContent = '✅ Disalin!';
+        btn.textContent = 'Disalin!';
         setTimeout(() => {
           btn.textContent = oldText;
         }, 2000);

@@ -43,7 +43,9 @@ export function captureMetaOrderContext(request: Request): MetaOrderContext {
   };
 }
 
-export function serializeMetaOrderContext(context: MetaOrderContext): string | undefined {
+export function serializeMetaOrderContext(
+  context: MetaOrderContext,
+): string | undefined {
   const cleaned = normalizeMetaOrderContext(context);
   return Object.values(cleaned).some(Boolean) ? JSON.stringify(cleaned) : undefined;
 }
@@ -59,7 +61,9 @@ export function parseMetaOrderContext(raw: unknown): MetaOrderContext {
 
 function normalizeMetaOrderContext(context: MetaOrderContext): MetaOrderContext {
   const normalized: MetaOrderContext = {};
-  if (isValidMetaExternalId(context?.externalId)) normalized.externalId = context.externalId;
+  if (isValidMetaExternalId(context?.externalId)) {
+    normalized.externalId = context.externalId;
+  }
   if (isValidMetaBrowserId(context?.fbp)) normalized.fbp = context.fbp;
   if (isValidMetaBrowserId(context?.fbc)) normalized.fbc = context.fbc;
   const clientIp = cleanClientIp(context?.clientIp);

@@ -130,11 +130,33 @@ export type AutoLarisPaymentInquiry = {
 
 export const AUTOLARIS_PENDING_CODE = "02";
 export const AUTOLARIS_PAID_CODE = "00";
+/**
+ * Words that may settle a payment, and the two that were removed.
+ *
+ * The provider's own documentation (`ongkipro/autolaris`,
+ * `docs/guides/payment-gateway.md` §6) is explicit: *"`SUCCESS`/`BERHASIL`
+ * terlalu generik dan `DELIVERED` adalah status pengiriman; ketiganya tidak
+ * boleh ditafsirkan sebagai lunas"* — and only an explicit settlement status
+ * confirmed by the provider may mark a transaction and its order paid.
+ *
+ * `SUCCESS` and `BERHASIL` were in this set. They are now gone, because §7 of
+ * the same guide settles what `rc: "00"` actually means: the **API call**
+ * succeeded, not the payment. A `00` answered with a generic success word is
+ * therefore ambiguous between "advice request succeeded" and "payment
+ * settled" — and resolving that ambiguity in favour of paid marks an order paid
+ * that may not be, which is the one direction this path must never fail in.
+ *
+ * What remains is unambiguous settlement vocabulary: nothing generic, nothing
+ * from the shipping lifecycle. The provider has still published no complete
+ * settlement mapping, so these three are a conservative reading rather than a
+ * confirmed contract — which is exactly why every `rc: "00"` that does not
+ * match is captured as evidence rather than discarded
+ * (`reconcileAutoLarisPaymentStatuses`), and why manual reconciliation remains
+ * the documented fallback.
+ */
 const AUTOLARIS_PAID_STATUSES = new Set([
-  "SUCCESS",
   "PAID",
   "SETTLED",
-  "BERHASIL",
   "LUNAS",
 ]);
 
@@ -162,7 +184,25 @@ type AutoLarisResponse = {
   };
 };
 
-/** Provider timestamps are documented as Jakarta local time without an offset. */
+/**
+ * `payment_info.expired` arrives without an offset, and is read as Jakarta time.
+ *
+ * That is an **assumption, not a documented fact**. The provider's own
+ * reference lists the timezone of `expired` under "Batas kontrak" — the things
+ * the published collection does not state (`ongkipro/autolaris`,
+ * `docs/reference/h2h-api.md`). This comment previously claimed the opposite,
+ * that Jakarta time was documented, which is the kind of guess-dressed-as-fact
+ * that survives precisely because it reads as settled.
+ *
+ * `+07:00` is the reasonable reading for an Indonesian provider quoting local
+ * time, and it is what ships. The consequence if it is wrong is worth naming:
+ * were the provider to send UTC, every instruction would be treated as expiring
+ * seven hours later than it does, and `/payment` would keep presenting a dead
+ * virtual account as live. An unparseable value returns `undefined` and the
+ * instruction simply carries no expiry, which fails in the safe direction.
+ *
+ * Confirm with AutoLaris before go-live, as the reference itself instructs.
+ */
 export function parseAutoLarisExpiry(value: unknown): string | undefined {
   const match = String(value || "")
     .trim()

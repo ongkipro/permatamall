@@ -157,19 +157,6 @@ export const TAXONOMY_RULES: readonly TaxonomyRule[] = [
     ],
   },
   {
-    // Install rule (permatamall): topical muscle/joint relief gels. Both sides
-    // checked against the same official files; Meta has no heat-rub leaf, and
-    // "first aid" is where Google files the same product.
-    google: { id: 5848, path: "Health & Beauty > Health Care > First Aid > Hot & Cold Therapies > Heat Rubs" },
-    metaPath: "health & beauty > health > first aid",
-    productType: "Kesehatan > Pereda Nyeri Otot & Sendi",
-    keywords: [
-      "relaxing gel", "gel pereda nyeri", "pereda nyeri", "pegal linu", "otot dan sendi",
-      "nyeri otot", "nyeri sendi", "pegal otot", "balsem", "counterpain", "sensasi hangat",
-      "asam urat", "rematik", "keseleo", "kesemutan", "linu"
-    ],
-  },
-  {
     google: { id: 1604, path: "Apparel & Accessories > Clothing" },
     metaPath: "clothing & accessories > clothing",
     productType: "Fashion & Pakaian > Pakaian",

@@ -155,23 +155,23 @@ export const POST: APIRoute = async ({ request, locals }) => {
     // the dedicated external ID cookie wins over phone so every funnel event for
     // one visitor keeps the same advertiser-issued identity.
     const browserIds = readMetaBrowserIds(request);
-    const resolvedPhone = purchaseOrder?.customer_phone || payload.phone;
-    const resolvedEmail = purchaseOrder?.customer_email || payload.email;
     const event = {
       eventName: payload.eventName,
       eventId,
       eventSourceUrl: payload.eventSourceUrl,
       userData: {
-        phone: resolvedPhone,
+        phone: purchaseOrder?.customer_phone || payload.phone,
         name: purchaseOrder?.customer_name || payload.name,
         // Never the address `buyerEmail`/`submit-order` mint for the payment
         // provider: it is `<phone digits>@<store host>`, nobody owns it, and Meta
         // scores match quality on every key it is handed.
-        email: matchableCustomerEmail(
-          resolvedEmail,
-          locals.tenant.siteUrl,
-          request.url,
-        ),
+        email:
+          matchableCustomerEmail(
+            purchaseOrder?.customer_email,
+            locals.tenant.siteUrl,
+            request.url,
+          ) ||
+          payload.email,
         city: purchaseOrder?.city || payload.city,
         province: purchaseOrder?.province || payload.province,
         postalCode: purchaseOrder?.postal_code || payload.postalCode,
@@ -210,6 +210,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
 
     const delivered = await deliverCapiEvent(
       database,
+      event.eventName,
       eventId,
       adsConfig.metaPixelId,
       adsConfig.metaCapiToken,

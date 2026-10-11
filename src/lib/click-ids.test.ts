@@ -1,5 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { readFileSync } from "node:fs";
+import { productPageRedirect, PRODUCT_PAGE_REDIRECT_MAX_AGE } from "./native-landing-pages.ts";
 import {
   hasAdClickId,
   hasClickId,
@@ -8,7 +10,6 @@ import {
   parseClickIdsFromUrl,
   readClickIdCookie,
   readMetaBrowserIds,
-  readOrderClickIds,
 } from "./click-ids.ts";
 
 test("captures the click id Google attached to the landing URL", () => {
@@ -177,34 +178,50 @@ test("a campaign-tagged link never erases the ad click that was paid for", () =>
     "and no tag from the older click lingers to mix two campaigns",
   );
 
-  // Each network keeps its own last click. A Meta click must not erase the
-  // Google click needed for later Google offline reconciliation.
+  // A genuinely new paid click is last-touch: it replaces the attribution and
+  // brings its own campaign tags with it.
   const metaClick = parseClickIdsFromUrl(new URL("https://shop.example/promo?fbclid=IwAR_new"));
   const afterMeta = mergeClickIds(merged, metaClick);
-  assert.equal(afterMeta.gclid, "Cj0KCQ_paid");
+  assert.equal(afterMeta.gclid, undefined);
   assert.equal(afterMeta.fbclid, "IwAR_new");
   assert.match(String(afterMeta._fbc), /^fb\.1\.\d+\.IwAR_new$/);
-  assert.equal(afterMeta.utm_source, "whatsapp");
+  assert.equal(afterMeta.utm_source, undefined);
 
   // Nothing stored yet is the common first-touch case and must not invent keys.
   assert.deepEqual(mergeClickIds({}, broadcast), broadcast);
 });
 
-test("a later browser ID enriches order attribution without erasing click IDs", () => {
-  const fbp = "fb.1.1788230000000.1234567890";
-  const fbc = "fb.1.1788230000000.IwARcurrent";
-  const request = new Request("https://shop.example/api/submit-order", {
-    headers: {
-      cookie:
-        `adsbook_click_ids=${encodeURIComponent(JSON.stringify({ gclid: "Cj0_paid", fbclid: "IwARold", _fbc: "fb.1.1788220000000.IwARold" }))}; ` +
-        `_fbp=${fbp}; _fbc=${fbc}`,
-    },
-  });
+test("an embed carrying only the parent page's _fbp keeps the stored gclid", () => {
+  const googleClick = parseClickIdsFromUrl(new URL("https://shop.example/?gclid=Cj0_paid"));
+  const embedReload = parseClickIdsFromUrl(new URL("https://shop.example/embed/form?_fbp=fb.1.1700000000000.123"));
+  const merged = mergeClickIds(googleClick, embedReload);
+  assert.equal(merged.gclid, "Cj0_paid");
+  assert.equal(merged._fbp, "fb.1.1700000000000.123", "the fresher browser id still lands");
+});
 
-  assert.deepEqual(readOrderClickIds(request), {
-    gclid: "Cj0_paid",
-    fbclid: "IwARold",
-    _fbp: fbp,
-    _fbc: fbc,
-  });
+test("a public redirect to a product page keeps the ad's click ids", () => {
+  // A landing page handed a product page answers a redirect to /produk/<slug>.
+  // Every store's ads point at landing URLs, so a redirect without the query
+  // string strips fbclid/gclid and the UTM tags before any script can read them
+  // — the click is paid for and never attributed. Found live: all nine of a
+  // store's landings redirected bare after they were made product pages.
+  const source = (path: string) => readFileSync(new URL(`../${path}`, import.meta.url), "utf8");
+  const redirects = [
+    ...source("middleware.ts").matchAll(/productPageRedirect\(`[^`]*`/g),
+    ...source("pages/[slug].astro").matchAll(/(?:productPageRedirect|Astro\.redirect)\(`[^`]*`/g),
+    ...source("pages/solusi-terbaru.astro").matchAll(/Astro\.redirect\(`[^`]*`/g),
+  ].map((match) => match[0]);
+  assert.equal(redirects.length, 4);
+  for (const redirect of redirects) {
+    assert.match(redirect, /\$\{(Astro\.)?url\.search\}`$/, redirect);
+  }
+});
+
+test("the product-page redirect is a 301 that browsers do not keep forever", () => {
+  const response = productPageRedirect("/produk/pupuk?fbclid=abc&utm_source=fb");
+  assert.equal(response.status, 301);
+  assert.equal(response.headers.get("location"), "/produk/pupuk?fbclid=abc&utm_source=fb");
+  // A permanent redirect without Cache-Control is cached indefinitely, which
+  // would outlive an operator releasing the claim.
+  assert.equal(response.headers.get("cache-control"), `public, max-age=${PRODUCT_PAGE_REDIRECT_MAX_AGE}`);
 });

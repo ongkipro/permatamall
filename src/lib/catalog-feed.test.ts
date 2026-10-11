@@ -124,76 +124,6 @@ test("a feed omits the ad category it cannot determine", () => {
   assert.ok(known.includes("<g:google_product_category>"));
 });
 
-/**
- * `identifier_exists=no` used to be emitted beside `brand` and an `mpn` taken
- * from the variant SKU. Both halves were wrong.
- *
- * The SKU on this catalogue is a bundle label the merchant chose — `BELI_1_PCS`,
- * "buy 1 piece" — not a manufacturer's part number, so it identified nothing.
- * And Google's reference is explicit that `identifier_exists=no` is for products
- * that genuinely carry no assigned identifiers: an item declaring it while also
- * sending a brand and an MPN is the documented case that "will receive a
- * warning". Omitting the attribute defaults it to yes, which is what a branded
- * product is.
- */
-test("the feed never claims a product has no identifiers while sending a brand", () => {
-  const mockProducts: CatalogProduct[] = [
-    {
-      productId: 14001,
-      slug: "bibit-sirsak",
-      productName: "Bibit Sirsak Juara",
-      category: "Pertanian",
-      heroImage: "/images/hero.jpg",
-      variants: [{ id: 10, label: "Paket 1 Batang", price: 85000, sku: "BELI_1_PCS" }],
-    },
-  ];
-
-  for (const xml of [
-    generateGoogleCatalogXml(mockProducts, "https://toko-uji.example"),
-    generateMetaCatalogXml(mockProducts, "https://toko-uji.example"),
-  ]) {
-    assert.ok(xml.includes("<g:brand>"), "a branded product still declares its brand");
-    assert.ok(
-      !xml.includes("<g:identifier_exists>"),
-      "identifier_exists must not contradict the brand in the same item",
-    );
-    assert.ok(
-      !xml.includes("<g:mpn>"),
-      "a merchant bundle label is not a manufacturer part number",
-    );
-  }
-});
-
-/**
- * `<g:brand>` was always the *store* name, because that was the only name the
- * schema carried. On a single-brand store that is harmless; on a store selling
- * Carukesi, He-ji and Ken+total it published one manufacturer for all three,
- * and Google matches on brand. The column is nullable, so a store that never
- * fills it in keeps exactly the behaviour it had.
- */
-test("a product's own brand wins over the store name, and absence falls back", () => {
-  const base = {
-    slug: "gel",
-    productName: "Carukesi Relaxing Gel 50g",
-    category: "Kesehatan",
-    heroImage: "/images/hero.jpg",
-    variants: [{ id: 10, label: "1 Pcs", price: 98500 }],
-  };
-  const products: CatalogProduct[] = [
-    { ...base, productId: 14001, brand: "Carukesi" },
-    { ...base, productId: 14002, slug: "lain" },
-    { ...base, productId: 14003, slug: "kosong", brand: "   " },
-  ];
-
-  for (const xml of [
-    generateGoogleCatalogXml(products, "https://toko-uji.example", "Permata Mall"),
-    generateMetaCatalogXml(products, "https://toko-uji.example", "Permata Mall"),
-  ]) {
-    const brands = [...xml.matchAll(/<g:brand>([^<]+)<\/g:brand>/g)].map((m) => m[1]);
-    assert.deepEqual(brands, ["Carukesi", "Permata Mall", "Permata Mall"]);
-  }
-});
-
 // Google caps title at 150 and description at 5000; Meta at 200 and 9999.
 // Over the cap an item is disapproved, not truncated — silently, one product at
 // a time. `product-mutation.ts` accepts a 160-character title, so a title of
@@ -229,10 +159,58 @@ test("clampFeedText trims on a word boundary when one is close", () => {
   assert.equal(clampFeedText("a".repeat(40), 10), "a".repeat(10));
 });
 
+// `identifier_exists: no` and `g:mpn` together contradict each other: the first
+// declares the product carries no manufacturer identifier, the second supplies
+// one. The `g:mpn` was never truthful either — an MPN is assigned by a
+// manufacturer, and `sku` is nullable, merchant-editable and changes whenever
+// an operator edits it.
+
+test("the Google feed declares no identifier and never invents one", () => {
+  const product: CatalogProduct = {
+    productId: 14009,
+    slug: "tanpa-mpn",
+    productName: "Produk Tanpa MPN",
+    heroImage: "/images/hero.jpg",
+    variants: [{ id: 1, label: "Satuan", price: 89000, sku: "SKU-YANG-DIEDIT-PEDAGANG" }],
+  };
+  const xml = generateGoogleCatalogXml([product], "https://toko-uji.example");
+  assert.ok(xml.includes("<g:identifier_exists>no</g:identifier_exists>"));
+  assert.ok(!xml.includes("<g:mpn>"), "a merchant SKU is not a manufacturer part number");
+  assert.ok(!xml.includes("<g:gtin>"));
+  assert.ok(
+    !xml.includes("SKU-YANG-DIEDIT-PEDAGANG"),
+    "the merchant-editable sku must not reach the feed at all",
+  );
+});
+
+test("the Meta feed carries no identifier claim either", () => {
+  const product: CatalogProduct = {
+    productId: 14010,
+    slug: "meta-tanpa-mpn",
+    productName: "Produk Meta",
+    heroImage: "/images/hero.jpg",
+    variants: [{ id: 1, label: "Satuan", price: 89000, sku: "SKU-LAIN" }],
+  };
+  const xml = generateMetaCatalogXml([product], "https://toko-uji.example");
+  assert.ok(!xml.includes("<g:mpn>"));
+  assert.ok(!xml.includes("SKU-LAIN"));
+});
+
 test("feeds link the JPEG sibling of an uploaded WebP, since Meta takes JPEG or PNG only", () => {
   const upload = "/assets/uploads/2026-10-08/bd4cac38-d36e-4285-9811-532ebecdb3de.webp";
   assert.equal(feedImagePath(upload), upload.replace(/\.webp$/, ".jpg"));
-  for (const other of ["/images/mark.webp", "https://r2.example.com/x.webp", "/assets/uploads/2026-10-08/x.png"]) {
+  // Anything that is not an asset-route upload is left as the merchant set it.
+  for (const other of ["/images/adsbook-mark.webp", "https://r2.example.com/pompa.webp", "/assets/uploads/2026-10-08/x.png"]) {
     assert.equal(feedImagePath(other), other);
   }
+  const product: CatalogProduct = {
+    productId: 10004,
+    slug: "dompet",
+    productName: "Dompet Kulit",
+    heroImage: upload,
+    variants: [{ id: 1, label: "Hitam", price: 200000 }],
+  };
+  const jpg = `<g:image_link>https://toko-uji.example${upload.replace(/\.webp$/, ".jpg")}</g:image_link>`;
+  assert.ok(generateMetaCatalogXml([product], "https://toko-uji.example").includes(jpg));
+  assert.ok(generateGoogleCatalogXml([product], "https://toko-uji.example").includes(jpg));
 });

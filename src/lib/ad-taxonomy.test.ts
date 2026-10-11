@@ -30,19 +30,6 @@ test("herbal supplements map to Google 525 and send no Meta category", () => {
   assert.equal(result.productType, "Kesehatan > Suplemen Herbal");
 });
 
-test("a topical muscle/joint relief gel maps to Google 5848 Heat Rubs, not Skin Care", () => {
-  // Install rule: the store's own product. Its old title carried "cream"/"krim"
-  // and went out as skincare.
-  const result = getAdTaxonomy("Umum", "Carukési Relaxing Gel 50g", "Gel pereda nyeri otot dan sendi, sensasi hangat");
-  assert.equal(result.googleCategoryId, 5848);
-  assert.equal(
-    result.googleCategoryName,
-    "Health & Beauty > Health Care > First Aid > Hot & Cold Therapies > Heat Rubs",
-  );
-  assert.equal(result.metaCategoryName, "health & beauty > health > first aid");
-  assert.equal(result.productType, "Kesehatan > Pereda Nyeri Otot & Sendi");
-});
-
 test("kitchen tools map to Google 668 Kitchen Tools & Utensils", () => {
   const result = getAdTaxonomy("Perkakas", "Pengasah Pisau Portable", "Alat asahan pisau dapur serbaguna");
   assert.equal(result.googleCategoryId, 668);

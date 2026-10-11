@@ -80,11 +80,26 @@ function pick(dbValue: unknown, envKey: string, fallback: string): string {
   return text(dbValue) || getEnvValue(envKey) || fallback;
 }
 
+/**
+ * A store address must be https — except on this machine. `npm run dev:local`
+ * serves http://localhost, and forcing an https address there made every
+ * absolute link (feeds, canonical, OG, redirects) point at a host that does
+ * not exist. A loopback host can never be a production store, so allowing
+ * plain http for it alone weakens nothing.
+ */
+export function isAcceptedSiteProtocol(url: URL): boolean {
+  if (url.protocol === "https:") return true;
+  return (
+    url.protocol === "http:" &&
+    (url.hostname === "localhost" || url.hostname === "127.0.0.1" || url.hostname === "[::1]")
+  );
+}
+
 function siteOrigin(value: string): string {
   try {
     const url = new URL(value);
     if (
-      url.protocol === "https:" &&
+      isAcceptedSiteProtocol(url) &&
       url.pathname === "/" &&
       !url.search &&
       !url.hash
@@ -97,12 +112,21 @@ function siteOrigin(value: string): string {
   return defaults.siteUrl;
 }
 
+/**
+ * The shapes resolution accepts, exported so the settings editor rejects a
+ * value here instead of storing one this module will silently fall back for.
+ * An operator who saves `#fff` and is shown `#111111` has been told nothing
+ * about why.
+ */
+export const THEME_COLOR_PATTERN = /^#[0-9a-f]{6}$/i;
+export const LOCALE_PATTERN = /^[a-z]{2}(?:-[A-Z]{2})?$/;
+
 function themeColor(value: string): string {
-  return /^#[0-9a-f]{6}$/i.test(value) ? value : defaults.themeColor;
+  return THEME_COLOR_PATTERN.test(value) ? value : defaults.themeColor;
 }
 
 function locale(value: string): string {
-  return /^[a-z]{2}(?:-[A-Z]{2})?$/.test(value) ? value : defaults.locale;
+  return LOCALE_PATTERN.test(value) ? value : defaults.locale;
 }
 
 /**
@@ -130,7 +154,7 @@ export function resolveTenantConfig(
   );
 
   return Object.freeze({
-    slug: pick(row?.slug, "PUBLIC_TENANT_SLUG", defaults.slug),
+    slug: text(row?.slug) || defaults.slug,
     name,
     siteUrl: siteOrigin(pick(row?.site_url, "PUBLIC_SITE_URL", defaults.siteUrl)),
     description:

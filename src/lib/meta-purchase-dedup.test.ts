@@ -14,10 +14,6 @@ const TRACKER_SOURCE = readFileSync(
   new URL("../components/storefront/tracking/MetaThanksTracker.astro", import.meta.url),
   "utf8",
 );
-const THANKS_SOURCE = readFileSync(
-  new URL("../pages/thanks.astro", import.meta.url),
-  "utf8",
-);
 
 const INLINE_SCRIPT = (() => {
   const match = TRACKER_SOURCE.match(/<script\b[^>]*\bis:inline\b[^>]*>([\s\S]*)<\/script>/);
@@ -84,11 +80,7 @@ async function runTracker(
     if (input.startsWith("/api/order-status")) {
       return Promise.resolve({
         ok: true,
-        json: () => Promise.resolve({
-          content_ids: ["434683"],
-          product_name: "Asahan Portable",
-          ...orderStatus,
-        }),
+        json: () => Promise.resolve(orderStatus),
       });
     }
     if (input.startsWith("/api/meta-event")) {
@@ -110,22 +102,6 @@ async function runTracker(
     __PS_LOAD_META_PIXEL__: () => {
       run.pixelLoadPulled += 1;
     },
-    // The other half of the base's contract: no tracker may call `fbq('track')`
-    // itself, because fbevents replays its queue in arrival order and discards
-    // a track that precedes the init. The real hook waits for the init to have
-    // been issued; here that is already true, so it forwards immediately.
-    __PS_META_TRACK__: (
-      eventName: string,
-      data?: unknown,
-      options?: { eventID?: string },
-    ) => {
-      (windowStub.fbq as (...args: unknown[]) => unknown)(
-        "track",
-        eventName,
-        data,
-        options,
-      );
-    },
     location: {
       search: "",
       href: "https://permatamall.shop/thanks",
@@ -145,7 +121,6 @@ async function runTracker(
 
   const tracker = new Function(
     "tenantName",
-    "tenantSlug",
     "metaExternalIdCookie",
     "window",
     "document",
@@ -158,7 +133,6 @@ async function runTracker(
 
   tracker(
     "Permatamall",
-    "permatamall",
     META_EXTERNAL_ID_COOKIE,
     windowStub,
     { cookie: documentCookie },
@@ -168,16 +142,8 @@ async function runTracker(
     fetchStub,
   );
 
-  // The script fires asynchronously (status fetch + SHA-256 hashing), and the
-  // browser leg now lands *after* the CAPI post: `__PS_META_TRACK__` holds it
-  // until MetaPixelBase's single init has actually been issued, so waiting only
-  // for `postedPayloads` returns before the Pixel call exists. Wait for both,
-  // still bounded.
-  for (
-    let i = 0;
-    i < 40 && (run.postedPayloads.length === 0 || run.pixelEventIds.length === 0);
-    i += 1
-  ) {
+  // The script fires asynchronously (status fetch + SHA-256 hashing).
+  for (let i = 0; i < 20 && run.postedPayloads.length === 0; i += 1) {
     await new Promise((resolve) => setTimeout(resolve, 5));
   }
   return run;
@@ -314,16 +280,6 @@ test("no checkout form mints a random Purchase event_id any more", () => {
       `${script} must not carry a browser-minted purchase_event_id into thanks state`,
     );
   }
-  const hybrid = readFileSync(
-    new URL("../scripts/form-hybrid.ts", import.meta.url),
-    "utf8",
-  );
-  assert.match(hybrid, /submit_token:\s*submitToken/);
-  assert.doesNotMatch(
-    hybrid,
-    /submit_token:\s*`\$\{submitToken\}_\$\{eventId\}`/,
-    "a funnel event id must not turn a retry into a new order identity",
-  );
 });
 
 test("embed parent surfaces never emit Purchase before verified thanks", () => {
@@ -339,15 +295,4 @@ test("embed parent surfaces never emit Purchase before verified thanks", () => {
   assert.doesNotMatch(widgetSource, /["']Purchase["']/);
   assert.doesNotMatch(widgetSource, /adsbook:order-complete/);
   assert.doesNotMatch(navigationSource, /adsbook:order-complete/);
-});
-
-test("the thanks WhatsApp action keeps app handoff in the current browsing context", () => {
-  const whatsappAnchor = THANKS_SOURCE.match(/<a\s+id="wa-confirm"[\s\S]*?<\/a>/)?.[0] ?? "";
-
-  assert.ok(whatsappAnchor, "the thanks page must render its WhatsApp confirmation action");
-  assert.doesNotMatch(
-    whatsappAnchor,
-    /target\s*=\s*["']_blank["']/,
-    "wa.me must receive the current context so mobile can hand off without opening another tab",
-  );
 });

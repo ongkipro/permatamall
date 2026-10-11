@@ -1,5 +1,8 @@
 import { getRuntimeEnv } from "./env.ts";
-import { MengantarClient } from "./mengantar-client.ts";
+import {
+  MengantarClient,
+  MengantarPosCodIneligibleError,
+} from "./mengantar-client.ts";
 import {
   buildMengantarOrderPayload,
   parseMengantarDispatchResponse,
@@ -121,6 +124,22 @@ async function recordDispatchError(
     .run();
 }
 
+// Mengantar will refuse every COD `pos` order until the account's delivered
+// rate recovers, so stop offering it at checkout instead of taking orders that
+// cannot ship. The operator re-enables it from the expedition settings.
+async function disablePosCod(database: D1Database) {
+  try {
+    await database
+      .prepare(
+        `UPDATE courier_rules SET is_cod_enabled = 0
+        WHERE lower(courier_code) = 'pos' AND is_cod_enabled = 1`,
+      )
+      .run();
+  } catch (error) {
+    console.error("mengantar-dispatch-disable-pos-cod", error);
+  }
+}
+
 export async function dispatchOrderToMengantar(
   database: D1Database,
   locals: App.Locals,
@@ -222,6 +241,8 @@ export async function dispatchOrderToMengantar(
       SET provider_dispatch_error = 'DISPATCHING', provider_dispatch_claimed_at = ?
       WHERE id = ? AND provider_order_id IS NULL
         AND (payment_method = 'cod' OR payment_status IN ('paid', 'settled', 'success'))
+        AND stock_restored_at IS NULL
+        AND payment_status NOT IN ('cancelled', 'refunded', 'failed')
         AND shipping_status = 'pending'
         AND (
           COALESCE(provider_dispatch_error, '') <> 'DISPATCHING'
@@ -298,6 +319,8 @@ export async function dispatchOrderToMengantar(
           AND provider_dispatch_claimed_at = ?
           AND shipping_status = 'pending'
           AND (payment_method = 'cod' OR payment_status IN ('paid', 'settled', 'success'))
+        AND stock_restored_at IS NULL
+        AND payment_status NOT IN ('cancelled', 'refunded', 'failed')
           AND payment_method = ? AND payment_status = ?
           AND customer_name = ? AND customer_phone = ? AND address = ?
           AND destination_area_id = ? AND courier_code = ?
@@ -386,6 +409,9 @@ export async function dispatchOrderToMengantar(
     };
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
+    if (error instanceof MengantarPosCodIneligibleError) {
+      await disablePosCod(database);
+    }
     await recordDispatchError(database, order.id, message);
     return { status: "failed", error: message };
   } finally {

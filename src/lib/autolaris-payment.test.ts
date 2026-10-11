@@ -1,10 +1,10 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { DatabaseSync } from "node:sqlite";
 import {
   AUTOLARIS_CHANNEL_OPTIONS,
   parseAutoLarisPaymentResponse,
 } from "./autolaris-client.ts";
-import { summarizePaymentBuckets } from "./autolaris-balance.ts";
 import { envTenantConfig } from "./tenant.ts";
 import {
   buyerEmail,
@@ -13,6 +13,8 @@ import {
   isSyntheticBuyerEmail,
   matchableCustomerEmail,
   reconcileAutoLarisPaymentStatuses,
+  PENDING_AUTOLARIS_INQUIRY_SQL,
+  AUTOLARIS_EXPIRED_RECHECK_HOURS,
 } from "./autolaris-payment.ts";
 
 function createAutoLarisOrderDatabase(autoLarisApiKey: string | null) {
@@ -360,20 +362,6 @@ test("AutoLaris channels map QRIS separately from bank transfer channels", () =>
   );
 });
 
-test("recorded balance separates paid funds, pending bills, fees, and failures", () => {
-  const summary = summarizePaymentBuckets([
-    { status: "paid", transaction_count: 2, billed_total: 350000, admin_fees: 5000 },
-    { status: "pending", transaction_count: 1, billed_total: 175000, admin_fees: 2500 },
-    { status: "failed", transaction_count: 3, billed_total: 0, admin_fees: 0 },
-  ]);
-  assert.deepEqual(summary, {
-    paidFunds: 350000,
-    pendingBilled: 175000,
-    recordedFees: 7500,
-    failedCount: 3,
-  });
-});
-
 test("a failed instruction is regenerated on the next request, a live one is left alone", async (context) => {
   const originalFetch = globalThis.fetch;
   context.after(() => {
@@ -636,7 +624,7 @@ test("scheduled Advice reconciliation moves a paid order exactly once", async (c
   globalThis.fetch = async (_input, init) => {
     providerCalls += 1;
     requestedBody = JSON.parse(String(init?.body)) as Record<string, unknown>;
-    return Response.json({ rc: "00", ket: "SUCCESS", data: { awb: "" } });
+    return Response.json({ rc: "00", ket: "PAID", data: { awb: "" } });
   };
 
   const first = await reconcileAutoLarisPaymentStatuses(
@@ -651,6 +639,9 @@ test("scheduled Advice reconciliation moves a paid order exactly once", async (c
     unproven: 0,
     failed: 0,
     paidOrderIds: [41],
+    // Empty on a recognised settlement: the capture exists for the words the
+    // allowlist does not know yet.
+    unrecognisedPaidStatuses: [],
   });
   assert.equal(state.transactionStatus, "paid");
   assert.equal(state.orderPaymentStatus, "paid");
@@ -681,4 +672,118 @@ test("scheduled Advice reconciliation leaves pending money untouched", async (co
   assert.equal(state.transactionStatus, "pending");
   assert.equal(state.orderPaymentStatus, "pending");
   assert.equal(state.notifications, 0);
+});
+
+// No settled Advice response has ever been observed against a real payment, so
+// the paid allowlist — PAID, SETTLED, LUNAS — is a conservative reading. If
+// the provider answers with its success code and a word outside that guess, the
+// order must not settle (a guess may not move money) but the observation must
+// not be discarded either: it is exactly the capture that closes SCR1, and it
+// used to be counted as `unproven` beside genuine failures and thrown away.
+
+test("the provider's success code with an unknown word is captured, not settled", async (context) => {
+  const originalFetch = globalThis.fetch;
+  context.after(() => {
+    globalThis.fetch = originalFetch;
+  });
+  const { database, state } = createAdviceReconciliationDatabase();
+  globalThis.fetch = async () =>
+    Response.json({ rc: "00", ket: "TERBAYAR", data: { awb: "" } });
+
+  const result = await reconcileAutoLarisPaymentStatuses(
+    database,
+    QA_LOCALS,
+    new Date("2026-09-09T17:00:00.000Z"),
+  );
+
+  // Nothing moved: an unrecognised word cannot settle a payment.
+  assert.equal(state.transactionStatus, "pending");
+  assert.equal(state.orderPaymentStatus, "pending");
+  assert.equal(result.unproven, 1);
+  assert.deepEqual(result.paidOrderIds, []);
+  // But the exact word is carried out, so the allowlist can be revised from
+  // observation rather than from another guess.
+  assert.deepEqual(result.unrecognisedPaidStatuses, ["TERBAYAR"]);
+});
+
+test("a genuine failure is not mistaken for settlement evidence", async (context) => {
+  const originalFetch = globalThis.fetch;
+  context.after(() => {
+    globalThis.fetch = originalFetch;
+  });
+  const { database } = createAdviceReconciliationDatabase();
+  globalThis.fetch = async () =>
+    Response.json({ rc: "99", ket: "FAILED", data: { awb: "" } });
+
+  const result = await reconcileAutoLarisPaymentStatuses(
+    database,
+    QA_LOCALS,
+    new Date("2026-09-09T17:00:00.000Z"),
+  );
+  assert.equal(result.unproven, 1);
+  assert.deepEqual(
+    result.unrecognisedPaidStatuses,
+    [],
+    "only the success code makes a word worth capturing",
+  );
+});
+
+test("a pending read stays a silent no-op", async (context) => {
+  const originalFetch = globalThis.fetch;
+  context.after(() => {
+    globalThis.fetch = originalFetch;
+  });
+  const { database, state } = createAdviceReconciliationDatabase();
+  globalThis.fetch = async () =>
+    Response.json({ rc: "02", ket: "PENDING", data: { awb: "" } });
+
+  const result = await reconcileAutoLarisPaymentStatuses(
+    database,
+    QA_LOCALS,
+    new Date("2026-09-09T17:00:00.000Z"),
+  );
+  assert.equal(result.pending, 1);
+  assert.equal(result.unproven, 0);
+  assert.deepEqual(result.unrecognisedPaidStatuses, []);
+  assert.equal(state.orderPaymentStatus, "pending");
+});
+
+test("a local store on a dotless host still mints an address the provider accepts, and still recognises it", () => {
+  const local = "http://localhost:8787";
+  const minted = buyerEmail(null, "0812-3456-7890", local);
+  assert.equal(minted, "081234567890@localhost.invalid");
+  assert.match(minted, /^[^\s@]+@[^\s@]+\.[^\s@]+$/, "AutoLaris' own email rule");
+  assert.equal(isSyntheticBuyerEmail(minted, local), true, "never handed to Meta as a match key");
+  assert.equal(buyerEmail(null, "081234567890", "https://toko.example"), "081234567890@toko.example");
+});
+
+test("the hourly Advice run reaches new instructions, not the same old expired ones", () => {
+  // The shape a live store reached: dozens of long-dead QRIS instructions nobody
+  // paid, then today's. The old query took the 25 oldest every hour and never
+  // got past them.
+  const db = new DatabaseSync(":memory:");
+  db.exec(`
+    CREATE TABLE orders (id INTEGER PRIMARY KEY, order_number TEXT, customer_name TEXT,
+      payment_status TEXT, shipping_status TEXT, stock_restored_at TEXT);
+    CREATE TABLE payment_transactions (id INTEGER PRIMARY KEY, order_id INTEGER, provider TEXT,
+      provider_transaction_id TEXT, total_amount INTEGER, status TEXT, expires_at TEXT, created_at TEXT);
+  `);
+  const now = new Date("2026-09-29T10:07:00.000Z");
+  const at = (hoursAgo: number) => new Date(now.getTime() - hoursAgo * 3_600_000).toISOString();
+  const addOrder = db.prepare("INSERT INTO orders VALUES (?, ?, 'x', 'pending', 'pending', NULL)");
+  const addTx = db.prepare("INSERT INTO payment_transactions VALUES (?, ?, 'autolaris', ?, 1000, ?, ?, ?)");
+  let id = 0;
+  const add = (status: string, expiresHoursAgo: number, createdHoursAgo: number) => {
+    id += 1;
+    addOrder.run(id, `INV-${id}`);
+    addTx.run(id, id, `P${id}`, status, at(expiresHoursAgo), at(createdHoursAgo));
+    return id;
+  };
+  for (let i = 0; i < 30; i += 1) add("expired", 24 * 10 + i, 24 * 10 + i + 1);
+  const justExpired = add("expired", 2, 3);
+  const stillPending = add("pending", -1, 0.5);
+
+  const cutoff = new Date(now.getTime() - AUTOLARIS_EXPIRED_RECHECK_HOURS * 3_600_000).toISOString();
+  const rows = db.prepare(PENDING_AUTOLARIS_INQUIRY_SQL).all(cutoff, 25) as Array<{ transaction_id: number }>;
+  assert.deepEqual(rows.map((row) => row.transaction_id), [stillPending, justExpired]);
 });

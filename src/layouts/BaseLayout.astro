@@ -69,6 +69,11 @@ const titleForHead = escapeHtmlText(title);
 
 const publicSiteUrl = Astro.locals.tenant.siteUrl;
 const adsConfig = await getStoreAdsConfig(Astro.locals);
+const hasMetaPixel = Boolean(adsConfig.metaPixelId && /^\d{5,25}$/.test(String(adsConfig.metaPixelId).trim()));
+const hasGoogleTag = Boolean(
+  (adsConfig.googleTagManagerId && /^GTM-[A-Z0-9]{4,20}$/.test(String(adsConfig.googleTagManagerId).trim().toUpperCase())) ||
+  adsConfig.googleAdsConversionId
+);
 const canonical = canonicalProp ?? new URL(Astro.url.pathname, publicSiteUrl).toString();
 const imageUrl = new URL(image, publicSiteUrl).toString();
 const preloadImageUrls =
@@ -84,10 +89,18 @@ const preloadImageUrls =
     <slot name="head" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="generator" content={Astro.generator} />
-    <link rel="dns-prefetch" href="https://www.googletagmanager.com" />
-    <link rel="dns-prefetch" href="https://connect.facebook.net" />
-    <link rel="preconnect" href="https://connect.facebook.net" crossorigin />
-    <link rel="preconnect" href="https://www.googletagmanager.com" crossorigin />
+    {hasGoogleTag && (
+      <>
+        <link rel="dns-prefetch" href="https://www.googletagmanager.com" />
+        <link rel="preconnect" href="https://www.googletagmanager.com" crossorigin />
+      </>
+    )}
+    {hasMetaPixel && (
+      <>
+        <link rel="dns-prefetch" href="https://connect.facebook.net" />
+        <link rel="preconnect" href="https://connect.facebook.net" crossorigin />
+      </>
+    )}
     {
       preloadImageUrls.map((item) =>
         typeof item === 'string' ? (
@@ -99,17 +112,16 @@ const preloadImageUrls =
     }
     {/*
       `astro-seo` always emits exactly one robots meta, built from its
-      `noindex`/`nofollow` props. `extend.meta` below used to add a second one,
-      so every page shipped the directive twice — and on `/thanks` and
-      `/payment` the two disagreed: astro-seo's `noindex, follow` beside a
-      hand-written `noindex, nofollow`. A crawler resolves a conflict by taking
-      the most restrictive, so the outcome was right by luck while the page
-      stated two different things. `nofollow={noindex}` carries the intended
-      semantics through the one tag that is actually owned here.
+      `noindex`/`nofollow` props. `extend.meta` used to add a second one, so
+      every page shipped the directive twice — and on `/thanks` and `/payment`
+      the two disagreed: astro-seo's `noindex, follow` beside a hand-written
+      `noindex, nofollow`. A crawler resolves a conflict by taking the most
+      restrictive, so the outcome was right by luck while the page stated two
+      different things. `nofollow={noindex}` carries the intended semantics
+      through the one tag that is actually owned here.
 
-      Written as a JSX comment, not an HTML one: this is a note for whoever
-      edits the layout, and an HTML comment here would be shipped in the
-      `<head>` of every page on the site.
+      A JSX comment, not an HTML one: an HTML comment here would ship in the
+      <head> of every page on the site.
     */}
     <SEO
       title={titleForHead}
@@ -200,6 +212,7 @@ const preloadImageUrls =
     <MetaDebugTracker />
   </head>
   <body>
+    <GtmBase gtmId={adsConfig.googleTagManagerId} noscript />
     <!-- Ink, not emerald. This is the first focusable element on six of the seven
          checkout routes, so tabbing into a page the design system requires to carry
          no green painted a solid emerald block across it. Square, like everything
@@ -220,43 +233,5 @@ const preloadImageUrls =
       </div>
     </div>
 
-    <script is:inline>
-      const menu = document.getElementById('mobile-menu');
-      const backdrop = document.getElementById('menu-backdrop');
-      const toggle = document.getElementById('menu-toggle');
-      const close = document.getElementById('menu-close');
-      const menuLinks = menu?.querySelectorAll('a') ?? [];
-
-      const openMenu = () => {
-        menu?.classList.remove('invisible');
-        requestAnimationFrame(() => {
-          menu?.classList.remove('translate-x-full');
-        });
-        backdrop?.classList.remove('pointer-events-none', 'opacity-0');
-        backdrop?.classList.add('opacity-100');
-        toggle?.setAttribute('aria-expanded', 'true');
-        menu?.setAttribute('aria-hidden', 'false');
-        document.body.style.overflow = 'hidden';
-      };
-
-      const closeMenu = () => {
-        menu?.classList.add('translate-x-full');
-        backdrop?.classList.add('pointer-events-none', 'opacity-0');
-        backdrop?.classList.remove('opacity-100');
-        toggle?.setAttribute('aria-expanded', 'false');
-        menu?.setAttribute('aria-hidden', 'true');
-        document.body.style.overflow = '';
-        setTimeout(() => {
-          if (menu?.classList.contains('translate-x-full')) {
-            menu?.classList.add('invisible');
-          }
-        }, 200);
-      };
-
-      toggle?.addEventListener('click', openMenu);
-      close?.addEventListener('click', closeMenu);
-      backdrop?.addEventListener('click', closeMenu);
-      menuLinks.forEach((link) => link.addEventListener('click', closeMenu));
-    </script>
   </body>
 </html>

@@ -5,10 +5,7 @@ export interface CatalogProductRow {
   title: string;
   slug: string;
   category?: string | null;
-  /** The product's own brand. Null falls back to the store name in the feeds. */
   brand?: string | null;
-  /** Merchant-written description. Null keeps the synthesised fallback. */
-  description?: string | null;
   image_url?: string | null;
   is_active?: number | null;
   created_at?: string | null;
@@ -117,6 +114,7 @@ export function mergeStorefrontCatalog(
     const slug = product.slug.trim();
     const image = product.image_url!.trim();
     const categoryLabel = product.category?.trim() || "Produk";
+    const brand = product.brand?.trim();
     const presentation = presentationsByProductId.get(productId);
     const details = {
       subheadline: `Pilih varian ${productName} berdasarkan opsi dan harga yang tersedia.`,
@@ -141,7 +139,13 @@ export function mergeStorefrontCatalog(
         ...(comparePrice ? { comparePrice } : {}),
       };
     });
-    const firstVariant = variants[0];
+    // The product's own price is its "from" price, the cheapest variant — the
+    // figure the product page already shows. It used to be whichever variant
+    // D1 returned first, so a product whose larger size was entered first
+    // listed that size's price on every card while its page said less.
+    const fromVariant = variants.reduce((low, variant) =>
+      variant.price < low.price ? variant : low,
+    );
 
     catalog.push({
         catalogId: product.id,
@@ -152,23 +156,21 @@ export function mergeStorefrontCatalog(
         headline: presentation?.headline || productName,
         subheadline: presentation?.subheadline || details.subheadline,
         seoTitle: presentation?.seoTitle || productName,
-        // Presentation content wins when an operator has authored it; the
-        // product's own column is next; the synthesised sentence is last and
-        // describes nothing, which is why the feeds were competing on it.
         seoDescription:
           presentation?.seoDescription ||
-          product.description?.trim() ||
           `Lihat pilihan varian, harga, dan ketersediaan ${productName}. Detail mengikuti informasi katalog toko.`,
-        price: firstVariant.price,
-        ...(firstVariant.comparePrice
-          ? { comparePrice: firstVariant.comparePrice }
+        price: fromVariant.price,
+        ...(fromVariant.comparePrice
+          ? { comparePrice: fromVariant.comparePrice }
           : {}),
         image,
         heroImage: image,
         images: [image],
         tag: presentation?.tag || categoryLabel,
         category: categoryLabel,
-        brand: product.brand?.trim() || undefined,
+        // `products.brand` (0051) is the manufacturer's name. Dropping it here
+        // is how the feeds kept reporting the store as every product's brand.
+        ...(brand ? { brand } : {}),
         relatedCategories:
           presentation?.relatedCategories?.length
             ? presentation.relatedCategories

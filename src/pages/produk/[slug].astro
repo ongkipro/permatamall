@@ -1,4 +1,5 @@
 ---
+import { geoHeadersFromCf } from '../../lib/geo';
 import Breadcrumb from '../../components/storefront/shared/Breadcrumb.astro';
 import MetaLandingTracker from '../../components/storefront/tracking/MetaLandingTracker.astro';
 import BaseLayout from '../../layouts/BaseLayout.astro';
@@ -9,7 +10,8 @@ import RatingStars from '../../components/storefront/shared/RatingStars.astro';
 import GeoIpResolvedForm from '../../components/storefront/forms/GeoIpResolvedForm.astro';
 import ProductImageGallery from '../../components/storefront/ProductImageGallery.astro';
 import SocialProofToast from '../../components/storefront/shared/SocialProofToast.astro';
-import { cardImageSrc } from '../../lib/image-derivative';
+import { recentOrderCount } from '../../lib/social-proof';
+import { getRuntimeEnv } from '../../lib/env';
 import { resolveFormModeContext } from '../../lib/form-mode';
 import '../../styles/form-hybrid.css';
 import { defaultCatalogContentId } from '../../lib/catalog-feed';
@@ -27,6 +29,10 @@ if (!product) {
 // than growing a second copy here. The URL stays `/produk/<slug>`: that is the
 // product's address, and the landing page's own slug redirects to it, so the
 // two never compete as duplicate content.
+// `astro check` does not count a value used only in a frontmatter `return` as
+// read, so the geo helper is named once here to keep that check clean.
+void geoHeadersFromCf;
+
 const productPageLanding = await getProductPageLanding(
   Astro.locals,
   String(product.productId),
@@ -40,11 +46,16 @@ if (productPageLanding) {
     new Request(new URL(`/${productPageLanding.slug}`, Astro.url), {
       headers: new Headers({
         ...Object.fromEntries(Astro.request.headers),
+        // The rebuilt request loses `request.cf`; without the visitor's
+        // province the landing's hybrid form showed everyone the full form.
+        ...geoHeadersFromCf(Astro.request),
         'x-adsbook-product-page': product.slug,
       }),
     }),
   );
 }
+// The store's real orders (A-300); under the threshold the toast renders nothing.
+const socialProofOrders = await recentOrderCount(getRuntimeEnv(Astro.locals)?.OMS_DB as D1Database | undefined);
 
 const cheapestVariant = [...product.variants].sort((a, b) => a.price - b.price)[0] ?? null;
 const displayPrice = cheapestVariant?.price ?? product.price;
@@ -80,7 +91,7 @@ const productSchema = {
   sku: product.productId,
   brand: {
     '@type': 'Brand',
-    name: Astro.locals.tenant.name,
+    name: product.brand || Astro.locals.tenant.name,
   },
   offers: {
     '@type': 'AggregateOffer',
@@ -135,23 +146,6 @@ const productSchemaJson = JSON.stringify(productSchema).replace(/</g, '\\u003c')
   canonical={canonical}
   hideHeader={false}
   hideFooter={false}
-  product={{
-    name: product.productName,
-    description: product.description,
-    image: product.heroImage,
-    url: canonical,
-    category: product.category,
-    ratingValue: ratingValue,
-    reviewCount: reviewCount,
-    offers: product.variants.map((v) => ({
-      price: v.price,
-      priceCurrency: 'IDR',
-      availability: 'InStock',
-      url: canonical,
-      name: v.label,
-      ...(v.sku ? { sku: v.sku } : {}),
-    })),
-  }}
   breadcrumbs={[
     { name: 'Beranda', url: '/' },
     { name: 'Produk', url: '/produk' },
@@ -164,6 +158,8 @@ const productSchemaJson = JSON.stringify(productSchema).replace(/</g, '\\u003c')
     contentName={product.productName}
     price={displayPrice}
   />
+  {/* The page's only Product JSON-LD: BaseLayout is deliberately given no
+      `product`, which would emit a second, conflicting Product block. */}
   <script is:inline type="application/ld+json" set:html={productSchemaJson} />
 
   <main class="mx-auto max-w-[480px] bg-white pb-20">
@@ -245,7 +241,7 @@ const productSchemaJson = JSON.stringify(productSchema).replace(/</g, '\\u003c')
                   <span class="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[#111111]" aria-hidden="true" />
                   <div class="min-w-0">
                     <p class="text-[14px] font-semibold text-[#111111]">{v.label}</p>
-                    <p class="mt-0.5 text-[11px] text-[#555555]">Stok Siap Kirim • COD Available</p>
+                    <p class="mt-0.5 text-[11px] text-[#555555]">Siap Kirim</p>
                   </div>
                 </div>
               </div>
@@ -451,8 +447,7 @@ const productSchemaJson = JSON.stringify(productSchema).replace(/</g, '\\u003c')
     </section>
 
     <SocialProofToast
-      productLabel={product.productName}
-      productImage={cardImageSrc(productImages[0] ?? product.heroImage)}
+      orderCount={socialProofOrders}
     />
 
     <!-- Sticky Mobile Purchase Bar (Auto-hides while the hero or the order

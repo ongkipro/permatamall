@@ -1,9 +1,9 @@
 import type { CourierRateResult } from "../../lib/mengantar-client";
-import { hasClickId, readOrderClickIds, serializeClickIds } from "../../lib/click-ids";
 import {
   captureMetaOrderContext,
   serializeMetaOrderContext,
 } from "../../lib/meta-order-context";
+import { hasClickId, readClickIdCookie, serializeClickIds } from "../../lib/click-ids";
 import type { ResolvedShippingRates } from "../../lib/shipping-quote";
 import type { APIRoute } from "astro";
 import { selectQuotedRate } from "../../lib/courier-rules";
@@ -12,7 +12,7 @@ import {
   isCodBlockedForProvince,
   loadStoreCodDisabledProvinceCodes,
 } from "../../lib/form-mode";
-import { getRuntimeEnv } from "../../lib/env";
+import { getEnvValue, getRuntimeEnv } from "../../lib/env";
 import { buyerEmail } from "../../lib/autolaris-payment";
 import {
   checkRateLimit,
@@ -34,7 +34,7 @@ import {
   recordFailedPaymentAttempt,
   type AutoLarisPaymentRecord,
 } from "../../lib/autolaris-payment";
-import { getProviderConfig } from "../../lib/provider-config";
+import { autoLarisOrderRailGap, getProviderConfig } from "../../lib/provider-config";
 import { normalizePhone } from "../../lib/validation";
 
 export const prerender = false;
@@ -140,10 +140,29 @@ export const POST: APIRoute = async ({ request, locals }) => {
       422,
     );
   }
-  if (data.payment_method !== "cod") {
+  // Manual transfer goes to the seller's own account and needs no provider.
+  if (data.payment_method !== "cod" && data.payment_method !== "manual_transfer") {
     try {
-      const provider = (await getProviderConfig(database, locals)).autolaris;
-      if (!provider.apiKey) {
+      // The same readiness /api/payment-methods reports, enforced here so a
+      // checkout that still offers QRIS/VA (a cached page, a direct POST) cannot
+      // create an order whose payment /submit is bound to refuse.
+      const [provider, store, warehouse] = await Promise.all([
+        getProviderConfig(database, locals).then((config) => config.autolaris),
+        database
+          .prepare("SELECT is_autolaris_enabled FROM stores ORDER BY id LIMIT 1")
+          .first<{ is_autolaris_enabled: number | null }>(),
+        database
+          .prepare("SELECT address FROM warehouses ORDER BY id LIMIT 1")
+          .first<{ address: string | null }>(),
+      ]);
+      const env = getRuntimeEnv(locals);
+      const gap = autoLarisOrderRailGap({
+        apiKey: provider.apiKey,
+        originId: getEnvValue("AUTOLARIS_ORDER_ORIGIN_ID", env),
+        destinationId: getEnvValue("AUTOLARIS_ORDER_DESTINATION_ID", env),
+        warehouseAddress: warehouse?.address,
+      });
+      if (gap || store?.is_autolaris_enabled === 0) {
         return json(
           {
             success: false,
@@ -268,8 +287,12 @@ export const POST: APIRoute = async ({ request, locals }) => {
   try {
     // Attribution captured at the ad landing by the middleware; kept with the
     // order so a COD sale confirmed later can be uploaded to Google Ads.
-    const clickIds = readOrderClickIds(request);
+    const clickIds = readClickIdCookie(request);
     const storedClickIds = hasClickId(clickIds) ? serializeClickIds(clickIds) : undefined;
+    // The browser's own Meta identity, taken at the moment of the sale. A COD
+    // Purchase is confirmed hours or days later from a cron with no request of
+    // its own, so `_fbp`, `_fbc`, the user agent and the client IP have to be
+    // carried on the order or the server-side event goes out without them.
     const metaRequestContext = serializeMetaOrderContext(
       captureMetaOrderContext(request),
     );
@@ -337,20 +360,17 @@ export const POST: APIRoute = async ({ request, locals }) => {
         );
       }
     }
-    if (order.created) {
-      scheduleReceiverPerformanceRefresh(
-        database,
-        order.orderNumber,
-        customerPhone,
-        locals,
-      );
-    }
+    scheduleReceiverPerformanceRefresh(
+      database,
+      order.orderNumber,
+      customerPhone,
+      locals,
+    );
     const paymentStatus =
       data.payment_method === "cod" ? "unpaid" : payment?.status || "pending";
     const paymentUrl = payment?.providerPaymentUrl || "";
     return json({
       success: true,
-      deduplicated: !order.created,
       order: {
         id: order.id,
         order_id: order.orderNumber,

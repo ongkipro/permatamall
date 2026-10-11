@@ -14,10 +14,10 @@ export type CatalogProduct = {
   slug: string;
   productName: string;
   category?: string;
-  headline?: string;
-  description?: string;
   /** The product's own brand. Falls back to the store name when absent. */
   brand?: string;
+  headline?: string;
+  description?: string;
   seoDescription?: string;
   heroImage: string;
   variants: CatalogProductVariant[];
@@ -31,21 +31,6 @@ export function escapeXml(value: string): string {
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&apos;");
 }
-
-/**
- * Meta's catalog accepts only JPEG or PNG for `image_link` ("Images must be in
- * JPEG or PNG format", Marketing API catalog reference), and every admin
- * upload is stored as WebP. A feed therefore names the `.jpg` sibling of an
- * uploaded WebP; the asset route serves that sibling when it exists and the
- * WebP otherwise, so a store with no JPEG copies is served exactly what it was
- * before. Google accepts either.
- */
-const UPLOADED_WEBP = /^(\/assets\/uploads\/\d{4}-\d{2}-\d{2}\/[0-9a-f-]+)\.webp$/i;
-
-export function feedImagePath(path: string): string {
-  return path.replace(UPLOADED_WEBP, "$1.jpg");
-}
-
 
 /**
  * The catalog identity scheme, and the one rule that governs everything here:
@@ -118,6 +103,20 @@ export function defaultCatalogContentId(product: {
   // the whole product page down with a 500 instead, which is a worse trade —
   // the page still sells, it simply cannot be retargeted.
   return catalogProductIdOrNull(product.productId) ?? undefined;
+}
+
+/**
+ * Meta's catalog accepts only JPEG or PNG for `image_link` ("Images must be in
+ * JPEG or PNG format", Marketing API catalog reference), and every admin
+ * upload is stored as WebP. A feed therefore names the `.jpg` sibling of an
+ * uploaded WebP; the asset route serves that sibling when it exists and the
+ * WebP otherwise, so a store with no JPEG copies is served exactly what it was
+ * before. Google accepts either.
+ */
+const UPLOADED_WEBP = /^(\/assets\/uploads\/\d{4}-\d{2}-\d{2}\/[0-9a-f-]+)\.webp$/i;
+
+export function feedImagePath(path: string): string {
+  return path.replace(UPLOADED_WEBP, "$1.jpg");
 }
 
 /**
@@ -252,24 +251,19 @@ export function generateGoogleCatalogXml(
     titleMax: 150,
     descriptionMax: 5000,
     categoryXml: googleCategoryXml,
-    // Neither `mpn` nor `identifier_exists` is emitted, and both omissions are
-    // deliberate.
+    // `identifier_exists: no` alone, and no `g:mpn`.
     //
-    // `sku` was being sent as the MPN. On this catalogue that produced
-    // `<g:mpn>BELI_1_PCS</g:mpn>` — a bundle label meaning "buy 1 piece",
-    // chosen by the merchant, not a manufacturer's part number. It is not an
-    // identifier of anything.
+    // The two together contradict each other: `identifier_exists: no` declares
+    // the product carries no manufacturer identifier, while `g:mpn` supplies
+    // one. Google reads that pairing as inconsistent, and the `g:mpn` was never
+    // truthful anyway — an MPN is assigned by a manufacturer, and `sku` here is
+    // nullable, merchant-editable and changes whenever an operator edits it.
     //
-    // `identifier_exists=no` then contradicted the `brand` and `mpn` sent
-    // beside it. Google's own reference is explicit that the value is for
-    // products that genuinely carry no assigned identifiers, and that "products
-    // for which the identifier exists attribute is incorrectly set to no and
-    // for which there is evidence that a unique product identifier exists, will
-    // receive a warning" — evidence being exactly the brand and MPN in the same
-    // item. Omitted, it defaults to yes, which is what a branded product is.
-    //
-    // A real GTIN or manufacturer MPN, once the merchant has one, belongs here.
-    identityXml: () => "",
+    // The previous comment argued the MPN kept Merchant Center from rejecting
+    // an item for a missing global identifier. That is exactly the job
+    // `identifier_exists: no` already does; the MPN was redundant as well as
+    // contradictory, and this schema has no column for a real one.
+    identityXml: () => `\n      <g:identifier_exists>no</g:identifier_exists>`,
   });
 }
 

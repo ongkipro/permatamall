@@ -4,10 +4,11 @@ import {
   autoLarisChannelLockReason,
   resolveDisabledAutoLarisChannels,
 } from "../../lib/autolaris-client";
-import { getRuntimeEnv } from "../../lib/env";
-import { getProviderConfig } from "../../lib/provider-config";
+import { getEnvValue, getRuntimeEnv } from "../../lib/env";
+import { autoLarisOrderRailGap, getProviderConfig } from "../../lib/provider-config";
 import {
   calculatePaymentAdminFee,
+  COD_EFFECTIVE_RATE_LABEL,
   COD_SERVICE_FEE_RATE,
   COD_SERVICE_FEE_VAT_RATE,
   normalizePaymentFeeBearer,
@@ -26,7 +27,7 @@ export const GET: APIRoute = async ({ locals }) => {
     let disabledAutoLarisChannels: string[] = [];
     let paymentFeeBearer = normalizePaymentFeeBearer(undefined);
     let codFeeBearer = normalizePaymentFeeBearer(undefined);
-    let autolarisApiKey = "";
+    let autoLarisGap: string | null = "AutoLaris belum dikonfigurasi.";
     let sellerBankAccounts: Array<{
       id: number;
       bank_code: string;
@@ -36,7 +37,7 @@ export const GET: APIRoute = async ({ locals }) => {
     }> = [];
     if (database?.prepare) {
       try {
-        const [providerConfig, store, bankAccounts] = await Promise.all([
+        const [providerConfig, store, bankAccounts, warehouse] = await Promise.all([
           getProviderConfig(database, locals),
           database
             .prepare(
@@ -76,11 +77,21 @@ export const GET: APIRoute = async ({ locals }) => {
               account_number: string;
               is_active: number;
             }>(),
+          database
+            .prepare("SELECT address FROM warehouses ORDER BY id LIMIT 1")
+            .first<{ address: string | null }>()
+            .catch(() => null),
         ]);
-        autolarisApiKey = providerConfig.autolaris.apiKey;
+        const env = getRuntimeEnv(locals);
+        autoLarisGap = autoLarisOrderRailGap({
+          apiKey: providerConfig.autolaris.apiKey,
+          originId: getEnvValue("AUTOLARIS_ORDER_ORIGIN_ID", env),
+          destinationId: getEnvValue("AUTOLARIS_ORDER_DESTINATION_ID", env),
+          warehouseAddress: warehouse?.address,
+        });
         isCodEnabled = store?.is_cod_enabled !== 0;
         isAutoLarisMasterEnabled = store?.is_autolaris_enabled !== 0;
-        autoLarisConfigured = Boolean(autolarisApiKey) && isAutoLarisMasterEnabled;
+        autoLarisConfigured = !autoLarisGap && isAutoLarisMasterEnabled;
         disabledAutoLarisChannels = resolveDisabledAutoLarisChannels(
           store?.disabled_autolaris_channels,
         );
@@ -112,7 +123,7 @@ export const GET: APIRoute = async ({ locals }) => {
           admin_fee_vat_rate: COD_SERVICE_FEE_VAT_RATE,
           fee_bearer: codFeeBearer,
           fee_basis: "merchandise_plus_shipping",
-          fee_description: "Biaya layanan 3% + PPN 11% dari biaya layanan",
+          fee_description: `Biaya COD ${COD_EFFECTIVE_RATE_LABEL} dari harga + ongkir, sudah termasuk PPN`,
           is_active: isCodEnabled,
         },
         ...AUTOLARIS_CHANNEL_OPTIONS.map((channel) => {
@@ -140,8 +151,8 @@ export const GET: APIRoute = async ({ locals }) => {
               lockReason ||
               (!isAutoLarisMasterEnabled
                 ? "AutoLaris dinonaktifkan oleh toko."
-                : !autolarisApiKey
-                  ? "AutoLaris belum dikonfigurasi."
+                : autoLarisGap
+                  ? autoLarisGap
                   : isChannelDisabled
                     ? "Channel dinonaktifkan oleh toko."
                     : undefined),

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { buttonVariants } from "../ui/button";
 import {
   Card,
   CardContent,
@@ -96,16 +97,15 @@ function LoadingState() {
   return (
     <div
       className="space-y-6"
-      role="status"
       aria-label="Memuat ringkasan analitik"
       aria-busy="true"
     >
       <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
         {Array.from({ length: 4 }).map((_, index) => (
-          <Skeleton key={index} className="h-32 rounded-2xl" />
+          <Skeleton key={index} className="h-32 rounded-xl" />
         ))}
       </div>
-      <Skeleton className="h-72 rounded-2xl" />
+      <Skeleton className="h-72 rounded-xl" />
     </div>
   );
 }
@@ -222,7 +222,7 @@ export function AnalyticsDashboard({ showPaymentsLink = false }: { showPaymentsL
         className="rounded-xl border border-rose-200 bg-rose-50/50 p-8 text-center"
         role="alert"
       >
-        <h2 className="text-base font-bold text-rose-950">
+        <h2 className="text-base font-semibold text-rose-950">
           Analitik tidak dapat dimuat
         </h2>
         <p className="mt-1.5 text-xs text-rose-700">{error}</p>
@@ -271,7 +271,7 @@ export function AnalyticsDashboard({ showPaymentsLink = false }: { showPaymentsL
       iconTone: "bg-blue-50 text-blue-700",
     },
     {
-      label: "Return to Sender",
+      label: "Retur (RTS)",
       value: percentage(data.rts_rate),
       note:
         data.rts_base > 0
@@ -327,7 +327,7 @@ export function AnalyticsDashboard({ showPaymentsLink = false }: { showPaymentsL
           </span>
           <div>
             <p className="text-xs font-medium text-slate-900">Periode laporan</p>
-            <p className="text-[11px] text-slate-500">
+            <p className="text-xs text-slate-500">
               Semua metrik mengikuti periode ini; dibuka pada bulan berjalan (WIB).
             </p>
           </div>
@@ -343,12 +343,12 @@ export function AnalyticsDashboard({ showPaymentsLink = false }: { showPaymentsL
           />
           <Button
             variant="secondary"
-            size="icon"
+            size="default"
             onClick={() => void loadAnalytics(dateSelection)}
             disabled={refreshing}
             aria-label="Perbarui data dashboard"
             aria-busy={refreshing}
-            className="size-11 shrink-0 border border-slate-200 bg-white shadow-none"
+            className="w-10 shrink-0 border border-slate-200 bg-white px-0"
           >
             <RefreshCw
               className={`size-4 ${refreshing ? "animate-spin" : ""}`}
@@ -361,7 +361,7 @@ export function AnalyticsDashboard({ showPaymentsLink = false }: { showPaymentsL
 
       {error && (
         <div
-          className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-xs font-bold text-rose-800"
+          className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-xs font-semibold text-rose-800"
           role="alert"
         >
           {error}{data ? " Data periode terakhir yang berhasil dimuat tetap ditampilkan." : ""}
@@ -373,20 +373,20 @@ export function AnalyticsDashboard({ showPaymentsLink = false }: { showPaymentsL
         aria-label="Ringkasan performa toko"
       >
         {metrics.map((metric) => (
-          <Card key={metric.label} className="overflow-hidden border-slate-200 shadow-none">
+          <Card key={metric.label} className="overflow-hidden border-slate-200 shadow-none transition-colors hover:border-slate-300">
             <CardContent className="p-3.5 sm:p-5">
               <div className="flex items-start justify-between gap-2">
-                <p className="text-[10px] font-medium uppercase tracking-[0.08em] text-slate-500 sm:text-[11px]">
+                <p className="text-xs font-medium uppercase tracking-[0.08em] text-slate-500 sm:text-xs">
                   {metric.label}
                 </p>
                 <span className={`hidden size-8 shrink-0 place-items-center rounded-xl sm:grid ${metric.iconTone}`}>
                   <metric.icon className="size-4" aria-hidden="true" />
                 </span>
               </div>
-              <p className={`mt-3 text-lg font-semibold tabular-nums tracking-[-0.035em] sm:text-2xl ${metric.tone}`}>
+              <p className={`mt-3 text-lg font-semibold tabular-nums tracking-tight sm:text-2xl ${metric.tone}`}>
                 {metric.value}
               </p>
-              <p className="mt-1 line-clamp-2 text-[10px] leading-relaxed text-slate-500 sm:text-[11px]">
+              <p className="mt-1 line-clamp-2 text-xs leading-relaxed text-slate-500 sm:text-xs">
                 {metric.note}
               </p>
             </CardContent>
@@ -435,7 +435,8 @@ export function AnalyticsDashboard({ showPaymentsLink = false }: { showPaymentsL
                     >
                       <CartesianGrid
                         vertical={false}
-                        stroke="#e8edf3"
+                        stroke="#e2e8f0"
+                        strokeDasharray="3 3"
                       />
                       <XAxis
                         dataKey="date"
@@ -461,7 +462,7 @@ export function AnalyticsDashboard({ showPaymentsLink = false }: { showPaymentsL
                         tick={{ fontSize: 10, fill: "#64748b" }}
                       />
                       <ChartTooltip
-                        cursor={{ fill: "rgba(148,163,184,0.08)" }}
+                        cursor={{ fill: "rgba(148,163,184,0.06)" }}
                         content={<ChartTooltipContent />}
                       />
                       <Bar
@@ -500,7 +501,7 @@ export function AnalyticsDashboard({ showPaymentsLink = false }: { showPaymentsL
                     <p className="truncate text-xs font-medium text-slate-800">
                       {item.name}
                     </p>
-                    <p className="mt-0.5 text-[10px] leading-4 text-slate-500">
+                    <p className="mt-0.5 text-xs leading-4 text-slate-500">
                       {item.detail}
                     </p>
                   </div>
@@ -508,7 +509,7 @@ export function AnalyticsDashboard({ showPaymentsLink = false }: { showPaymentsL
                     {item.count.toLocaleString("id-ID")} pesanan · {percentage(item.percentage)}
                   </span>
                 </div>
-                <div className="mt-2 h-2 overflow-hidden rounded-full bg-slate-100">
+                <div className="mt-2 h-2 overflow-hidden rounded-full bg-slate-100/90 ring-1 ring-slate-900/5">
                   <div
                     className={`h-full rounded-full ${item.bar}`}
                     style={{
@@ -525,7 +526,7 @@ export function AnalyticsDashboard({ showPaymentsLink = false }: { showPaymentsL
               </p>
             )}
             {showPaymentsLink && (
-              <a href="/admin/payments" className="inline-flex min-h-11 w-full items-center justify-center rounded-xl border border-slate-200 bg-white px-3 text-xs font-medium text-slate-700 hover:bg-slate-50">
+              <a href="/admin/payments" className={buttonVariants({ variant: "outline", className: "w-full" })}>
                 Kelola payment
               </a>
             )}

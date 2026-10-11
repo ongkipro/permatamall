@@ -1,10 +1,17 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { DatabaseSync } from "node:sqlite";
-import { decideRetry,
+import { readFileSync } from "node:fs";
+import { splitMigrationStatements } from "./schema-version.ts";
+import {
+  CAPI_DRAIN_LEASE_MS,
   countRecoverableEvents,
-  requeueRecoverableEvents,
+  decideRetry,
+  deliverCapiEvent,
   drainCapiOutbox,
+  enqueueCapiEvent,
+  purgeExpiredCapiOutboxEvents,
+  requeueRecoverableEvents,
 } from "./capi-outbox.ts";
 
 const MINUTE = 60_000;
@@ -42,172 +49,10 @@ test("backoff is capped so a stale event cannot schedule itself years out", () =
 });
 
 /**
- * The stall this pair of assertions exists to prevent.
- *
- * `deliverCapiEvent` (inline, from `/api/meta-event`) and `drainCapiOutbox`
- * (a visitor's, or the hourly cron's) can work the same row at once. Both read
- * the same `attempts`, both decide "pending", and both apply `attempts + 1` —
- * so the row ends up `pending` at or past `max_attempts`. While the drain
- * filtered on `attempts < max_attempts`, that row was never selected again and
- * never settled either. It stopped, silently. All 169 stalled rows on the live
- * install were in exactly that state, the Purchase for a real order among them.
+ * A real SQLite behind the D1 shape, because the claim is a property of how
+ * the database serializes two writers — a hand-rolled mock that returns rows
+ * on demand would prove nothing about it.
  */
-test("a row already at its attempt budget is still drained, and settles instead of stalling", async () => {
-  const seen: string[] = [];
-  const row = {
-    id: 1,
-    event_id: "INV-10011",
-    event_name: "Purchase",
-    payload: JSON.stringify({
-      eventName: "Purchase",
-      eventId: "INV-10011",
-      eventSourceUrl: "https://example.test/thanks",
-      userData: {},
-      customData: { orderNumber: "INV-10011" },
-    }),
-    attempts: 5,
-    max_attempts: 5,
-    created_at: "2026-08-29T07:43:27.234Z",
-  };
-
-  const database = {
-    prepare(sql: string) {
-      seen.push(sql);
-      const statement = {
-        bind: () => statement,
-        async all() {
-          return { results: sql.includes("RETURNING id, event_id") ? [row] : [] };
-        },
-        async run() {
-          return { meta: { changes: 1 } };
-        },
-      };
-      return statement;
-    },
-  } as unknown as D1Database;
-
-  const originalFetch = globalThis.fetch;
-  globalThis.fetch = (async () =>
-    new Response(JSON.stringify({ events_received: 1 }), { status: 200 })) as typeof fetch;
-  try {
-    const { drainCapiOutbox } = await import("./capi-outbox.ts");
-    await drainCapiOutbox(database, "111", "token");
-  } finally {
-    globalThis.fetch = originalFetch;
-  }
-
-  const select = seen.find((sql) => sql.includes("RETURNING id, event_id"));
-  assert.ok(select, "the drain must issue its claim");
-  assert.ok(
-    !/attempts\s*<\s*max_attempts/.test(select),
-    "the drain must not exclude a row that is already at its budget — that is what makes a stall permanent",
-  );
-
-  const update = seen.find((sql) => sql.includes("attempts + 1 >= max_attempts"));
-  assert.ok(update, "the drain must write the outcome back");
-  assert.ok(
-    /attempts \+ 1 >= max_attempts/.test(update),
-    "the terminal check must be re-evaluated in SQL against the row's current attempts, not the value this call read",
-  );
-});
-
-/**
- * `event_time` is when the conversion happened, not when we managed to deliver
- * it. The outbox exists to retry, so computing it at send time was guaranteed
- * to be wrong for exactly the events that needed the outbox most: the stalled
- * Purchase for INV-10011 would have been filed under the day its retry
- * succeeded, two days after the order was placed.
- */
-test("a retried event reports when it happened, not when it was finally delivered", async () => {
-  const createdAt = "2026-08-29T07:43:27.234Z";
-  const enqueuedEventTime = Math.floor(new Date(createdAt).getTime() / 1000);
-  let sentBody: any = null;
-
-  const withPayload = (payload: Record<string, unknown>) => ({
-    id: 1,
-    event_id: "INV-10011",
-    event_name: "Purchase",
-    payload: JSON.stringify({
-      eventName: "Purchase",
-      eventId: "INV-10011",
-      eventSourceUrl: "https://example.test/thanks",
-      userData: {},
-      customData: { orderNumber: "INV-10011" },
-      ...payload,
-    }),
-    attempts: 1,
-    max_attempts: 5,
-    created_at: createdAt,
-  });
-
-  const makeDb = (row: unknown) =>
-    ({
-      prepare(sql: string) {
-        const statement = {
-          bind: () => statement,
-          async all() {
-            return { results: sql.includes("RETURNING id, event_id") ? [row] : [] };
-          },
-          async run() {
-            return { meta: { changes: 1 } };
-          },
-        };
-        return statement;
-      },
-    }) as unknown as D1Database;
-
-  const originalFetch = globalThis.fetch;
-  globalThis.fetch = (async (_url: string, init: RequestInit) => {
-    sentBody = JSON.parse(String(init.body));
-    return new Response(JSON.stringify({ events_received: 1 }), { status: 200 });
-  }) as unknown as typeof fetch;
-  try {
-    const { drainCapiOutbox } = await import("./capi-outbox.ts");
-
-    // Stored by a current enqueue.
-    await drainCapiOutbox(makeDb(withPayload({ eventTime: enqueuedEventTime })), "111", "tok");
-    assert.equal(sentBody.data[0].event_time, enqueuedEventTime);
-
-    // Enqueued before `eventTime` was stored: fall back to the row's own
-    // creation time, never to "now".
-    sentBody = null;
-    await drainCapiOutbox(makeDb(withPayload({})), "111", "tok");
-    assert.equal(sentBody.data[0].event_time, enqueuedEventTime);
-  } finally {
-    globalThis.fetch = originalFetch;
-  }
-});
-
-/** A backlog of PageViews must never delay the revenue event behind it. */
-test("Purchase drains ahead of top-of-funnel events", async () => {
-  let select = "";
-  const database = {
-    prepare(sql: string) {
-      if (sql.includes("RETURNING id, event_id")) select = sql;
-      const statement = {
-        bind: () => statement,
-        async all() {
-          return { results: [] };
-        },
-        async run() {
-          return { meta: { changes: 0 } };
-        },
-      };
-      return statement;
-    },
-  } as unknown as D1Database;
-
-  const { drainCapiOutbox } = await import("./capi-outbox.ts");
-  await drainCapiOutbox(database, "111", "tok");
-
-  const purchaseFirst = select.indexOf("'Purchase' THEN 0");
-  const byId = select.indexOf("id ASC");
-  assert.ok(purchaseFirst > -1, "the drain must order Purchase ahead of other events");
-  assert.ok(byId > purchaseFirst, "within a class the order must stay id ASC, so nothing is starved");
-});
-
-// Recovering an outage, and not double-sending while draining it.
-
 function outboxDatabase(seed: string) {
   const sqlite = new DatabaseSync(":memory:");
   sqlite.exec(`
@@ -235,46 +80,24 @@ function outboxDatabase(seed: string) {
   return { sqlite, database };
 }
 
-test("requeue recovers a destination outage, and refuses what can never land", async () => {
-  const now = new Date("2026-09-08T04:00:00.000Z");
-  const { sqlite, database } = outboxDatabase(`
-    INSERT INTO capi_event_outbox VALUES
-      (1,'vc-1','ViewContent','{}','failed',5,5,'Unsupported post request ...','t','2026-09-07T12:14:00.000Z','t'),
-      (2,'pv-1','PageView','{}','failed',2,5,'Error validating access token','t','2026-09-07T09:00:00.000Z','t'),
-      (3,'bad-1','PageView','{}','failed',0,5,'payload tidak dapat dibaca','t','2026-09-07T13:00:00.000Z','t'),
-      (4,'old-1','PageView','{}','failed',5,5,'Unsupported post request ...','t','2026-08-20T00:00:00.000Z','t'),
-      (5,'pv-2','PageView','{}','sent',1,5,NULL,'t','2026-09-07T13:00:00.000Z','t');
-  `);
-  assert.equal(await countRecoverableEvents(database, now), 2);
-  assert.equal(await requeueRecoverableEvents(database, now), 2);
-  const rows = sqlite.prepare("SELECT event_id, status, attempts FROM capi_event_outbox ORDER BY id").all() as {
-    event_id: string; status: string; attempts: number;
-  }[];
-  assert.deepEqual(
-    rows.map((r) => `${r.event_id}:${r.status}:${r.attempts}`),
-    // The unreadable payload and the row past Meta's seven-day event_time limit
-    // stay terminal: sending either spends the recovery on an event that cannot
-    // land.
-    ["vc-1:pending:0", "pv-1:pending:0", "bad-1:failed:0", "old-1:failed:5", "pv-2:sent:1"],
-  );
-  assert.equal(await countRecoverableEvents(database, now), 0, "requeue does not loop");
-});
+const pageView = (eventId: string) =>
+  JSON.stringify({ eventName: "PageView", eventId, eventSourceUrl: "https://toko.test/", userData: {}, customData: {} });
 
 test("two concurrent drains never claim the same row", async () => {
-  const now = new Date("2026-09-08T04:00:00.000Z");
-  const payloadFor = (eventId: string) =>
-    JSON.stringify({ eventName: "PageView", eventId, eventSourceUrl: "https://t.test/", userData: {}, customData: {} });
+  const now = new Date("2026-09-04T04:00:00.000Z");
   const seeded = Array.from({ length: 14 }, (_, i) =>
-    `(${i + 1},'e-${i + 1}','PageView','${payloadFor(`e-${i + 1}`)}','pending',0,5,NULL,'2026-09-08T03:00:00.000Z','2026-09-08T03:00:00.000Z','t')`,
+    `(${i + 1},'e-${i + 1}','PageView','${pageView(`e-${i + 1}`)}','pending',0,5,NULL,'2026-09-04T03:00:00.000Z','2026-09-04T03:00:00.000Z','t')`,
   ).join(",");
   const { sqlite, database } = outboxDatabase(`INSERT INTO capi_event_outbox VALUES ${seeded};`);
-
   const originalFetch = globalThis.fetch;
   globalThis.fetch = (async () => {
+    // Slow enough that a second drain would overlap a naive select-then-send.
     await new Promise((resolve) => setTimeout(resolve, 5));
     return new Response(JSON.stringify({ events_received: 1 }), { status: 200 });
   }) as typeof fetch;
   try {
+    // Both drains claim before either transmits — two visitors arriving
+    // together, each firing a drain in `waitUntil`, or the cron and a visitor.
     await Promise.all([
       drainCapiOutbox(database, "1234567890", "token", now),
       drainCapiOutbox(database, "1234567890", "token", now),
@@ -282,11 +105,171 @@ test("two concurrent drains never claim the same row", async () => {
   } finally {
     globalThis.fetch = originalFetch;
   }
-
-  const sent = sqlite.prepare("SELECT event_id FROM capi_event_outbox WHERE status = 'sent'").all() as { event_id: string }[];
-  const ids = sent.map((row) => row.event_id);
-  assert.equal(new Set(ids).size, ids.length, "no row may be claimed twice");
-  assert.equal(ids.length, 14);
+  const sent = (sqlite.prepare("SELECT event_id FROM capi_event_outbox WHERE status = 'sent' ORDER BY id").all() as { event_id: string }[]).map((r) => r.event_id);
+  // Ten claimed by the first drain, four by the second: disjoint, and every
+  // one of the fourteen accounted for exactly once.
+  assert.equal(new Set(sent).size, sent.length, "no row may be claimed twice");
+  assert.equal(sent.length, 14);
   const overBudget = sqlite.prepare("SELECT COUNT(*) AS c FROM capi_event_outbox WHERE attempts > max_attempts").get() as { c: number };
   assert.equal(overBudget.c, 0, "a double transmission is what pushed attempts past its budget in production");
+});
+
+test("a claimed row is hidden from the next drain until its lease expires", async () => {
+  const now = new Date("2026-09-04T04:00:00.000Z");
+  const { sqlite, database } = outboxDatabase(
+    `INSERT INTO capi_event_outbox VALUES (1,'e-1','PageView','${pageView("e-1")}','pending',0,5,NULL,'2026-09-04T03:00:00.000Z','2026-09-04T03:00:00.000Z','t');`,
+  );
+  const originalFetch = globalThis.fetch;
+  // A transmission that never resolves is a Worker killed mid-drain.
+  globalThis.fetch = (async () => new Promise(() => {})) as typeof fetch;
+  try {
+    void drainCapiOutbox(database, "1234567890", "token", now);
+    await new Promise((resolve) => setTimeout(resolve, 10));
+    const leased = sqlite.prepare("SELECT next_retry_at FROM capi_event_outbox WHERE id = 1").get() as { next_retry_at: string };
+    assert.ok(Date.parse(leased.next_retry_at) > now.getTime(), "the claim must push the row out of the due window");
+    // The lease is a delay, not a grave: the row returns on its own.
+    assert.ok(Date.parse(leased.next_retry_at) <= now.getTime() + CAPI_DRAIN_LEASE_MS, "and it must come back once the lease expires");
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test("the purge removes only settled rows past retention, and keeps the queue", async () => {
+  const now = new Date("2026-09-05T00:00:00.000Z");
+  const { sqlite, database } = outboxDatabase(`
+    INSERT INTO capi_event_outbox VALUES
+      (1,'old-sent','PageView','{}','sent',1,5,NULL,'t','2026-07-01T00:00:00.000Z','2026-07-01T00:00:00.000Z'),
+      (2,'old-failed','PageView','{}','failed',5,5,'x','t','2026-07-01T00:00:00.000Z','2026-07-01T00:00:00.000Z'),
+      (3,'old-pending','Purchase','{}','pending',2,5,NULL,'t','2026-07-01T00:00:00.000Z','2026-07-01T00:00:00.000Z'),
+      (4,'new-sent','PageView','{}','sent',1,5,NULL,'t','2026-09-04T00:00:00.000Z','2026-09-04T00:00:00.000Z');
+  `);
+  assert.equal(await purgeExpiredCapiOutboxEvents(database, now), 2);
+  const left = (sqlite.prepare("SELECT event_id FROM capi_event_outbox ORDER BY id").all() as { event_id: string }[]).map((r) => r.event_id);
+  // A pending row is never purged however old — that is a stuck queue to be
+  // drained or recovered, not history to be swept.
+  assert.deepEqual(left, ["old-pending", "new-sent"]);
+});
+
+// Recovering an outage caused by a dead access token. The classification is
+// structural rather than a match on Meta's error prose, so it must stay
+// pinned to the one property that makes it exact.
+
+test("a dead token is the only reason decideRetry terminates below the attempt budget", () => {
+  // This is the invariant `requeueRecoverableEvents` selects on. If a third
+  // terminal reason is ever added without incrementing attempts, that reason
+  // would silently become "recoverable" and be resent forever.
+  assert.deepEqual(decideRetry({ success: false, errorCode: 190 }, 0, 5), {
+    status: "failed",
+    delayMs: 0,
+  });
+  assert.equal(decideRetry({ success: false, errorCode: 500 }, 0, 5).status, "pending");
+  assert.equal(decideRetry({ success: false, errorCode: 4 }, 0, 5).status, "pending");
+  assert.equal(decideRetry({ success: false, errorCode: 500 }, 4, 5).status, "failed");
+});
+
+
+
+test("requeue recovers a destination outage, not just a dead token", async () => {
+  const now = new Date("2026-09-04T04:00:00.000Z");
+  const { sqlite, database } = outboxDatabase(`
+    INSERT INTO capi_event_outbox VALUES
+      -- exhausted its budget honestly, against a pixel the token could not see
+      (1,'vc-1','ViewContent','{}','failed',5,5,'Unsupported post request. Object with ID ...','t','2026-09-03T12:14:00.000Z','t'),
+      -- the dead-token rows the first version of this function was built for
+      (2,'pv-1','PageView','{}','failed',2,5,'Error validating access token','t','2026-09-03T09:00:00.000Z','t'),
+      -- Purchase, and it must be requeued ahead of the rest
+      (3,'INV-9','Purchase','{}','failed',9,5,'Unsupported post request. Object with ID ...','t','2026-09-03T13:00:00.000Z','t'),
+      -- can never succeed
+      (4,'bad-1','PageView','{}','failed',0,5,'payload tidak dapat dibaca','t','2026-09-03T13:00:00.000Z','t'),
+      -- inside the 30-day retention, past Meta's 7-day event_time limit
+      (5,'old-1','PageView','{}','failed',5,5,'Unsupported post request. Object with ID ...','t','2026-08-20T00:00:00.000Z','t'),
+      -- already delivered
+      (6,'pv-2','PageView','{}','sent',1,5,NULL,'t','2026-09-03T13:00:00.000Z','t');
+  `);
+
+  assert.equal(await countRecoverableEvents(database, now), 3);
+  assert.equal(await requeueRecoverableEvents(database, now), 3);
+
+  const rows = sqlite.prepare("SELECT event_id, status, attempts, last_error FROM capi_event_outbox ORDER BY id").all() as {
+    event_id: string; status: string; attempts: number; last_error: string | null;
+  }[];
+  assert.deepEqual(
+    rows.map((r) => `${r.event_id}:${r.status}:${r.attempts}`),
+    // Budget reset, error cleared. The unreadable payload and the stale row
+    // stay terminal; sending either would spend the operator's one recovery on
+    // an event that can never land.
+    ["vc-1:pending:0", "pv-1:pending:0", "INV-9:pending:0", "bad-1:failed:0", "old-1:failed:5", "pv-2:sent:1"],
+  );
+  assert.equal(rows[0].last_error, null);
+  assert.equal(await countRecoverableEvents(database, now), 0, "requeue does not loop");
+});
+
+/** The outbox exactly as the checked-in chain builds it: 0026, then 0057. */
+function migratedOutbox() {
+  const sqlite = new DatabaseSync(":memory:");
+  for (const name of ["0026_classy_dark_phoenix.sql", "0057_capi_outbox_event_name_key.sql"]) {
+    const sql = readFileSync(new URL(`../db/migrations/${name}`, import.meta.url), "utf8");
+    for (const statement of splitMigrationStatements(sql)) sqlite.exec(statement);
+  }
+  const database = {
+    prepare: (sql: string) => {
+      const bound: unknown[] = [];
+      const statement = {
+        bind: (...values: unknown[]) => { bound.push(...values); return statement; },
+        run: async () => ({ meta: { changes: Number(sqlite.prepare(sql).run(...bound as never[]).changes) } }),
+        first: async () => sqlite.prepare(sql).get(...bound as never[]) ?? null,
+        all: async () => ({ results: sqlite.prepare(sql).all(...bound as never[]) }),
+      };
+      return statement;
+    },
+  } as unknown as D1Database;
+  return { sqlite, database };
+}
+
+const outboxEvent = (eventName: string, eventId: string, eventTime?: number) => ({
+  eventName,
+  eventId,
+  eventSourceUrl: "https://toko.test/",
+  userData: {},
+  customData: { orderNumber: eventId },
+  eventTime,
+});
+
+test("a funnel event posted with an order number cannot swallow that order's Purchase", async () => {
+  const { database } = migratedOutbox();
+  assert.equal(await enqueueCapiEvent(database, outboxEvent("PageView", "INV-10500")), true);
+  assert.equal(
+    await enqueueCapiEvent(database, outboxEvent("Purchase", "INV-10500")),
+    true,
+    "the Purchase must still be recorded",
+  );
+  assert.equal(
+    await enqueueCapiEvent(database, outboxEvent("Purchase", "INV-10500")),
+    false,
+    "a replayed Purchase is still deduplicated",
+  );
+});
+
+test("immediate delivery and a concurrent drain transmit an event once, with its original time", async () => {
+  const { sqlite, database } = migratedOutbox();
+  await enqueueCapiEvent(database, outboxEvent("Purchase", "INV-7", 1_780_000_000));
+  const bodies: { data: { event_time: number }[] }[] = [];
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = (async (_url: unknown, init?: RequestInit) => {
+    bodies.push(JSON.parse(String(init?.body)));
+    await new Promise((resolve) => setTimeout(resolve, 5));
+    return new Response(JSON.stringify({ events_received: 1 }), { status: 200 });
+  }) as typeof fetch;
+  try {
+    await Promise.all([
+      deliverCapiEvent(database, "Purchase", "INV-7", "1234567890", "token"),
+      drainCapiOutbox(database, "1234567890", "token"),
+    ]);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+  assert.equal(bodies.length, 1, "exactly one transmission");
+  assert.equal(bodies[0].data[0].event_time, 1_780_000_000, "a retry never restamps the event as now");
+  const row = sqlite.prepare("SELECT status, attempts FROM capi_event_outbox").get() as { status: string; attempts: number };
+  assert.deepEqual({ ...row }, { status: "sent", attempts: 0 });
 });

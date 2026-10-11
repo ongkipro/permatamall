@@ -45,7 +45,6 @@ type OrderRow = {
   payment_method: string;
   payment_status: string;
   payment_instruction_status?: string | null;
-  payment_channel_code?: string | null;
   shipping_status: string;
   courier_code: string | null;
   cnote_no: string | null;
@@ -264,13 +263,6 @@ export const GET: APIRoute = async ({ url, locals }) => {
             ORDER BY pt.id DESC
             LIMIT 1
           ) AS payment_instruction_status,
-          (
-            SELECT channel_code
-            FROM payment_transactions
-            WHERE payment_transactions.order_id = orders.id
-            ORDER BY payment_transactions.id DESC
-            LIMIT 1
-          ) AS payment_channel_code,
           destination_area_id,
           provider_order_id,
           provider_dispatch_error,
@@ -366,7 +358,6 @@ export const GET: APIRoute = async ({ url, locals }) => {
           payment_method: row.payment_method,
           payment_status: row.payment_status,
           payment_instruction_status: row.payment_instruction_status || null,
-          payment_channel_code: row.payment_channel_code || null,
           shipping_status: row.shipping_status,
           courier_code: row.courier_code,
           cnote_no: row.cnote_no,

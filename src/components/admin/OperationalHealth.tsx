@@ -21,6 +21,7 @@ const SIGNAL_TITLES: Record<HealthSignal["id"], string> = {
   "meta-capi": "Pengiriman Meta CAPI terakhir",
   mengantar: "Kontak Mengantar terakhir",
   autolaris: "AutoLaris Create Order & verifikasi",
+  "google-ads-outbox": "Antrean Google Ads offline",
   alerting: "Saluran peringatan",
 };
 
@@ -32,6 +33,8 @@ const REASONS: Record<string, string> = {
   stalled: "Event sudah lewat jadwal retry dan belum terkirim — antrean macet.",
   "terminal-failures":
     "Ada conversion yang gagal permanen dan tidak akan pernah sampai ke Meta.",
+  "earlier-failures":
+    "Tidak ada yang menunggu. Kegagalan lama (lebih dari 24 jam) masih tersimpan dan bisa dikirim ulang dari halaman Ads.",
   // meta-capi
   "never-enqueued": "Belum pernah ada conversion event yang tercatat.",
   "no-delivery-in-window": "Tidak ada pengiriman pada 200 event terakhir.",
@@ -86,7 +89,10 @@ function formatAge(minutes: number | null) {
 }
 
 function describeMetrics(signal: HealthSignal) {
-  if (signal.id === "capi-outbox") {
+  // Both outboxes carry the same three counters and fail the same way, so they
+  // read the same way too — an operator should not have to learn a second
+  // vocabulary for the second queue.
+  if (signal.id === "capi-outbox" || signal.id === "google-ads-outbox") {
     const { pending = 0, failed = 0, overdue = 0 } = signal.metrics;
     return `${pending} menunggu · ${overdue} lewat jadwal · ${failed} gagal permanen`;
   }
@@ -102,7 +108,9 @@ function ageLabel(signal: HealthSignal) {
       ? "Pembayaran terakhir"
       : "Create Order terakhir";
   }
-  return signal.id === "capi-outbox" ? "Antrean tertua" : "Terakhir sukses";
+  return signal.id === "capi-outbox" || signal.id === "google-ads-outbox"
+    ? "Antrean tertua"
+    : "Terakhir sukses";
 }
 
 export default function OperationalHealth() {
@@ -192,7 +200,7 @@ export default function OperationalHealth() {
                       <p className="text-xs font-medium text-slate-900">
                         {SIGNAL_TITLES[signal.id]}
                       </p>
-                      <p className="text-[11px] leading-relaxed text-slate-500">
+                      <p className="text-xs leading-relaxed text-slate-500">
                         {REASONS[signal.reason] || signal.reason}
                         {metrics ? ` · ${metrics}` : ""}
                       </p>
@@ -202,7 +210,7 @@ export default function OperationalHealth() {
                           timestamp — and "Terakhir sukses —" beside it reads as a missing
                           measurement rather than an absent one. */}
                       {signal.id !== "alerting" && (
-                        <span className="text-right text-[11px] text-slate-500">
+                        <span className="text-right text-xs text-slate-500">
                           {ageLabel(signal)}
                           <br />
                           <span className="font-medium text-slate-700">
@@ -211,7 +219,7 @@ export default function OperationalHealth() {
                         </span>
                       )}
                       <span
-                        className={`inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-[11px] font-medium ${STATE_TONE[signal.state]}`}
+                        className={`inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-xs font-medium ${STATE_TONE[signal.state]}`}
                       >
                         <Icon className="size-3.5" aria-hidden />
                         {STATE_LABEL[signal.state]}
@@ -221,7 +229,7 @@ export default function OperationalHealth() {
                 );
               })}
             </ul>
-            <p className="mt-3 text-[11px] text-slate-500">
+            <p className="mt-3 text-xs text-slate-500">
               Versi {health.build.version} ({health.build.releaseTag}) · skema{" "}
               {health.build.appliedSchemaVersion ?? "?"}/{health.build.expectedSchemaVersion}
               {health.build.schemaState === "match" ? "" : ` · ${health.build.schemaState}`}

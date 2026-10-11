@@ -5,6 +5,7 @@ import {
   validateNewAdminPassword,
 } from "./admin-credentials.ts";
 import { STOREFRONT_TEMPLATE_IDS } from "./tenant-contract.ts";
+import { isAcceptedSiteProtocol } from "./tenant.ts";
 
 export interface InstallInput {
   storeName: unknown;
@@ -36,22 +37,35 @@ export interface InstallPlan {
  * destination; these rows only let the operator explicitly narrow that result.
  * Paxel COD stays off because that was the existing product policy before the
  * demo seed that carried these rows was removed.
+ *
+ * Only JNE and J&T start enabled: the two couriers with the widest COD reach
+ * in the fleet's traffic, so a new store offers a short, reliable choice and
+ * the operator switches the others on in /admin/expeditions. Every courier
+ * still gets a row, so turning one on is a toggle, not a missing entry.
+ *
+ * Ninja is not in this list: Mengantar discontinued it from its public API on
+ * 2026-09-01, and migration `0061` removes the rule from existing stores.
+ *
+ * SPX (Shopee Express) appeared in the live `/order/estimate?courier=all`
+ * result as `spx` on 2026-09-25, before Mengantar's documentation listed it;
+ * Mengantar confirmed it for create-order. Migration `0059` adds it to
+ * existing stores.
  */
 export const DEFAULT_COURIER_RULES = [
-  { code: "JNE", cod: 1 },
-  { code: "SiCepat", cod: 1 },
-  { code: "J&T", cod: 1 },
-  { code: "SAP", cod: 1 },
-  { code: "Ninja", cod: 1 },
-  { code: "Anteraja", cod: 1 },
-  { code: "Lion", cod: 1 },
-  { code: "IDexpress", cod: 1 },
-  { code: "Paxel", cod: 0 },
-  { code: "Pos", cod: 1 },
+  { code: "JNE", enabled: 1, cod: 1 },
+  { code: "SiCepat", enabled: 0, cod: 1 },
+  { code: "J&T", enabled: 1, cod: 1 },
+  { code: "SAP", enabled: 0, cod: 1 },
+  { code: "Anteraja", enabled: 0, cod: 1 },
+  { code: "Lion", enabled: 0, cod: 1 },
+  { code: "IDexpress", enabled: 0, cod: 1 },
+  { code: "Paxel", enabled: 0, cod: 0 },
+  { code: "Pos", enabled: 0, cod: 1 },
+  { code: "SPX", enabled: 0, cod: 1 },
 ] as const;
 
 const defaultCourierValues = DEFAULT_COURIER_RULES.map(
-  (rule) => `('${rule.code.replace("'", "''")}', 1, ${rule.cod})`,
+  (rule) => `('${rule.code.replace("'", "''")}', ${rule.enabled}, ${rule.cod})`,
 ).join(",\n");
 
 const LOCALE_PATTERN = /^[a-z]{2}(?:-[A-Z]{2})?$/;
@@ -93,7 +107,7 @@ export function planInstall(
   let siteUrl = "";
   try {
     const parsed = new URL(siteUrlRaw);
-    if (parsed.protocol !== "https:") {
+    if (!isAcceptedSiteProtocol(parsed)) {
       return { ok: false, error: "Alamat toko harus memakai https." };
     }
     siteUrl = parsed.origin;
