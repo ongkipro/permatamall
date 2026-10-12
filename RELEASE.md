@@ -103,10 +103,10 @@ Two registries, currently in step:
 
 | Source | Field | Value |
 | --- | --- | --- |
-| `src/lib/version.ts` | `version` | `1.3.1` |
-| `src/lib/version.ts` | `releaseTag` | `2026.08-google-offline` |
-| `src/lib/version.ts` | `schemaVersion` | `49` |
-| `package.json` | `version` | `1.3.1` |
+| `src/lib/version.ts` | `version` | `1.5.3` |
+| `src/lib/version.ts` | `releaseTag` | `2026.10-fleet-status` |
+| `src/lib/version.ts` | `schemaVersion` | `62` |
+| `package.json` | `version` | `1.5.3` |
 
 `src/lib/version.ts` is what the admin sidebar renders and is the value users
 see. Keep it and `package.json` in step when bumping.
