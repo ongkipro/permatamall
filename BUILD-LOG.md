@@ -6601,3 +6601,37 @@ files are committed.
   - Order detail no longer prints "Skor Mengantar -".
 
 Verified: `astro check` 0 errors; 833 passing; build.
+
+## 2026-10-15 — 1.5.7: a CMS landing page opens with an eager hero and its own h1
+
+Found building the first numaskin-adbook landing page (`/treatment-lotion`,
+since claimed as `/produk/deep-sea-water-treatment-lotion`), whose first section
+is an `image` and whose first headline was its title.
+
+- **Hero image.** `[slug].astro` rendered every typed `image` section
+  `loading="lazy"`, so the page's opening image — its LCP on a paid click —
+  waited for layout. The first section now loads `eager` with
+  `fetchpriority="high"`, the same rule `deferOffscreenImages` already applies to
+  an `html` section; later images stay lazy.
+- **h1.** Every `headline` section rendered as `<h2>` and the layout renders no
+  `<h1>` on a landing page, so the page had none — including when it takes over
+  a product page, whose own template has one. The first headline section now
+  renders as `<h1>`; `landing.css` already styles `.lp-section h1`, and the
+  measured size, weight and alignment did not change (24px / 700 / center).
+- Checked: `npm test` (834, one new in `landing-pages.test.ts`), `npm run check`;
+  rendered locally against a copy of the numaskin D1 at 390px — one `h1`, hero
+  `eager`/`fetchpriority=high`, the next image `lazy`, no horizontal scroll, no
+  console errors.
+
+## 2026-10-15 — 1.5.8: the landing h1 is never a second one
+
+Review of 1.5.7 found two edges in promoting the first headline section to
+`<h1>`:
+
+- a page whose legacy `html` section already writes an `<h1>` would get a
+  second one from its first typed headline. The route now promotes nothing when
+  any `html` section carries `<h1`;
+- a headline whose stored config does not parse renders nothing, yet was still
+  chosen, leaving the page with no `<h1>`. Only a headline with text is chosen.
+
+Checked: `npm test` (834), `npm run check`.
