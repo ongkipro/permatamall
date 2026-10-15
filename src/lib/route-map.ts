@@ -120,7 +120,7 @@ const CHECKOUT_FORMS = new Set([
   "/form-full",
 ]);
 
-const LANDING_PAGES = new Set(["/[slug]", "/contoh-landing", "/solusi-terbaru", "/landing-page"]);
+const LANDING_PAGES = new Set(["/[slug]", "/contoh-landing", "/solusi-terbaru", "/landing-page", "/meta-ads"]);
 
 /**
  * `src/pages/admin/orders/[invoice].astro` → `/admin/orders/[invoice]`.

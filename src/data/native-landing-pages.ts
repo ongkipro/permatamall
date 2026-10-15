@@ -139,4 +139,4 @@ export const nativeLandingPages: NativeLandingPage[] = [
  * answers first, so the CMS refuses them. Every entry in `nativeLandingPages`
  * is refused the same way without being repeated here.
  */
-export const installRouteSlugs: string[] = ['carukesi-ads-catalog'];
+export const installRouteSlugs: string[] = ['carukesi-ads-catalog', 'meta-ads'];

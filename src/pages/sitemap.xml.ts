@@ -22,6 +22,7 @@ const STATIC_PATHS = [
   { path: "/pengiriman", priority: "0.4", changefreq: "monthly" },
   { path: "/kebijakan-privasi", priority: "0.3", changefreq: "yearly" },
   { path: "/syarat-ketentuan", priority: "0.3", changefreq: "yearly" },
+  { path: "/meta-ads", priority: "0.6", changefreq: "monthly" },
 ];
 
 function escapeXml(value: string) {
