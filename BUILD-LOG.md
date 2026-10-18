@@ -1,6 +1,6 @@
 # BUILD LOG: AdsBookCMS
 
-> Verified against disk: 2026-10-12 @ `b827004` + 1.5.4 working tree
+> Verified against disk: 2026-10-16 @ `fd652b4`
 
 Author & Curator: **[ongki.pro](https://ongki.pro)**
 
@@ -6602,6 +6602,37 @@ files are committed.
 
 Verified: `astro check` 0 errors; 833 passing; build.
 
+## 2026-10-15 — 1.5.5 and 1.5.6 rolled out; two installs join the line
+
+- **Rollout.** Ten installs merged the product, passed `check` (0 errors) and
+  `test` (0 failing; 833–836 by install), deployed and answered 200 on `/` and
+  `/produk`: agritani-shop, beranda-tani, carukesi, klikinaja,
+  numaskin-adbook, permatamall, revenleather, skincarebpom, taniniaga,
+  zanobyshop. `fleet:status`: 1.5.6, 0 behind, schema 62/62 on each. The 1.5.6
+  preflight reported "62 applied, all in this tree" on the eight installs
+  deployed by hand.
+- **Actions installs.** permatamall and zanobyshop deploy on push to `main`
+  with a bare `wrangler deploy`, which skips the preflight; their production
+  ledgers were compared by hand first (nothing missing). Moving those workflows
+  onto `npm run deploy` is open.
+- **Merges.** Generated route-map files were regenerated rather than resolved
+  by hand. Install-owned `RELEASE.md` kept its install side on zvarashop and
+  permatamall; zvarashop's `version.ts` keeps `schemaVersion: 69`.
+- **zvarashop held** (see the 1.5.6 entry): `6006be7` is pushed but not
+  deployed; the preflight names `0069`–`0073` and refuses.
+- **agritani.shop installed.** New Worker `agritani-shop` with its own D1
+  (`agritani-shop-d1`), KV (`agritani-shop-session`) and R2
+  (`agritani-shop-assets`); `agritani.shop` and `www` as custom domains,
+  `workers_dev` off; install token held in the owner's secrets store. The
+  owner completed `/install` ("Agritani Store"). Store configuration and
+  catalogue are still empty. Unrelated to the separate `agritani.com` site and
+  its resources, which were not touched.
+- **numaskin-adbook** (`page.numaskin.id`), set up by another session the same
+  day, taken from 1.5.4 to 1.5.6 with the rest.
+- **In production.** After deploy the hourly backfill on taniniaga and carukesi
+  recorded one Receiver Score refusal each and stopped, as designed. Scores
+  return only once Mengantar CS whitelists each account.
+
 ## 2026-10-15 — 1.5.7: a CMS landing page opens with an eager hero and its own h1
 
 Found building the first numaskin-adbook landing page (`/treatment-lotion`,
@@ -6657,3 +6688,43 @@ kept); an html-only page rendered `<h1 class="sr-only">` with its title.
 
 Revenleather's landings that answered 0 in the same scan are product-page
 hand-offs (`301` to `/produk/<slug>`, one `<h1>` there), not a defect.
+
+## 2026-10-16 — 1.5.10: the deploy preflight guards native landing pages
+
+zvarashop's production D1 lists 55 native landing pages that its repository's
+register does not. They were added and deployed from another device. A deploy
+from the repository would pass every existing preflight check once the
+missing migrations were restored, and then the hourly
+`reconcileNativeLandingPages` would delete those rows and any product page
+they had claimed.
+
+- **Fourth refusal.** `preflight:deploy` reads
+  `SELECT slug FROM landing_pages WHERE source = 'native'` from production and
+  refuses when any slug is missing from the active register
+  (`findUnregisteredNativeLandings`, tested). A fresh database passes. If the
+  rows cannot be read, the preflight says so and skips the comparison.
+  `ALLOW_NATIVE_LANDING_REMOVAL=1` allows an intended removal.
+- Verified read-only against production. A copy of taniniaga passed ("14,
+  all registered"). A copy of zvarashop, given placeholder `0069`–`0073` files
+  so it got past the ledger check, refused with 55 slugs and exit 1. Nothing
+  was deployed.
+
+Checked: `npm test` (836), `npm run check`.
+
+## 2026-10-18 — beranda-tani on 1.5.10; every selling page audited
+
+- **Deploy.** `ac887b0`, deployed with `npm run deploy`, which ran the 1.5.10
+  preflight on a real install for the first time: ledger 62 applied, 6
+  native landings, all registered. `check` 0 errors, `test` 0 failing.
+- **Audit, live, 390 px headless Chromium.** The six native landings and the
+  four `/produk/<slug>` pages each rendered one `<h1>` and one form, with no
+  horizontal overflow and no console errors. Each form's variant ids, labels,
+  prices and compare prices match the store's D1 `product_variants` exactly.
+  Every landing resolves its product by slug and passes `product.slug` to
+  the form and the sticky CTA, so no price is hard-coded in a route file.
+- **Checkout path.** `/api/locations` and `/api/shipping-rates` answered live
+  for COD and prepaid (SAP Rp6.300 for 500 ml, Rp7.000 for 1 L to Bekasi
+  Barat). The Mengantar key is a Worker secret, not the `stores` column.
+  Payment methods offered: COD, QRIS and five VAs through AutoLaris.
+  `seller_bank_accounts` is empty, so manual transfer is not offered. No order
+  was placed.
