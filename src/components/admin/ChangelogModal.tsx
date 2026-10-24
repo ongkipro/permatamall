@@ -29,10 +29,339 @@ interface ChangelogRelease {
 // changelog.test.ts fails when version.ts moves without a matching entry here.
 const CHANGELOG_RELEASES: ChangelogRelease[] = [
   {
+    version: "1.7.13",
+    date: "24 Oktober 2026",
+    releaseTag: "2026.10-plugins",
+    isLatest: true,
+    highlight: "Transfer manual bisa dikonfirmasi dari detail order, dan Purchase-nya terkirim ke Meta.",
+    changes: [
+      {
+        title: "Tombol Transfer Diterima",
+        description: "Order transfer bank manual yang belum lunas kini punya tombol Transfer Diterima di kartu Pembayaran. Setelah dikonfirmasi, order berstatus lunas dan bisa dipush ke Mengantar. Sebelumnya order ini tidak bisa ditandai lunas dari dashboard.",
+      },
+      {
+        title: "Purchase Meta untuk pembeli yang transfer lewat WhatsApp",
+        description: "Konfirmasi itu langsung mengirim Purchase ke Meta lewat server (CAPI), memakai identitas iklan yang tersimpan saat checkout. Pembeli tidak perlu kembali ke halaman terima kasih. Nomor invoice yang sama dipakai sebagai event_id, jadi tidak pernah terhitung dua kali. COD tetap mengirim Purchase dari halaman terima kasih.",
+      },
+    ],
+  },
+  {
+    version: "1.7.12",
+    date: "24 Oktober 2026",
+    releaseTag: "2026.10-plugins",
+    isLatest: false,
+    highlight: "Sitemap dan judul halaman lebih bersih untuk Google.",
+    changes: [
+      {
+        title: "Slug iklan kedua tidak lagi masuk sitemap",
+        description: "Landing page native yang memakai konten halaman lain (canonical ke halaman itu) bisa ditandai canonicalSlug di register. Sitemap hanya mencantumkan halaman aslinya, sehingga Google tidak melaporkannya sebagai duplikat.",
+      },
+      {
+        title: "Nama toko tidak tertulis dua kali di judul",
+        description: "Judul Kebijakan Privasi, Syarat & Ketentuan, dan Pengiriman tidak lagi menambahkan nama toko bila judulnya sudah memuat nama itu.",
+      },
+    ],
+  },
+  {
+    version: "1.7.11",
+    date: "23 Oktober 2026",
+    releaseTag: "2026.10-plugins",
+    highlight: "Halaman produk lebih cepat terbuka, termasuk saat dilayani dari server luar negeri.",
+    changes: [
+      {
+        title: "Halaman produk membaca database lebih sedikit",
+        description: "Katalog kini dibaca sekali per kunjungan dan bacaan yang tidak saling bergantung dijalankan bersamaan. Waktu tunggu halaman produk sebelum mulai tampil jadi lebih singkat, terutama bila Cloudflare melayani pengunjung dari server di Amerika.",
+      },
+      {
+        title: "Worker berjalan dekat database (Smart Placement)",
+        description: "Template wrangler.jsonc kini menyalakan Smart Placement. Toko yang sudah terpasang perlu menambahkannya di wrangler.jsonc sendiri; deploy preflight akan mengingatkan bila belum.",
+      },
+    ],
+  },
+  {
+    version: "1.7.10",
+    date: "23 Oktober 2026",
+    releaseTag: "2026.10-plugins",
+    highlight: "Panel Siapkan Toko kini memperingatkan saat tidak ada kurir aktif.",
+    changes: [
+      {
+        title: "Langkah wajib: aktifkan minimal satu kurir",
+        description: "Bila semua kurir dimatikan, checkout tidak bisa menghitung ongkir dan pembeli hanya melihat pesan gagal. Panel Siapkan Toko di dashboard kini menampilkan langkah ini dengan tautan langsung ke halaman Ekspedisi.",
+      },
+    ],
+  },
+  {
+    version: "1.7.9",
+    date: "23 Oktober 2026",
+    releaseTag: "2026.10-plugins",
+    highlight: "Checkout lebih tahan gangguan ongkir dan pilihan transfer lebih jelas.",
+    changes: [
+      {
+        title: "Ongkir COD tetap muncul saat estimasi kecamatan gagal",
+        description: "Bila estimasi ongkir ke kecamatan tujuan gagal, pembeli COD kini mendapat ongkir rata-rata kota yang dikonfirmasi admin, tidak lagi berhenti di pesan gagal. Pembayaran di muka tetap memakai ongkir kurir asli.",
+      },
+      {
+        title: "Rekening transfer tampil lengkap",
+        description: "Pilihan transfer bank kini menampilkan nama pemilik rekening di samping keterangan biaya. Toko dengan satu rekening atau satu bank Virtual Account menampilkannya langsung sebagai satu pilihan, tanpa harus membuka daftar terlebih dulu.",
+      },
+      {
+        title: "Form lengkap mengenali provinsi pengunjung sejak awal",
+        description: "Form lengkap kini menerima provinsi pengunjung seperti form ringkas, sehingga pilihan COD sesuai provinsi tampil tanpa jeda.",
+      },
+    ],
+  },
+  {
+    version: "1.7.8",
+    date: "22 Oktober 2026",
+    releaseTag: "2026.10-plugins",
+    highlight: "Pratinjau toko lewat alamat IP tidak lagi dialihkan ke domain toko.",
+    changes: [
+      {
+        title: "Pratinjau lewat alamat IP",
+        description: "Membuka toko lewat alamat IP, misalnya dari jaringan lokal atau Tailscale saat pengembangan, sebelumnya langsung dialihkan ke domain toko sehingga perubahan tidak bisa dilihat. Kini alamat IP diperlakukan sama seperti localhost. Pengunjung yang datang lewat domain tidak terpengaruh.",
+      },
+    ],
+  },
+  {
+    version: "1.7.7",
+    date: "22 Oktober 2026",
+    releaseTag: "2026.10-plugins",
+    highlight: "Toko bisa disembunyikan dari mesin pencari dengan satu pengaturan.",
+    changes: [
+      {
+        title: "Opsi noindex untuk seluruh toko",
+        description: "Pengaturan PUBLIC_SITE_NOINDEX=true membuat semua halaman toko tidak diindeks mesin pencari. Cocok untuk domain funnel iklan atau COD yang menjual produk yang sama dengan toko utama merek, supaya keduanya tidak bersaing di hasil pencarian. Iklan berbayar tetap berjalan. Tanpa pengaturan ini toko tetap diindeks seperti biasa.",
+      },
+    ],
+  },
+  {
+    version: "1.7.6",
+    date: "22 Oktober 2026",
+    releaseTag: "2026.10-plugins",
+    highlight: "Judul utama beranda tidak lagi diakhiri tanda pisah saat tagline kosong.",
+    changes: [
+      {
+        title: "Judul beranda dan nama toko di header lebih rapi",
+        description: "Toko tanpa tagline sebelumnya menampilkan judul utama beranda (dibaca mesin pencari dan pembaca layar) sebagai \"Nama Toko — \" dengan tanda pisah menggantung, begitu juga keterangan saat kursor diarahkan ke nama toko di header. Kini keduanya hanya berisi nama toko, atau nama toko dan tagline bila tagline diisi.",
+      },
+    ],
+  },
+  {
+    version: "1.7.5",
+    date: "22 Oktober 2026",
+    releaseTag: "2026.10-plugins",
+    highlight: "Header toko kini bisa menampilkan logo merek sendiri di samping nama toko.",
+    changes: [
+      {
+        title: "Logo merek di header (opsional)",
+        description: "Isi PUBLIC_SITE_BRAND_MARK dengan path gambar (misalnya /images/merek.svg) untuk menampilkan logo toko di samping nama toko pada header. Bila tidak diisi, header tetap memakai monogram huruf seperti sebelumnya, jadi toko lain tidak berubah.",
+      },
+    ],
+  },
+  {
+    version: "1.7.4",
+    date: "21 Oktober 2026",
+    releaseTag: "2026.10-plugins",
+    highlight: "Halaman produk kini disimpan di edge per provinsi dengan TTFB di bawah 0,3 detik.",
+    changes: [
+      {
+        title: "Cache halaman produk & landing page per provinsi",
+        description: "Halaman produk (/produk/<slug>) dan landing page kini disimpan selama 2 menit di edge Cloudflare berdasarkan kode provinsi pengunjung (Geo-IP). Pengunjung dari provinsi yang sama menerima halaman instan tanpa query database, sementara pemilihan form checkout (COD vs non-COD) tetap akurat sesuai provinsi masing-masing.",
+      },
+      {
+        title: "Halaman dari cache langsung dijawab sebelum pengecekan skema D1",
+        description: "Permintaan yang sudah ada di cache edge kini langsung dijawab sebelum Worker memeriksa tabel migrasi D1, memangkas jeda byte pertama (TTFB) pada isolate baru.",
+      },
+    ],
+  },
+  {
+    version: "1.7.3",
+    date: "21 Oktober 2026",
+    releaseTag: "2026.10-plugins",
+    highlight: "Foto produk yang diunggah tampil jauh lebih cepat.",
+    changes: [
+      {
+        title: "Foto unggahan disimpan di edge Cloudflare",
+        description: "Foto dari penyimpanan R2 sebelumnya dibaca ulang lewat Worker di setiap permintaan, sekitar satu detik sebelum byte pertama. Kini salinannya disimpan di edge selama sehari dan dikirim tanpa membaca database maupun R2. Foto yang dihapus berhenti tampil paling lambat dalam sehari.",
+      },
+    ],
+  },
+  {
+    version: "1.7.2",
+    date: "20 Oktober 2026",
+    releaseTag: "2026.10-plugins",
+    highlight: "Teks halaman benar-benar tidak lagi bergeser saat font dimuat.",
+    changes: [
+      {
+        title: "Font Inter hanya dalam mode optional",
+        description: "Font dipakai bila siap saat halaman pertama digambar; jika belum, halaman memakai font sistem sampai kunjungan berikutnya. Perbaikan 1.7.1 ternyata belum cukup karena aturan font bawaan paket masih ikut termuat dan menukar font; kini aturan itu dihapus. Hanya subset latin dan latin-ext yang dideklarasikan.",
+      },
+    ],
+  },
+  {
+    version: "1.7.1",
+    date: "20 Oktober 2026",
+    releaseTag: "2026.10-plugins",
+    highlight: "Teks halaman tidak lagi bergeser saat font dimuat.",
+    changes: [
+      {
+        title: "Font tidak bertukar di tengah halaman",
+        description: "Font Inter kini dipakai bila sudah siap saat halaman pertama digambar; jika belum, halaman memakai font sistem sampai kunjungan berikutnya. Judul dan paragraf tidak lagi melompat (CLS).",
+      },
+    ],
+  },
+  {
+    version: "1.7.0",
+    date: "20 Oktober 2026",
+    releaseTag: "2026.10-plugins",
+    highlight: "Halaman toko dan landing page terbuka lebih cepat, dan tidak lagi bergeser saat font dimuat.",
+    changes: [
+      {
+        title: "Cache halaman dua menit",
+        description:
+          "Beranda, daftar produk, dan landing page disimpan sebentar di edge Cloudflare, sehingga pengunjung berikutnya tidak menunggu render ulang. Perubahan dari admin tampil paling lama dua menit kemudian. Halaman produk, form, terima kasih, dan admin tidak pernah di-cache, dan harga tetap divalidasi ulang saat order.",
+      },
+      {
+        title: "Font dimuat lebih awal",
+        description: "Font Inter dipreload sehingga judul tidak lagi bergeser saat font tiba (CLS).",
+      },
+    ],
+  },
+  {
+    version: "1.6.5",
+    date: "20 Oktober 2026",
+    releaseTag: "2026.10-plugins",
+    highlight: "Satu domain utama: domain lama dan http diarahkan otomatis, link iklan tetap jalan.",
+    changes: [
+      {
+        title: "Domain lama diarahkan ke domain utama",
+        description:
+          "Domain lama toko (diatur lewat PUBLIC_ALIAS_HOSTS) diarahkan permanen ke domain utama, lengkap dengan path dan parameter iklan (UTM, fbclid). Webhook dan callback pembayaran tidak ikut diarahkan.",
+      },
+      {
+        title: "Selalu HTTPS",
+        description: "Kunjungan lewat http kini selalu diarahkan ke https, walau pengaturan zona Cloudflare belum mengaktifkannya.",
+      },
+    ],
+  },
+  {
+    version: "1.6.4",
+    date: "20 Oktober 2026",
+    releaseTag: "2026.10-plugins",
+    highlight: "Pembeli COD dari form singkat kini otomatis diarahkan ke WhatsApp CS dari halaman terima kasih.",
+    changes: [
+      {
+        title: "Redirect WhatsApp untuk form singkat",
+        description:
+          "Order COD dari form singkat (middle) sebelumnya tidak pernah diarahkan ke WhatsApp walau pengaturannya aktif. Kini setiap order COD yang tercatat ikut diarahkan, setelah Purchase terkirim.",
+      },
+      {
+        title: "Catatan nomor WhatsApp lebih jelas",
+        description: "Halaman terima kasih kini menyebut bahwa CS akan menghubungi WhatsApp pembeli di nomornya sendiri.",
+      },
+    ],
+  },
+  {
+    version: "1.6.3",
+    date: "20 Oktober 2026",
+    releaseTag: "2026.10-plugins",
+    highlight: "Pesan WhatsApp CRM kini menyebut varian, jumlah, dan harga satuan yang dipilih pembeli.",
+    changes: [
+      {
+        title: "Varian dan harga di Template CRM",
+        description:
+          "Variabel baru: {{varian}}, {{product_variant}}, {{jumlah}}, {{harga_satuan}}, dan {{rincian_pesanan}} (satu baris per item). Template bawaan memakainya; template yang sudah Anda ubah tetap seperti semula dan bisa ditambahkan variabelnya di Pengaturan → Template CRM.",
+      },
+      {
+        title: "Harga coret tidak lagi dikarang",
+        description:
+          "{{compare_price}} kini memakai harga coret asli varian. Tanpa harga coret, nilainya sama dengan harga jual, tidak lagi harga × 1,3.",
+      },
+      {
+        title: "Status tugas terjadwal di dashboard",
+        description:
+          "Panel kesehatan menampilkan apakah pemeliharaan per jam (retry CAPI, rekonsiliasi pembayaran, skor penerima, plugin) benar-benar berjalan.",
+      },
+    ],
+  },
+  {
+    version: "1.6.2",
+    date: "20 Oktober 2026",
+    releaseTag: "2026.10-plugins",
+    highlight: "Skor penerima Mengantar pulih sendiri setelah akun di-whitelist, termasuk di toko yang lama tidak menerima order.",
+    changes: [
+      {
+        title: "Cek ulang otomatis setelah whitelist",
+        description:
+          "Order yang pernah ditolak Mengantar karena belum di-whitelist kini dicek ulang tiap jam berapa pun umurnya, jadi peringatan di dashboard hilang sendiri begitu akses aktif.",
+      },
+      {
+        title: "Pesan penolakan lebih jelas",
+        description:
+          "Pesan dari Mengantar kini menyebut fitur yang ditolak (cek skor penerima) dan API key mana yang dipakai: dari dashboard atau dari secret server. Dengan begitu permintaan ke CS Mengantar tepat sasaran.",
+      },
+    ],
+  },
+  {
+    version: "1.6.1",
+    date: "20 Oktober 2026",
+    releaseTag: "2026.10-plugins",
+    highlight: "Halaman Kelola CRM lebih mudah dibaca saat ada order yang gagal terkirim.",
+    changes: [
+      {
+        title: "Jumlah gagal berwarna merah",
+        description: "Angka Gagal 24 jam di Kelola CRM kini merah setiap kali ada order yang belum diterima Kelola.",
+      },
+      {
+        title: "Menu Plugin tetap tersorot",
+        description: "Saat membuka pengaturan sebuah plugin, menu Pengaturan → Plugin di sidebar tetap tersorot.",
+      },
+    ],
+  },
+  {
+    version: "1.6.0",
+    date: "20 Oktober 2026",
+    releaseTag: "2026.10-plugins",
+    highlight: "Fitur opsional kini berupa plugin: tidak terpasang sampai toko mengaktifkannya.",
+    changes: [
+      {
+        title: "Halaman Plugin",
+        description:
+          "Pengaturan → Plugin menampilkan fitur opsional toko. Owner memasang dan mengaktifkannya sendiri; menonaktifkan tidak menghapus data, dan Hapus data menghapus tabel plugin itu.",
+      },
+      {
+        title: "Kelola CRM menjadi plugin",
+        description:
+          "Sambungan Kelola pindah dari Profil & Integrasi ke Pengaturan → Plugin → Kelola CRM. Toko yang tidak mengaktifkannya tidak membawa tabel maupun menu Kelola.",
+      },
+    ],
+  },
+  {
+    version: "1.5.12",
+    date: "19 Oktober 2026",
+    releaseTag: "2026.10-landing-hero-h1",
+    highlight: "Order dan pesanan tertinggal bisa dikirim otomatis ke Kelola CRM untuk ditindaklanjuti tim.",
+    changes: [
+      {
+        title: "Order masuk ke Penjualan Kelola",
+        description:
+          "Tempel URL webhook dan secret dari Kelola (sejak 1.6.0 di Pengaturan → Plugin). Setiap order baru dikirim setelah checkout tanpa menunda pembeli, dicoba ulang tiap jam selama 24 jam, dan bisa dikirim ulang dari detail order.",
+      },
+      {
+        title: "Pesanan tertinggal untuk follow-up",
+        description:
+          "Pesanan tertinggal yang 30 menit kemudian masih belum jadi order dikirim ke menu Data tertinggal di Kelola — terpisah dari Penjualan, jadi omzet tidak menggelembung.",
+      },
+      {
+        title: "Halaman asal order",
+        description: "Setiap order mencatat halaman (landing page) tempat pembeli memesan, terlihat di detail order.",
+      },
+    ],
+  },
+  {
     version: "1.5.11",
     date: "19 Oktober 2026",
     releaseTag: "2026.10-landing-hero-h1",
-    isLatest: true,
     highlight: "Landing page dengan HTML sendiri tidak lagi memicu request sia-sia setiap kali dibuka.",
     changes: [
       {

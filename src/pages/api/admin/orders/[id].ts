@@ -9,6 +9,7 @@ import { getMengantarDispatchEligibility } from '../../../../lib/payment-dispatc
 import { calculateCodCustomerTotal, calculateCodFeeBreakdown } from '../../../../lib/payment-fee-policy';
 import { dispatchOrderToMengantar } from '../../../../lib/mengantar-dispatch';
 import { buildPaymentNotification, recordNotification } from '../../../../lib/notifications';
+import { enqueuePurchaseForPaidOrder, manualTransferBecamePaid } from '../../../../lib/paid-order-purchase.ts';
 import {
   getReceiverPerformance,
   isRecentReceiverRefusal,
@@ -27,6 +28,14 @@ import {
   resolveEligibleShippingRates,
   ShippingQuoteError,
 } from '../../../../lib/shipping-quote';
+import { pluginContext } from '../../../../plugins/registry';
+import { getKelolaConfig, kelolaOrderState, resendOrderToKelola } from '../../../../plugins/kelola/sync';
+
+/** The Kelola config when the plugin is active, else `undefined` (plugin off). */
+async function activeKelolaConfig(db: D1Database, locals: App.Locals) {
+  const context = await pluginContext(db, getRuntimeEnv(locals), 'kelola');
+  return context ? getKelolaConfig(context.settings, context.env) : undefined;
+}
 
 export const prerender = false;
 
@@ -35,7 +44,7 @@ const SHIPPING_STATUSES = ['pending', 'processing', 'shipped', 'delivered', 'ret
 const PAID_STATUSES = new Set(['paid', 'settled', 'success']);
 
 type OrderUpdatePayload = {
-  action?: 'dispatch-order' | 'refresh-scoring';
+  action?: 'dispatch-order' | 'refresh-scoring' | 'push-kelola';
   payment_status?: string;
   shipping_status?: string;
   cnote_no?: string;
@@ -87,6 +96,7 @@ type OrderRow = {
   receiver_performance_checked_at: string | null;
   stock_restored_at: string | null;
   ad_click_ids: string | null;
+  source_page_path: string | null;
   created_at: string;
   warehouse_name: string | null;
   pickup_address_id: string | null;
@@ -101,6 +111,7 @@ type OrderItemRow = {
   unit_price: number;
   variant_title: string;
   variant_sku: string;
+  variant_compare_price: number | null;
   product_id: number;
   product_title: string;
 };
@@ -171,6 +182,7 @@ async function loadOrder(database: D1Database, rawOrderKey: string) {
       o.receiver_performance_json,
       o.receiver_performance_checked_at,
       o.ad_click_ids,
+      o.source_page_path,
       o.stock_restored_at,
       o.created_at,
       w.name AS warehouse_name,
@@ -218,6 +230,7 @@ export const GET: APIRoute = async ({ params, locals }) => {
         oi.unit_price,
         pv.title AS variant_title,
         pv.sku AS variant_sku,
+        pv.compare_price AS variant_compare_price,
         p.id AS product_id,
         p.title AS product_title
       FROM order_items oi
@@ -298,7 +311,11 @@ export const GET: APIRoute = async ({ params, locals }) => {
         ...readStoredReceiverPerformance(order.receiver_performance_json),
         receiver_performance_checked_at: order.receiver_performance_checked_at,
         ad_click_ids: order.ad_click_ids,
+        source_page_path: order.source_page_path,
         created_at: order.created_at,
+        // Absent unless the Kelola plugin is active; OrderDetail then shows no panel.
+        kelola: await activeKelolaConfig(db, locals).then((config) =>
+          config === undefined ? null : kelolaOrderState(db, config, order.id)),
         payment: payment ? {
           reference_id: payment.reference_id,
           channel_code: payment.channel_code,
@@ -317,6 +334,7 @@ export const GET: APIRoute = async ({ params, locals }) => {
           unit_price: item.unit_price,
           variant_title: item.variant_title,
           variant_sku: item.variant_sku,
+          variant_compare_price: item.variant_compare_price,
           product_id: item.product_id,
           product_title: item.product_title,
         })),
@@ -346,6 +364,14 @@ export const PATCH: APIRoute = async ({ params, request, locals }) => {
     if (!current) return jsonError('Order tidak ditemukan.', 404);
 
     const action = body.action;
+    if (action === 'push-kelola') {
+      const config = await activeKelolaConfig(db, locals);
+      if (config === undefined) return jsonError('Plugin Kelola CRM belum aktif.', 409);
+      const result = await resendOrderToKelola(db, config, current.id);
+      return result.ok
+        ? jsonOk({ message: `Order ${current.order_number} sudah ada di Kelola.`, data: { kelola: result.state } })
+        : jsonError(result.error ?? 'Gagal mengirim order ke Kelola.', 502, { data: { kelola: result.state } });
+    }
     if (action === 'refresh-scoring') {
       const phone = (typeof body.customer_phone === 'string' ? normalizePhoneNumber(body.customer_phone).slice(0, 40) : undefined) ?? current.customer_phone;
       let performance: ReceiverPerformance;
@@ -648,6 +674,7 @@ export const PATCH: APIRoute = async ({ params, request, locals }) => {
       return jsonError('Tidak ada perubahan yang dikirim.', 400);
     }
 
+    let metaPurchase: Awaited<ReturnType<typeof enqueuePurchaseForPaidOrder>> | null = null;
     if (assignments.length > 0) {
       const destinationEditGuard =
         hasCustomerChanges || hasShippingSelection
@@ -712,6 +739,16 @@ export const PATCH: APIRoute = async ({ params, request, locals }) => {
           }),
         });
       }
+      // A manual transfer is confirmed here and nowhere else, so this is its
+      // Purchase. Best effort, like the AutoLaris path: the payment is already
+      // durable, and the outbox keys on the order number, so a repeat is a no-op.
+      if (manualTransferBecamePaid(current.payment_method, current.payment_status, resolvedPaymentStatus)) {
+        try {
+          metaPurchase = await enqueuePurchaseForPaidOrder(db, locals, current.id);
+        } catch (error) {
+          console.error('paid-order-purchase-failed', error);
+        }
+      }
     }
 
     let dispatchOutcome: Awaited<ReturnType<typeof dispatchOrderToMengantar>> | undefined;
@@ -733,7 +770,13 @@ export const PATCH: APIRoute = async ({ params, request, locals }) => {
         ? dispatchOutcome?.status === 'unpaid'
           ? `Draft shipment ${updated.order_number} diterima Mengantar dan menunggu top up wallet`
           : `Shipment ${updated.order_number} berhasil dibuat di Mengantar`
-        : `Order ${updated.order_number} berhasil diperbarui`,
+        : `Order ${updated.order_number} berhasil diperbarui${
+            metaPurchase?.status === 'queued'
+              ? ' · Purchase dikirim ke Meta'
+              : metaPurchase?.status === 'deduplicated'
+                ? ' · Purchase sudah tercatat sebelumnya'
+                : ''
+          }`,
       data: {
         id: updated.id,
         order_number: updated.order_number,
@@ -765,6 +808,7 @@ export const PATCH: APIRoute = async ({ params, request, locals }) => {
         receiver_risk_label: updated.receiver_risk_label,
         ...readStoredReceiverPerformance(updated.receiver_performance_json),
         receiver_performance_checked_at: updated.receiver_performance_checked_at,
+        meta_purchase: metaPurchase,
       },
     });
   } catch (error) {

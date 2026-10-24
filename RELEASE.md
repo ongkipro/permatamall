@@ -1,6 +1,6 @@
 # Release and Deployment — AdsBookCMS
 
-> Verified against disk: 2026-09-02 @ `ef86095` + AutoLaris production evidence
+> Verified against disk: 2026-10-09 @ `8213409` + deploy-builds-first working tree
 
 This document is the single owner of how a change reaches production. It replaces the previous `VERSION.md` runbook and the deleted `AUTO_UPDATE_DEPLOY.md`, which between them described three mutually exclusive release models, none of which matched the one workflow that exists.
 
@@ -31,11 +31,24 @@ lines are the whole trigger block in `ci.yml`.
 
 ### Manual deploy
 
-`npx wrangler deploy` (or `npm run deploy`) deploys the working tree to whatever
-Worker `wrangler.jsonc` names. In **this** repository that file is placeholders
-(`example.com`, placeholder binding ids), so there is no production Worker to
-reach; the command belongs in an install, run against that install's own
-resources.
+`npm run deploy` runs the deploy preflight, then `astro build`, then
+`wrangler deploy` to whatever Worker `wrangler.jsonc` names. Bare
+`npx wrangler deploy` skips both: it uploads whatever `dist/` already holds,
+so after a merge it ships the *previous* build while every check passes. On
+2026-10-09 that put two installs live on yesterday's bundle; the live
+`_astro/*.js` hash matching a stale local `dist/` was the tell. Use the npm
+script. In **this** repository that file is the one-click
+template (all-zero ids, which the deploy preflight refuses), so there is no
+production Worker to reach; the command belongs in an install, run against that
+install's own resources.
+
+`npx wrangler triggers deploy` changes only the cron schedule, but it reads the
+**built** config (`dist/server/wrangler.json`), not `wrangler.jsonc`. Run
+`npm run build` after editing `triggers.crons`, or the command reports
+"Deployed triggers" while re-applying the schedule of the previous build.
+Workers Free allows five cron triggers per account, shared by every install on
+it; the hourly cron carries AutoLaris expiry, outbox drains and the alert
+evaluation, so an install without one has none of those.
 
 ---
 
@@ -49,24 +62,33 @@ npm run check     # astro check && tsc --noEmit
 npm run build     # astro build
 ```
 
-Current verified baseline: **624 tests total, 622 passing and two intentional skips**, `tsc` clean, `astro check` 421 files with 0 errors / 0 warnings / 0 hints, 34 Markdown documents valid, and the Cloudflare server build complete. Commit `ef86095` passed the hosted build-and-deploy workflow.
+Current verified working-tree baseline: **754 tests passing**, `tsc` clean, `astro check` 0 errors / 0 warnings / 0 hints, and the Cloudflare server build complete (2026-09-25, uncommitted audit working tree on `6e30950`). AGENTS.md §4 carries the same number and is the one to keep current.
 
 ### Current production-readiness assessment
 
-Commit `ef86095` is deployed as Worker version
-`b5002c3c-df91-4f54-8760-38feb16c7fb7`. Hosted check, test, build, deploy,
-custom-domain, hourly-cron, buyer-page browser, and catalogue-feed evidence are
-green. The following provider evidence remains separate from this release:
+The 2026-09-25 working tree on `6e30950` is a **release candidate**,
+not an unconditional full-production release. The local automated and browser gates are green, but the following
+release evidence is still missing:
 
+- a hosted CI run for the exact commit;
+- an approved production-D1 migration preflight or an explicitly accepted
+  first-request runtime migration;
 - read-only or approved sandbox/live smoke evidence for the active Mengantar
   account's tracking, pickup, and insufficient-wallet responses;
-- a live settled, expired, and failed AutoLaris Advice response proving the
-  provider vocabulary accepted by the fail-closed scheduled reconciliation.
+- a settled AutoLaris payment observed end to end on a live install.
 
-AutoLaris QRIS/VA now creates one provider order through `/submit` and
-the hourly Worker reconciles it through `/advice`. Only explicit provider-paid
-evidence advances D1; unknown responses fail closed, and owner/admin manual
-confirmation remains the immutable audited fallback.
+COD and manual seller-bank transfer can be considered for a controlled canary
+after install-specific configuration, backup/rollback preparation, and provider
+smoke checks. AutoLaris QRIS/VA no longer depends on the retired webhook path:
+since 1.4.x the hourly cron calls the provider's Advice endpoint for every
+pending transaction — and each that expired in the last 24 hours, newest first,
+up to 25 a run (`PENDING_AUTOLARIS_INQUIRY_SQL`) — and marks one paid **only** when the response carries
+`rc: "00"`; `02` stays pending and every other code is unproven and moves
+nothing. The owner/admin manual reconciliation from `/admin/payments` remains
+as the audited fallback, and both paths write `paid_at`. Automatic marking is
+therefore enabled by construction, gated on the provider's own paid code —
+what remains unobserved is a real settled response, which only a paid virtual
+account produces.
 
 A green build is not proof the storefront works. For any browser-visible change, open the affected page before merging. Neither `tsc` nor `astro check` catches a route that fails to compose — an unterminated `.astro` frontmatter block silently produced a 404 on `/disclaimer` while every static check stayed green.
 
@@ -95,6 +117,47 @@ Rules:
 - `src/db/migrations/` is the only migration directory.
 - Invalid, unknown, or ahead history fails closed with `SCHEMA_UPGRADE_*`; never bypass the gate.
 
+Migration-specific notes:
+
+- **`0049` (1.3.2, ADR-021)** moves admin sessions and rate-limit counters from
+  KV into D1. Sessions are not migrated: every operator logs in once more after
+  the first deploy that carries it. Nothing else changes for the buyer.
+- **`0050` (1.3.3, ADR-022)** adds `autolaris_callbacks`. Additive; no data
+  moves. The provider's `callback_url` starts answering 200 instead of 410.
+- **`0051`–`0055`** (ADR-024 renumbering): product catalogue fields
+  (`brand`/`description`), the Meta order-context snapshot, checkout
+  fingerprint deduplication, the per-operator notification floor, and typed
+  landing sections (a table rebuild inside one migration). All additive for
+  data; `0055` replaces `landing_sections` in place.
+- **`0056`** disables the `Ninja` courier rule (Mengantar retired it from its
+  public API on 2026-09-01). The row is disabled, not deleted, so an operator's
+  COD flag and exclusions survive.
+- **`0057`** re-keys `capi_event_outbox` uniqueness from `event_id` to
+  `(event_name, event_id)`, matching how Meta itself deduplicates. It closes a
+  path where a funnel event posted with an order number's `event_id` made the
+  real Purchase dedupe away. Drops one index and creates one; no data moves.
+- **`0058`** adds `install_secrets`, where a Worker with no `AUTH_SECRET`
+  secret keeps the session key it generates for itself (ADR-026). Additive;
+  an install that sets `AUTH_SECRET` never writes a row.
+- **`0059`** adds an `SPX` courier rule to every store that already has a
+  courier policy (Mengantar quotes it as `spx`). Additive.
+- **`0060`** adds `stores.thanks_whatsapp_redirect`, the switch for handing a
+  COD buyer from `/thanks` to WhatsApp support. Default `0`: no behaviour
+  changes until an operator turns it on.
+- **`0061`** deletes the `Ninja` courier rule `0056` disabled. Only
+  `courier_rules` rows; no install had an order with Ninja, and one that did
+  would keep its `courier_code`.
+- **`0062`–`0065`** (1.5.12): `orders.source_page_path` (the landing page an
+  order came from), the Kelola push state on `orders` (`kelola_synced_at`,
+  `kelola_attempts`, `kelola_last_error`, `kelola_lead_synced_at`) and the
+  `stores.kelola_webhook_*` pair. All additive; the push stays off until an
+  operator saves a webhook pair. `0066` (1.6.0) supersedes these columns.
+- **`0066`** (1.6.0, ADR-028) creates `plugins`, carries a saved Kelola pair
+  into an active `kelola` plugin row, and **drops** the six `kelola_*` columns
+  from `orders` and `stores`. That is destructive by design; on 2026-10-20 those
+  columns were empty on every store. Kelola's own table
+  (`plugin_kelola_orders`) is created on activation, not by the chain.
+
 ---
 
 ## 4. Version registry
@@ -103,15 +166,17 @@ Two registries, currently in step:
 
 | Source | Field | Value |
 | --- | --- | --- |
-| `src/lib/version.ts` | `version` | `1.5.5` |
-| `src/lib/version.ts` | `releaseTag` | `2026.10-fleet-status` |
-| `src/lib/version.ts` | `schemaVersion` | `62` |
-| `package.json` | `version` | `1.5.5` |
+| `src/lib/version.ts` | `version` | `1.7.13` |
+| `src/lib/version.ts` | `releaseTag` | `2026.10-plugins` |
+| `src/lib/version.ts` | `schemaVersion` | `67` |
+| `package.json` | `version` | `1.7.13` |
 
 `src/lib/version.ts` is what the admin sidebar renders and is the value users
 see. Keep it and `package.json` in step when bumping.
 
-`schemaVersion` counts migration files, and the tree holds 49 (`0000`–`0048`).
+`schemaVersion` counts migration files, and the tree holds 67 (`0000`–`0066`).
+`1.5.0` (2026-10-11) is the first release that carries `0056`–`0061`;
+`1.5.12` carries `0062`–`0065`; `1.6.0` carries `0066`.
 `schema-version.test.ts` fails CI on drift; middleware enforces the same chain at
 runtime; `operational-health.ts` and the dashboard expose applied version.
 
@@ -188,6 +253,17 @@ git check-attr merge -- wrangler.jsonc     # expect: merge: keepours
 
 The merge driver is what stops the product's placeholder `wrangler.jsonc` from replacing the install's real one. Git cannot ship a driver inside a repository, so this configuration lives in each clone and must be repeated on every machine. If it is missing, those files conflict instead — noisy, but safe.
 
+### Where every install stands
+
+```bash
+npm run fleet:status -- ~/Projects/toko-a ~/Projects/toko-b   # add --offline for git only
+```
+
+Read-only: per install checkout it prints the `CMS_VERSION`, HEAD, sync with
+its own `origin`, uncommitted files, commits behind `product/main`, the last
+Worker deployment and applied/expected D1 migrations. The product keeps no list
+of installs (ADR-012), so the checkouts are passed in.
+
 ### The procedure, in this order
 
 ```bash
@@ -215,11 +291,44 @@ store that has none, so a build carrying the product's placeholders no longer
 produces a bundle stuck calling itself "Your Store" — but keep them accurate
 anyway, because they are what an install shows before the wizard runs.
 
-**Confirm the target before deploying.** `npx wrangler deploy --dry-run` prints the resolved Worker name, bindings and routes. If it prints `adsbookcms-your-store`, or a database id of all zeros, the merge overwrote the install's configuration — stop and restore it.
+**Confirm the target before deploying.** `npx wrangler deploy --dry-run` prints the resolved Worker name, bindings and routes. If it prints a database or KV id of all zeros, the merge overwrote the install's configuration — stop and restore it. (Since ADR-026 the template's *names* — `adsbookcms`, `adsbookcms-d1` — are real defaults a one-click install may keep, so only the ids are a signal.)
+
+**Both checks are mechanical.** `npm run deploy` and `npm run cf:deploy`
+run `preflight:deploy` first (npm's `pre*` hook), and it refuses four times over:
+
+- **the config** — when the Worker name, a D1 database name or id, or an R2
+  bucket name is still the product's placeholder. Not overridable; in **this**
+  repository it always fails, which is correct: §1 says there is no production
+  Worker to reach here.
+- **the tree** — when HEAD is behind its upstream (after a fetch, so the count
+  is real), when tracked files carry uncommitted changes, when HEAD is detached
+  or the branch tracks no remote. `wrangler deploy` uploads the working tree,
+  not the branch, and that has reverted production twice: a verified fix
+  silently undone 36 minutes later by a clone that had not pulled it, and a
+  live landing page removed by a stale clone. Nothing failed either time.
+  `ALLOW_STALE_DEPLOY=1` overrides this half only, and prints in full what it
+  is overriding.
+- **the D1 ledger** — when production `d1_migrations` holds a migration this
+  tree does not have (read with `wrangler d1 execute --remote`). The new
+  Worker would answer 503 on every database route: zvarashop on 2026-10-15,
+  whose `0069`–`0073` were applied and deployed from another device and never
+  pushed. Not overridable. A fresh database (no ledger table) passes; a ledger
+  that cannot be read is reported and not compared.
+- **native landing pages** — when production `landing_pages` holds a
+  `source = 'native'` row whose slug this tree's register
+  (`src/data/native-landing-pages.ts`) does not list. The hourly reconcile
+  deletes such rows, and any product page they claim, within the hour:
+  zvarashop on 2026-10-16 carried 55. `ALLOW_NATIVE_LANDING_REMOVAL=1`
+  overrides it, for a removal that is intended.
+
+It adds no deploy step and holds no credentials. It cannot cover a bare
+`npx wrangler deploy` — wrangler has no pre-deploy hook — so `npm run deploy`
+is the deploy command, and reaching for wrangler directly is choosing to skip
+this. Logic and decisions: `src/lib/deploy-preflight.ts`.
 
 ### What this procedure does not solve
 
-It is manual, and nothing verifies that an install ran it. Drift between the product and its installs is the accepted cost of ADR-012, and closing it properly is task **A-51**; making the product an installable, versioned artifact is **A-52**.
+The rest is still manual. The preflight proves the tree is the branch, not that the branch is current with the product: drift between the product and its installs is the accepted cost of ADR-012, and closing it properly is task **A-51**; making the product an installable, versioned artifact is **A-52**.
 
 ---
 
