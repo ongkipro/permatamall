@@ -133,7 +133,26 @@ export const nativeLandingPages: NativeLandingPage[] = [
     title: 'NutriLove Cuka Apel — Terapi Alami Kolesterol, Tengkuk Kaku & Lemak Darah',
     productSlug: 'cuka-sari-apel-100-original',
     description: 'Landing page konversi NutriLove Cuka Apel With The Mother angle Kolesterol Tinggi, Tengkuk Kaku Berat, Plak Pembuluh Darah & Promo Beli 1 Dapat 3.',
+    image: '/images/landing/nutrilove-cuka-apel/product-thumb.webp',
     isActive: true,
+  },
+  {
+    slug: 'nutrilove-gula-darah-stabil',
+    title: 'NutriLove Cuka Apel — Solusi Alami Gula Darah Stabil, Ngantuk Habis Makan & Kencing Malam',
+    productSlug: 'cuka-sari-apel-100-original',
+    description: 'Landing page konversi Brutal Overclaim NutriLove Cuka Apel With The Mother khusus market usia 40-65+ dengan keluhan ngantuk berat habis makan nasi, bolak-balik kencing malam, kaki kebas kesemutan & gula darah.',
+    image: '/images/landing/nutrilove-cuka-apel/gula-darah-hero.webp',
+    isActive: true,
+    canonicalSlug: 'nutrilove-cuka-apel',
+  },
+  {
+    slug: 'nutrilove-perut-buncit-detox',
+    title: 'NutriLove Cuka Apel — Solusi Detox Perut Buncit Keras (Visceral Fat), Begah & Susah BAB',
+    productSlug: 'cuka-sari-apel-100-original',
+    description: 'Landing page konversi Brutal Overclaim NutriLove Cuka Apel With The Mother khusus market usia 30-55 dengan keluhan perut buncit keras, celana sempit, perut begah kembung & susah BAB.',
+    image: '/images/landing/nutrilove-cuka-apel/perut-buncit-hero.webp',
+    isActive: true,
+    canonicalSlug: 'nutrilove-cuka-apel',
   },
 ];
 
