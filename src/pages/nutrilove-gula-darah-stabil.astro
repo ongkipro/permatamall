@@ -89,30 +89,6 @@ const defaultUpsellVariantId = (
 
 const canonical = `${Astro.locals.tenant.siteUrl}${await nativeLandingCanonicalPath(Astro.locals, SLUG)}`;
 
-const productJsonLd = {
-  '@context': 'https://schema.org',
-  '@type': 'Product',
-  name: 'NutriLove Cuka Sari Apel Murni With The Mother (500ml)',
-  image: [`${Astro.locals.tenant.siteUrl}/images/landing/nutrilove-cuka-apel/gula-darah-hero.webp`],
-  description:
-    'Cuka Sari Apel fermentasi alami Raw & Unfiltered With The Mother ukuran 500ml untuk membantu meredam lonjakan gula darah sehabis makan dan melancarkan sirkulasi saraf tepi.',
-  brand: { '@type': 'Brand', name: 'NutriLove' },
-  aggregateRating: {
-    '@type': 'AggregateRating',
-    ratingValue: '4.9',
-    reviewCount: '4120',
-  },
-  offers: {
-    '@type': 'AggregateOffer',
-    priceCurrency: 'IDR',
-    lowPrice: String(price),
-    highPrice: '195000',
-    offerCount: String(product.variants.length || 3),
-    availability: 'https://schema.org/InStock',
-    url: canonical,
-  },
-};
-
 const testimonials = [
   {
     name: 'Pak Hendro (56 th)',
@@ -157,7 +133,6 @@ const socialProofOrders = await recentOrderCount(getRuntimeEnv(Astro.locals)?.OM
   image="/images/landing/nutrilove-cuka-apel/gula-darah-hero.webp"
   preloadImages="/images/landing/nutrilove-cuka-apel/gula-darah-hero.webp"
 >
-  <script slot="head" type="application/ld+json" set:html={JSON.stringify(productJsonLd)} />
 
   <MetaLandingTracker
     slug={SLUG}
