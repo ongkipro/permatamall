@@ -1,6 +1,6 @@
 # AdsBookCMS Meta Pixel, CAPI, GTM, and Google Ads Specification
 
-> Verified against disk: 2026-10-31 @ `122cb89` + feat/admin-topbar-polish working tree (§2 /thanks gate, §15, §16.1; other sections retain their recorded evidence)
+> Verified against disk: 2026-11-01 @ `0dd1dc3` (§16.1 user agent and multipart body, §16.1a fleet audit; other sections retain their recorded evidence; §16.1b server-leg audit added 2026-11-01)
 
 This document owns the technical tracking contract for AdsBookCMS-rendered and headless storefronts. It covers event semantics, identity, browser/server boundaries, deduplication, durable delivery, store configuration, and verification. It does not claim attribution certainty, legal compliance, consent applicability, or live provider acceptance.
 
@@ -630,7 +630,7 @@ On a successful send the `attempts` counter is not incremented and `last_error` 
 Two ways, and it needs both:
 
 - **Opportunistically**, on the back of later storefront traffic, scheduled through `waitUntil()` by `/api/meta-event` and `/api/v1/tracking/events`.
-- **On the hour**, from `runScheduledMaintenance` in `src/worker.ts`, which reads the store ads config and calls `drainCapiOutbox` directly.
+- **On the hour**, from `runScheduledMaintenance` in `src/worker.ts`, which reads the store ads config and calls `drainCapiOutboxBacklog`: up to `CAPI_CRON_DRAIN_BATCHES` (3) batches of ten, stopping at the first batch that does not land in full — an empty backlog or a refusing Meta. A storefront request still drains one batch. Three batches keep the cron inside the Free plan's 50 subrequests next to its other fetches; one batch an hour would need ten hours to land a 107-row requeue on a quiet store.
 
 This section used to say there was no cron, and for a while that was true. It was also the bug: backoff caps at an hour, which quietly assumes a visitor arrives within the hour. A store between campaigns has no such visitor, so a failed event simply sat there — while the health check counted it as overdue with nothing acting on it. The scheduled handler now owns the clock; opportunistic draining remains because it delivers sooner when there *is* traffic.
 
@@ -818,7 +818,12 @@ The procedure behind the 1.7.12 check on revenleather and petanisejahtera.com.
   `fbq('track')` is called, but no `/tr` request is made while
   `navigator.webdriver` is true. Launch Chrome with
   `--disable-blink-features=AutomationControlled` before you conclude the
-  Pixel is broken.
+  Pixel is broken. A `HeadlessChrome` user agent silences it the same way
+  (2026-11-01): give the context a real mobile Chrome user agent too.
+- **Read the beacon body, not only its URL.** fbevents POSTs to
+  `www.facebook.com/tr/` with a `multipart/form-data` body; `ev`, `id` and `eid`
+  are form fields there, so a check that parses only query parameters reports
+  "no events" on a Pixel that works.
 - **Deduplication is checked within one visit:** each `eid` on a Pixel hit must
   equal the `event_id` of one `/api/meta-event` body. Expected pairs: PageView
   and ViewContent on load; AddToCart once name and phone qualify;
@@ -831,6 +836,76 @@ The procedure behind the 1.7.12 check on revenleather and petanisejahtera.com.
   `/thanks` should answer 200 with no exceptions or `error` logs.
 - Purchase is not covered by any of this: it needs a real order, which is a
   production write and needs explicit approval.
+
+### 16.1a Fleet audit after 1.8.4 (2026-11-01)
+
+Run with §16.1's method on the seven 1.8.4 installs (zvara.shop,
+permatamall.shop, agritani.shop, taniniaga.shop, halotani.shop, baven.shop,
+page.numaskin.id), a product page opened with `fbclid` and `utm_*`, every
+beacon aborted. Each showed exactly one Pixel id, one PageView and one
+ViewContent, both with an `eid`; `adsbook_click_ids` held the `fbclid` and the
+UTM campaign and `_fbc` was set; zvara and baven also fired their Google Ads
+tag (`AW-…`); `/thanks` answered `Cache-Control: no-store`; no page error. No
+tracking, CAPI or click-id code changed between 1.8.0 and 1.8.4. Every live
+install pins Graph API v26.0, Meta's newest (changelog checked 2026-11-01).
+Not covered here: Purchase and the server leg; see §16.1b for the read of one
+install's `capi_event_outbox`.
+
+### 16.1b Server leg audit on zvara.shop (2026-11-01)
+
+Read-only, on the install's own `capi_event_outbox` (30 days, 26 321 rows), the
+step §16.1a said it did not cover. Method, repeatable on any install:
+
+```bash
+env -u CLOUDFLARE_API_TOKEN -u CF_API_TOKEN \
+  npx wrangler d1 execute <d1-name> --remote --json --command "<aggregate SELECT>"
+```
+
+Aggregates only; never `SELECT payload` without reducing it to key names, and
+never read a token. **The stored `payload` is pre-hash and camelCase**
+(`userData.phone`, `name`, `province`, `city`, `postalCode`, `externalId`, `fbp`,
+`fbc`, `clientIp`, `userAgent`; `customData.orderNumber`); hashing to `ph`, `fn`,
+`ct`... happens at send time in `meta-capi.ts`. A `LIKE '%"em"%'` over the
+payload therefore reports 0 for everything. Use
+`json_extract(payload,'$.userData.<key>')`.
+
+Result: every row is `sent` on the first attempt (0 pending, 0 failed, 0
+retries). Every Purchase `event_id` joins to an order (`customData.orderNumber`).
+Coverage of match keys on Purchase (486): phone, name, province, external_id,
+IP, user agent 100%; `fbp` 99%; `fbc` 98%; city and postal code 2%; email 0%.
+
+Findings:
+
+- **`fbp` was missing from first-visit top-of-funnel events** (PageView 31%,
+  ViewContent 21%, against 99% on Purchase). Cause, reproduced in a real
+  browser: the pixel library is deferred to 2.5 s and alone writes `_fbp`, while
+  `MetaPageViewTracker` posts the server PageView/ViewContent at ~240 ms.
+  Fixed: the `MetaPixelBase` bootstrap writes `_fbp` first, in Meta's format
+  (`fb.1.<ms>.<10 digits>`), when none exists; fbevents.js keeps it. Verified
+  live after the fix: the first `/api/meta-event` request carries the cookie
+  before `fbevents.js` is requested. fbevents.js then writes its own copy on the
+  registrable domain, so the browser holds two `_fbp` cookies (host-only and
+  `.domain`) with the **same value**; that is expected, not a defect.
+- **City and postal code at 2% is the form, not a bug.** The short checkout form
+  asks for a province only (12 of 486 purchased orders have a city, and the
+  payload matches the order row exactly). Collecting a city would cost
+  conversion for a small Event Match Quality gain; recorded as a decision to
+  leave, revisit only with EMQ evidence (§16.3).
+- **Email is 0%** because the COD form collects none.
+- **The same audit on page.revenleather.com (225 Purchase, 105 710
+  PageView/ViewContent):** all `sent`, none failed; Purchase `fbp` 99.6%, `fbc`
+  98.7%, city 36%; but `fbp` on PageView 12% and ViewContent 11% before the
+  early-`_fbp` fix, because a store fed by Meta ads has far more first-visit
+  traffic than zvara. Deployed there 2026-11-01 (Worker `e749164f`); the first
+  `/api/meta-event` request now carries `_fbp`. Re-measure with the queries above
+  in about ten days (UNIMPLEMENTED_SPECS TRK-1).
+- **Measuring from Playwright:** wait for `load`, not `networkidle` (the pixel
+  never lets the network go idle, so `networkidle` times out). Read the cookie a
+  request actually sent with `request.allHeaders()`. A fresh browser context per
+  run is a first-time visitor. **Timing from a workstation:** read the colo from
+  the `cf-ray` suffix (or `/cdn-cgi/trace`) and compare only requests that landed
+  on the colo you mean; this machine's route flips between SIN, HKG, NRT, CDG,
+  FRA and MRS, which alone moves TTFB between 0.12 s and 3 s.
 
 ### 16.2 "Purchases are missing in Ads Manager": measure before changing code (2026-10-24)
 
