@@ -94,7 +94,7 @@ The [Modules](#modules) section is the same book read from the other side.
 
 | Route | Methods | Auth | Roles | File | Libs | Tables | Tests |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| `/assets/[...key]` | GET | public | — | `src/pages/assets/[...key].ts` | `env` | — | `env.test.ts` |
+| `/assets/[...key]` | GET | public | — | `src/pages/assets/[...key].ts` | `edge-cache` `env` | — | `edge-cache.test.ts` `env.test.ts` |
 | `/media/[...key]` | GET | public | — | `src/pages/media/[...key].ts` | `env` | — | `env.test.ts` |
 
 ## Install & auth (2)
@@ -276,7 +276,7 @@ is either transitive (imported by another lib) or dead, and only reading tells w
 | `deploy-preflight` | 10 | — | ✓ | — |
 | `developer-api-keys` | 22 | — | ✓ | `/api/admin/settings/developer` |
 | `district-catalog` | 1 | — | ✓ | `/api/locations` `/api/v1/geo/districts` |
-| `edge-cache` | 10 | — | ✓ | — |
+| `edge-cache` | 11 | — | ✓ | `/assets/[...key]` |
 | `embed-markup` | 5 | — | ✓ | `/embed/form` |
 | `embed-security` | 6 | — | ✓ | `/api/admin/settings` |
 | `env` | 4 | — | ✓ | `/` `/carukesi-asam-urat-bengkak` `/carukesi-ibu-rumah-tangga-pegal` `/carukesi-kebas-kesemutan` `/carukesi-lansia-gendong-cucu` `/carukesi-leher-kaku-pundak` `/carukesi-momen-intim-pasangan` `/carukesi-nyeri-sendi-lutut` `/carukesi-olahraga-keseleo-engkel` `/carukesi-pekerja-keras-badan-remuk` `/carukesi-sakit-pinggang-boyok` `/carukesi-tidur-nyenyak-bebas-ngilu` `/ken-total` `/nutrilove-cuka-apel` `/nutrilove-gula-darah-stabil` `/nutrilove-perut-buncit-detox` `/produk/[slug]` `/[slug]` `/hybrid-form` `/assets/[...key]` `/media/[...key]` `/hello` `/api/form-config` `/api/geo-province` `/api/install` `/api/locations` `/api/meta-event` `/api/ops/v1/orders` `/api/ops/v1/orders/[number]` `/api/order-status` `/api/payment-methods` `/api/record-abandoned-order` `/api/shipping-rates` `/api/submit-middle-order` `/api/submit-order` `/api/v1/checkout` `/api/v1/geo/shipping-rates` `/api/v1/orders/status` `/api/v1/storefront` `/api/v1/tracking/events` `/api/webhooks/autolaris` `/admin/check` `/admin/dashboard` `/admin/products` `/admin/settings/plugins/kelola` `/admin/status` `/api/admin/abandoned-orders` `/api/admin/access` `/api/admin/ads` `/api/admin/analytics` `/api/admin/check` `/api/admin/content` `/api/admin/expeditions` `/api/admin/health` `/api/admin/health/check` `/api/admin/health/status` `/api/admin/logout` `/api/admin/media` `/api/admin/notifications` `/api/admin/ongkir` `/api/admin/orders` `/api/admin/orders/[id]` `/api/admin/orders/[id]/follow-up` `/api/admin/orders/attention` `/api/admin/orders/export` `/api/admin/orders/retention` `/api/admin/payment-reconciliation` `/api/admin/plugins` `/api/admin/plugins/kelola` `/api/admin/products` `/api/admin/profile` `/api/admin/rules` `/api/admin/seller-bank-accounts` `/api/admin/settings` `/api/admin/settings/developer` `/api/admin/shipping` `/api/admin/upload-r2` `/api/admin/warehouses` `/api/admin/whatsapp-numbers` |
