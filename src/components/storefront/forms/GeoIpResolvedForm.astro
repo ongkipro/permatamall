@@ -15,6 +15,7 @@ interface Props {
   selectedVariantId?: string;
   province?: string;
   embedded?: boolean;
+  product?: any;
 }
 
 const {
@@ -24,6 +25,7 @@ const {
   embedded = false,
   selectedVariantId,
   bannerImage,
+  product,
 } = Astro.props;
 const database = getRuntimeEnv(Astro.locals)?.OMS_DB as D1Database | undefined;
 const codDisabledProvinceCodes = await loadStoreCodDisabledProvinceCodes(database);
@@ -45,6 +47,7 @@ const resolvedProvince = province || formContext.province;
     resolvedMode === 'full' ? (
       <FormHybridContent
         productSlug={productSlug}
+        product={product}
         selectedVariantId={selectedVariantId}
         province={resolvedProvince}
         embedded={embedded}
@@ -54,6 +57,7 @@ const resolvedProvince = province || formContext.province;
     ) : (
       <FormMiddleContent
         productSlug={productSlug}
+        product={product}
         selectedVariantId={selectedVariantId}
         province={resolvedProvince}
         embedded={embedded}

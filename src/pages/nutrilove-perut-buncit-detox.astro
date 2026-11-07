@@ -6,6 +6,7 @@ import SocialProofToast from '../components/storefront/shared/SocialProofToast.a
 import { recentOrderCount } from '../lib/social-proof';
 import { getStorefrontProduct, getStorefrontProducts } from '../lib/catalog';
 import { nativeLandingCanonicalPath } from '../lib/landing-pages';
+import { nativeLandingProductJsonLd } from '../lib/native-landing-product';
 import { defaultCatalogContentId } from '../lib/catalog-feed';
 import {
   loadStoreCodDisabledProvinceCodes,
@@ -29,10 +30,10 @@ if (!product) {
   product = firstProduct ?? {
     productId: '17981',
     slug: PRODUCT_SLUG,
-    productName: 'Cuka Sari Apel 100% Original',
-    contentName: 'Cuka Sari Apel 100% Original With The Mother',
-    headline: 'Paket Detox Lemak Perut Buncit & Pencernaan Plong',
-    subheadline: 'Cuka Sari Apel Murni With The Mother (Beli 1 Dapat 3)',
+    productName: 'NutriLove Cuka Apel 100% Original With The Mother',
+    contentName: 'NutriLove Cuka Apel 100% Original With The Mother',
+    headline: 'Paket Detox Lemak Perut Buncit, Begah & Pencernaan Plong',
+    subheadline: 'Cuka Sari Apel Murni With The Mother (Beli 1 Gratis 3 Botol)',
     seoTitle: 'NutriLove Cuka Apel With The Mother — Solusi Alami Kempeskan Perut Buncit Keras, Begah & Susah BAB',
     seoDescription: 'Perut buncit keras kayak batu, celana makin sempit, dan sering begah susah BAB? Detox alami 1 sendok NutriLove Cuka Apel With The Mother bantu luruhkan lemak visceral perut.',
     price: 97500,
@@ -51,22 +52,32 @@ if (!product) {
     ],
     keyPoints: [
       'Isi 500ml per botol',
-      'Paket Promo Beli 1 Dapat 3 (Total 1.500 ml)',
-      'Bisa COD seluruh Indonesia',
+      'Promo Beli 1 Gratis 3 (Total 4 Botol / 2.000 ml)',
+      'Gratis Ongkir Se-Pulau Jawa & Bisa COD Seluruh Indonesia',
     ],
     idealFor: ['Pria dan wanita usia 30–55 tahun yang memiliki keluhan perut buncit keras, celana sempit, metabolisme melambat, sering begah, dan susah BAB'],
-    offerText: 'PROMO SPESIAL: BELI 1 DAPAT 3 (Total 1.500 ml) Hanya Rp 97.500',
+    offerText: 'PROMO SPESIAL: BELI 1 GRATIS 3 (Total 4 Botol / 2.000 ml) Hanya Rp 97.500 • GRATIS ONGKIR SE-PULAU JAWA',
     ctaText: 'Pesan Sekarang (COD)',
     ratingValue: 4.9,
     reviewCount: 4650,
     soldCount: 6800,
     reviews: [],
     variants: [
-      { id: '12', sku: 'BELI_2_GRATIS_2', label: 'BELI 1 Dapat 3', price: 97500, comparePrice: 199000 },
-      { id: '13', sku: 'PAKET_6_BOTOL', label: 'PAKET 6 Botol', price: 149000, comparePrice: 398000 },
-      { id: '14', sku: 'PAKET_9_BOTOL', label: 'PAKET 9 Botol', price: 195000, comparePrice: 597000 },
+      { id: '12', sku: 'BELI_2_GRATIS_2', label: 'BELI 1 GRATIS 3 (Dapat 4 Botol)', price: 97500, comparePrice: 199000 },
+      { id: '13', sku: 'PAKET_6_BOTOL', label: 'PAKET 6 Botol (Hemat 50%)', price: 199000, comparePrice: 398000 },
     ],
   } as Product;
+}
+
+// Enforce exactly 2 packages: Beli 1 Gratis 3 (Total 4 Botol Rp 97.500) and Paket 6 Botol (Rp 199.000)
+if (product) {
+  product = {
+    ...product,
+    variants: [
+      { id: '12', sku: 'BELI_2_GRATIS_2', label: 'BELI 1 GRATIS 3 (Dapat 4 Botol)', price: 97500, comparePrice: 199000 },
+      { id: '13', sku: 'PAKET_6_BOTOL', label: 'PAKET 6 Botol (Hemat 50%)', price: 199000, comparePrice: 398000 },
+    ],
+  };
 }
 
 const database = getRuntimeEnv(Astro.locals)?.OMS_DB as D1Database | undefined;
@@ -79,13 +90,8 @@ const formContext = await resolveFormModeContext(
 const cheapest = [...product.variants].sort((a, b) => a.price - b.price)[0] ?? null;
 const price = cheapest?.price ?? product.price ?? 97500;
 const comparePrice = cheapest?.comparePrice ?? product.comparePrice ?? 199000;
-const discount = comparePrice > price ? Math.round((1 - price / comparePrice) * 100) : 51;
 
-const defaultUpsellVariantId = (
-  product.variants.find((v) => v.sku === 'PAKET_6_BOTOL' || /6\s*botol/i.test(v.label)) ??
-  product.variants[1] ??
-  product.variants[0]
-)?.id;
+const defaultUpsellVariantId = '13';
 
 const canonical = `${Astro.locals.tenant.siteUrl}${await nativeLandingCanonicalPath(Astro.locals, SLUG)}`;
 
@@ -109,13 +115,13 @@ const testimonials = [
     image: '/images/landing/nutrilove-cuka-apel/testimoni-pak-dimas.webp',
   },
   {
-    name: 'Ibu Wahyuni (48 th)',
-    city: 'Solo',
-    occupation: 'Wiraswasta',
+    name: 'Ibu Dewi (43 th)',
+    city: 'Semarang',
+    occupation: 'Ibu Rumah Tangga & Pengusaha Kue',
     rating: 5,
-    highlight: 'keinginan ngemil gorengan malam hari berhenti sendiri dan badan turun 4,5 kg tanpa lemas',
-    quote: 'Penyakit saya itu kalau malam suka lapar mata pengen ngemil manis dan gorengan, besok paginya perut langsung begah penuh gas. Sejak minum 1 sloki NutriLove pakai air hangat sore hari, keinginan ngemil gorengan malam hari berhenti sendiri dan badan turun 4,5 kg tanpa lemas. Aman banget di lambung!',
-    image: '/images/landing/nutrilove-cuka-apel/testimoni-ibu-wahyuni.webp',
+    highlight: 'perut buncit bawah yang tadinya kayak hamil 4 bulan sekarang kempes rata dan enteng banget',
+    quote: 'Sebagai tukang kue saya tiap hari icip mentega dan gula. Perut bawah buncit keras menonjol kayak hamil 4 bulan dan susah BAB berhari-hari. Beruntung ketemu NutriLove With The Mother ini. Cukup 1 sloki campur air hangat tiap pagi dan sore, hari ke-3 kerak usus keluar tuntas, perut buncit bawah yang tadinya kayak hamil 4 bulan sekarang kempes rata dan enteng banget!',
+    image: '/images/landing/nutrilove-cuka-apel/testimoni-ibu-dewi.webp',
   },
 ];
 
@@ -132,6 +138,7 @@ const socialProofOrders = await recentOrderCount(getRuntimeEnv(Astro.locals)?.OM
   hideFooter={true}
   image="/images/landing/nutrilove-cuka-apel/perut-buncit-hero-brutal.webp"
   preloadImages="/images/landing/nutrilove-cuka-apel/perut-buncit-hero-brutal.webp"
+  product={nativeLandingProductJsonLd(product, canonical)}
 >
 
   <MetaLandingTracker
@@ -161,11 +168,11 @@ const socialProofOrders = await recentOrderCount(getRuntimeEnv(Astro.locals)?.OM
           <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
           <span class="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
         </span>
-        <span class="text-amber-300 font-black uppercase shrink-0">PROMO HARI INI:</span>
-        <span class="text-slate-100 font-extrabold whitespace-nowrap">BELI 1 DAPAT 3</span>
+        <span class="text-amber-300 font-black uppercase shrink-0">PROMO:</span>
+        <span class="text-slate-100 font-extrabold whitespace-nowrap">BELI 1 GRATIS 3 (4 BTL)</span>
       </div>
       <span class="whitespace-nowrap text-[12px] font-black tracking-wider text-amber-300 bg-emerald-800/90 px-2.5 py-0.5 rounded-full border border-emerald-600/60 shadow-xs shrink-0">
-        BISA COD
+        GRATIS ONGKIR P. JAWA
       </span>
     </header>
 
@@ -194,20 +201,16 @@ const socialProofOrders = await recentOrderCount(getRuntimeEnv(Astro.locals)?.OM
         </p>
 
         <!-- ═══ HIGH-CONVERSION VALUE BANNER ═══ -->
-        <div class="mx-auto mt-4 w-full max-w-[420px] rounded-2xl bg-gradient-to-b from-[#0F2F1F] via-[#143e2a] to-[#0F2F1F] px-3.5 py-3 text-center text-white shadow-md border-2 border-amber-400/60">
-          <div class="flex items-center justify-center gap-1.5">
-            <span class="flex h-2 w-2 relative shrink-0">
-              <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-300 opacity-75"></span>
-              <span class="relative inline-flex rounded-full h-2 w-2 bg-amber-400"></span>
-            </span>
-            <span class="text-[clamp(13.5px,4.3vw,17px)] font-black uppercase tracking-wide text-amber-300 drop-shadow-xs leading-tight">
-              PAKET DETOX: BELI 1 DAPAT 3 BOTOL (1.500 ML)
-            </span>
-          </div>
-          <div class="mt-1.5 flex flex-wrap items-center justify-center gap-x-1.5 gap-y-0.5 text-[12px] font-bold text-slate-100 leading-snug">
-            <span>Gratis Sloki Takar + Sedotan Anti-Ngilu</span>
+        <div class="mx-auto mt-4 w-full max-w-[420px] rounded-xl bg-[#0F2F1F] p-3 text-center text-white shadow-sm border border-amber-400/50">
+          <p class="text-[14px] sm:text-[15px] font-black uppercase tracking-wide text-amber-300 leading-tight">
+            PROMO: BELI 1 GRATIS 3 (TOTAL 4 BOTOL)
+          </p>
+          <div class="mt-1.5 flex flex-wrap items-center justify-center gap-x-2 gap-y-0.5 text-[12px] font-bold text-slate-200">
+            <span class="text-amber-300">Gratis Ongkir Se-Pulau Jawa</span>
             <span class="text-amber-400 font-black">•</span>
-            <span class="text-amber-200 font-extrabold">Bisa Bayar di Tempat (COD)</span>
+            <span>Bisa COD</span>
+            <span class="text-amber-400 font-black">•</span>
+            <span>Gratis Sloki Takar</span>
           </div>
         </div>
       </div>
@@ -230,7 +233,7 @@ const socialProofOrders = await recentOrderCount(getRuntimeEnv(Astro.locals)?.OM
         </div>
 
         <div class="absolute top-3 right-3 bg-red-600 text-white text-[12px] font-black uppercase tracking-wider px-2.5 py-1 rounded-md shadow-md border border-white/20">
-          BELI 1 DAPAT 3
+          BELI 1 GRATIS 3
         </div>
 
         <div class="absolute bottom-0 inset-x-0 bg-gradient-to-t from-slate-950/95 via-slate-950/80 to-transparent px-3 pt-8 pb-2.5 text-center">
@@ -244,19 +247,20 @@ const socialProofOrders = await recentOrderCount(getRuntimeEnv(Astro.locals)?.OM
       <div class="mt-4 px-4 sm:px-5">
         <a
           href="#form-pemesanan"
-          class="flex w-full min-h-[48px] items-center justify-center gap-2 rounded-xl bg-red-600 hover:bg-red-700 px-4 py-3 text-[14px] sm:text-[15px] font-black uppercase tracking-wide text-white shadow-lg shadow-red-600/25 transition-colors active:scale-[0.99]"
+          class="flex w-full min-h-[50px] items-center justify-center gap-2 rounded-xl bg-red-600 hover:bg-red-700 px-4 py-3 text-[14px] sm:text-[15px] font-bold tracking-normal text-white shadow-lg shadow-red-600/25 transition-colors active:scale-[0.99]"
         >
-          <span>Ambil Promo Detox Beli 1 Dapat 3 ↓</span>
+          <span>Ambil Promo Beli 1 Gratis 3 (Gratis Ongkir P. Jawa)</span>
+          <span aria-hidden="true">↓</span>
         </a>
         <p class="mt-1.5 text-[12px] text-slate-500">
-          Bayar di Tempat Saat Paket Sampai • Gratis Sloki Takar &amp; Sedotan
+          Bayar di Tempat (COD) • Gratis Ongkir Se-Pulau Jawa • Gratis Sloki Takar &amp; Sedotan
         </p>
       </div>
       <div id="hero-fold-sentinel" class="h-px w-full" aria-hidden="true"></div>
 
       <!-- Clean Minimalist Trust Row -->
       <div class="mt-4 flex flex-wrap items-center justify-center gap-x-2 gap-y-1.5 px-3 text-[12px] font-bold text-slate-700">
-        <span class="bg-emerald-50 px-2.5 py-1 rounded-full text-emerald-900 border border-emerald-200/80 whitespace-nowrap">Kaya Probiotik Hidup</span>
+        <span class="bg-emerald-50 px-2.5 py-1 rounded-full text-emerald-900 border border-emerald-200/80 whitespace-nowrap">Gratis Ongkir Se-Pulau Jawa</span>
         <span class="bg-slate-100 px-2.5 py-1 rounded-full text-slate-800 border border-slate-200/60 whitespace-nowrap">Bisa COD (Bayar di Tempat)</span>
         <span class="bg-slate-100 px-2.5 py-1 rounded-full text-slate-800 border border-slate-200/60 whitespace-nowrap">Bukan Obat Pencahar</span>
         <span class="bg-slate-100 px-2.5 py-1 rounded-full text-slate-800 border border-slate-200/60 whitespace-nowrap">Aman Untuk Maag</span>
@@ -385,86 +389,6 @@ const socialProofOrders = await recentOrderCount(getRuntimeEnv(Astro.locals)?.OM
               <span>Kenyang awet tahan ngemil</span>
             </li>
           </ul>
-        </div>
-      </div>
-    </section>
-
-    <!-- ═══ 4. SECTION: 3 MEKANISME BIOKIMIA PELURUH LEMAK VISCERAL & DETOX USUS ═══ -->
-    <section class="border-t border-slate-100 bg-white pt-10 pb-10 text-center">
-      <div class="px-5">
-        <span class="mb-2 block text-[12px] font-bold uppercase tracking-[0.2em] text-[#0F2F1F]">Mekanisme Pembakaran Alami</span>
-        <h2 class={`${sectionTitle} mt-1`}>
-          Bagaimana 1 Sendok NutriLove Mengempeskan Perut Buncit?
-        </h2>
-        <p class={`${sectionLead} text-center`}>
-          Kombinasi Asam Asetat murni, Serat Pektin Apel, dan Miliaran Probiotik Hidup bekerja langsung di lambung, hati, dan saluran cerna:
-        </p>
-      </div>
-
-      <!-- IMAGE: PERBANDINGAN WITH THE MOTHER (RATIO 4:3) -->
-      <div class="mt-6 relative w-full overflow-hidden aspect-[4/3] bg-white shadow-2xs border-y border-slate-200/80">
-        <img
-          src="/images/landing/nutrilove-cuka-apel/perbandingan-cuka-mother.webp"
-          alt="Perbandingan Cuka Bening Biasa vs NutriLove Raw Unfiltered With The Mother Kaya Enzim Detox"
-          class="h-full w-full object-cover object-center"
-          loading="lazy"
-          decoding="async"
-          width="1200"
-          height="900"
-        />
-
-        <div class="absolute top-3 inset-x-3 flex justify-between gap-2">
-          <span class="bg-slate-900/90 text-slate-200 text-[12px] font-bold px-2.5 py-1 rounded-md shadow-xs border border-white/20">
-            ✕ Cuka Bening (Enzim Mati)
-          </span>
-          <span class="bg-[#0F2F1F]/95 text-amber-300 text-[12px] font-bold px-2.5 py-1 rounded-md shadow-xs border border-amber-400/30">
-            ✓ NutriLove 'The Mother' (Hidup)
-          </span>
-        </div>
-
-        <div class="absolute bottom-0 inset-x-0 bg-slate-950/90 px-3 py-2 text-center text-white">
-          <p class="text-[12px] text-amber-300">
-            Endapan keruh <strong>'The Mother'</strong> mengandung koloni probiotik hidup pengurai lemak &amp; gas usus.
-          </p>
-        </div>
-      </div>
-
-      <!-- 3 Key Biological Action Cards -->
-      <div class="mt-6 px-5 space-y-3 text-left">
-        <div class="p-3 rounded-lg bg-emerald-50/70 border border-emerald-200/80 flex items-start gap-3">
-          <div class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-emerald-700 text-white font-black text-[12px] mt-0.5">
-            1
-          </div>
-          <div>
-            <h3 class="text-[14.5px] font-bold text-slate-950">Mengaktifkan Enzim AMPK (Saklar Pembakar Lemak Perut)</h3>
-            <p class="text-[13px] text-slate-600 mt-0.5 leading-relaxed">
-              Asam asetat alami mengaktifkan enzim AMPK di organ hati dan jaringan adiposa untuk mempercepat pembakaran cadangan lemak visceral di perut bawah dan pinggang menjadi energi.
-            </p>
-          </div>
-        </div>
-
-        <div class="p-3 rounded-lg bg-emerald-50/70 border border-emerald-200/80 flex items-start gap-3">
-          <div class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-emerald-700 text-white font-black text-[12px] mt-0.5">
-            2
-          </div>
-          <div>
-            <h3 class="text-[14.5px] font-bold text-slate-950">Probiotik 'The Mother' Menguras Gas &amp; Sisa Kerak Usus</h3>
-            <p class="text-[13px] text-slate-600 mt-0.5 leading-relaxed">
-              Koloni bakteri baik dari fermentasi apel murni menyeimbangkan mikrobioma usus, mendorong keluar sisa kotoran menahun dan gas pemicu perut begah setiap pagi dengan lembut.
-            </p>
-          </div>
-        </div>
-
-        <div class="p-3 rounded-lg bg-emerald-50/70 border border-emerald-200/80 flex items-start gap-3">
-          <div class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-emerald-700 text-white font-black text-[12px] mt-0.5">
-            3
-          </div>
-          <div>
-            <h3 class="text-[14.5px] font-bold text-slate-950">Serat Pektin Mengikat Minyak Makanan &amp; Tahan Lapar</h3>
-            <p class="text-[13px] text-slate-600 mt-0.5 leading-relaxed">
-              Pektin alami mengikat molekul minyak dari gorengan atau santan sebelum terserap jadi lemak baru, sekaligus memberikan rasa kenyang lebih awet hingga malam hari.
-            </p>
-          </div>
         </div>
       </div>
     </section>
@@ -618,7 +542,7 @@ const socialProofOrders = await recentOrderCount(getRuntimeEnv(Astro.locals)?.OM
       </div>
     </section>
 
-    <!-- ═══ 7. PENAWARAN KHUSUS & URGENCY PROMO (BELI 1 DAPAT 3 + BONUS LENGKAP) ═══ -->
+    <!-- ═══ 7. PENAWARAN KHUSUS & URGENCY PROMO (BELI 1 GRATIS 3 + GRATIS ONGKIR P. JAWA) ═══ -->
     <section class="w-full border-t border-slate-100 bg-[#0F2F1F] text-white px-4 sm:px-5 py-7 text-center">
       <div class="max-w-[420px] mx-auto space-y-4">
         
@@ -634,30 +558,33 @@ const socialProofOrders = await recentOrderCount(getRuntimeEnv(Astro.locals)?.OM
           </div>
         </div>
 
-        <!-- Visual 3-Bottle vs 6-Bottle Bundle Showcase -->
+        <!-- 2 Exclusive Bundle Showcase Cards Only (Eliminated other tiers) -->
         <div class="grid grid-cols-2 gap-2.5 text-left">
+          
+          <!-- Card 1: Beli 1 Gratis 3 (Total 4 Botol = 2L) -->
           <div class="rounded-2xl border border-white/20 bg-white/5 p-2.5 flex flex-col justify-between">
             <div class="relative overflow-hidden rounded-xl aspect-[4/3] bg-slate-900">
               <img
-                src="/images/landing/nutrilove-cuka-apel/bundle-3-hero.webp"
-                alt="Paket Detox Beli 1 Dapat 3 Botol NutriLove Cuka Apel (1.500 ml)"
+                src="/images/landing/nutrilove-cuka-apel/bundle-4-hero.webp"
+                alt="Paket Detox Beli 1 Gratis 3 Total 4 Botol NutriLove Cuka Apel (2.000 ml)"
                 class="h-full w-full object-cover object-center"
                 loading="lazy"
                 decoding="async"
-                width="800"
-                height="800"
+                width="1200"
+                height="896"
               />
               <span class="absolute top-1.5 left-1.5 bg-slate-900/90 text-white text-[12px] font-black uppercase px-2 py-0.5 rounded">
-                3 Botol (1,5L)
+                4 Botol (2L)
               </span>
             </div>
             <div class="mt-2">
-              <p class="text-[12px] font-bold text-slate-300 uppercase">Detox Awal 30 Hari</p>
+              <p class="text-[12px] font-bold text-slate-300 uppercase">Beli 1 Gratis 3 (4 Btl)</p>
               <p class="text-[17px] font-black text-white font-mono leading-tight mt-0.5">Rp{Math.round(price).toLocaleString('id-ID')}</p>
-              <p class="text-[12px] text-emerald-300 font-semibold mt-0.5">Rp32.500 / botol 500ml</p>
+              <p class="text-[12px] text-emerald-300 font-semibold mt-0.5">Rp24.375 / btl 500ml</p>
             </div>
           </div>
 
+          <!-- Card 2: Paket 6 Botol Rp 199.000 -->
           <div class="rounded-2xl border-2 border-amber-400 bg-amber-400/15 p-2.5 flex flex-col justify-between shadow-lg relative">
             <div class="relative overflow-hidden rounded-xl aspect-[4/3] bg-slate-900">
               <img
@@ -674,20 +601,20 @@ const socialProofOrders = await recentOrderCount(getRuntimeEnv(Astro.locals)?.OM
               </span>
             </div>
             <div class="mt-2">
-              <p class="text-[12px] font-black text-amber-300 uppercase">Detox Tuntas 6 Botol</p>
-              <p class="text-[17px] font-black text-amber-300 font-mono leading-tight mt-0.5">Rp149.000</p>
-              <p class="text-[12px] text-amber-100 font-bold mt-0.5">Rp24.800/btl • Ongkir 1 Kg!</p>
+              <p class="text-[12px] font-black text-amber-300 uppercase">Paket 6 Botol (3L)</p>
+              <p class="text-[17px] font-black text-amber-300 font-mono leading-tight mt-0.5">Rp199.000</p>
+              <p class="text-[12px] text-amber-100 font-bold mt-0.5">Rp33.166/btl • Ongkir 1 Kg!</p>
             </div>
           </div>
         </div>
 
-        <!-- High-Contrast Price Display -->
-        <div class="space-y-1">
-          <div class="inline-block bg-red-600 text-white px-3 py-1 font-black text-[12px] uppercase tracking-wider rounded-md shadow-xs">
-            HEMAT {discount}% HARI INI
+        <!-- High-Contrast Price Display & Free Shipping Pulau Jawa Highlight -->
+        <div class="space-y-1.5">
+          <div class="inline-block bg-emerald-600 text-white px-3.5 py-1 font-black text-[12px] uppercase tracking-wider rounded-md shadow-xs">
+            GRATIS ONGKIR SE-PULAU JAWA
           </div>
 
-          <div class="flex items-baseline justify-center gap-2 pt-1">
+          <div class="flex items-baseline justify-center gap-2 pt-0.5">
             <span class="text-[14px] sm:text-[15px] font-medium text-slate-400 line-through">Rp{comparePrice.toLocaleString('id-ID')}</span>
             <span class="text-[30px] sm:text-[36px] font-black text-amber-300 font-mono tracking-normal leading-none">
               Rp{Math.round(price).toLocaleString('id-ID')}
@@ -695,30 +622,11 @@ const socialProofOrders = await recentOrderCount(getRuntimeEnv(Astro.locals)?.OM
           </div>
 
           <p class="text-[12px] text-amber-200 font-bold">
-            Mulai Rp97.500 (Dapat 3 Botol Besar @500ml) • Tambah Rp51.500 Langsung Dapat 6 Botol!
+            Mulai Rp97.500 (Dapat 4 Botol Besar @500ml) • Paket 6 Botol Rp199.000 • GRATIS ONGKIR Se-Pulau Jawa!
           </p>
         </div>
 
-        <!-- Unbeatable Bonus Stack Box -->
-        <div class="rounded-xl bg-white/10 border border-amber-400/40 p-3.5 text-left space-y-2">
-          <p class="text-[12px] font-black uppercase tracking-wider text-amber-300">
-            🎁 GRATIS 3 BONUS DETOX PERUT HARI INI:
-          </p>
-          <ul class="space-y-1.5 text-[12px] text-slate-100 font-medium">
-            <li class="flex items-start gap-2">
-              <span class="text-amber-300 font-black">✓</span>
-              <span><strong>Sendok/Sloki Takar Presisi (5ml–15ml)</strong> — Takaran detox akurat 10ml tanpa takut asam di lambung.</span>
-            </li>
-            <li class="flex items-start gap-2">
-              <span class="text-amber-300 font-black">✓</span>
-              <span><strong>Sedotan Khusus Anti-Ngilu</strong> — Melindungi email gigi saat minum rutin pagi &amp; malam.</span>
-            </li>
-            <li class="flex items-start gap-2">
-              <span class="text-amber-300 font-black">✓</span>
-              <span><strong>Kartu Jadwal Detox 14 Hari + Garansi Ganti Baru 100%</strong> jika botol bocor/pecah di pengiriman.</span>
-            </li>
-          </ul>
-        </div>
+
 
         <!-- Realtime Live Stock Bar -->
         <div class="space-y-1.5 pt-1 text-left">
@@ -740,10 +648,10 @@ const socialProofOrders = await recentOrderCount(getRuntimeEnv(Astro.locals)?.OM
     <section id="form-pemesanan" class="bg-white px-0 pt-7 pb-4 scroll-mt-4 w-full">
       <div class="px-4 pb-2 text-center">
         <h2 class="text-[20px] font-bold tracking-normal text-slate-950 leading-tight">
-          Pilih Paket Detox &amp; Lengkapi Alamat COD
+          Pilih Paket &amp; Lengkapi Alamat COD
         </h2>
-        <p class="text-[13px] sm:text-[13.5px] text-slate-600 mt-1 max-w-[380px] mx-auto leading-relaxed">
-          Paling Hemat: Pilih <strong>PAKET 6 Botol (Rp 149.000)</strong> untuk program detox tuntas suami-istri 60 hari (tetap dihitung ongkir 1 kg!). Bisa Bayar di Tempat (COD).
+        <p class="mt-1 text-[13px] text-slate-500">
+          Gratis Ongkir Se-Pulau Jawa • Bisa Bayar di Tempat (COD)
         </p>
       </div>
 
@@ -751,6 +659,7 @@ const socialProofOrders = await recentOrderCount(getRuntimeEnv(Astro.locals)?.OM
         mode={formContext.mode}
         province={formContext.province}
         productSlug={product.slug}
+        product={product}
         selectedVariantId={defaultUpsellVariantId}
         embedded={true}
       />
@@ -763,7 +672,7 @@ const socialProofOrders = await recentOrderCount(getRuntimeEnv(Astro.locals)?.OM
       style="transform: translateY(100%); opacity: 0; pointer-events: none;"
     >
       <div>
-        <p class="text-[12px] font-bold uppercase tracking-wider text-emerald-800 whitespace-nowrap">Detox Beli 1 Dapat 3</p>
+        <p class="text-[12px] font-bold uppercase tracking-wider text-emerald-800 whitespace-nowrap">Beli 1 Gratis 3 (4 Btl)</p>
         <div class="flex items-baseline gap-1.5">
           <p class="text-[16px] font-black text-red-700 leading-none">Rp{Math.round(price).toLocaleString('id-ID')}</p>
           <span class="text-[12px] text-slate-400 line-through">Rp{comparePrice.toLocaleString('id-ID')}</span>
