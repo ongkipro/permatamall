@@ -22,8 +22,10 @@ export type ThanksWhatsappOrder = {
 export const THANKS_WHATSAPP_REDIRECT = {
   /** Never sooner: the buyer should see the order was taken. */
   minMs: 1500,
-  /** After the Pixel library is up, room for its Purchase request to leave. */
-  afterPixelMs: 800,
+  /** After the Pixel library is up, room for its Purchase beacon to leave on
+   * a slow mobile connection before the WebView hands off to WhatsApp. Was
+   * 800; raised for agritani.shop's in-app traffic (audit 2026-11-10). */
+  afterPixelMs: 1500,
   /** Never later: the server already holds the COD Purchase, so a browser leg
    * that never loads must not keep the buyer waiting. */
   maxMs: 5000,

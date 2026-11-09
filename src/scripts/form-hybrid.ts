@@ -2,7 +2,7 @@ import { buildMetaAdvancedMatching } from "../lib/meta-identity.ts";
 import { META_EXTERNAL_ID_COOKIE } from "../lib/click-ids.ts";
 import { formatIdr } from "../lib/format-idr";
 import { normalizePhone } from "../lib/validation";
-import { calculateCodFeeBreakdown } from "../lib/payment-fee-policy";
+import { buyerPaymentAdminFee, calculateCodFeeBreakdown } from "../lib/payment-fee-policy";
 import { paymentBrandAsset } from "../lib/payment-brand";
 
 import { formatDeliveryLocation, groupLocationResults } from "../lib/location-search";
@@ -920,9 +920,11 @@ function initHybridOrderFormInstance(formRoot: HTMLElement) {
     if (option.paymentMethod === "cod") {
       return calculateCodFeeBreakdown(orderAmount).totalFee;
     }
-    return option.adminFeeRate > 0
-      ? Math.ceil(orderAmount * option.adminFeeRate)
-      : option.adminFee;
+    // The same fee the server asks AutoLaris for, so the bill equals this total.
+    return buyerPaymentAdminFee(option.code, orderAmount)
+      ?? (option.adminFeeRate > 0
+        ? Math.ceil(orderAmount * option.adminFeeRate)
+        : option.adminFee);
   };
   const paymentOptionDescription = (option: PaymentOption) => {
     if (option.feeBearer === "seller") {
@@ -940,7 +942,8 @@ function initHybridOrderFormInstance(formRoot: HTMLElement) {
     const adminFee =
       option.paymentMethod === "cod"
         ? calculateCodFeeBreakdown(orderAmount).totalFee
-        : Math.ceil(orderAmount * option.adminFeeRate);
+        : buyerPaymentAdminFee(option.code, orderAmount)
+          ?? Math.ceil(orderAmount * option.adminFeeRate);
     return `Biaya admin ${fmt(adminFee)}`;
   };
 
@@ -1210,7 +1213,7 @@ function initHybridOrderFormInstance(formRoot: HTMLElement) {
     const brandCode = opt.bankCode || opt.channelCode || opt.code;
     const brandAsset = opt.logoUrl || paymentBrandAsset(brandCode);
     const badgeHtml = brandAsset
-      ? `<span class="payment-brand-mark" aria-hidden="true"><img src="${brandAsset}" alt="" loading="lazy" /></span>`
+      ? `<span class="payment-brand-mark" aria-hidden="true"><img src="${brandAsset}" alt="" width="36" height="24" loading="lazy" decoding="async" /></span>`
       : opt.paymentMethod === "cod"
         ? `<span class="payment-brand-mark payment-brand-mark--text" aria-hidden="true">COD</span>`
         : "";

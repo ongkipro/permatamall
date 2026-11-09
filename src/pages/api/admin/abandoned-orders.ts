@@ -10,6 +10,7 @@ import { jsonError, jsonOk } from "../../../lib/api.ts";
 import { abandonedListFilter } from "../../../lib/order-list-filter.ts";
 import { selectQuotedRate } from "../../../lib/courier-rules.ts";
 import { getRuntimeEnv } from "../../../lib/env.ts";
+import { scheduleCodPurchase } from "../../../lib/paid-order-purchase.ts";
 import {
   sourceFacetStatement,
   sourceFilterOptions,
@@ -352,6 +353,10 @@ export const POST: APIRoute = async ({ request, locals }) => {
       shippingCost: Number(selectedRate.price),
       followedUpBy: locals.admin?.username || "",
     });
+    // A CS-closed sale is a COD order like any other (owner 2026-11-10,
+    // audit F-5): report it, with the identity stored when the lead was
+    // captured. `event_time` is now, the moment the buyer agreed.
+    scheduleCodPurchase(database, locals, converted.id, "cod");
     return jsonOk({
       message: `${converted.orderNumber} masuk ke order baru dan siap ditinjau sebelum push ke Mengantar.`,
       data: {

@@ -2,6 +2,8 @@ import type { APIRoute } from 'astro';
 import { getRuntimeEnv } from '../../lib/env.ts';
 import { json, jsonError, jsonOk } from '../../lib/api.ts';
 import { recordAbandonedOrder } from '../../lib/order-persistence.ts';
+import { captureMetaOrderContext, serializeMetaOrderContext } from '../../lib/meta-order-context.ts';
+import { hasClickId, readClickIdCookie, serializeClickIds } from '../../lib/click-ids.ts';
 import {
   checkRateLimit,
   getClientIp,
@@ -99,6 +101,13 @@ export const POST: APIRoute = async ({ request, locals }) => {
         request.headers.get('referer'),
         new URL(request.url),
       ),
+      // Captured now, from the buyer's own request: if CS converts this lead,
+      // its Purchase is sent from the operator's request (audit F-5).
+      metaRequestContext: serializeMetaOrderContext(captureMetaOrderContext(request)),
+      adClickIds: (() => {
+        const clickIds = readClickIdCookie(request);
+        return hasClickId(clickIds) ? serializeClickIds(clickIds) : undefined;
+      })(),
     });
     // Deliberately no notification. An abandoned capture is a lead to work
     // through in `/admin/orders/abandoned`, not an event worth interrupting an

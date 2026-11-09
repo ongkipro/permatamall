@@ -645,7 +645,7 @@ test("the D1 counter allocates unique suffixes across concurrent INV and ABN req
   assert.ok(numbers.every((number) => /^(?:INV|ABN)-\d{5}$/.test(number)));
 });
 
-test("abandoned retention deletes only unpaid abandoned orders older than seven days", async () => {
+test("abandoned retention deletes only unpaid abandoned orders older than fourteen days", async () => {
   const database = new SqliteD1Database();
   const d1 = asD1(database);
   const now = new Date("2026-08-17T12:00:00.000Z");
@@ -672,19 +672,19 @@ test("abandoned retention deletes only unpaid abandoned orders older than seven 
     "ABN-20001",
     "unpaid",
     "abandoned",
-    "2026-08-10T11:59:59.000Z",
+    "2026-08-03T11:59:59.000Z",
   );
   const boundaryId = await insertOrder(
     "ABN-20002",
     "unpaid",
     "abandoned",
-    "2026-08-10T12:00:00.000Z",
+    "2026-08-03T12:00:00.000Z",
   );
   const paidId = await insertOrder(
     "ABN-20003",
     "paid",
     "abandoned",
-    "2026-08-01T00:00:00.000Z",
+    "2026-07-20T00:00:00.000Z",
   );
   const pendingId = await insertOrder(
     "INV-20004",

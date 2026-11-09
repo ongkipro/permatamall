@@ -30,15 +30,72 @@ interface ChangelogRelease {
 // changelog.test.ts fails when version.ts moves without a matching entry here.
 const CHANGELOG_RELEASES: ChangelogRelease[] = [
   {
+    version: "1.10.0",
+    date: "10 November 2026",
+    releaseTag: "2026.11-signal",
+    isLatest: true,
+    highlight: "Setiap order COD sampai ke Meta sebagai Purchase, langsung dari server.",
+    changes: [
+      {
+        title: "Purchase COD dikirim saat order masuk",
+        description: "Purchase untuk order COD kini dikirim server ke Meta begitu order tersimpan, tidak lagi menunggu pembeli membuka halaman terima kasih. Pembeli yang menutup browser atau langsung dialihkan ke WhatsApp tetap terhitung. Setiap jam sistem juga mengirim order COD yang masih terlewat.",
+      },
+      {
+        title: "Lead yang dikonversi CS ikut menjadi Purchase",
+        description: "Pesanan tertinggal yang diubah menjadi order oleh CS kini dikirim ke Meta sebagai Purchase, dengan identitas iklan pembeli yang tersimpan saat lead tercatat.",
+      },
+      {
+        title: "Status: Order COD tanpa Purchase Meta",
+        description: "Halaman Status punya pemeriksaan baru yang merah bila ada order COD berumur 2-48 jam yang belum terkirim ke Meta, dan ikut mengirim peringatan ke webhook bila diatur.",
+      },
+      {
+        title: "Analitik: Purchase ke Meta",
+        description: "Metrik baru di Analitik → Ringkasan dan kolom di data harian: order yang Purchase-nya diterima Meta. Angka inilah yang dicocokkan dengan Events Manager.",
+      },
+      {
+        title: "Transfer belum dikonfirmasi",
+        description: "Panel Action needed memisahkan transfer bank manual yang belum dikonfirmasi. Purchase transfer baru terkirim ke Meta setelah tombol Transfer Diterima ditekan.",
+      },
+      {
+        title: "Pesanan tertinggal disimpan 14 hari",
+        description: "Lead kini disimpan 14 hari (sebelumnya 7) dan tidak bisa dihapus manual dari daftar order. Tandai follow-up atau ubah menjadi order.",
+      },
+      {
+        title: "Kirim ulang event Meta yang gagal",
+        description: "Iklan & tracking → Meta punya tombol Kirim ulang event gagal: Meta diuji dulu, lalu event yang gagal karena token lama dikirim ulang.",
+      },
+      {
+        title: "Halaman terima kasih lebih cepat ke Meta",
+        description: "Pixel Meta mulai dimuat bersamaan dengan pengecekan status order, dan pengalihan otomatis ke WhatsApp memberi waktu 1,5 detik setelah Pixel siap.",
+      },
+    ],
+  },
+  {
     version: "1.9.2",
     date: "2 November 2026",
     releaseTag: "2026.10-ops",
-    isLatest: true,
+    isLatest: false,
     highlight: "Form checkout tetap jelas dengan aksen oranye.",
     changes: [
       {
         title: "Kolom terisi tetap abu-abu, bingkai fokus gelap",
         description: "Dengan tombol oranye, kolom yang sudah terisi kembali berlatar abu-abu netral (bukan peach), dan kolom yang sedang diketik berbingkai gelap dengan cincin aksen, supaya tidak tertukar dengan bingkai merah saat error.",
+      },
+      {
+        title: "Docs: panduan admin, API, dan CLI",
+        description: "Buku panduan teks dari tombol Docs di kartu AdsBookCMS bawah sidebar (owner dan admin). Bagian Panduan admin menjelaskan pesanan, pengiriman, pembayaran dan biaya admin, katalog dan landing page, iklan dan analitik, serta pengaturan. Bagian Integrasi menjelaskan API key, Headless API, Operations API, CLI adsbook, dan kode error; daftar endpoint dan scope-nya dibaca langsung dari sistem.",
+      },
+      {
+        title: "Tagihan QRIS/VA sama dengan total di checkout",
+        description: "Bila biaya admin ditanggung pembeli, nominal QR atau VA kini memang ditambah biaya admin (VA BCA Rp6.500, VA lain Rp3.000, QRIS sekitar 0,7%), sama dengan total yang dilihat pembeli saat checkout, dan toko tetap menerima total pesanan utuh. Bila ditanggung toko, pembeli tidak melihat biaya admin dan biaya itu mengurangi nominal yang diterima toko.",
+      },
+      {
+        title: "Nominal diterima toko di detail pesanan",
+        description: "Detail pesanan QRIS/VA menampilkan nominal yang diterima toko. Bila biaya admin dibayar pembeli, biaya itu dan total yang ditagih ke pembeli ikut ditampilkan.",
+      },
+      {
+        title: "Toko baru: biaya admin ditanggung pembeli",
+        description: "Instalasi baru memakai pengaturan biaya admin QRIS/VA dan COD ditanggung pembeli. Pengaturannya bisa diubah di menu Pembayaran.",
       },
     ],
   },

@@ -22,12 +22,12 @@ colors:
   focus:          "#2563EB"   # focus ring only - see accessibility notes
 typography: { display: "Inter 700", body: "Inter 400", emphasis: "Inter 600" }
 spacing: { base: 4px }
-radius: { md: 6px, xl: 12px, 2xl: 16px, full: 9999px }   # DESIGN-SYSTEM §3
+radius: { base: 10px, md: 8px, xl: 14px, 2xl: 18px, full: 9999px }   # foundation.css --radius 0.625rem; DESIGN-SYSTEM §3
 shadows: { buy-bar: "0 -8px 24px rgba(17,17,17,0.08)" }   # the only one
 motion: { duration-base: 200ms, easing: ease-out }
 ---
 
-> Verified against disk: 2026-11-02 @ `156a214` (accent is CTA orange; other values retain their recorded evidence, subordinate to DESIGN-SYSTEM.md)
+> Verified against disk: 2026-11-06 @ `feb3c62` (radius re-checked against `foundation.css`; accent is CTA orange per `156a214`; other values retain their recorded evidence, subordinate to DESIGN-SYSTEM.md)
 
 ## Rationale
 

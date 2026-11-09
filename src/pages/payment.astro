@@ -66,7 +66,7 @@ if (Array.from(Astro.url.searchParams.keys()).some((key) => key !== 'preview')) 
         <div class="mt-5 rounded-none border border-[#E5E5E5] bg-white p-5 text-center">
           <div id="channel-logo-container" class="mb-3 flex justify-center">
             <div class="inline-flex h-14 w-28 items-center justify-center rounded-none border border-[#E5E5E5] bg-white p-1">
-              <img id="payment-logo" src="/images/payment/qris.svg" alt="QRIS" class="h-full w-full object-contain" />
+              <img id="payment-logo" src="/images/payment/qris.svg" alt="QRIS" width="102" height="46" class="h-full w-full object-contain" loading="eager" decoding="async" />
             </div>
           </div>
 
@@ -594,7 +594,9 @@ if (Array.from(Astro.url.searchParams.keys()).some((key) => key !== 'preview')) 
       amountLabelEl.textContent = sellerBearsFee ? 'Pesanan + ongkir' : 'Nominal Pesanan';
       amountEl.textContent = formatRp(sellerBearsFee ? payment.total_amount : amount);
       // A zero fee row only adds a line to read; a manual transfer has none.
-      adminFeeRow.hidden = !adminFee;
+      // A fee the seller bears is between the store and AutoLaris (Paduka,
+      // 2026-11-02): the buyer sees only what they pay.
+      adminFeeRow.hidden = !adminFee || sellerBearsFee;
       adminFeeLabelEl.textContent = sellerBearsFee ? 'Biaya Layanan (seller)' : 'Biaya Layanan';
       adminFeeEl.textContent = sellerBearsFee && adminFee
         ? `Ditanggung seller (${formatRp(adminFee)})`

@@ -4,7 +4,7 @@ import {
   type SchemaUpgradeError,
 } from "./schema-version.ts";
 
-export type OperationalAlertId = "schema" | "capi-outbox" | "google-ads-outbox";
+export type OperationalAlertId = "schema" | "capi-outbox" | "google-ads-outbox" | "meta-purchase-coverage";
 export type OperationalAlertState = "healthy" | "firing" | "unknown";
 
 export type OperationalAlertSignal = {
@@ -141,7 +141,7 @@ export function alertsFromOperationalHealth(
 
   // Both conversion queues alert the same way. Google's used to reach only the
   // health panel, which is how A-182's head-of-line block went unnoticed.
-  const queue = (id: "capi-outbox" | "google-ads-outbox"): OperationalAlertSignal => {
+  const queue = (id: "capi-outbox" | "google-ads-outbox" | "meta-purchase-coverage"): OperationalAlertSignal => {
     const signal = health.signals.find((candidate) => candidate.id === id);
     if (!signal) return { id, state: "unknown", reason: "unreadable" };
     if (signal.state === "degraded") return { id, state: "firing", reason: signal.reason };
@@ -149,7 +149,9 @@ export function alertsFromOperationalHealth(
     return { id, state: "unknown", reason: signal.reason };
   };
 
-  return [schema, queue("capi-outbox"), queue("google-ads-outbox")];
+  // Orders that never became an event are invisible to both queue signals
+  // (audit 2026-11-10), so coverage pages the operator on its own.
+  return [schema, queue("capi-outbox"), queue("google-ads-outbox"), queue("meta-purchase-coverage")];
 }
 
 export function schemaAlertFromError(

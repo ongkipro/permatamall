@@ -117,6 +117,12 @@ const { tenantName } = Astro.props;
       const orderPk = pick('order_pk', '');
       const statusToken = pick('status_token', '');
       if (!orderPk || !statusToken) return;
+      // Start the 105 KB fbevents download now, in parallel with the status
+      // fetch, rather than after it: on a slow in-app browser the two were
+      // sequential and the WhatsApp hand-off could leave before the Pixel
+      // Purchase did (audit 2026-11-10). Only the download moves; the stub
+      // still holds the track until MetaPixelBase's single init is issued.
+      window.__PS_LOAD_META_PIXEL__?.();
       let finalEventId = '';
       try {
         const resp = await fetch('/api/order-status', {
@@ -225,13 +231,6 @@ const { tenantName } = Astro.props;
           };
           if (typeof window.__PS_META_INIT__ === 'function') {
             window.__PS_META_INIT__(advancedMatching);
-          }
-          // The library is deferred behind an interaction listener and a
-          // 2.5 s timer. A buyer who reads this page and closes it triggers
-          // neither, so the conversion pulls the download forward itself —
-          // the same thing the Google conversion has always done.
-          if (typeof window.__PS_LOAD_META_PIXEL__ === 'function') {
-            window.__PS_LOAD_META_PIXEL__();
           }
           // Through the ordered hook: the init above is issued a digest later,
           // and a Purchase replayed ahead of it is discarded without a word.

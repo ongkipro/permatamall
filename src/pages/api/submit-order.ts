@@ -21,6 +21,7 @@ import {
 } from "../../lib/rate-limit";
 import { scheduleReceiverPerformanceRefresh } from "../../lib/rts-scoring";
 import { scheduleOrderCreated } from "../../plugins/registry";
+import { scheduleCodPurchase } from "../../lib/paid-order-purchase";
 import {
   DuplicateSubmissionError,
   OrderInputError,
@@ -369,6 +370,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
       locals,
     );
     scheduleOrderCreated(database, order.id, locals);
+    scheduleCodPurchase(database, locals, order.id, data.payment_method);
     const paymentStatus =
       data.payment_method === "cod" ? "unpaid" : payment?.status || "pending";
     const paymentUrl = payment?.providerPaymentUrl || "";

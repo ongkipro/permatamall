@@ -60,6 +60,8 @@ test("only a COD order with a usable number is handed off, and only when enabled
 test("the hand-off waits for the page to register, never longer than five seconds", () => {
   assert.ok(THANKS_WHATSAPP_REDIRECT.minMs >= 1000 && THANKS_WHATSAPP_REDIRECT.minMs < THANKS_WHATSAPP_REDIRECT.maxMs);
   assert.ok(THANKS_WHATSAPP_REDIRECT.maxMs <= 5000);
+  assert.ok(THANKS_WHATSAPP_REDIRECT.afterPixelMs >= 1500, "room for the Pixel beacon on slow mobile");
+  assert.ok(THANKS_WHATSAPP_REDIRECT.afterPixelMs < THANKS_WHATSAPP_REDIRECT.maxMs);
 });
 
 test("the hand-off waits on the tracker, and the CAPI leg survives leaving the page", async () => {
@@ -75,4 +77,13 @@ test("the hand-off waits on the tracker, and the CAPI leg survives leaving the p
   assert.match(thanks, /addEventListener\('ps:purchase-done'/);
   assert.match(thanks, /fbq\.instance/);
   assert.match(thanks, /shouldAutoRedirectToWhatsapp\(/);
+});
+
+test("the Pixel download starts before the order-status round trip, not after it", async () => {
+  const { readFileSync } = await import("node:fs");
+  const tracker = readFileSync(new URL("../components/storefront/tracking/MetaThanksTracker.astro", import.meta.url), "utf8");
+  const load = tracker.indexOf("__PS_LOAD_META_PIXEL__?.()");
+  const status = tracker.indexOf("fetch('/api/order-status'");
+  assert.ok(load > 0 && status > 0, "both calls are present");
+  assert.ok(load < status, "fbevents is requested in parallel with the status fetch");
 });

@@ -104,6 +104,12 @@ class FakeStatement {
 
   async first<T>() {
     if (this.sql.includes("FROM payment_reconciliation_audits")) return null;
+    if (this.sql.includes("o.shipping_status = 'abandoned'")) {
+      const lead = this.args
+        .map((id) => this.database.state.orders.get(Number(id)))
+        .find((order) => order?.shipping_status === "abandoned");
+      return (lead ? { order_number: lead.order_number } : null) as T;
+    }
     if (this.sql.includes("o.provider_order_id IS NOT NULL")) {
       const committed = this.args
         .map((id) => this.database.state.orders.get(Number(id)))
@@ -750,7 +756,7 @@ test("single delete route deletes once and a repeat is a 404", async () => {
   assert.equal(database.state.variants.get(501), 10);
 });
 
-test("deleting an abandoned lead leaves every other row alone", async () => {
+test("a lead cannot be deleted through the order route (owner 2026-11-10)", async () => {
   const database = databaseWithOrders(order(32, "abandoned"));
   const stockBefore = database.state.variants.get(501);
 
@@ -759,9 +765,10 @@ test("deleting an abandoned lead leaves every other row alone", async () => {
     locals: locals(database),
   } as never);
 
-  assert.equal(response.status, 200);
+  assert.equal(response.status, 409);
+  assert.match(((await response.json()) as { error: string }).error, /lead dan tidak pernah dihapus/);
   assert.equal(database.state.variants.get(501), stockBefore);
-  assert.equal(database.state.orders.has(32), false);
+  assert.equal(database.state.orders.has(32), true);
 });
 
 test("bulk delete route reports the orders it actually deleted", async () => {

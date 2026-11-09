@@ -240,7 +240,7 @@ const preloadImageUrls =
       googleAdsLabel={adsConfig.googleAdsConversionLabel}
     />
     <MetaPixelBase pixelId={adsConfig.metaPixelId} />
-    <MetaPageViewTracker />
+    {hasMetaPixel && <MetaPageViewTracker />}
     <MetaDebugTracker />
   </head>
   <body>

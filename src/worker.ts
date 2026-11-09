@@ -18,7 +18,7 @@ import {
   purgeExpiredAutoLarisCallbacks,
   reconcileAutoLarisPaymentStatuses,
 } from "./lib/autolaris-payment.ts";
-import { enqueuePurchaseForPaidOrder } from "./lib/paid-order-purchase.ts";
+import { enqueuePurchaseForPaidOrder, sweepMissedCodPurchases } from "./lib/paid-order-purchase.ts";
 import { envTenantConfig } from "./lib/tenant.ts";
 import { drainCapiOutboxBacklog, purgeExpiredCapiOutboxEvents } from "./lib/capi-outbox.ts";
 import { getStoreAdsConfig } from "./lib/store-ads.ts";
@@ -134,6 +134,11 @@ async function runScheduledMaintenance(
   // along within the hour — not true for a store between campaigns, and the
   // health check below was already counting the overdue rows without anything
   // acting on them.
+  // A COD buyer who never reached /thanks sent no Purchase from either leg
+  // (audit 2026-11-10, F-1). Delivered inline; the drain below retries a miss.
+  const sweptCodPurchases = await housekeeping("scheduled-cod-purchase-sweep-failed", () =>
+    sweepMissedCodPurchases(env.OMS_DB, scheduledLocals, new Date(scheduledTime)),
+  );
   const drainedCapiEvents = await housekeeping("scheduled-capi-drain-failed", async () => {
     const ads = await getStoreAdsConfig({ runtimeEnv: env } as unknown as App.Locals);
     return ads.metaPixelId && ads.metaCapiToken
@@ -164,7 +169,7 @@ async function runScheduledMaintenance(
     backfillReceiverScores(env.OMS_DB, scheduledLocals),
   );
 
-  const health = await collectOperationalHealth(env.OMS_DB);
+  const health = await collectOperationalHealth(env.OMS_DB, scheduledLocals);
   const alerts = await evaluateOperationalAlerts(
     alertsFromOperationalHealth(health),
     {
@@ -198,6 +203,7 @@ async function runScheduledMaintenance(
       // not know. Non-empty here is the observation SCR1 needs, not an error.
       unrecognisedPaidStatuses: autoLarisReconciliation.unrecognisedPaidStatuses,
     },
+    sweptCodPurchases,
     drainedCapiEvents,
     queuedGoogleAdsConversions,
     drainedGoogleAdsConversions,

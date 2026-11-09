@@ -27,7 +27,7 @@ function classifierReasons(): Map<string, Set<string>> {
 
 test("every reason a classifier returns has an action or an explicit none", () => {
   const pairs = classifierReasons();
-  assert.equal(pairs.size, Object.keys(SIGNAL_TITLES).length, "all eight signals were read");
+  assert.equal(pairs.size, Object.keys(SIGNAL_TITLES).length, "every signal was read");
   for (const [id, reasons] of pairs) {
     for (const reason of reasons) {
       assert.ok(

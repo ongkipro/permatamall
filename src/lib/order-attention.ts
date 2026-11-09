@@ -14,6 +14,11 @@ import { matchesShippingQueue } from "./shipping-queue.ts";
  *   route itself applies;
  * - awaiting_payment — `AWAITING_PAYMENT_SQL`, the order list's "Belum
  *   dibayar" filter;
+ * - transfer_unconfirmed — the manual transfers inside awaiting_payment. Only
+ *   the operator's "Transfer Diterima" can confirm one, and that click is
+ *   also its Meta Purchase (TRACKING_SPECS §13); 55 sat unconfirmed on
+ *   agritani.shop on 2026-11-10 (audit F-2). Kept out of awaiting_payment so
+ *   that one counts what the buyer still owes a provider;
  * - leads_new — the lead list's follow-up status `new`;
  * - needs_waybill / needs_pickup / needs_drop_off — `matchesShippingQueue`
  *   over the rows `/admin/shipping` lists (`shippingListFilter`).
@@ -26,6 +31,7 @@ export type AttentionKey =
   | "ready_push"
   | "push_problem"
   | "awaiting_payment"
+  | "transfer_unconfirmed"
   | "leads_new"
   | "needs_waybill"
   | "needs_pickup"
@@ -105,13 +111,15 @@ export async function readOrderAttention(
       .bind(...shipping.params, ATTENTION_ROW_LIMIT + 1),
     database.prepare(
       `SELECT
-         SUM(CASE WHEN ${orderRowSql()} AND ${AWAITING_PAYMENT_SQL} THEN 1 ELSE 0 END) AS awaiting_payment,
-         SUM(CASE WHEN ${orderRowSql()} AND ${AWAITING_PAYMENT_SQL} AND created_at < ?1 THEN 1 ELSE 0 END) AS awaiting_payment_stale,
+         SUM(CASE WHEN ${orderRowSql()} AND ${AWAITING_PAYMENT_SQL} AND payment_method <> 'manual_transfer' THEN 1 ELSE 0 END) AS awaiting_payment,
+         SUM(CASE WHEN ${orderRowSql()} AND ${AWAITING_PAYMENT_SQL} AND payment_method <> 'manual_transfer' AND created_at < ?1 THEN 1 ELSE 0 END) AS awaiting_payment_stale,
+         SUM(CASE WHEN ${orderRowSql()} AND ${AWAITING_PAYMENT_SQL} AND payment_method = 'manual_transfer' THEN 1 ELSE 0 END) AS transfer_unconfirmed,
+         SUM(CASE WHEN ${orderRowSql()} AND ${AWAITING_PAYMENT_SQL} AND payment_method = 'manual_transfer' AND created_at < ?1 THEN 1 ELSE 0 END) AS transfer_unconfirmed_stale,
          SUM(CASE WHEN ${leadRowSql()} AND lead_follow_up_status = 'new' THEN 1 ELSE 0 END) AS leads_new,
          SUM(CASE WHEN ${leadRowSql()} AND lead_follow_up_status = 'new' AND created_at < ?1 THEN 1 ELSE 0 END) AS leads_new_stale
        FROM orders`,
     ).bind(new Date(now - STALE_AFTER_MS).toISOString()),
-  ])) as [D1Result<PendingRow>, D1Result<ShipmentRow>, D1Result<{ awaiting_payment: number | null; awaiting_payment_stale: number | null; leads_new: number | null; leads_new_stale: number | null }>];
+  ])) as [D1Result<PendingRow>, D1Result<ShipmentRow>, D1Result<{ awaiting_payment: number | null; awaiting_payment_stale: number | null; transfer_unconfirmed: number | null; transfer_unconfirmed_stale: number | null; leads_new: number | null; leads_new_stale: number | null }>];
 
   const pendingRows = (pending.results ?? []).slice(0, ATTENTION_ROW_LIMIT);
   const shipmentRows = (shipments.results ?? []).slice(0, ATTENTION_ROW_LIMIT);
@@ -160,12 +168,15 @@ export async function readOrderAttention(
       ),
     ).length;
 
-  const totals = counts.results?.[0] ?? { awaiting_payment: 0, awaiting_payment_stale: 0, leads_new: 0, leads_new_stale: 0 };
+  const totals = counts.results?.[0] ?? { awaiting_payment: 0, awaiting_payment_stale: 0, transfer_unconfirmed: 0, transfer_unconfirmed_stale: 0, leads_new: 0, leads_new_stale: 0 };
+  // lazy: transfer_unconfirmed opens the "Belum dibayar" list, which also holds
+  // unpaid QRIS/VA. Upgrade path: a payment-method filter on the order list.
   const items: AttentionItem[] = [
     { key: "confirm", label: "Menunggu konfirmasi", hint: "Order baru, cek alamat dan risiko lalu konfirmasi", count: confirm, stale: confirmStale, href: "/admin/orders?status=pending", tone: "info" },
     { key: "ready_push", label: "Siap push ke Mengantar", hint: "Lolos syarat push Mengantar; push dari daftar Menunggu", count: readyPush, href: "/admin/orders?status=pending", tone: "info" },
     { key: "push_problem", label: "Push Mengantar bermasalah", hint: "Ditolak atau hasil belum pasti. Yang ditolak tetap bisa dipush ulang setelah dibetulkan", count: pushProblem, href: "/admin/orders?status=pending", tone: "bad" },
-    { key: "awaiting_payment", label: "Menunggu pembayaran online", hint: "QRIS, VA, atau transfer yang belum dibayar pembeli", count: Number(totals.awaiting_payment) || 0, stale: Number(totals.awaiting_payment_stale) || 0, href: "/admin/orders?payment_status=unpaid", tone: "warn" },
+    { key: "awaiting_payment", label: "Menunggu pembayaran online", hint: "QRIS atau VA yang belum dibayar pembeli", count: Number(totals.awaiting_payment) || 0, stale: Number(totals.awaiting_payment_stale) || 0, href: "/admin/orders?payment_status=unpaid", tone: "warn" },
+    { key: "transfer_unconfirmed", label: "Transfer belum dikonfirmasi", hint: "Cek mutasi rekening lalu tekan Transfer Diterima di detail order. Purchase baru terkirim ke Meta setelah dikonfirmasi", count: Number(totals.transfer_unconfirmed) || 0, stale: Number(totals.transfer_unconfirmed_stale) || 0, href: "/admin/orders?payment_status=unpaid", tone: "warn" },
     { key: "leads_new", label: "Lead belum dihubungi", hint: "Pesanan tertinggal yang belum di-follow up", count: Number(totals.leads_new) || 0, stale: Number(totals.leads_new_stale) || 0, href: "/admin/orders/abandoned?follow_up_status=new", tone: "warn" },
     { key: "needs_waybill", label: "Perlu dibuatkan resi", hint: "Sudah di Mengantar, resi belum terbit", count: queueCount("needs_waybill"), href: "/admin/shipping?queue=needs_waybill", tone: "warn" },
     { key: "needs_pickup", label: "Perlu jadwal pickup", hint: "Berresi, belum dijadwalkan pickup kurir", count: queueCount("needs_pickup"), href: "/admin/shipping?queue=needs_pickup", tone: "warn" },

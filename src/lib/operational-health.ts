@@ -12,6 +12,7 @@ import {
   type GoogleAdsOutboxDepth,
 } from "./google-ads-offline.ts";
 import { getSchemaVersionStatus } from "./schema-version.ts";
+import { getStoreAdsConfig } from "./store-ads.ts";
 import { CMS_VERSION } from "./version.ts";
 
 /**
@@ -40,6 +41,7 @@ export type HealthState = "healthy" | "degraded" | "unknown";
 export type HealthSignalId =
   | "capi-outbox"
   | "meta-capi"
+  | "meta-purchase-coverage"
   | "mengantar"
   | "receiver-score"
   | "autolaris"
@@ -563,11 +565,87 @@ async function readAutoLarisWindow(
  * throwing, so one unreadable table reports `unknown` for its own signal
  * instead of blanking the whole panel.
  */
+/**
+ * COD orders Meta was never told about (audit 2026-11-10).
+ *
+ * Every placed COD order is a Purchase at submit, so once it is older than the
+ * submit-time send and the hourly sweep it must have an outbox row. A queue
+ * signal cannot see this: an event that was never enqueued is not in any
+ * queue. Five such orders sat unnoticed on agritani.shop. Counts only.
+ */
+export const PURCHASE_COVERAGE_MIN_AGE_MS = 2 * 60 * 60_000;
+export const PURCHASE_COVERAGE_MAX_AGE_MS = 48 * 60 * 60_000;
+
+export type PurchaseCoverage = { orders: number; missing: number };
+
+export async function readPurchaseCoverage(
+  database: D1Database,
+  now = Date.now(),
+): Promise<PurchaseCoverage | null> {
+  try {
+    const row = await database
+      .prepare(
+        `SELECT COUNT(*) AS orders,
+           SUM(CASE WHEN NOT EXISTS (
+             SELECT 1 FROM capi_event_outbox c
+              WHERE c.event_name = 'Purchase' AND c.event_id = o.order_number
+           ) THEN 1 ELSE 0 END) AS missing
+         FROM orders o
+        WHERE o.created_at >= ? AND o.created_at <= ?
+          AND o.payment_method = 'cod'
+          AND o.shipping_status NOT IN ('abandoned', 'cancelled', 'returned', 'failed')
+          AND o.payment_status NOT IN ('failed', 'refunded', 'cancelled')
+          AND o.stock_restored_at IS NULL`,
+      )
+      .bind(
+        new Date(now - PURCHASE_COVERAGE_MAX_AGE_MS).toISOString(),
+        new Date(now - PURCHASE_COVERAGE_MIN_AGE_MS).toISOString(),
+      )
+      .first<{ orders: number | null; missing: number | null }>();
+    return { orders: Number(row?.orders ?? 0), missing: Number(row?.missing ?? 0) };
+  } catch (error) {
+    console.error("meta-purchase-coverage-unreadable", error);
+    return null;
+  }
+}
+
+export function classifyPurchaseCoverage(
+  coverage: PurchaseCoverage | null,
+  metaConfigured: boolean,
+  now: number,
+): HealthSignal {
+  if (!coverage) return signal("meta-purchase-coverage", "unknown", "unreadable", null, now);
+  const metrics = { orders: coverage.orders, missing: coverage.missing };
+  if (!metaConfigured) {
+    return signal("meta-purchase-coverage", "unknown", "meta-not-configured", null, now, metrics);
+  }
+  if (coverage.orders === 0) {
+    return signal("meta-purchase-coverage", "unknown", "no-cod-orders", null, now, metrics);
+  }
+  if (coverage.missing > 0) {
+    return signal("meta-purchase-coverage", "degraded", "orders-without-purchase", null, now, metrics);
+  }
+  return signal("meta-purchase-coverage", "healthy", "all-orders-sent", null, now, metrics);
+}
+
+/** Pixel and CAPI token both present (D1 first, env fallback). Never returns the token. */
+async function readMetaConfigured(database: D1Database, locals?: App.Locals): Promise<boolean> {
+  try {
+    const ads = await getStoreAdsConfig({
+      ...(locals ?? {}),
+      runtimeEnv: { ...(getRuntimeEnv(locals) ?? {}), OMS_DB: database },
+    } as unknown as App.Locals);
+    return Boolean(ads.metaPixelId && ads.metaCapiToken);
+  } catch {
+    return false;
+  }
+}
+
 export async function collectOperationalHealth(
   database: D1Database,
   locals?: App.Locals,
 ): Promise<OperationalHealth> {
-  const [depth, delivery, mengantar, receiverScore, autolaris, googleAdsDepth, schema, schedulerRunAt] = await Promise.all([
+  const [depth, delivery, mengantar, receiverScore, autolaris, googleAdsDepth, schema, schedulerRunAt, coverage, metaConfigured] = await Promise.all([
     readCapiOutboxDepth(database),
     readCapiDeliveryWindow(database),
     readMengantarWindow(database),
@@ -576,12 +654,15 @@ export async function collectOperationalHealth(
     readGoogleAdsOutboxDepth(database),
     getSchemaVersionStatus(locals),
     readSchedulerHeartbeat(database),
+    readPurchaseCoverage(database),
+    readMetaConfigured(database, locals),
   ]);
 
   const now = Date.now();
   const signals = [
     classifyCapiOutbox(depth, now),
     classifyCapiDelivery(delivery, now),
+    classifyPurchaseCoverage(coverage, metaConfigured, now),
     classifyMengantar(mengantar, now),
     classifyReceiverScore(receiverScore, now),
     classifyAutoLaris(autolaris, now),

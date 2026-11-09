@@ -1,6 +1,107 @@
 # STATUS — AdsBookCMS
 
-> Verified against disk: 2026-11-02 @ `cf4ce18` (1.9.2 plus PRs #157-#164 on eleven of the twelve installs; fleet registry in `docs/FLEET.md`; the sections below retain their dated evidence)
+> Verified against disk: 2026-11-02 @ `f333530` (product `main` has PRs #167-#171 not yet on any install; installs run 1.9.2 plus PRs #157-#164 on eleven of the twelve; fleet registry in `docs/FLEET.md`; the sections below retain their dated evidence)
+
+## 2026-11-10 — PR #191 (COD Purchase at checkout) live on agritani.shop only
+
+**Done (verified):** PR #191 (`df35c5d`) merged; agritani-shop merged product/main and its own
+`origin` (3 landing-page commits from another session), `npm test` 1198/1198 (1 skipped), check 0
+errors, build ok, pushed `688f433`, `npm run deploy` (preflight passed) → Worker `46619b10`.
+Live: `/`, `/produk`, `/thanks`, landing 200, `/admin` 302; D1 80/80 migrations. Every COD order of
+the last 48 h older than 2 h has a Purchase in the outbox (67/67).
+
+**Not yet observed:** an order placed after the deploy (none arrived in the first 5 minutes), so
+the at-checkout send and the new `meta-purchase-coverage` signal are proven locally, not yet in
+production. Meta's own view (Events Manager) not checked: needs the store CAPI token.
+
+**Fleet:** the other installs (taniniaga and the rest) do not have #191 yet. Roll it with the
+RELEASE §7 procedure per install. Audit and decisions: `docs/AUDIT-2026-11-10-agritani-purchase-gap.md`,
+ADR-035 (leads 14 days, never deleted by hand), ADR-036.
+
+## 2026-11-05 — nine installs rolled to product `a913fcb` (CHECKPOINT, session may close)
+
+**Task:** bring the nine in-scope installs to product `main` (`a913fcb`), pin Singapore, deploy, review live.
+Out of scope by instruction: permatamall, klikinaja, skincarebpom.
+
+**Done (verified):** product/main merged into zvarashop, agritani-shop, bavenshop, taniniaga, halotanishop,
+numaskin-adbook, revenleather, beranda-tani, cekat-shop; each pushed to its own `origin`, then `npm run deploy`
+(preflight passed, rc=0). `fleet:status` afterwards: all nine 0 behind, clean, synced, schema complete
+(zvara 93/93, others 80/80). `npm run check` 0 errors, `npm run build` ok, `npm test` 0 failed on all nine.
+Placement pinned `aws:ap-southeast-1` on zvara, halotani, numaskin, cekat (were `smart`); the other five already were.
+All D1 are APAC. Live: every domain 200, `cf-placement` local/remote-SIN, ~0.3-1.6 s TTFB.
+Install brand tokens intact: numaskin `#002b49`, beranda-tani `#1b5e20`, revenleather `#121212`; reven `/kontak` COD copy ok.
+
+**Conflicts resolved:** zvara (route-map regenerated), numaskin (`FormHybridContent`/`FormMiddleContent`: kept bundle logic,
+`cheapestVariant` fallback), revenleather (`kontak.astro` imports, kept Reven side).
+
+**Unverified:** no test order, so payment/thanks/checkout not exercised live. Live submit-button colour not measured on
+zvara and baven (no `sf-accent` in the HTML). Install deploy commits: halotani `488d350`, cekat `1964d31` carry only the placement pin.
+
+**Next steps:** (1) update `docs/FLEET.md` (versions, last deploy 2026-11-05, Singapore on all nine) via a PR, re-stamp its header;
+(2) measure live submit-button colour on zvara/baven; (3) decide on permatamall (44 behind, local clone +0/-2 vs origin),
+klikinaja (44 behind) and skincarebpom (1.8.5, 371 uncommitted files).
+
+**Open decisions:** whether/when to roll permatamall, klikinaja, skincarebpom.
+
+**Resume:** `cd ~/Projects/adsbookcms && npm run fleet:status -- ~/Projects/{zvarashop,agritani-shop,bavenshop,taniniaga,halotanishop,numaskin-adbook,revenleather,beranda-tani,cekat-shop}`
+No delivery ledger is active in this repository (no `.delivery/`).
+
+## 2026-11-03 — baven and petanisejahtera reviewed; five installs on #167-#185
+
+baven (`195681ff`), petanisejahtera (`2a968dcb`), taniniaga (`727cd330`) and agritani (`a60d1b84`) run
+product #167-#185 together with revenleather, all pinned to Singapore. Five of twelve installs.
+Installs still behind: zvara, permatamall, halotani, numaskin, klikinaja, cekat (1.9.2 plus #157-#164)
+and skincarebpom (1.8.5). Open store-content findings: STORE-3, STORE-4. BUILD-LOG entries 262-263.
+
+## 2026-11-03 — agritani and taniniaga updated and reviewed
+
+agritani.shop (Worker `19d65f93`) and taniniaga.shop (`bccf347e`) run product #167-#183, pinned to
+Singapore, with their own preferred-variant logic kept. Read-only live reviews (49 and 40 URLs) were
+clean on prices, feeds, JSON-LD and brand; the product-owned findings are fixed (#182, #183) and the
+store-data ones are STORE-1 and STORE-2. A review agent left a test lead, `ABN-10718`, in agritani's
+D1. Installs still behind are listed in the entry above. BUILD-LOG entries 260-261.
+
+## 2026-11-03 — baven updated
+
+baven.shop runs product #167-#179 (Worker `526a823f`), pinned to Singapore like revenleather.
+Nine installs still on 1.9.2 plus #157-#164 (zvara, permatamall, agritani, taniniaga, halotani,
+numaskin, beranda-tani, klikinaja, cekat; skincarebpom stays at 1.8.5). BUILD-LOG entry 258.
+
+## 2026-11-02 — Singapore placement and a lighter dashboard
+
+revenleather's Worker is pinned to Singapore (ADR-034, Worker `e5ac2f20`): requests entering at
+LAX no longer run there (2-3 s to first byte; now a median 1.1 s). The other installs still use
+Smart Placement until each takes the change. On product `main`, and on revenleather since 2026-11-03 (Worker `b19e3ed5`): the
+dashboard loads its chart lazily, requests its rankings beside its cards, and its analytics API
+makes its six D1 reads at once. BUILD-LOG entry 256.
+
+## 2026-11-02 — revenleather screened and corrected
+
+Live now: the 79 product pages carry the product name as their H1 (D1 content, pixel-identical).
+Deployed the same day (Worker `c8639527`): product PRs #167-#175, store-read courier/payment/COD
+copy on /kontak, /pengiriman and /tentang, the header nav at 390 px, forms opening on the
+cheapest variant. The Worker already runs in Singapore (Smart Placement). BUILD-LOG entry 254.
+
+## 2026-11-02 — Docs book and QRIS/VA fee rules (product only, not deployed)
+
+On product `main`, no install has them yet, no version bump (What's new 1.9.2 lists them):
+
+- **Docs** (`/admin/docs`, owner and admin, PRs #167 and the admin-guide PR): a 13-chapter
+  text book in two parts. Panduan admin: start (roles, dashboard, an order's path), orders,
+  shipping and couriers, payments and fees, catalogue and landing pages, ads and analytics,
+  settings. Integrasi API & CLI: API key and scope, Headless API, Operations API, the
+  `adsbook` CLI, errors and limits, with tables read from the code.
+  The sidebar's AdsBookCMS card holds Docs and What's new.
+- **QRIS/VA admin fee** (PRs #168, #169, #171; PAY-2 closed): AutoLaris bills exactly what it
+  is asked for and deducts its fee, so the store now decides. Buyer-borne: the bill is the
+  order total plus the fee (VA fixed; QRIS grossed up) and the store receives the whole order
+  total. Seller-borne: the buyer sees no fee and the store receives the total minus the fee.
+  The order detail shows "Diterima toko". A new install is `buyer`.
+
+Live state: all twelve stores are `seller` (klikinaja, cekat and skincarebpom changed from
+`buyer` on 2026-11-02, TASKS A-448). Pending Paduka's go-ahead: rolling #167-#171 out to the
+installs, then returning those three stores to `buyer` (not before: their current code shows a
+checkout fee the QR does not bill). BUILD-LOG entries 247-250.
 
 ## 2026-11-02 — revenleather QRIS/VA and the fee shown to the buyer
 

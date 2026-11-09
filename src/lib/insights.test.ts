@@ -187,7 +187,7 @@ test("Jakarta period boundaries include ISO and SQLite timestamp spellings", asy
   for (const at of ["2026-09-30T17:00:00.000Z", "2026-09-30 17:00:00", "2026-10-01T16:59:59.999Z", "2026-10-01 16:59:59"]) order({ at });
   for (const at of ["2026-09-30T16:59:59.999Z", "2026-10-01T17:00:00.000Z"]) order({ at, amount: 999_999 });
   const period = { start: "2026-10-01", end: "2026-10-01", days: 1 };
-  assert.deepEqual((await trendSeries(d1, period)).data.total, { orders: 4, leads: 0, revenue: 400_000 });
+  assert.deepEqual((await trendSeries(d1, period)).data.total, { orders: 4, leads: 0, revenue: 400_000, meta_purchases: 0 });
 });
 
 test("empty insights return zero totals rather than missing data", async () => {
@@ -198,7 +198,7 @@ test("empty insights return zero totals rather than missing data", async () => {
   assert.equal((await orderTimes(d1, OCTOBER)).data.total, 0);
   const trend = (await trendSeries(d1, OCTOBER)).data;
   assert.equal(trend.series.length, 28);
-  assert.deepEqual(trend.total, { orders: 0, leads: 0, revenue: 0 });
+  assert.deepEqual(trend.total, { orders: 0, leads: 0, revenue: 0, meta_purchases: 0 });
 });
 
 // ── A-351 landing ranking ───────────────────────────────────────────────────
@@ -293,22 +293,23 @@ test("trend: zero-filled days, sources sum to the whole, previous period ends th
   order({ at: "2026-09-02T16:00:00.000Z", amount: 50_000 }); // Jakarta 2 Sept: outside
   const all = (await trendSeries(d1, OCTOBER)).data;
   assert.equal(all.series.length, 28);
-  assert.deepEqual(all.series[0], { date: "2026-10-01", orders: 0, leads: 0, revenue: 0 });
-  assert.deepEqual(all.series.find((day) => day.date === "2026-10-06"), { date: "2026-10-06", orders: 3, leads: 0, revenue: 350_000 });
-  assert.deepEqual(all.total, { orders: 8, leads: 3, revenue: 430_000 });
-  assert.deepEqual(all.previous, { start: "2026-09-03", end: "2026-09-30", orders: 2, leads: 0, revenue: 130_000 });
+  assert.deepEqual(all.series[0], { date: "2026-10-01", orders: 0, leads: 0, revenue: 0, meta_purchases: 0 });
+  assert.deepEqual(all.series.find((day) => day.date === "2026-10-06"), { date: "2026-10-06", orders: 3, leads: 0, revenue: 350_000, meta_purchases: 0 });
+  assert.deepEqual(all.total, { orders: 8, leads: 3, revenue: 430_000, meta_purchases: 0 });
+  assert.deepEqual(all.previous, { start: "2026-09-03", end: "2026-09-30", orders: 2, leads: 0, revenue: 130_000, meta_purchases: 0 });
 
-  const sum = { orders: 0, leads: 0, revenue: 0 };
+  const sum = { orders: 0, leads: 0, revenue: 0, meta_purchases: 0 };
   for (const source of ["madu", "promo-kopi", SOURCE_SLUG_NONE_FILTER]) {
     const part = (await trendSeries(d1, OCTOBER, { source })).data.total;
     sum.orders += part.orders;
     sum.leads += part.leads;
     sum.revenue += part.revenue;
+    sum.meta_purchases += part.meta_purchases;
   }
   assert.deepEqual(sum, all.total);
 
   const unknown = (await trendSeries(d1, OCTOBER, { source: "no-such-page" })).data.total;
-  assert.deepEqual(unknown, { orders: 0, leads: 0, revenue: 0 });
+  assert.deepEqual(unknown, { orders: 0, leads: 0, revenue: 0, meta_purchases: 0 });
 });
 
 test("trend for one product counts its rows and its own line revenue", async () => {
@@ -318,7 +319,25 @@ test("trend for one product counts its rows and its own line revenue", async () 
   order({ at: "2026-10-11T04:00:00.000Z", shipping: "abandoned", items: [[101, 1, 50_000]] });
   order({ at: "2026-10-12T03:00:00.000Z", shipping: "returned", items: [[101, 3, 50_000]] });
   const { data } = await trendSeries(d1, OCTOBER, { productId: 11111 });
-  assert.deepEqual(data.total, { orders: 3, leads: 1, revenue: 190_000 });
+  assert.deepEqual(data.total, { orders: 3, leads: 1, revenue: 190_000, meta_purchases: 0 });
+});
+
+test("trend: Meta Purchase counts only placed orders whose Purchase was delivered", async () => {
+  const { sqlite, d1, order } = openDatabase();
+  const sent = order({ at: "2026-10-06T03:00:00.000Z" }); // COD, Purchase delivered
+  order({ at: "2026-10-06T04:00:00.000Z" }); // COD, never reached Meta
+  const pending = order({ at: "2026-10-06T05:00:00.000Z" }); // queued, not yet accepted
+  const lead = order({ at: "2026-10-06T06:00:00.000Z", shipping: "abandoned" });
+  const outbox = sqlite.prepare(`INSERT INTO capi_event_outbox (event_id, event_name, payload, status, next_retry_at, created_at, updated_at)
+    VALUES (?, ?, '{}', ?, 't', 't', 't')`);
+  outbox.run(`INV-${sent}`, "Purchase", "sent");
+  outbox.run(`INV-${pending}`, "Purchase", "pending");
+  // A funnel event on a lead's id is not a Purchase, and a lead never counts.
+  outbox.run(`INV-${lead}`, "PageView", "sent");
+  const { total } = (await trendSeries(d1, OCTOBER)).data;
+  assert.deepEqual(total, { orders: 3, leads: 1, revenue: 300_000, meta_purchases: 1 });
+  const product = (await trendSeries(d1, OCTOBER, { productId: 11111 })).data.total;
+  assert.equal(product.meta_purchases, 0, "no order here holds that product");
 });
 
 // ── A-353 products ──────────────────────────────────────────────────────────

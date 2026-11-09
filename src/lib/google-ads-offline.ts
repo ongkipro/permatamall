@@ -206,6 +206,9 @@ export function readConversionUploadErrorCodes(partialFailure: unknown): string[
   return codes;
 }
 
+/** Bounded like the Meta leg (audit M-5, L-11): the cron must not hang on Google. */
+const GOOGLE_FETCH_TIMEOUT_MS = 10_000;
+
 async function accessToken(config: GoogleAdsOfflineConfig): Promise<string> {
   const response = await fetch("https://oauth2.googleapis.com/token", {
     method: "POST",
@@ -216,6 +219,7 @@ async function accessToken(config: GoogleAdsOfflineConfig): Promise<string> {
       refresh_token: config.refreshToken,
       grant_type: "refresh_token",
     }),
+    signal: AbortSignal.timeout(GOOGLE_FETCH_TIMEOUT_MS),
   });
   const body = await response.json().catch(() => null) as { access_token?: unknown; error_description?: unknown } | null;
   if (!response.ok || typeof body?.access_token !== "string") {
@@ -243,6 +247,7 @@ export async function uploadGoogleClickConversion(
         method: "POST",
         headers,
         body: JSON.stringify({ conversions: [conversion], partialFailure: true }),
+        signal: AbortSignal.timeout(GOOGLE_FETCH_TIMEOUT_MS),
       },
     );
     const body = await response.json().catch(() => null) as {

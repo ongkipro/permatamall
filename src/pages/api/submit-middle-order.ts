@@ -18,6 +18,7 @@ import {
 } from "../../lib/rate-limit";
 import { scheduleReceiverPerformanceRefresh } from "../../lib/rts-scoring";
 import { scheduleOrderCreated } from "../../plugins/registry";
+import { scheduleCodPurchase } from "../../lib/paid-order-purchase";
 import {
   DuplicateSubmissionError,
   OrderInputError,
@@ -217,6 +218,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
       locals,
     );
     scheduleOrderCreated(database, order.id, locals);
+    scheduleCodPurchase(database, locals, order.id, "cod");
     const data = {
       id: order.id,
       order_id: order.orderNumber,

@@ -1,6 +1,6 @@
 # AdsBookCMS Meta Pixel, CAPI, GTM, and Google Ads Specification
 
-> Verified against disk: 2026-11-02 @ `56bb886` (§16.1d pixel testing notes added; other sections retain their recorded evidence)
+> Verified against disk: 2026-11-10 @ `700bc21` (§13 COD sweep and the Meta Purchase metric added; other sections retain their recorded evidence)
 
 This document owns the technical tracking contract for AdsBookCMS-rendered and headless storefronts. It covers event semantics, identity, browser/server boundaries, deduplication, durable delivery, store configuration, and verification. It does not claim attribution certainty, legal compliance, consent applicability, or live provider acceptance.
 
@@ -717,6 +717,26 @@ This example describes field meaning; it is not merchant data or a live credenti
 
 A successfully persisted COD order may qualify as Purchase because the commercial order has been accepted. Checkout persistence must succeed first. Shipping confirmation and Mengantar dispatch remain later operational states and do not create a second Purchase. See [`MENGANTAR_INTEGRATION_SPEC.md`](./MENGANTAR_INTEGRATION_SPEC.md).
 
+The server sends it at checkout: `submit-order`, `submit-middle-order` and
+`/api/v1/checkout` call `scheduleCodPurchase` (`src/lib/paid-order-purchase.ts`)
+right after the order is persisted, in `waitUntil`, through
+`enqueuePurchaseForPaidOrder` with the identity captured on that request.
+`/thanks` still fires the browser Pixel on the same `event_id` (Meta merges
+the two) and its own server post becomes an outbox no-op.
+
+Before 2026-11-10 both legs left only from `/thanks`, after an order-status
+round trip and the hashing, so a buyer whose tab closed, whose in-app browser
+died, or whom the WhatsApp auto-redirect took away first sent nothing: 5 of
+732 COD orders on agritani.shop in 30 days, four from the Facebook in-app
+browser ([`docs/AUDIT-2026-11-10-agritani-purchase-gap.md`](./docs/AUDIT-2026-11-10-agritani-purchase-gap.md) F-1, F-7).
+The hourly cron's `sweepMissedCodPurchases` remains a second net: a COD order
+30 minutes to 48 hours old, not abandoned or void, with no Purchase in the
+outbox, is enqueued with `event_time` = its `created_at`.
+
+The dashboard figure to reconcile against Events Manager is Analitik → Tren →
+"Purchase ke Meta" (orders whose Purchase outbox row is `sent`), not
+"Orders", which also counts unpaid transfers and QRIS/VA.
+
 ### Online payment
 
 Order creation alone is not Purchase. `/api/order-status` reads the existing D1 order/payment state. Only authenticated AutoLaris paid reconciliation qualifies the online Purchase path. Unknown orders return `404`; unpaid or failed states must not be rewritten as Purchase.
@@ -741,6 +761,10 @@ Only `manual_transfer` crossing into a paid status qualifies. COD stays on
 `/thanks` (courier remittance must not report it again), and QRIS/VA stay on
 reconciliation. Before 1.7.13 the dashboard had no control that set a manual
 transfer paid at all, so those orders could not be pushed to Mengantar either.
+
+An unconfirmed manual transfer shows on the dashboard as "Transfer belum
+dikonfirmasi" (`order-attention.ts`), so the click that sends its Purchase is
+not forgotten (audit F-2: 55 unconfirmed on agritani.shop).
 
 **Rule for every install and every new order path:** a path that makes an
 order paid outside `/thanks` must call `enqueuePurchaseForPaidOrder`, or the

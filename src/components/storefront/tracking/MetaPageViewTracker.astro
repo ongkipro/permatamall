@@ -19,8 +19,7 @@
       event_id: eventId,
       lp_name: pathname,
       content_name: contentName,
-      value: 1,
-      currency: 'IDR',
+      // No value: a page view is not revenue (tracking audit L-4).
       content_type: 'page',
       event_source_url: window.location.href,
     });

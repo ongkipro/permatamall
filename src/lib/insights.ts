@@ -285,7 +285,18 @@ export async function landingRanking(
 
 // ── A-352 Trend ─────────────────────────────────────────────────────────────
 
-type TrendGroupRow = { date: string; orders: number; leads: number; revenue: number };
+type TrendGroupRow = { date: string; orders: number; leads: number; revenue: number; meta_purchases: number };
+
+/**
+ * An order whose Meta Purchase the outbox holds as delivered (audit
+ * 2026-11-10, F-3). "Orders" counts every placed row, including unpaid
+ * transfers that never qualify; this is the figure to reconcile against
+ * Events Manager. Uses the `(event_name, event_id)` unique index (0057).
+ * Delivered rows are purged after 30 days, so older days read low.
+ */
+const metaPurchaseSentSql = (alias = "") => `EXISTS (
+  SELECT 1 FROM capi_event_outbox c
+   WHERE c.event_name = 'Purchase' AND c.event_id = ${alias}order_number AND c.status = 'sent')`;
 
 /**
  * One source (or none) or one product, optionally one channel. With a
@@ -308,6 +319,7 @@ function trendSelect(
         `SELECT ${day}
           COUNT(DISTINCT CASE WHEN ${orderRowSql("o.")} THEN o.id END) AS orders,
           COUNT(DISTINCT CASE WHEN ${leadRowSql("o.")} THEN o.id END) AS leads,
+          COUNT(DISTINCT CASE WHEN ${orderRowSql("o.")} AND ${metaPurchaseSentSql("o.")} THEN o.id END) AS meta_purchases,
           COALESCE(SUM(CASE WHEN ${orderRowSql("o.")} AND NOT (${releasedOrderSql("o.")})
             THEN oi.quantity * oi.unit_price ELSE 0 END), 0) AS revenue
         FROM orders o
@@ -323,6 +335,7 @@ function trendSelect(
       `SELECT ${day}
         COALESCE(SUM(CASE WHEN ${orderRowSql("o.")} THEN 1 ELSE 0 END), 0) AS orders,
         COALESCE(SUM(CASE WHEN ${leadRowSql("o.")} THEN 1 ELSE 0 END), 0) AS leads,
+        COALESCE(SUM(CASE WHEN ${orderRowSql("o.")} AND ${metaPurchaseSentSql("o.")} THEN 1 ELSE 0 END), 0) AS meta_purchases,
         COALESCE(SUM(CASE WHEN ${orderRowSql("o.")} AND NOT (${releasedOrderSql("o.")}) THEN o.total_amount ELSE 0 END), 0) AS revenue
       FROM orders o
       WHERE ${range.sql}${where.sql}
@@ -352,14 +365,16 @@ export function shapeTrend(
     orders: num(row?.orders),
     leads: num(row?.leads),
     revenue: num(row?.revenue),
+    meta_purchases: num(row?.meta_purchases),
   }));
   const total = series.reduce(
     (sum, day) => ({
       orders: sum.orders + day.orders,
       leads: sum.leads + day.leads,
       revenue: sum.revenue + day.revenue,
+      meta_purchases: sum.meta_purchases + day.meta_purchases,
     }),
-    { orders: 0, leads: 0, revenue: 0 },
+    { orders: 0, leads: 0, revenue: 0, meta_purchases: 0 },
   );
   const prior = previousInsightsPeriod(period);
   return {
@@ -371,6 +386,7 @@ export function shapeTrend(
       orders: num(previous?.orders),
       leads: num(previous?.leads),
       revenue: num(previous?.revenue),
+      meta_purchases: num(previous?.meta_purchases),
     },
   };
 }

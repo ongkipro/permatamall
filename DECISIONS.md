@@ -1,6 +1,6 @@
 # Architecture Decision Record — AdsBookCMS
 
-> Verified against disk: 2026-11-02 @ `be6ee6a` (ADR-019 amendment adds the 1.9.2 form states; earlier ADRs retain their recorded evidence)
+> Verified against disk: 2026-11-10 @ `700bc21` (ADR-035 leads kept 14 days, ADR-036 COD Purchase is sent at checkout; earlier ADRs retain their recorded evidence)
 
 Append-only. One decision per entry. A decision is recorded here only when it constrains future work; implementation detail belongs in `ARCHITECTURE.md`, remaining work in `UNIMPLEMENTED_SPECS.md`.
 
@@ -1270,3 +1270,89 @@ follow D1, not copy in a file.
 **Rejected alternatives.** *Editing every native page* (does not scale, drifts
 from the register). *Rewriting the HTML in middleware* (couples SEO to string
 surgery on every response).
+
+---
+
+## ADR-034 — Pin the Worker to Singapore instead of Smart Placement
+
+**Date:** 2026-11-02 · **Status:** Accepted (Paduka: "pastikan server Singapore").
+Amends ADR-030 decision 1. `wrangler.jsonc` `placement`.
+
+**Context.** ADR-030 turned on Smart Placement so the fetch handler runs beside
+D1, and recorded that Cloudflare "can decline". It did: on page.revenleather.com,
+16 uncached requests from one workstation landed on SIN, MRS, CDG and LAX. SIN
+answered in 0.3-0.4 s (`cf-placement: local-SIN`); MRS and CDG were moved to SIN
+(`remote-SIN`, about 1 s); LAX was **not** moved (`local-LAX`) and took 2.0-2.9 s,
+every D1 read crossing the Pacific. A Lighthouse run measured a product page's
+document at 3.38 s for the same reason. Since 2026-01-22 Cloudflare offers an
+explicit placement hint, `placement.region`, which runs the Worker in the data
+center nearest a named cloud region
+([placement](https://developers.cloudflare.com/workers/configuration/placement/)).
+D1 itself can only be hinted to `apac`, and every fleet database runs there
+(`wrangler d1 info`).
+
+**Decision.** The template and each install whose D1 runs in APAC set
+`"placement": { "region": "aws:ap-southeast-1" }` (Singapore). An install whose
+D1 is elsewhere sets that region, or keeps `"mode": "smart"`.
+
+**Evidence.** revenleather, Worker `e5ac2f20`: every request now answers
+`remote-SIN` or `local-SIN`, LAX included; LAX-entry product pages fell from
+2.0-2.9 s to a median 1.1 s, SIN stayed 0.4 s.
+
+**Consequences.** A visitor whose colo is far from Singapore pays one hop to
+SIN instead of one hop per D1 read. If Cloudflare ever moves a D1 primary out
+of South-East Asia, the pin works against it; `cf-placement` and the D1
+region (`wrangler d1 info`) are the two things to re-check. Each install's
+`wrangler.jsonc` is its own (keepours), so the fleet changes one install at a
+time.
+
+## ADR-035 — A lead is kept 14 days and is never deleted by hand
+
+**Date:** 2026-11-10 · **Status:** Accepted (Paduka: "lead jangan pernah di
+hapus", then "pesanan tertinggal boleh di hapus setelah 14 hari tercreate").
+Audit `docs/AUDIT-2026-11-10-agritani-purchase-gap.md` F-4.
+
+**Context.** The hourly cron deleted every unpaid `abandoned` row older than
+seven days. On agritani.shop the oldest lead on 2026-11-10 was from
+2026-11-03, so any Insights period longer than a week counted too few Leads
+and too high a closing rate, and CS lost leads it was still following up. The
+order delete route also accepted an `ABN-` key, so a lead could be removed by
+hand at any age.
+
+**Decision.** `ABANDONED_RETENTION_DAYS` is 14: the cron (and `POST
+/api/admin/orders/retention`) deletes an unpaid lead 14 days after it was
+captured, never sooner. Nothing else deletes a lead:
+`deleteOrdersReleasingReservations` refuses any batch holding an `abandoned`
+row (409), and the operator marks the follow-up or converts it instead. A
+source scan test fails if a third `DELETE FROM orders` appears.
+
+**Consequences.** Lead figures are complete for any Insights period up to 14
+days; a 30- or 90-day period still under-counts leads older than that and
+reads a higher closing rate. A lead's name, phone and address are kept twice
+as long as before.
+
+## ADR-036 — The COD Purchase leaves the server at checkout
+
+**Date:** 2026-11-10 · **Status:** Accepted.
+Audit `docs/AUDIT-2026-11-10-agritani-purchase-gap.md` F-1, F-7, F-9.
+`TRACKING_SPECS.md` §13.
+
+**Context.** Both Meta legs of a COD Purchase left only from `/thanks`, after
+an order-status round trip. A buyer whose in-app browser closed, or whom the
+WhatsApp auto-redirect took away first, was never reported: 5 of 732 on
+agritani.shop in 30 days. No signal noticed, because the queue signals only
+see events that were enqueued.
+
+**Decision.** Checkout (`submit-order`, `submit-middle-order`,
+`/api/v1/checkout`) enqueues the COD Purchase itself through
+`enqueuePurchaseForPaidOrder`, after the response, keyed on the order number.
+The hourly cron sweeps COD orders 30 min to 48 h old that still have none.
+`/thanks` keeps the browser Pixel on the same `event_id`. A CS-converted lead
+is reported the same way at conversion. A new health signal,
+`meta-purchase-coverage`, degrades and alerts on any COD order 2-48 h old
+without a Purchase.
+
+**Consequences.** The server leg no longer depends on the buyer's browser, so
+the WhatsApp hand-off and in-app browsers cannot lose it. A cancelled order is
+still reported, as it always was at submit; the order count on Meta is the
+order count, not the delivered count.

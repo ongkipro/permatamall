@@ -181,6 +181,14 @@ test("health and schema failures map only to bounded redacted alert state", () =
         ageMinutes: 120,
         metrics: { pending: 0, failed: 2, overdue: 0 },
       },
+      {
+        id: "meta-purchase-coverage",
+        state: "degraded",
+        reason: "orders-without-purchase",
+        lastAt: null,
+        ageMinutes: null,
+        metrics: { orders: 40, missing: 2 },
+      },
     ],
     build: {
       version: "test",
@@ -196,6 +204,8 @@ test("health and schema failures map only to bounded redacted alert state", () =
     { id: "capi-outbox", state: "firing", reason: "stalled" },
     // A-227: a stuck Google queue pages the operator, not only the panel.
     { id: "google-ads-outbox", state: "firing", reason: "terminal-failures" },
+    // Audit 2026-11-10: an order that never became an event is in no queue.
+    { id: "meta-purchase-coverage", state: "firing", reason: "orders-without-purchase" },
   ]);
   assert.deepEqual(
     schemaAlertFromError(

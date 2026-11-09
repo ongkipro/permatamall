@@ -10,6 +10,8 @@ import { metaNameParts, normalizeMetaText, sha256Hex, toE164Digits } from './met
  * set; v20.0 expired 2026-09-24. Every live install carries v26.0.
  */
 export const META_GRAPH_API_VERSION = 'v26.0';
+/** Graph API request budget; a timeout leaves the outbox row to retry. */
+export const META_CAPI_TIMEOUT_MS = 8_000;
 
 export { toE164Digits } from './meta-identity.ts';
 
@@ -179,10 +181,13 @@ export async function sendMetaCapiEvent(
 
   const endpoint = `https://graph.facebook.com/${META_GRAPH_API_VERSION}/${targetPixelId}/events?access_token=${targetToken}`;
   try {
+    // Bounded (audit M-5): this runs on checkout and storefront requests, and
+    // a hanging Graph API must not hold them. A timeout is a retryable failure.
     const response = await fetch(endpoint, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
+      signal: AbortSignal.timeout(META_CAPI_TIMEOUT_MS),
     });
 
     const responseBody: unknown = await response.json().catch(() => null);

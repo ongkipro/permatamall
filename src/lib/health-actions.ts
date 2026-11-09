@@ -14,6 +14,7 @@ import type { HealthSignalId } from "./operational-health.ts";
 export const SIGNAL_TITLES: Record<HealthSignalId, string> = {
   "capi-outbox": "Antrean Meta CAPI",
   "meta-capi": "Pengiriman Meta CAPI terakhir",
+  "meta-purchase-coverage": "Order COD tanpa Purchase Meta (2-48 jam)",
   mengantar: "Kontak Mengantar terakhir",
   "receiver-score": "Skor penerima (RTS) Mengantar",
   autolaris: "AutoLaris Create Order & verifikasi",
@@ -31,13 +32,19 @@ export const REASONS: Record<string, string> = {
   "terminal-failures":
     "Ada conversion yang gagal permanen dan tidak akan pernah sampai ke Meta.",
   "earlier-failures":
-    "Tidak ada yang menunggu. Kegagalan lama (lebih dari 24 jam) masih tersimpan dan bisa dikirim ulang dari halaman Ads.",
+    "Tidak ada yang menunggu. Kegagalan lama (lebih dari 24 jam) masih tersimpan dan bisa dikirim ulang dari Iklan & tracking → Meta (tombol Kirim ulang event gagal).",
   // meta-capi
   "never-enqueued": "Belum pernah ada conversion event yang tercatat.",
   "no-delivery-in-window": "Tidak ada pengiriman pada 200 event terakhir.",
   "never-delivered": "Semua event yang tercatat gagal terkirim.",
   failing: "Kegagalan terakhir lebih baru daripada keberhasilan terakhir.",
   delivered: "Meta menerima event terakhir dengan sukses.",
+  // meta-purchase-coverage
+  "meta-not-configured": "Pixel atau token CAPI belum diisi, jadi tidak ada Purchase yang dikirim.",
+  "no-cod-orders": "Tidak ada order COD berumur 2-48 jam untuk diperiksa.",
+  "orders-without-purchase":
+    "Ada order COD yang tidak pernah dikirim ke Meta sebagai Purchase. Cek token CAPI dan Workers Logs (cod-purchase-at-submit-failed).",
+  "all-orders-sent": "Setiap order COD 2-48 jam terakhir sudah punya Purchase di antrean Meta.",
   // mengantar
   "no-orders": "Belum ada order sama sekali.",
   "never-dispatched": "Belum ada order yang dikirim ke Mengantar.",
@@ -114,6 +121,13 @@ export const HEALTH_ACTIONS: Record<HealthSignalId, Record<string, HealthAction 
     "never-delivered": META,
     failing: META,
     delivered: null,
+  },
+  "meta-purchase-coverage": {
+    unreadable: null,
+    "meta-not-configured": META,
+    "no-cod-orders": null,
+    "orders-without-purchase": META,
+    "all-orders-sent": null,
   },
   mengantar: {
     unreadable: null,

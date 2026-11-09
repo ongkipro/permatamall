@@ -39,12 +39,13 @@ const brandMark = Astro.locals.tenant.brandMark;
         alt=""
         height="32"
         style="display:block;height:32px;width:auto;max-width:168px;flex-shrink:0;object-fit:contain"
+        loading="eager"
         decoding="async"
       />
     ) : (
       <>
         {brandMark && (
-          <img src={brandMark} alt="" width="28" height="28" class="shrink-0 object-contain" decoding="async" />
+          <img src={brandMark} alt="" width="28" height="28" class="shrink-0 object-contain" loading="eager" decoding="async" />
         )}
         {/* Text wordmark, Shopify-theme style: the name in capitals, slightly
             tracked, one line; leading-tight keeps the glyphs inside the

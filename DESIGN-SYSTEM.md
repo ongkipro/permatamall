@@ -1,19 +1,79 @@
 # AdsBookCMS — Design System
 
-> Verified against disk: 2026-11-02 @ `156a214` (1.9.1: accent is CTA orange in §1.1; other sections retain their recorded evidence)
+> Verified against disk: 2026-11-06 @ `feb3c62` (§0 re-checked: the `--sf-*` tokens against `form-hybrid.css`, the radius against `foundation.css`, rule 5 against its guard; other sections retain their recorded evidence from `156a214`, 1.9.1). §0 is checked by `storefront-images.test.ts`, `admin-controls.test.ts` and `admin-page-width.test.ts`; the rest of §0 restates sections below.
 >
 > **The public palette is neutral plus one overridable accent (ADR-019, as
 > amended 2026-08-23).** Colour tokens below that describe the retired gold
 > accent are historical; `design-tokens.md` at the repository root is the
-> current source for the neutrals, and the nine `--sf-*` custom properties in
+> current source for the neutrals, and the thirteen `--sf-*` custom properties in
 > `src/styles/form-hybrid.css` are the re-brand contract in full — four accent
 > tokens including the focus ring, plus the field, its border, its empty state,
-> the alternate surface and the separator hairline. An install overrides those
+> the alternate surface and the separator hairline, plus four for field state
+> (focus frame, valid, valid border, invalid ring). An install overrides those
 > declarations; it does not fork the stylesheet.
 
 This document describes the presentation layer **as it ships**, extracted from the code rather than from intent. Concrete values carry a file reference, and a line number where that line number is stable. Section 1.4 dropped its line numbers after they drifted through a refactor and left the document wrong about its own subject. Anything that could not be verified against the tree was left out — see `DECISIONS.md` ADR-010.
 
 Scope note from `ARCHITECTURE.md`: the **admin shell is a canonical product surface** (every install gets the same operator UI), while **storefront presentation varies per install** via `PUBLIC_STOREFRONT_TEMPLATE`. The two therefore have separate, deliberately unrelated palettes. Do not unify them.
+
+---
+
+## 0. Contract — read this first, then only the section a rule points at
+
+Everything below this section is evidence for these rules, plus the history of
+how the tree got here. Applying this system to another project, or building a
+page on an install, starts and mostly ends here.
+
+1. **Tokens, not forks.** The public palette is neutral plus one accent. The
+   `--sf-*` properties in `src/styles/form-hybrid.css` are the whole re-brand
+   contract: nine for accent, fields and surfaces at the top of the file, and four
+   for field state (`--sf-focus-frame`, `--sf-valid`, `--sf-valid-border`,
+   `--sf-invalid-ring`) beside the field rules. An install overrides those
+   declarations in its own CSS and never edits the product stylesheet (§1.1, ADR-019).
+   `design-tokens.md` is the portable copy of the values; this file wins on conflict.
+2. **Two surfaces, two palettes.** The admin shell is identical on every install; the
+   storefront varies by template. Do not unify them (scope note above, §1.3).
+3. **Shape and type.** Soft radius from `--radius: 0.625rem` in `foundation.css`:
+   `rounded-xl` 14px for images and cards, `rounded-2xl` 18px for grouped surfaces,
+   pills full; separation by surface and whitespace rather than lines (§3). Inter at
+   400, 600 and 700 and nothing else: the other weights render as one of these (§8.8).
+4. **A control's geometry belongs to its primitive.** A caller passes layout only,
+   never height, radius, colour or type size (§7.1). Guards: `admin-controls.test.ts`,
+   `admin-page-width.test.ts`.
+5. **Every public `<img>` declares `loading` and reserves its box.** Guarded by
+   `storefront-images.test.ts` (storefront components, layouts, public pages and
+   `src/scripts`, which builds some `<img>` strings): an explicit `loading`, plus `width`
+   and `height` unless the size is genuinely unknown (an uploaded logo or banner, a CMS
+   image). Each exception is listed with its reason and the number of tags it covers;
+   one that excuses nothing, or a further tag that matches it, fails. `loading` counts
+   only as a literal or a ternary of literals, since `loading={props.loading}` can
+   render nothing. An image built through the DOM, or a file type the scan cannot
+   read, fails too.
+   Convention, not guarded: the one image that is the page's first paint is `eager` with
+   `fetchpriority="high"`, the rest `lazy`; a product card asks `cardImageSrc()` for its
+   `-sm` derivative; CMS landing HTML gets `lazy` and `decoding="async"` from
+   `deferOffscreenImages()`. `/hello` is the admin login and follows the admin surface.
+6. **No React on the public surface.** Scriptless Astro; a React island is for the
+   admin (§7.3, §7.4).
+7. **Browser proof beats a green build.** Open the page at a narrow and a wide
+   width, check focus, console and horizontal overflow (§9). An SSR island that
+   throws answers 200 with an empty body.
+8. **A landing page is storefront, not a third surface.** It inherits every rule
+   above — tokens, shape, image contract — whichever of the two kinds it is.
+   `docs/LANDING-PAGES.md` owns the CMS-vs-native choice, the `/<slug>` URL
+   contract and the reserved-slug mechanics; `docs/NATIVE_LANDING_PAGE_SPEC.md`
+   owns the native-Astro implementation standard. Neither restates this file's
+   tokens or shape rule, and this file does not restate their routing. CMS
+   section markup is wrapped by `.lp-section` (`src/styles/landing-pages/landing.css`),
+   which supplies the spacing and type rules an operator's HTML does not carry;
+   its own images are governed by rule 5 through `deferOffscreenImages()`.
+
+**Taking this to another project.** Copy the values from `design-tokens.md` and
+rules 1 to 8; keep the guards or write their equivalents, because a rule with no
+failing test is a rule the next agent will not see. Do not copy: the retired
+`wide-catalog` template (§1.2), the gold accent, the scroll-snap carousel (§7.4),
+the resolved items in §8, or any install's brand values (a store's logo, accent
+and fonts are its own).
 
 ---
 

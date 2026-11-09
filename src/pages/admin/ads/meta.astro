@@ -160,7 +160,7 @@ const outline = buttonVariants({ variant: 'outline' });
                 Lihat
               </button>
             </span>
-            <span class="mt-1.5 block text-xs text-slate-500">Token tersimpan di enkripsi KV server-side dan tidak pernah dikirim ke browser.</span>
+            <span class="mt-1.5 block text-xs text-slate-500">Token tersimpan di database toko (D1) di server dan tidak pernah dikirim ke browser.</span>
           </label>
         </div>
 
@@ -182,6 +182,11 @@ const outline = buttonVariants({ variant: 'outline' });
           </div>
           <p id="metaTestHint" class="text-xs text-slate-500">Ambil dari Events Manager → Test Events. Event uji tidak masuk data produksi.</p>
           <p id="testMetaStatus" class="text-xs empty:hidden" role="status" aria-live="polite"></p>
+          <div class="flex flex-col gap-2 sm:flex-row sm:items-center">
+            <button id="requeueMeta" type="button" class={outline}>Kirim ulang event gagal</button>
+            <p id="requeueMetaStatus" class="text-xs empty:hidden" role="status" aria-live="polite"></p>
+          </div>
+          <p class="text-xs text-slate-500">Setelah token diperbaiki: Meta diuji dulu, lalu event yang gagal dikirim ulang.</p>
         </div>
 
         <div class="flex flex-col gap-3 border-t border-slate-200 p-4 sm:flex-row sm:items-center sm:justify-between">
@@ -381,7 +386,7 @@ const outline = buttonVariants({ variant: 'outline' });
       })
       .then((data) => {
         pixelInput.value = data.meta_pixel_id || '';
-        if (tokenHint) tokenHint.textContent = data.meta_capi_configured ? 'Tersimpan (Enkripsi Server)' : 'Belum diisi';
+        if (tokenHint) tokenHint.textContent = data.meta_capi_configured ? 'Tersimpan di server' : 'Belum diisi';
 
         if (kpiPixelVal) kpiPixelVal.textContent = data.meta_pixel_id || 'Belum diisi';
         if (kpiPixelStatus) kpiPixelStatus.className = data.meta_pixel_id ? 'h-2 w-2 rounded-full bg-emerald-500' : 'h-2 w-2 rounded-full bg-slate-300';
@@ -423,6 +428,35 @@ const outline = buttonVariants({ variant: 'outline' });
         updateBadge(Boolean(payload.data.meta_pixel_id && payload.data.meta_capi_configured));
       } catch (err) {
         if (statusText) statusText.textContent = err instanceof Error ? err.message : 'Gagal menyimpan.';
+      }
+    });
+
+    const requeueButton = document.getElementById('requeueMeta');
+    const requeueStatus = document.getElementById('requeueMetaStatus');
+    requeueButton?.addEventListener('click', async () => {
+      requeueButton.setAttribute('disabled', 'true');
+      requeueButton.textContent = 'Mengirim ulang...';
+      if (requeueStatus) requeueStatus.textContent = '';
+      try {
+        const res = await fetch('/api/admin/ads', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'requeue-capi', meta_pixel_id: pixelInput.value.trim() }),
+        });
+        const payload = await res.json().catch(() => ({}));
+        if (!res.ok || !payload.success) throw new Error(payload.error || 'Meta menolak permintaan.');
+        if (requeueStatus) {
+          requeueStatus.textContent = payload.message || 'Selesai.';
+          requeueStatus.className = 'text-xs empty:hidden text-emerald-700';
+        }
+      } catch (err) {
+        if (requeueStatus) {
+          requeueStatus.textContent = `Gagal: ${err instanceof Error ? err.message : 'kesalahan tidak dikenal'}`;
+          requeueStatus.className = 'text-xs empty:hidden text-rose-700';
+        }
+      } finally {
+        requeueButton.removeAttribute('disabled');
+        requeueButton.textContent = 'Kirim ulang event gagal';
       }
     });
 

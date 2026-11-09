@@ -380,3 +380,19 @@ test("the thanks tracker's hash returns undefined, never '', when it cannot hash
   assert.ok(body.length > 0, "hashSha256Hex not found");
   assert.doesNotMatch(body, /return\s+''|return\s+""/);
 });
+
+test("Meta and Google ad requests are bounded (audit M-5, L-11)", async () => {
+  const { readFileSync } = await import("node:fs");
+  const meta = readFileSync(new URL("./meta-capi.ts", import.meta.url), "utf8");
+  const google = readFileSync(new URL("./google-ads-offline.ts", import.meta.url), "utf8");
+  assert.match(meta, /signal: AbortSignal\.timeout\(META_CAPI_TIMEOUT_MS\)/);
+  assert.equal((google.match(/signal: AbortSignal\.timeout\(GOOGLE_FETCH_TIMEOUT_MS\)/g) ?? []).length, 2);
+});
+
+test("a store without Meta posts no PageView and no placeholder value (tracking L-4, L-5)", async () => {
+  const { readFileSync } = await import("node:fs");
+  const layout = readFileSync(new URL("../layouts/BaseLayout.astro", import.meta.url), "utf8");
+  const tracker = readFileSync(new URL("../components/storefront/tracking/MetaPageViewTracker.astro", import.meta.url), "utf8");
+  assert.match(layout, /\{hasMetaPixel && <MetaPageViewTracker \/>\}/);
+  assert.doesNotMatch(tracker, /value: 1/);
+});

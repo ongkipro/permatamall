@@ -1,7 +1,7 @@
+import { POST as POST_RETENTION } from "../pages/api/admin/orders/retention.ts";
 import assert from "node:assert/strict";
 import test from "node:test";
 import { POST } from "../pages/api/record-abandoned-order.ts";
-import { POST as POST_RETENTION } from "../pages/api/admin/orders/retention.ts";
 
 type QueryValue = null | number | string | Uint8Array;
 
@@ -187,8 +187,26 @@ test("authenticated retention POST executes the write-side purge", async () => {
   assert.deepEqual(await response.json(), {
     success: true,
     deleted_count: 2,
-    retention_days: 7,
+    retention_days: 14,
   });
   assert.equal(statements.length, 3);
   assert.ok(statements.every((sql) => sql.startsWith("DELETE FROM")));
+});
+
+test("only the retention purge and the guarded lifecycle delete remove an orders row", async () => {
+  const { readdirSync, readFileSync } = await import("node:fs");
+  const sources: string[] = [];
+  const walk = (dir: URL) => {
+    for (const entry of readdirSync(dir, { withFileTypes: true })) {
+      const next = new URL(entry.name + (entry.isDirectory() ? "/" : ""), dir);
+      if (entry.isDirectory()) walk(next);
+      else if (/\.(ts|astro)$/.test(entry.name) && !entry.name.endsWith(".test.ts")) sources.push(next.pathname);
+    }
+  };
+  walk(new URL("../", import.meta.url));
+  const deleters = sources
+    .filter((file) => /DELETE FROM orders\b/.test(readFileSync(file, "utf8")))
+    .map((file) => file.replace(/^.*\/src\//, "src/"))
+    .sort();
+  assert.deepEqual(deleters, ["src/lib/order-lifecycle.ts", "src/lib/order-persistence.ts"]);
 });

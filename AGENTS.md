@@ -1,6 +1,6 @@
 # AGENTS.md — Working Agreement for AdsBookCMS
 
-> Verified against disk: 2026-11-02 @ `be6ee6a` (1.9.2; baseline 1173)
+> Verified against disk: 2026-11-06 @ `feb3c62` (1.9.2; §4 baseline, the lib-module count, the auth test count and the §6 guard names re-checked; other claims not re-audited)
 
 This file is the contract for any AI coding agent or contributor working in this repository. Read it before the first edit.
 
@@ -123,11 +123,11 @@ can reach it.
 
 On a fresh clone, run `npm run check` rather than bare `npx tsc --noEmit`. `astro check` generates `.astro/types.d.ts` first; without it `tsc` reports phantom errors such as `Property 'env' does not exist on type 'ImportMeta'`.
 
-Current verified baseline: **1173 passing** (0 skipped, 2026-11-02, `fix/payment-fee-display`, 1.9.2), 0 type errors, `astro check` 0 errors / 0 warnings / 0 hints (574 files). A change that reduces this baseline is not done.
+Current verified baseline: **1188 passing** (0 skipped, 2026-11-06, `ui/storefront-image-guard`, 1.9.2), 0 type errors, `astro check` 0 errors / 0 warnings / 0 hints (590 files). A change that reduces this baseline is not done.
 
 New non-trivial logic — a branch, a parser, a money or auth path — leaves one runnable check behind. Trivial one-liners do not need a test.
 
-`src/lib/auth.ts` is covered by `src/lib/auth.test.ts` (15 tests, mutation-verified). That suite asserts security *properties* — a tampered signature is rejected, a rotated credential closes the session, a role never reaches a route it should not. Keep it that way: a test that merely asserts a valid token is valid buys nothing.
+`src/lib/auth.ts` is covered by `src/lib/auth.test.ts` (17 tests; mutation-verified when it had 15). That suite asserts security *properties* — a tampered signature is rejected, a rotated credential closes the session, a role never reaches a route it should not. Keep it that way: a test that merely asserts a valid token is valid buys nothing.
 
 ---
 
@@ -145,7 +145,7 @@ A permitted command is not an approved one. The tooling here runs with broad per
 
 ## 6. Code discipline
 
-Smallest change that is correct. Reuse what exists before adding; the codebase already has 116 non-test lib modules and duplicating one is the most common failure mode.
+Smallest change that is correct. Reuse what exists before adding; the codebase already has 140 non-test lib modules and duplicating one is the most common failure mode.
 
 Before adding a dependency, check whether the platform already provides it. Two headless UI libraries already ship side by side (`radix-ui` and `@base-ui/react`) — do not add a third.
 
@@ -154,7 +154,9 @@ primitives own every control's height, radius and colour (never pass them per
 call), filter rows are `FilterBar`/`FilterField`, search is `SearchInput`, page
 width belongs to AdminShell alone. `admin-controls.test.ts` and
 `admin-page-width.test.ts` fail the suite when a screen drifts from it — fix
-the screen, not the test.
+the screen, not the test. DESIGN-SYSTEM.md §0 is the whole UI contract in one
+page, including the public image rule that `storefront-images.test.ts` guards;
+read it before touching a component, and before taking the look to another project.
 
 Fix root causes, not symptoms. Grep every caller before editing a shared function: one guard in the shared path is a smaller diff than one guard per call site, and patching only the path in front of you leaves siblings broken.
 

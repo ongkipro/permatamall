@@ -376,6 +376,25 @@ export async function deleteOrdersReleasingReservations(
       `Order ${committed.order_number} sudah dibayar atau sudah dikirim ke kurir, sehingga tidak dapat dihapus. Batalkan atau refund dan pertahankan catatannya.`,
     );
   }
+  // Leads are never deleted (owner decision 2026-11-10, audit F-4): this is
+  // the one delete path left, and `/api/admin/orders/[id]` accepts an
+  // `ABN-` key as readily as an order's.
+  const lead = await database
+    .prepare(
+      `${cte}
+      SELECT o.order_number
+      FROM orders o
+      WHERE o.id IN (SELECT order_id FROM selected)
+        AND o.shipping_status = 'abandoned'
+      LIMIT 1`,
+    )
+    .bind(...orderIds)
+    .first<{ order_number: string }>();
+  if (lead) {
+    throw new OrderLifecycleError(
+      `${lead.order_number} adalah lead dan tidak pernah dihapus. Tandai follow-up-nya (mis. tidak tertarik) atau ubah menjadi order.`,
+    );
+  }
   const statements = [
     ...buildOrderReleaseStatements(database, orderIds, false),
     database

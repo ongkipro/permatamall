@@ -1,0 +1,8 @@
+# Cloudflare Workers static-assets headers. The copied-through files in
+# public/ have no content hash in their name, so the platform default is
+# `max-age=0, must-revalidate`: a returning visitor re-asks the edge about
+# every image on every page. A day is long enough to kill that and short
+# enough that a merchant who replaces a logo or hero sees it by tomorrow.
+# Hashed output (/_astro/*) and uploads (/assets/*) are already immutable.
+/images/*
+  Cache-Control: public, max-age=86400, stale-while-revalidate=604800

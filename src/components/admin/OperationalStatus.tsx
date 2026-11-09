@@ -85,6 +85,10 @@ function describeMetrics(signal: HealthSignal) {
     const { pending = 0, failed = 0, overdue = 0 } = metrics;
     return `${pending} menunggu · ${overdue} lewat jadwal · ${failed} gagal permanen`;
   }
+  if (signal.id === "meta-purchase-coverage") {
+    const { orders = 0, missing = 0 } = metrics;
+    return `${missing} dari ${orders} order COD tanpa Purchase`;
+  }
   if (signal.id === "receiver-score") {
     const refused = metrics.refusedInWindow ?? 0;
     return refused > 0 ? `${refused} order belum dinilai karena akses ditolak, pada 200 baris terakhir` : null;

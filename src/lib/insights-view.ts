@@ -15,7 +15,7 @@ export const UTM_NONE_LABEL = '(tanpa UTM)';
 export type InsightsReport = keyof typeof INSIGHTS_REPORTS;
 export const INSIGHTS_CHANNEL_OPTIONS = [
   { value: '', label: 'Semua kanal' }, { value: 'meta', label: 'Meta' },
-  { value: 'google', label: 'Google' }, { value: 'tiktok', label: 'TikTok' },
+  { value: 'google', label: 'Google' },
   { value: 'other_paid', label: 'Iklan lainnya' }, { value: 'organic', label: 'Organik' },
   { value: 'direct', label: 'Langsung' },
 ];

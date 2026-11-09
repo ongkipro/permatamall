@@ -430,6 +430,7 @@ test("Perlu tindakan counts what the linked lists show, under the Mengantar push
     ready_push: 3,
     push_problem: 2,
     awaiting_payment: 1,
+    transfer_unconfirmed: 0,
     leads_new: 1,
     needs_waybill: 1,
     needs_pickup: 1,
@@ -605,9 +606,14 @@ test("Action needed marks what has waited more than a day", async () => {
   insert.run("INV-OLD", hoursAgo(30), "cod", "unpaid", "pending");
   insert.run("INV-QRIS-OLD", hoursAgo(26), "qris", "pending", "pending");
   insert.run("ABN-OLD", hoursAgo(48), "cod", "unpaid", "abandoned");
+  // Only "Transfer Diterima" confirms these, and it is their Meta Purchase.
+  insert.run("INV-TF-NEW", hoursAgo(3), "manual_transfer", "pending", "pending");
+  insert.run("INV-TF-OLD", hoursAgo(40), "manual_transfer", "pending", "pending");
+  insert.run("INV-TF-PAID", hoursAgo(40), "manual_transfer", "paid", "pending");
   const { items } = await readOrderAttention(d1(sqlite), { now });
   const item = (key: string) => items.find((entry) => entry.key === key);
-  assert.deepEqual([item("confirm")?.count, item("confirm")?.stale], [3, 2]);
+  assert.deepEqual([item("confirm")?.count, item("confirm")?.stale], [6, 4]);
   assert.deepEqual([item("awaiting_payment")?.count, item("awaiting_payment")?.stale], [1, 1]);
+  assert.deepEqual([item("transfer_unconfirmed")?.count, item("transfer_unconfirmed")?.stale], [2, 1]);
   assert.deepEqual([item("leads_new")?.count, item("leads_new")?.stale], [1, 1]);
 });

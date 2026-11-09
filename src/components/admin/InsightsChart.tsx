@@ -3,10 +3,10 @@ import { ChartContainer, ChartTooltip, ChartTooltipContent } from '../ui/chart';
 import { insightsMoney, insightsNumber } from '../../lib/insights-view';
 
 export default function InsightsChart({ series, metric }: {
-  series: Array<{ date: string; orders: number; leads: number; revenue: number }>;
-  metric: 'orders' | 'leads' | 'revenue';
+  series: Array<{ date: string; orders: number; leads: number; revenue: number; meta_purchases: number }>;
+  metric: 'orders' | 'leads' | 'revenue' | 'meta_purchases';
 }) {
-  const label = { orders: 'Orders', leads: 'Leads', revenue: 'Revenue' }[metric];
+  const label = { orders: 'Orders', leads: 'Leads', revenue: 'Revenue', meta_purchases: 'Purchase ke Meta' }[metric];
   return <ChartContainer config={{ [metric]: { label, color: 'var(--chart-1)' } }} className="h-64 w-full">
     <LineChart data={series} accessibilityLayer>
       <CartesianGrid vertical={false} />
