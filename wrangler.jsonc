@@ -25,8 +25,10 @@
   // Run the Worker beside its D1, not beside the visitor: a page makes several
   // sequential D1 reads, and part of Indonesian traffic (and all of PageSpeed)
   // is served from US colos (ADR-030).
+  // Pinned beside the APAC D1 (ADR-034): smart placement left some requests
+  // running local-HKG (seen 2026-11-10), each D1 read then crossing to SIN.
   "placement": {
-    "mode": "smart"
+    "region": "aws:ap-southeast-1"
   },
 
   // Runtime credentials cannot safely degrade to placeholders. Declaring the
