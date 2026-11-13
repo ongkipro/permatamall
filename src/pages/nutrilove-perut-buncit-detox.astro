@@ -101,8 +101,8 @@ const testimonials = [
     city: 'Bekasi',
     occupation: 'Ibu Rumah Tangga & Pengusaha Kuliner',
     rating: 5,
-    highlight: 'lingkar perut susut 7 cm dalam 3 minggu dan celana lama yang tadinya sesak sekarang longgar semua',
-    quote: 'Sejak lewat umur 35, perut bawah rasanya buncit keras banget dan susah BAB sampai 3 hari sekali. Sudah coba teh pelangsing malah mulas melilit di perut. Pas ganti ke NutriLove Cuka Apel yang ada The Mother-nya ini tiap pagi dan sebelum makan, BAB lancar plong tiap pagi tanpa melilit, lingkar perut susut 7 cm dalam 3 minggu dan celana lama yang tadinya sesak sekarang longgar semua!',
+    highlight: 'lingkar perut susut 8 cm dalam 2 minggu dan kerak kotoran hitam rontok plong tanpa melilit',
+    quote: 'Sudah 3 tahun perut bawah rasanya buncit keras kayak batu dan cuma BAB 3 hari sekali. Tiap coba teh pelangsing malah tersiksa mulas melilit dan lemas di toilet. Pas coba NutriLove Cuka Apel With The Mother ini 1 sloki malam hari campur air hangat, subuhnya langsung BAB plong kotoran hitam keluar banyak banget tanpa mulas melilit sama sekali! Dalam 2 minggu lingkar perut susut 8 cm dan celana lama yang tadinya gak bisa dikancing sekarang longgar!',
     image: '/images/landing/nutrilove-cuka-apel/testimoni-ibu-rina.webp',
   },
   {
@@ -110,8 +110,8 @@ const testimonials = [
     city: 'Bandung',
     occupation: 'Karyawan Swasta',
     rating: 5,
-    highlight: 'perut buncit yang tadinya keras begah jadi kempes enteng dan nafas gak ngos-ngosan lagi',
-    quote: 'Duduk kerja seharian ditambah sering makan malam bikin perut maju ke depan sampai ikat pinggang mentok di lubang terakhir. Mau olahraga gak sempat. Saya rutin minum Paket 6 Botol ini bareng istri, baru jalan botol kedua perut buncit yang tadinya keras begah jadi kempes enteng dan nafas gak ngos-ngosan lagi pas naik tangga!',
+    highlight: 'perut buncit padat yang tadinya mentok di meja kerja sekarang kempes lembek dan turun 2 nomor celana',
+    quote: 'Kerja kantoran duduk seharian bikin perut maju ke depan padat kayak batu sampai nafas ngos-ngosan pas ikat tali sepatu. Ikat pinggang mentok di lubang paling ujung. Rutin minum NutriLove ACV ini tiap bangun tidur dan sebelum tidur, masuk botol kedua perut buncit yang tadinya keras padat langsung kempes lembek dan enteng. Berat badan turun 4,5 kg tanpa perlu diet menyiksa!',
     image: '/images/landing/nutrilove-cuka-apel/testimoni-pak-dimas.webp',
   },
   {
@@ -119,14 +119,14 @@ const testimonials = [
     city: 'Semarang',
     occupation: 'Ibu Rumah Tangga & Pengusaha Kue',
     rating: 5,
-    highlight: 'perut buncit bawah yang tadinya kayak hamil 4 bulan sekarang kempes rata dan enteng banget',
-    quote: 'Sebagai tukang kue saya tiap hari icip mentega dan gula. Perut bawah buncit keras menonjol kayak hamil 4 bulan dan susah BAB berhari-hari. Beruntung ketemu NutriLove With The Mother ini. Cukup 1 sloki campur air hangat tiap pagi dan sore, hari ke-3 kerak usus keluar tuntas, perut buncit bawah yang tadinya kayak hamil 4 bulan sekarang kempes rata dan enteng banget!',
+    highlight: 'perut buncit keras kayak hamil 4 bulan sekarang kempes rata dan tiap pagi BAB tuntas tanpa mengejan',
+    quote: 'Sebagai tukang kue tiap hari cicip mentega dan gula. Perut bawah buncit keras menonjol kayak orang hamil 4 bulan dan sembelit parah berhari-hari. Bersyukur banget nemu NutriLove yang ada The Mother aslinya ini. Cuma 1 sloki campur air hangat tiap subuh, hari ke-3 kerak usus rontok tuntas, perut buncit keras kempes rata dan nafas plong enteng banget!',
     image: '/images/landing/nutrilove-cuka-apel/testimoni-ibu-dewi.webp',
   },
 ];
 
-const sectionTitle = 'text-[clamp(21px,6.5vw,25px)] font-black text-slate-950 tracking-normal leading-[1.22]';
-const sectionLead = 'text-[13.5px] sm:text-[14px] text-slate-600 leading-relaxed mt-2 max-w-[420px] mx-auto';
+const sectionTitle = 'text-[clamp(22px,6.8vw,26px)] font-black text-slate-950 tracking-normal leading-[1.2]';
+const sectionLead = 'text-[15px] sm:text-[16px] text-slate-700 leading-relaxed mt-2 max-w-[420px] mx-auto';
 const socialProofOrders = await recentOrderCount(getRuntimeEnv(Astro.locals)?.OMS_DB as D1Database | undefined);
 ---
 
@@ -181,8 +181,8 @@ const socialProofOrders = await recentOrderCount(getRuntimeEnv(Astro.locals)?.OM
       <div class="px-4 sm:px-5 pt-5 sm:pt-6">
         
         <!-- Star Rating Social Proof -->
-        <div class="mb-3 inline-flex items-center justify-center gap-1.5 text-[12px] font-bold text-slate-800 bg-emerald-50/90 px-3 py-1 rounded-full border border-emerald-200/80 shadow-2xs">
-          <div class="flex items-center gap-0.5 shrink-0 text-amber-400 text-[13px] leading-none" role="img" aria-label="Rating 5 dari 5 bintang">
+        <div class="mb-3 inline-flex items-center justify-center gap-1.5 text-[13px] font-bold text-slate-800 bg-emerald-50/90 px-3.5 py-1 rounded-full border border-emerald-200/80 shadow-2xs">
+          <div class="flex items-center gap-0.5 shrink-0 text-amber-400 text-[14px] leading-none" role="img" aria-label="Rating 5 dari 5 bintang">
             ★ ★ ★ ★ ★
           </div>
           <span class="text-slate-900 font-extrabold">4.9 / 5.0</span>
@@ -190,33 +190,19 @@ const socialProofOrders = await recentOrderCount(getRuntimeEnv(Astro.locals)?.OM
           <span class="text-slate-600 font-medium">(6.800+ Paket Terkirim)</span>
         </div>
 
-        <!-- Main Impact Brutal Overclaim Headline (under 10 words, normal tracking) -->
-        <h1 class="mx-auto max-w-[440px] text-[clamp(21px,6.8vw,26px)] font-black leading-[1.24] tracking-normal text-slate-950">
+        <!-- Main Impact Brutal Overclaim Headline -->
+        <h1 class="mx-auto max-w-[440px] text-[clamp(22px,7vw,28px)] font-black leading-[1.22] tracking-normal text-slate-950">
           Perut Buncit Keras Kayak Batu &amp; <span class="box-decoration-clone rounded-[0.18em] bg-red-100 text-red-700 px-1.5 py-0.5">Susah BAB?</span>
         </h1>
 
         <!-- Subtitle -->
-        <p class="mx-auto mt-2 max-w-[420px] text-[14px] leading-relaxed text-slate-600">
-          Luruhkan lemak visceral membandel dan bersihkan sisa kerak usus dengan <strong class="text-slate-950 font-bold">NutriLove Cuka Apel With The Mother</strong>. Perut buncit begah langsung kempes enteng tanpa mulas melilit.
+        <p class="mx-auto mt-2.5 max-w-[420px] text-[15px] sm:text-[16px] leading-relaxed text-slate-700">
+          Luruhkan kerak usus menahun dan bakar lemak visceral mampet dengan <strong class="text-slate-950 font-bold">NutriLove Cuka Apel With The Mother</strong>. Perut langsung kempes enteng, BAB lancar plong tanpa mulas melilit.
         </p>
-
-        <!-- ═══ HIGH-CONVERSION VALUE BANNER ═══ -->
-        <div class="mx-auto mt-4 w-full max-w-[420px] rounded-xl bg-[#0F2F1F] p-3 text-center text-white shadow-sm border border-amber-400/50">
-          <p class="text-[14px] sm:text-[15px] font-black uppercase tracking-wide text-amber-300 leading-tight">
-            PROMO: BELI 1 GRATIS 3 (TOTAL 4 BOTOL)
-          </p>
-          <div class="mt-1.5 flex flex-wrap items-center justify-center gap-x-2 gap-y-0.5 text-[12px] font-bold text-slate-200">
-            <span class="text-amber-300">Gratis Ongkir Se-Pulau Jawa</span>
-            <span class="text-amber-400 font-black">•</span>
-            <span>Bisa COD</span>
-            <span class="text-amber-400 font-black">•</span>
-            <span>Gratis Sloki Takar</span>
-          </div>
-        </div>
       </div>
 
       <!-- ═══ FULL-WIDTH HERO BRUTAL OVERCLAIM BANNER (RATIO 4:3) ═══ -->
-      <div class="mt-5 relative w-full overflow-hidden bg-slate-950 aspect-[4/3] shadow-md border-y border-red-950">
+      <div class="mt-4 relative w-full overflow-hidden bg-slate-950 aspect-[4/3] shadow-md border-y border-red-950">
         <img
           src="/images/landing/nutrilove-cuka-apel/perut-buncit-hero-brutal.webp"
           alt="Perbandingan Perut Buncit Lemak Visceral vs Perut Kempes Ramping Dengan NutriLove Cuka Apel With The Mother"
@@ -228,17 +214,13 @@ const socialProofOrders = await recentOrderCount(getRuntimeEnv(Astro.locals)?.OM
           height="896"
         />
 
-        <div class="absolute top-3 left-3 bg-slate-950/90 text-red-400 text-[12px] font-black uppercase tracking-wider px-2.5 py-1 rounded-md shadow-md border border-red-500/40">
-          ⚠ LEMAK VISCERAL
-        </div>
-
         <div class="absolute top-3 right-3 bg-red-600 text-white text-[12px] font-black uppercase tracking-wider px-2.5 py-1 rounded-md shadow-md border border-white/20">
           BELI 1 GRATIS 3
         </div>
 
         <div class="absolute bottom-0 inset-x-0 bg-gradient-to-t from-slate-950/95 via-slate-950/80 to-transparent px-3 pt-8 pb-2.5 text-center">
-          <p class="text-[12px] sm:text-[13px] font-medium text-amber-300 leading-tight">
-            Aktifkan Pembakaran Lemak Perut • BAB Lancar Plong Tanpa Mulas Melilit
+          <p class="text-[13px] sm:text-[14px] font-bold text-amber-300 leading-tight">
+            Aktifkan Pembakaran Lemak Visceral • BAB Subuh Lancar Plong Tanpa Mulas Melilit
           </p>
         </div>
       </div>
@@ -247,19 +229,19 @@ const socialProofOrders = await recentOrderCount(getRuntimeEnv(Astro.locals)?.OM
       <div class="mt-4 px-4 sm:px-5">
         <a
           href="#form-pemesanan"
-          class="flex w-full min-h-[50px] items-center justify-center gap-2 rounded-xl bg-red-600 hover:bg-red-700 px-4 py-3 text-[14px] sm:text-[15px] font-bold tracking-normal text-white shadow-lg shadow-red-600/25 transition-colors active:scale-[0.99]"
+          class="flex w-full min-h-[52px] items-center justify-center gap-2 rounded-xl bg-red-600 hover:bg-red-700 px-4 py-3 text-[15px] sm:text-[16px] font-extrabold tracking-normal text-white shadow-lg shadow-red-600/25 transition-colors active:scale-[0.99]"
         >
-          <span>Ambil Promo Beli 1 Gratis 3 (Gratis Ongkir P. Jawa)</span>
+          <span>Ambil Promo Beli 1 Gratis 3 (COD)</span>
           <span aria-hidden="true">↓</span>
         </a>
-        <p class="mt-1.5 text-[12px] text-slate-500">
+        <p class="mt-2 text-[13px] font-medium text-slate-600">
           Bayar di Tempat (COD) • Gratis Ongkir Se-Pulau Jawa • Gratis Sloki Takar &amp; Sedotan
         </p>
       </div>
       <div id="hero-fold-sentinel" class="h-px w-full" aria-hidden="true"></div>
 
       <!-- Clean Minimalist Trust Row -->
-      <div class="mt-4 flex flex-wrap items-center justify-center gap-x-2 gap-y-1.5 px-3 text-[12px] font-bold text-slate-700">
+      <div class="mt-4 flex flex-wrap items-center justify-center gap-x-2 gap-y-1.5 px-3 text-[12.5px] font-bold text-slate-700">
         <span class="bg-emerald-50 px-2.5 py-1 rounded-full text-emerald-900 border border-emerald-200/80 whitespace-nowrap">Gratis Ongkir Se-Pulau Jawa</span>
         <span class="bg-slate-100 px-2.5 py-1 rounded-full text-slate-800 border border-slate-200/60 whitespace-nowrap">Bisa COD (Bayar di Tempat)</span>
         <span class="bg-slate-100 px-2.5 py-1 rounded-full text-slate-800 border border-slate-200/60 whitespace-nowrap">Bukan Obat Pencahar</span>
@@ -267,45 +249,45 @@ const socialProofOrders = await recentOrderCount(getRuntimeEnv(Astro.locals)?.OM
       </div>
 
       <!-- 4 Key Somatic Pain Points -->
-      <div class="mt-5 sm:mt-6 px-4 sm:px-5 text-left space-y-2.5">
-        <div class="p-3 rounded-xl bg-red-50/50 border border-red-200/80 shadow-2xs">
+      <div class="mt-6 px-4 sm:px-5 text-left space-y-3">
+        <div class="p-3.5 rounded-xl bg-red-50/60 border border-red-200/80 shadow-2xs">
           <div class="flex items-center justify-between gap-2">
-            <h2 class="text-[14px] font-bold text-slate-950">1. Perut Maju &amp; Keras Saat Ditekan (Visceral Fat)</h2>
-            <span class="text-[12px] font-bold uppercase tracking-wider text-red-700 bg-red-100 px-2 py-0.5 rounded shrink-0">Lemak Organ</span>
+            <h2 class="text-[15px] font-black text-slate-950">1. Perut Maju Keras Kayak Batu (Lemak Visceral Menahun)</h2>
+            <span class="text-[11.5px] font-black uppercase tracking-wider text-red-700 bg-red-100 px-2 py-0.5 rounded shrink-0">Lemak Organ</span>
           </div>
-          <p class="text-[13px] sm:text-[13.5px] text-slate-600 mt-1 leading-relaxed">Bukan sekadar lemak kulit, melainkan lemak visceral yang membungkus organ dalam dan hati (fatty liver) sehingga perut terasa padat keras dan sesak saat membungkuk.</p>
+          <p class="text-[14px] sm:text-[15px] text-slate-700 mt-1.5 leading-relaxed">Bukan sekadar lemak kulit yang lembek, melainkan timbunan lemak visceral padat yang membungkus organ dalam dan hati. Perut terasa padat mengganjal, begah saat duduk lama di kantor, dan sesak nafas saat membungkuk mengikat tali sepatu.</p>
         </div>
 
-        <div class="p-3 rounded-xl bg-red-50/50 border border-red-200/80 shadow-2xs">
+        <div class="p-3.5 rounded-xl bg-red-50/60 border border-red-200/80 shadow-2xs">
           <div class="flex items-center justify-between gap-2">
-            <h2 class="text-[14px] font-bold text-slate-950">2. Perut Begah Penuh Gas &amp; Susah BAB Berhari-hari</h2>
-            <span class="text-[12px] font-bold uppercase tracking-wider text-red-700 bg-red-100 px-2 py-0.5 rounded shrink-0">Usus Kotor</span>
+            <h2 class="text-[15px] font-black text-slate-950">2. Kerak Usus Membusuk &amp; BAB Macet 3 Hari Sekali</h2>
+            <span class="text-[11.5px] font-black uppercase tracking-wider text-red-700 bg-red-100 px-2 py-0.5 rounded shrink-0">Usus Kotor</span>
           </div>
-          <p class="text-[13px] sm:text-[13.5px] text-slate-600 mt-1 leading-relaxed">Kurangnya enzim pencernaan membuat sisa makanan membusuk jadi gas di usus, perut kembung kencang seperti balon dan BAB tidak tuntas.</p>
+          <p class="text-[14px] sm:text-[15px] text-slate-700 mt-1.5 leading-relaxed">Kurangnya enzim aktif membuat sisa makanan berhari-hari membusuk jadi gas racun di usus. Perut kembung kencang seperti ditiup balon, buang gas bau busuk, dan buang air besar tidak pernah tuntas.</p>
         </div>
 
-        <div class="p-3 rounded-xl bg-red-50/50 border border-red-200/80 shadow-2xs">
+        <div class="p-3.5 rounded-xl bg-red-50/60 border border-red-200/80 shadow-2xs">
           <div class="flex items-center justify-between gap-2">
-            <h2 class="text-[14px] font-bold text-slate-950">3. Metabolisme Mampet Sejak Lewat Usia 35 Tahun</h2>
-            <span class="text-[12px] font-bold uppercase tracking-wider text-red-700 bg-red-100 px-2 py-0.5 rounded shrink-0">Susah Turun BB</span>
+            <h2 class="text-[15px] font-black text-slate-950">3. Metabolisme Mampet Total Sejak Lewat Usia 35 Tahun</h2>
+            <span class="text-[11.5px] font-black uppercase tracking-wider text-red-700 bg-red-100 px-2 py-0.5 rounded shrink-0">Susah Turun BB</span>
           </div>
-          <p class="text-[13px] sm:text-[13.5px] text-slate-600 mt-1 leading-relaxed">Makan sedikit saja langsung jadi lemak di pinggang dan perut bawah, sementara kancing kemeja dan celana kerja makin hari makin sesak.</p>
+          <p class="text-[14px] sm:text-[15px] text-slate-700 mt-1.5 leading-relaxed">Makan sedikit saja langsung menumpuk jadi lemak di perut bawah dan pinggang. Kancing kemeja dan celana kerja makin sesak, ikat pinggang mentok di lubang paling ujung, dan badan terasa berat bangun pagi.</p>
         </div>
 
-        <div class="p-3 rounded-xl bg-red-50/50 border border-red-200/80 shadow-2xs">
+        <div class="p-3.5 rounded-xl bg-red-50/60 border border-red-200/80 shadow-2xs">
           <div class="flex items-center justify-between gap-2">
-            <h2 class="text-[14px] font-bold text-slate-950">4. Suka Lapar Mata &amp; Ngemil Manis Malam Hari</h2>
-            <span class="text-[12px] font-bold uppercase tracking-wider text-red-700 bg-red-100 px-2 py-0.5 rounded shrink-0">Craving Gula</span>
+            <h2 class="text-[15px] font-black text-slate-950">4. Lapar Mata Jam 9 Malam &amp; Suka Ngemil Manis</h2>
+            <span class="text-[11.5px] font-black uppercase tracking-wider text-red-700 bg-red-100 px-2 py-0.5 rounded shrink-0">Craving Gula</span>
           </div>
-          <p class="text-[13px] sm:text-[13.5px] text-slate-600 mt-1 leading-relaxed">Lonjakan insulin sehabis makan memicu sinyal lapar palsu di malam hari, membuat Anda sulit menahan godaan gorengan, roti, dan minuman manis.</p>
+          <p class="text-[14px] sm:text-[15px] text-slate-700 mt-1.5 leading-relaxed">Lonjakan hormon insulin sehabis makan malam memicu sinyal lapar palsu di otak. Anda dipaksa ingin ngunyah gorengan, roti, atau camilan manis padahal perut sebenarnya sudah penuh begah.</p>
         </div>
       </div>
 
       <!-- Narrative Pivot Callout -->
       <div class="mt-5 px-4 sm:px-5 text-left">
-        <div class="border-l-4 border-emerald-600 pl-3.5 bg-emerald-50/80 py-2.5 pr-3 rounded-r-lg">
-          <p class="text-[13.5px] sm:text-[14px] font-medium text-emerald-950 leading-relaxed italic">
-            “Jangan siksa usus Anda dengan teh pelangsing pencahar yang hanya menguras cairan tubuh dan bikin perut melilit! Untuk mengempeskan perut buncit keras, Anda butuh <strong>Asam Asetat &amp; Probiotik The Mother</strong> yang mengaktifkan enzim pembakar lemak visceral sekaligus membersihkan sisa kerak pencernaan.”
+        <div class="border-l-4 border-emerald-600 pl-3.5 bg-emerald-50/90 py-3 pr-3.5 rounded-r-xl">
+          <p class="text-[14px] sm:text-[15px] font-medium text-emerald-950 leading-relaxed italic">
+            “Berhenti menyiksa usus Anda dengan teh pelangsing pencahar yang cuma bikin dehidrasi lemas dan perut melilit di toilet! Untuk mengempeskan perut buncit keras, Anda butuh <strong>Asam Asetat 5% Murni &amp; Koloni Probiotik 'The Mother' hidup</strong> yang mengikis kerak usus membatu dan merontokkan lemak visceral dari dalam!”
           </p>
         </div>
       </div>
@@ -319,7 +301,7 @@ const socialProofOrders = await recentOrderCount(getRuntimeEnv(Astro.locals)?.OM
           Kenapa Sudah Kurangi Makan Tapi Perut Tetap Buncit?
         </h2>
         <p class={`${sectionLead} text-center`}>
-          Selama hormon insulin tinggi dan bakteri baik di usus kalah jumlah, tubuh akan mengunci cadangan lemak di area perut dan pinggang:
+          Selama enzim pencernaan mampet dan sisa kerak makanan menempel di dinding usus, tubuh mengunci cadangan lemak di area perut dan pinggang:
         </p>
       </div>
 
@@ -334,58 +316,58 @@ const socialProofOrders = await recentOrderCount(getRuntimeEnv(Astro.locals)?.OM
           width="1200"
           height="896"
         />
-        <div class="absolute bottom-0 inset-x-0 bg-slate-950/90 px-4 py-2 text-center text-white">
-          <p class="text-[12px] text-amber-300">
-            Enzim probiotik aktif <strong>'The Mother'</strong> meluruhkan timbunan lemak visceral dan membersihkan kerak sisa makanan di usus.
+        <div class="absolute bottom-0 inset-x-0 bg-slate-950/90 px-4 py-2.5 text-center text-white">
+          <p class="text-[13px] sm:text-[14px] font-bold text-amber-300">
+            Enzim probiotik aktif <strong>'The Mother'</strong> meluruhkan lemak visceral padat dan membilas kerak kotoran usus sampai bersih.
           </p>
         </div>
       </div>
 
       <!-- Comparison Grid: Teh Pencahar Biasa vs Terapi NutriLove ACV -->
-      <div class="mt-5 px-3.5 sm:px-4 grid grid-cols-2 gap-2 text-left">
-        <div class="p-2.5 rounded-xl bg-red-50/70 border border-red-200/60 shadow-2xs">
-          <p class="font-black text-red-900 uppercase tracking-wider text-[12px] pb-1.5 border-b border-red-200/50 mb-2">
-            Teh/Pil Pencahar
+      <div class="mt-5 px-3.5 sm:px-4 grid grid-cols-2 gap-2.5 text-left">
+        <div class="p-3 rounded-xl bg-red-50/80 border border-red-200/80 shadow-2xs">
+          <p class="font-black text-red-900 uppercase tracking-wider text-[12.5px] pb-1.5 border-b border-red-200/60 mb-2">
+            Teh/Pil Pencahar (Bahaya)
           </p>
-          <ul class="space-y-1.5 text-slate-900 font-bold text-[12px]">
+          <ul class="space-y-2 text-slate-900 font-bold text-[13px] sm:text-[13.5px]">
             <li class="flex items-start gap-1.5 leading-snug">
-              <span class="text-red-600 font-black text-[12px] mt-px shrink-0">✕</span>
-              <span>Perut mulas melilit hebat</span>
+              <span class="text-red-600 font-black text-[13px] mt-px shrink-0">✕</span>
+              <span>Mulas melilit lemas seharian</span>
             </li>
             <li class="flex items-start gap-1.5 leading-snug">
-              <span class="text-red-600 font-black text-[12px] mt-px shrink-0">✕</span>
-              <span>Hanya buang cairan tubuh</span>
+              <span class="text-red-600 font-black text-[13px] mt-px shrink-0">✕</span>
+              <span>Cuma buang cairan (bukan lemak)</span>
             </li>
             <li class="flex items-start gap-1.5 leading-snug">
-              <span class="text-red-600 font-black text-[12px] mt-px shrink-0">✕</span>
-              <span>Usus jadi malas bekerja</span>
+              <span class="text-red-600 font-black text-[13px] mt-px shrink-0">✕</span>
+              <span>Usus malas &amp; ketergantungan</span>
             </li>
             <li class="flex items-start gap-1.5 leading-snug">
-              <span class="text-red-600 font-black text-[12px] mt-px shrink-0">✕</span>
-              <span>Berhenti minum BB naik lagi</span>
+              <span class="text-red-600 font-black text-[13px] mt-px shrink-0">✕</span>
+              <span>Berhenti, perut makin buncit</span>
             </li>
           </ul>
         </div>
 
-        <div class="p-2.5 rounded-xl bg-emerald-50/80 border border-emerald-200/70 shadow-2xs">
-          <p class="font-black text-emerald-900 uppercase tracking-wider text-[12px] pb-1.5 border-b border-emerald-200/50 mb-2">
-            NutriLove ACV
+        <div class="p-3 rounded-xl bg-emerald-50/90 border border-emerald-200/80 shadow-2xs">
+          <p class="font-black text-emerald-900 uppercase tracking-wider text-[12.5px] pb-1.5 border-b border-emerald-200/60 mb-2">
+            NutriLove ACV (Alami)
           </p>
-          <ul class="space-y-1.5 text-slate-800 font-bold text-[12px]">
+          <ul class="space-y-2 text-slate-800 font-bold text-[13px] sm:text-[13.5px]">
             <li class="flex items-start gap-1.5 leading-snug">
-              <span class="text-emerald-700 font-black text-[12px] mt-px shrink-0">✓</span>
-              <span>Aktifkan enzim bakar lemak</span>
+              <span class="text-emerald-700 font-black text-[13px] mt-px shrink-0">✓</span>
+              <span>Bakar lemak visceral padat</span>
             </li>
             <li class="flex items-start gap-1.5 leading-snug">
-              <span class="text-emerald-700 font-black text-[12px] mt-px shrink-0">✓</span>
-              <span>BAB lancar tanpa melilit</span>
+              <span class="text-emerald-700 font-black text-[13px] mt-px shrink-0">✓</span>
+              <span>BAB subuh lancar tanpa melilit</span>
             </li>
             <li class="flex items-start gap-1.5 leading-snug">
-              <span class="text-emerald-700 font-black text-[12px] mt-px shrink-0">✓</span>
-              <span>Perut begah langsung plong</span>
+              <span class="text-emerald-700 font-black text-[13px] mt-px shrink-0">✓</span>
+              <span>Rontokkan kerak kotoran usus</span>
             </li>
             <li class="flex items-start gap-1.5 leading-snug">
-              <span class="text-emerald-700 font-black text-[12px] mt-px shrink-0">✓</span>
+              <span class="text-emerald-700 font-black text-[13px] mt-px shrink-0">✓</span>
               <span>Kenyang awet tahan ngemil</span>
             </li>
           </ul>
@@ -393,14 +375,14 @@ const socialProofOrders = await recentOrderCount(getRuntimeEnv(Astro.locals)?.OM
       </div>
     </section>
 
-    <!-- ═══ 5. SECTION: 6 MANFAAT UTAMA NUTRILOVE UNTUK DETOX PERUT & METABOLISME ═══ -->
-    <section class="border-t border-slate-100 bg-slate-50/70 pt-10 pb-10 text-center">
+    <!-- ═══ 4. SECTION: 6 MANFAAT UTAMA NUTRILOVE UNTUK DETOX PERUT & METABOLISME ═══ -->
+    <section class="border-t border-slate-100 bg-white pt-10 pb-10 text-center">
       <div class="px-5">
         <h2 class={`${sectionTitle} mt-1`}>
-          6 Manfaat Utama NutriLove Untuk Perut Kempes &amp; Plong
+          6 Bukti Khasiat NutriLove Untuk Perut Kempes &amp; Plong
         </h2>
         <p class={`${sectionLead} text-center`}>
-          Solusi alami 100% fermentasi apel murni tanpa bahan kimia pelangsing yang membahayakan ginjal atau jantung:
+          Fermentasi apel murni with The Mother kaya enzim alami tanpa bahan kimia pencahar:
         </p>
       </div>
 
@@ -417,78 +399,78 @@ const socialProofOrders = await recentOrderCount(getRuntimeEnv(Astro.locals)?.OM
         />
 
         <div class="absolute bottom-0 inset-x-0 bg-gradient-to-t from-slate-950/90 via-slate-950/60 to-transparent px-4 pt-6 pb-2.5 text-center">
-          <p class="text-[12px] sm:text-[12.5px] text-amber-300">
+          <p class="text-[13px] font-bold text-amber-300">
             Kemasan Resmi NutriLove Cuka Apel With The Mother (Isi 500ml / Botol)
           </p>
         </div>
       </div>
 
       <!-- 6 PRECISE STRUCTURED BENEFIT CARDS -->
-      <div class="mt-6 px-4 sm:px-5 space-y-2.5 text-left">
-        <div class="p-3.5 rounded-xl bg-white border border-emerald-200/80 shadow-2xs">
-          <h3 class="text-[14px] font-bold text-slate-950">
-            1. Mengikis Lemak Perut Buncit (Visceral Fat)
+      <div class="mt-6 px-4 sm:px-5 space-y-3 text-left">
+        <div class="p-4 rounded-xl bg-slate-50 border border-emerald-200/80 shadow-2xs">
+          <h3 class="text-[15px] font-bold text-slate-950">
+            1. Mengikis Lemak Visceral (Perut Buncit Keras Jadi Kempes Lembek)
           </h3>
-          <p class="text-[12.5px] sm:text-[13px] text-slate-600 mt-1 leading-relaxed">
-            Membantu meluruhkan timbunan lemak keras di rongga perut dan lingkar pinggang sehingga celana kembali longgar dan nafas terasa enteng.
+          <p class="text-[14px] sm:text-[15px] text-slate-700 mt-1 leading-relaxed">
+            Asam asetat 5% murni mengurai timbunan lemak visceral padat di rongga perut dan pinggang, membuat celana kembali longgar dan nafas terasa lega.
           </p>
         </div>
 
-        <div class="p-3.5 rounded-xl bg-white border border-emerald-200/80 shadow-2xs">
-          <h3 class="text-[14px] font-bold text-slate-950">
-            2. Mengempeskan Perut Begah, Kembung &amp; Bergas
+        <div class="p-4 rounded-xl bg-slate-50 border border-emerald-200/80 shadow-2xs">
+          <h3 class="text-[15px] font-bold text-slate-950">
+            2. Melunakkan Kerak Usus &amp; BAB Subuh Lancar Plong
           </h3>
-          <p class="text-[12.5px] sm:text-[13px] text-slate-600 mt-1 leading-relaxed">
-            Enzim protease dan probiotik hidup mengurai penumpukan gas di lambung dan usus, membebaskan rasa penuh sesak sehabis makan.
+          <p class="text-[14px] sm:text-[15px] text-slate-700 mt-1 leading-relaxed">
+            Melunakkan kotoran kering menahun di dinding usus, merangsang gerak alami pencernaan agar BAB tuntas setiap pagi tanpa perlu mengejan kuat.
           </p>
         </div>
 
-        <div class="p-3.5 rounded-xl bg-white border border-emerald-200/80 shadow-2xs">
-          <h3 class="text-[14px] font-bold text-slate-950">
-            3. Melancarkan BAB Tiap Pagi Tanpa Mulas Melilit
+        <div class="p-4 rounded-xl bg-slate-50 border border-emerald-200/80 shadow-2xs">
+          <h3 class="text-[15px] font-bold text-slate-950">
+            3. Mengempeskan Perut Begah, Kembung &amp; Gas Busuk
           </h3>
-          <p class="text-[12.5px] sm:text-[13px] text-slate-600 mt-1 leading-relaxed">
-            Bekerja memperbaiki gerak peristaltik usus secara alami, bukan menguras cairan seperti obat pencahar, sehingga BAB tuntas dan teratur setiap pagi.
+          <p class="text-[14px] sm:text-[15px] text-slate-700 mt-1 leading-relaxed">
+            Enzim protease dan probiotik hidup mengurai penumpukan gas busuk akibat makanan berlemak atau karbohidrat, perut langsung kempes enteng.
           </p>
         </div>
 
-        <div class="p-3.5 rounded-xl bg-white border border-emerald-200/80 shadow-2xs">
-          <h3 class="text-[14px] font-bold text-slate-950">
-            4. Mengunci Nafsu Ngemil Malam &amp; Craving Manis
+        <div class="p-4 rounded-xl bg-slate-50 border border-emerald-200/80 shadow-2xs">
+          <h3 class="text-[15px] font-bold text-slate-950">
+            4. Mengunci Nafsu Makan &amp; Lapar Mata Jam 9 Malam
           </h3>
-          <p class="text-[12.5px] sm:text-[13px] text-slate-600 mt-1 leading-relaxed">
-            Menstabilkan respon insulin sehabis makan sehingga sinyal lapar mata di malam hari berhenti dengan sendirinya tanpa rasa tersiksa.
+          <p class="text-[14px] sm:text-[15px] text-slate-700 mt-1 leading-relaxed">
+            Menstabilkan lonjakan gula darah dan respon hormon insulin sehabis makan malam, dorongan ngemil manis berhenti otomatis tanpa tersiksa.
           </p>
         </div>
 
-        <div class="p-3.5 rounded-xl bg-white border border-emerald-200/80 shadow-2xs">
-          <h3 class="text-[14px] font-bold text-slate-950">
+        <div class="p-4 rounded-xl bg-slate-50 border border-emerald-200/80 shadow-2xs">
+          <h3 class="text-[15px] font-bold text-slate-950">
             5. Detox Perlemakan Hati (Fatty Liver) &amp; Kolesterol
           </h3>
-          <p class="text-[12.5px] sm:text-[13px] text-slate-600 mt-1 leading-relaxed">
-            Membantu membersihkan timbunan trigliserida di organ hati dan pembuluh darah, membuat badan terasa ringan saat bangun pagi.
+          <p class="text-[14px] sm:text-[15px] text-slate-700 mt-1 leading-relaxed">
+            Membantu membersihkan timbunan trigliserida dan lemak darah, sirkulasi tubuh lancar dan badan langsung bertenaga segar saat bangun pagi.
           </p>
         </div>
 
-        <div class="p-3.5 rounded-xl bg-white border border-emerald-200/80 shadow-2xs">
-          <h3 class="text-[14px] font-bold text-slate-950">
-            6. Kulit Lebih Bersih &amp; Nafas Lebih Segar
+        <div class="p-4 rounded-xl bg-slate-50 border border-emerald-200/80 shadow-2xs">
+          <h3 class="text-[15px] font-bold text-slate-950">
+            6. Nafas Segar Bebas Bau Mulut &amp; Kulit Bebas Kusam
           </h3>
-          <p class="text-[12.5px] sm:text-[13px] text-slate-600 mt-1 leading-relaxed">
-            Saat saluran cerna bersih dari pembusukan sisa makanan, bau mulut berkurang drastis dan kulit tampak lebih segar cerah alami.
+          <p class="text-[14px] sm:text-[15px] text-slate-700 mt-1 leading-relaxed">
+            Ketika saluran cerna steril dari pembusukan sisa makanan, gas lambung busuk hilang tuntas sehingga nafas jadi segar dan kulit bersih cerah.
           </p>
         </div>
       </div>
     </section>
 
-    <!-- ═══ 6. SECTION: 3 VERIFIED TESTIMONIALS (ULASAN NYATA INDONESIA) ═══ -->
+    <!-- ═══ 5. SECTION: 3 VERIFIED TESTIMONIALS (ULASAN NYATA INDONESIA) ═══ -->
     <section class="border-t border-slate-100 bg-white pt-10 pb-10 text-center">
       <div class="px-5">
         <h2 class={`${sectionTitle} mt-1`}>
           Mereka Yang Perut Buncitnya Kembali Kempes &amp; Plong
         </h2>
         <p class={`${sectionLead} text-center mb-6`}>
-          Cerita asli pelanggan kami yang berhasil mengecilkan lingkar perut dan melancarkan BAB dengan NutriLove ACV:
+          Kisah nyata pelanggan yang berhasil meluruhkan lemak visceral dan menuntaskan BAB macet:
         </p>
       </div>
 
@@ -501,25 +483,25 @@ const socialProofOrders = await recentOrderCount(getRuntimeEnv(Astro.locals)?.OM
               <div class="flex items-center justify-between">
                 <div>
                   <div class="flex items-center gap-1.5">
-                    <h3 class="text-[15px] sm:text-[15.5px] font-bold text-slate-950">{testi.name}</h3>
-                    <span class="text-[12px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200/80 px-1.5 py-0.5 rounded">Terverifikasi</span>
+                    <h3 class="text-[16px] font-black text-slate-950">{testi.name}</h3>
+                    <span class="text-[12px] font-bold text-emerald-800 bg-emerald-50 border border-emerald-200/80 px-2 py-0.5 rounded-full">Terverifikasi</span>
                   </div>
-                  <p class="text-[12px] text-slate-500 mt-0.5">{testi.city} • {testi.occupation}</p>
+                  <p class="text-[13px] text-slate-500 mt-0.5">{testi.city} • {testi.occupation}</p>
                 </div>
 
-                <div class="flex items-center gap-0.5 text-amber-400 text-[12px] leading-none" role="img" aria-label={`Rating ${testi.rating} dari 5 bintang`}>
+                <div class="flex items-center gap-0.5 text-amber-400 text-[14px] leading-none" role="img" aria-label={`Rating ${testi.rating} dari 5 bintang`}>
                   ★ ★ ★ ★ ★
                 </div>
               </div>
 
               {testi.quote.includes(testi.highlight) ? (
-                <p class="border-l-2 border-[#0F2F1F]/40 pl-3.5 text-[13.5px] sm:text-[14.5px] leading-relaxed text-slate-700 italic">
+                <p class="border-l-2 border-[#0F2F1F]/60 pl-3.5 text-[15px] sm:text-[16px] leading-relaxed text-slate-800 italic">
                   "{testi.quote.split(testi.highlight)[0]}
                   <strong class="text-slate-950 font-bold not-italic">{testi.highlight}</strong>
                   {testi.quote.split(testi.highlight)[1]}"
                 </p>
               ) : (
-                <p class="border-l-2 border-[#0F2F1F]/40 pl-3.5 text-[13.5px] sm:text-[14.5px] leading-relaxed text-slate-700 italic">
+                <p class="border-l-2 border-[#0F2F1F]/60 pl-3.5 text-[15px] sm:text-[16px] leading-relaxed text-slate-800 italic">
                   "{testi.quote}"
                 </p>
               )}
@@ -542,23 +524,32 @@ const socialProofOrders = await recentOrderCount(getRuntimeEnv(Astro.locals)?.OM
       </div>
     </section>
 
-    <!-- ═══ 7. PENAWARAN KHUSUS & URGENCY PROMO (BELI 1 GRATIS 3 + GRATIS ONGKIR P. JAWA) ═══ -->
-    <section class="w-full border-t border-slate-100 bg-[#0F2F1F] text-white px-4 sm:px-5 py-7 text-center">
+    <!-- ═══ 6. PENAWARAN KHUSUS & URGENCY PROMO (BELI 1 GRATIS 3 + GRATIS ONGKIR P. JAWA) ═══ -->
+    <section class="w-full border-t border-slate-100 bg-[#0F2F1F] text-white px-4 sm:px-5 py-8 text-center">
       <div class="max-w-[420px] mx-auto space-y-4">
         
+        <div>
+          <h2 class="text-[22px] sm:text-[24px] font-black uppercase text-amber-300 leading-tight">
+            Ambil Paket Detox Hari Ini
+          </h2>
+          <p class="mt-1 text-[13.5px] text-slate-200">
+            Garansi 100% Original With The Mother • Bayar Pas Barang Sampai (COD)
+          </p>
+        </div>
+
         <!-- Countdown Timer Bar -->
         <div class="flex items-center justify-between bg-white/10 rounded-2xl px-4 py-2.5 border border-white/20 shadow-inner">
-          <span class="text-[12px] sm:text-[13px] font-extrabold text-slate-100">
+          <span class="text-[13px] font-extrabold text-slate-100">
             Promo Detox Berakhir Dalam:
           </span>
-          <div class="flex items-center gap-1.5 font-mono font-black text-[14px]">
-            <span id="countdown-minutes" class="bg-red-600 text-white px-2.5 py-1 rounded-lg min-w-[32px] text-center shadow-md">15</span>
+          <div class="flex items-center gap-1.5 font-mono font-black text-[15px]">
+            <span id="countdown-minutes" class="bg-red-600 text-white px-2.5 py-1 rounded-lg min-w-[34px] text-center shadow-md">15</span>
             <span class="text-amber-400 font-black text-[16px] leading-none">:</span>
-            <span id="countdown-seconds" class="bg-red-600 text-white px-2.5 py-1 rounded-lg min-w-[32px] text-center shadow-md">00</span>
+            <span id="countdown-seconds" class="bg-red-600 text-white px-2.5 py-1 rounded-lg min-w-[34px] text-center shadow-md">00</span>
           </div>
         </div>
 
-        <!-- 2 Exclusive Bundle Showcase Cards Only (Eliminated other tiers) -->
+        <!-- 2 Exclusive Bundle Showcase Cards Only -->
         <div class="grid grid-cols-2 gap-2.5 text-left">
           
           <!-- Card 1: Beli 1 Gratis 3 (Total 4 Botol = 2L) -->
@@ -579,7 +570,7 @@ const socialProofOrders = await recentOrderCount(getRuntimeEnv(Astro.locals)?.OM
             </div>
             <div class="mt-2">
               <p class="text-[12px] font-bold text-slate-300 uppercase">Beli 1 Gratis 3 (4 Btl)</p>
-              <p class="text-[17px] font-black text-white font-mono leading-tight mt-0.5">Rp{Math.round(price).toLocaleString('id-ID')}</p>
+              <p class="text-[18px] font-black text-white font-mono leading-tight mt-0.5">Rp{Math.round(price).toLocaleString('id-ID')}</p>
               <p class="text-[12px] text-emerald-300 font-semibold mt-0.5">Rp24.375 / btl 500ml</p>
             </div>
           </div>
@@ -602,7 +593,7 @@ const socialProofOrders = await recentOrderCount(getRuntimeEnv(Astro.locals)?.OM
             </div>
             <div class="mt-2">
               <p class="text-[12px] font-black text-amber-300 uppercase">Paket 6 Botol (3L)</p>
-              <p class="text-[17px] font-black text-amber-300 font-mono leading-tight mt-0.5">Rp199.000</p>
+              <p class="text-[18px] font-black text-amber-300 font-mono leading-tight mt-0.5">Rp199.000</p>
               <p class="text-[12px] text-amber-100 font-bold mt-0.5">Rp33.166/btl • Ongkir 1 Kg!</p>
             </div>
           </div>
@@ -615,22 +606,20 @@ const socialProofOrders = await recentOrderCount(getRuntimeEnv(Astro.locals)?.OM
           </div>
 
           <div class="flex items-baseline justify-center gap-2 pt-0.5">
-            <span class="text-[14px] sm:text-[15px] font-medium text-slate-400 line-through">Rp{comparePrice.toLocaleString('id-ID')}</span>
-            <span class="text-[30px] sm:text-[36px] font-black text-amber-300 font-mono tracking-normal leading-none">
+            <span class="text-[15px] font-medium text-slate-400 line-through">Rp{comparePrice.toLocaleString('id-ID')}</span>
+            <span class="text-[32px] sm:text-[38px] font-black text-amber-300 font-mono tracking-normal leading-none">
               Rp{Math.round(price).toLocaleString('id-ID')}
             </span>
           </div>
 
-          <p class="text-[12px] text-amber-200 font-bold">
-            Mulai Rp97.500 (Dapat 4 Botol Besar @500ml) • Paket 6 Botol Rp199.000 • GRATIS ONGKIR Se-Pulau Jawa!
+          <p class="text-[13px] text-slate-200">
+            Mulai <strong class="text-amber-300 font-black">Rp97.500</strong> (Dapat 4 Botol Besar @500ml) • Paket 6 Botol <strong class="text-amber-300 font-black">Rp199.000</strong> • Gratis Ongkir Se-Pulau Jawa
           </p>
         </div>
 
-
-
         <!-- Realtime Live Stock Bar -->
         <div class="space-y-1.5 pt-1 text-left">
-          <div class="flex items-center justify-between text-[12px] sm:text-[12.5px] font-bold">
+          <div class="flex items-center justify-between text-[12.5px] font-bold">
             <span class="flex items-center gap-1.5 text-slate-300">
               <span class="h-2 w-2 rounded-full bg-red-400 animate-ping shrink-0"></span>
               <span>Sisa Kuota Paket Detox Hari Ini:</span>
@@ -644,14 +633,14 @@ const socialProofOrders = await recentOrderCount(getRuntimeEnv(Astro.locals)?.OM
       </div>
     </section>
 
-    <!-- ═══ 8. FORMULIR PEMESANAN (CHECKOUT COD) ═══ -->
-    <section id="form-pemesanan" class="bg-white px-0 pt-7 pb-4 scroll-mt-4 w-full">
+    <!-- ═══ 7. FORMULIR PEMESANAN (CHECKOUT COD) ═══ -->
+    <section id="form-pemesanan" class="bg-white px-0 pt-8 pb-4 scroll-mt-4 w-full">
       <div class="px-4 pb-2 text-center">
-        <h2 class="text-[20px] font-bold tracking-normal text-slate-950 leading-tight">
+        <h2 class="text-[22px] sm:text-[24px] font-black tracking-normal text-slate-950 leading-tight">
           Pilih Paket &amp; Lengkapi Alamat COD
         </h2>
-        <p class="mt-1 text-[13px] text-slate-500">
-          Gratis Ongkir Se-Pulau Jawa • Bisa Bayar di Tempat (COD)
+        <p class="mt-1.5 text-[14px] font-medium text-slate-600">
+          Gratis Ongkir Se-Pulau Jawa • Bisa Bayar di Tempat Pas Kurir Sampai (COD)
         </p>
       </div>
 
